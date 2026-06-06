@@ -4,3 +4,11 @@ dist/
 .env.*
 *.tgz
 .DS_Store
+
+# Local development junctions and build scripts
+lsp-tools-mcp/
+ast-grep-mcp/
+git-bash-mcp/
+shared-skills/
+scripts/
+plugins/scripts/
