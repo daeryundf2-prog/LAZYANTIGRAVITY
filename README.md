@@ -1,14 +1,14 @@
 <div align="center">
-  <img src=".github/assets/lazycodex-logo.png" alt="LazyCodex" width="280">
+  <img src=".github/assets/lazycodex-logo.png" alt="LazyAntigravity" width="280">
 
-  <h1>LazyCodex</h1>
+  <h1>LazyAntigravity</h1>
 
   <p><strong>The one and only agent harness for complex codebases.</strong><br />
-  Project memory, planning, execution, and verified completion inside Codex.</p>
+  Project memory, planning, execution, and verified completion inside Google Antigravity.</p>
 
   <p>
-    <a href="https://github.com/code-yeongyu/lazycodex/stargazers">
-      <img alt="Stars" src="https://img.shields.io/github/stars/code-yeongyu/lazycodex?style=for-the-badge&color=c69ff5&logoColor=D9E0EE&labelColor=302D41" />
+    <a href="https://lazycodex.ai">
+      <img alt="Homage to LazyCodex" src="https://img.shields.io/badge/Homage_to-LazyCodex.ai-purple?style=for-the-badge&logo=github" />
     </a>
   </p>
 
@@ -17,7 +17,7 @@
     ·
     <a href="https://github.com/code-yeongyu/oh-my-openagent">OmO</a>
     ·
-    <a href="https://lazycodex.ai">lazycodex.ai</a>
+    <a href="https://lazycodex.ai">lazycodex.ai (Original)</a>
   </p>
 
   <br />
@@ -26,14 +26,19 @@
 <hr />
 
 > [!NOTE]
-> **[OmO] 60K Stars: the terrifying token burner has arrived in LazyCodex.**
+> **LAZYANTIGRAVITY**는 [lazycodex.ai](https://lazycodex.ai)를 오마주하여 제작된 **Google Antigravity** 플랫폼용 에이전트 하네스 플러그인 패키지입니다.
 >
-> Sisyphus Labs' OmO is the quality-obsessed agent harness whose public lore says it loved Anthropic models hard enough to get third-party clients blocked. Now that same OmO quality bar is available for Codex through LazyCodex.
+> 기존 Codex 플랫폼의 대표적인 협업 에이전트 오케스트레이터인 **LazyCodex**의 개념을 오마주하여, Antigravity의 `invoke_subagent` 플로우에 맞게 포팅 및 최적화하였습니다. 원작인 **LazyCodex**의 훌륭한 인터페이스와 철학은 공식 웹사이트 [lazycodex.ai](https://lazycodex.ai)에서 확인하실 수 있습니다!
+
+> [!IMPORTANT]
+> **[OmO] 60K Stars: the terrifying token burner has arrived in LazyAntigravity.**
+>
+> Sisyphus Labs' OmO is the quality-obsessed agent harness whose public lore says it loved Anthropic models hard enough to get third-party clients blocked. Now that same OmO quality bar is available for Antigravity through LazyAntigravity.
 >
 > If you wanted OmO but did not want the setup ceremony, start here:
 >
 > ```bash
-> npx lazycodex-ai install
+> npx lazyantigravity install
 > ```
 >
 > Context: [OmO 60K Stars on X](https://x.com/justsisyphus/status/2060210365338939452?s=20)
