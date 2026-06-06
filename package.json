@@ -1,10 +1,10 @@
 {
-  "name": "lazycodex-ai",
+  "name": "lazyantigravity",
   "version": "0.2.2",
-  "description": "Codex install alias for oh-my-openagent. Run `npx lazycodex-ai install` to set up the Codex platform.",
+  "description": "Antigravity install alias for oh-my-openagent. Run `npx lazyantigravity install` to set up the Antigravity platform.",
   "type": "module",
   "bin": {
-    "lazycodex-ai": "bin/lazycodex-ai.js"
+    "lazyantigravity": "bin/lazyantigravity.js"
   },
   "files": [
     "bin",

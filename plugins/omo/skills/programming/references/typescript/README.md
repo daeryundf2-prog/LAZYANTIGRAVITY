@@ -127,7 +127,7 @@ bun run ../../scripts/typescript/new-project.ts my-api --path ./projects
 
 Creates: `package.json` (Hono + Zod + Biome), `tsconfig.json` (ultra-strict), `biome.json`, `src/index.ts`, `.gitignore`. Works on macOS, Linux, Windows.
 
-For manual setup: `npx tsc --init`, then load `tsconfig-strict.md` for the full strict config.
+For manual setup: `bunx tsc --init`, then load `tsconfig-strict.md` for the full strict config.
 
 Key flags beyond `"strict": true`:
 
