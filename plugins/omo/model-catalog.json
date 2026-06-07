@@ -1,6 +1,7 @@
 {
 	"version": "2026-06-07.dual-platform-v2",
 	"codex": {
+		"canAutoRoute": true,
 		"current": {
 			"model": "gpt-5.5",
 			"model_context_window": 400000,
@@ -85,6 +86,8 @@
 		]
 	},
 	"antigravity": {
+		"canAutoRoute": false,
+		"routingMode": "hint-only",
 		"current": {
 			"model": "claude-opus-4.6",
 			"model_context_window": 200000,

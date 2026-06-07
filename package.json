@@ -13,7 +13,9 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "pack:dry-run": "npm pack --dry-run"
+    "pack:dry-run": "npm pack --dry-run",
+    "verify:drift": "node scripts/verify-drift.mjs",
+    "verify:sync": "npm run verify:drift"
   },
   "keywords": [
     "codex",

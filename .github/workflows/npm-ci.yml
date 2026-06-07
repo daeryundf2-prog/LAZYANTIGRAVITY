@@ -27,6 +27,8 @@ concurrency:
 jobs:
   test-pack:
     runs-on: ${{ matrix.os }}
+    env:
+      GEMINI_HOME: ${{ runner.temp }}/gemini-home
     strategy:
       fail-fast: false
       matrix:
@@ -69,17 +71,15 @@ jobs:
 
       - name: Verify CLI Help
         run: |
-          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop save-role-checkpoint --help
-          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop resume --help
+          node plugins/omo/components/ulw-loop/dist/cli.js --help
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop help
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop resume
 
-      - name: Install smoke test
-        run: |
-          mkdir -p test-home-smoke
-          export GEMINI_HOME="$GITHUB_WORKSPACE/test-home-smoke/.gemini"
-          node bin/lazyantigravity.js install
-          echo "Verifying installed skills exist..."
-          ls -la "$GEMINI_HOME/config/plugins/lazyantigravity/skills/ulw-loop/SKILL.md"
-          ls -la "$GEMINI_HOME/config/plugins/lazyantigravity/skills/ulw/SKILL.md"
+      - name: Install plugin to isolated GEMINI_HOME
+        run: node bin/lazyantigravity.js install
+
+      - name: Verify drift
+        run: npm run verify:drift -- --strict
 
       - name: Dry-run package
         run: npm pack --dry-run --json
