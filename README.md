@@ -25,6 +25,9 @@
 > **LAZYANTIGRAVITY**는 Google Antigravity 플랫폼용 에이전트 하네스 플러그인 패키지입니다.
 > 
 > 복잡한 코드베이스 분석, 다중 에이전트 자율 협업, 엄격한 품질 게이트 제어 및 모델 쿼터 초과 방지 설계를 Antigravity의 `invoke_subagent` 플로우에 최적화하여 제공합니다.
+>
+> 본 프로그램은 김연규님이 만든 Lazycodex를 antigravity에서도 사용하기위하여 제작되었습니다.
+> Lazycodex가 훨씬 좋습니다. Lazycodex.ai에서 확인해서 사용하세요.
 
 ---
 
