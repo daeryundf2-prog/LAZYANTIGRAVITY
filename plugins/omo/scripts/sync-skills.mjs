@@ -77,3 +77,16 @@ for (const skillName of sharedSkillNames) {
 	await cp(join(sharedSkillsRoot, skillName), join(skillsRoot, skillName), { recursive: true });
 	await adaptSkillForAntigravity(skillName);
 }
+
+// Copy standalone alias skills from skill-aliases/ (separate from skills/ which is rebuilt)
+const aliasesRoot = join(root, "skill-aliases");
+try {
+	const aliasEntries = await readdir(aliasesRoot, { withFileTypes: true });
+	for (const entry of aliasEntries) {
+		if (entry.isDirectory()) {
+			await cp(join(aliasesRoot, entry.name), join(skillsRoot, entry.name), { recursive: true });
+		}
+	}
+} catch {
+	// No skill-aliases directory — skip silently
+}

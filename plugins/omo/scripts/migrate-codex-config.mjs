@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
+import { getRuntimeConfig } from "./runtime-adapter.mjs";
 
 const FALLBACK_CATALOG = {
 	version: "fallback.gpt-5.5-400k",
@@ -41,6 +42,10 @@ const FALLBACK_CATALOG = {
 const MANAGED_KEYS = ["model", "model_context_window", "model_reasoning_effort", "plan_mode_reasoning_effort"];
 
 export async function migrateCodexConfig({ env = process.env, cwd = process.cwd() } = {}) {
+	const runtimeConfig = getRuntimeConfig(env);
+	if (!runtimeConfig.configMigrationEnabled) {
+		return { changed: [] };
+	}
 	const catalog = await readModelCatalog(env);
 	const statePath = resolveStatePath(env);
 	const state = await readState(statePath);
@@ -85,7 +90,10 @@ export function ensureCodexReasoningConfig(config, profile = FALLBACK_CATALOG.cu
 export async function readModelCatalog(env = process.env) {
 	const catalogPath = env.LAZYCODEX_MODEL_CATALOG_PATH?.trim() || join(dirname(fileURLToPath(import.meta.url)), "..", "model-catalog.json");
 	try {
-		return parseCatalog(JSON.parse(await readFile(catalogPath, "utf8"))) ?? FALLBACK_CATALOG;
+		const raw = JSON.parse(await readFile(catalogPath, "utf8"));
+		// New multi-platform format: extract the "codex" section (migration is Codex-only)
+		const platformSection = isRecord(raw.codex) ? { ...raw.codex, version: raw.version } : raw;
+		return parseCatalog(platformSection) ?? FALLBACK_CATALOG;
 	} catch (error) {
 		if (error instanceof Error) return FALLBACK_CATALOG;
 		throw error;

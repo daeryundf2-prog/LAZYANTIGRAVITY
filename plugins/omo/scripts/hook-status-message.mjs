@@ -1,4 +1,6 @@
-const PRODUCT_NAME = "LazyCodex";
+import { getRuntimeConfig } from "./runtime-adapter.mjs";
+
+const PRODUCT_NAME = getRuntimeConfig().productName;
 
 const WORD_OVERRIDES = new Map([
 	["lsp", "LSP"],
@@ -21,7 +23,7 @@ export function normalizeLazyCodexHookStatusLabel(label) {
 }
 
 export function parseLazyCodexHookStatusMessage(message) {
-	const match = /^LazyCodex\(([^)]+)\):\s+(.+)$/.exec(message.trim());
+	const match = /^(?:LazyCodex|LazyAntigravity)\(([^)]+)\):\s+(.+)$/.exec(message.trim());
 	if (match === null) return null;
 	const [, version, label] = match;
 	return { version, label };

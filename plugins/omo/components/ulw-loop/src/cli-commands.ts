@@ -1,7 +1,7 @@
 // biome-ignore-all format: keep cli-commands dispatcher under the 200 pure LOC budget.
 import { readFile } from "node:fs/promises";
 import { type CheckpointUlwLoopArgs, checkpointUlwLoop } from "./checkpoint.js";
-import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, readStdin, readValue } from "./cli-arg-parser.js";
+import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, readRepeated, readStdin, readValue } from "./cli-arg-parser.js";
 import { blockedDecisionHandoff, normalizeCodexGoalMode, printJson, printStatus, ULW_LOOP_HELP } from "./cli-output.js";
 import { parseSteeringProposal, printSteerResult } from "./cli-steering.js";
 import { buildCodexGoalInstruction } from "./codex-goal-instruction.js";
@@ -10,6 +10,7 @@ import { resolveUlwLoopSessionIdFromEnv, type UlwLoopScope } from "./paths.js";
 import { addUlwLoopGoal, createUlwLoopPlan, startNextUlwLoop, summarizeUlwLoopPlan } from "./plan-crud.js";
 import { readUlwLoopPlan } from "./plan-io.js";
 import { recordFinalReviewBlockers } from "./review-blockers.js";
+import { findLatestRoleCheckpoint, saveRoleCheckpoint, type UlwLimitErrorType } from "./role-checkpoint.js";
 import { steerUlwLoop } from "./steering.js";
 import type { UlwLoopItem } from "./types.js";
 import { UlwLoopError } from "./types.js";
@@ -34,6 +35,8 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 			case "criteria": return await criteria(repoRoot, rest, json, scope);
 			case "record-evidence": return await captureEvidence(repoRoot, rest, json, scope);
 			case "record-review-blockers": return await reviewBlockers(repoRoot, rest, json, scope);
+			case "save-role-checkpoint": return await saveRoleCheckpointCmd(repoRoot, rest, json);
+			case "resume": return await resumeCmd(repoRoot, json);
 			default: process.stdout.write(`${ULW_LOOP_HELP}\n`); return 1;
 		}
 	} catch (error) {
@@ -153,4 +156,94 @@ function findGoal(plan: { readonly goals: readonly UlwLoopItem[] }, goalId: stri
 	const goal = plan.goals.find((candidate) => candidate.id === goalId);
 	if (goal !== undefined) return goal;
 	throw new UlwLoopError(`Unknown ulw-loop id: ${goalId}.`, "ULW_LOOP_GOAL_NOT_FOUND", { details: { goalId } });
+}
+
+async function saveRoleCheckpointCmd(
+	repoRoot: string,
+	argv: readonly string[],
+	json: boolean,
+): Promise<number> {
+	const taskId = required(argv, "--task-id");
+	const platform = required(argv, "--platform") as "Antigravity" | "Codex";
+	const selectedModel = required(argv, "--selected-model");
+	const completedRoles = readList(argv, "--completed-roles");
+	const currentRole = required(argv, "--current-role");
+	const failedRole = readValue(argv, "--failed-role");
+	const errorType = readValue(argv, "--error-type") as UlwLimitErrorType | undefined;
+	const filesChanged = readList(argv, "--files-changed");
+	const commandsRun = readList(argv, "--commands-run");
+	const artifactsGenerated = readList(argv, "--artifacts-generated");
+	const nextRecommendedAction = required(argv, "--next-recommended-action");
+	const resumeCommand = required(argv, "--resume-command");
+
+	const path = await saveRoleCheckpoint(repoRoot, {
+		taskId,
+		platform,
+		selectedModel,
+		completedRoles,
+		currentRole,
+		filesChanged,
+		commandsRun,
+		artifactsGenerated,
+		nextRecommendedAction,
+		resumeCommand,
+		...(failedRole !== undefined ? { failedRole } : {}),
+		...(errorType !== undefined ? { errorType } : {}),
+	});
+
+	if (json) {
+		printJson({ ok: true, checkpointPath: path });
+	} else {
+		process.stdout.write(`Saved role checkpoint: ${path}\n`);
+	}
+	return 0;
+}
+
+async function resumeCmd(repoRoot: string, json: boolean): Promise<number> {
+	const checkpoint = await findLatestRoleCheckpoint(repoRoot);
+	if (!checkpoint) {
+		if (json) {
+			printJson({ ok: false, error: "No checkpoints found" });
+		} else {
+			process.stderr.write("No checkpoints found. Cannot resume.\n");
+		}
+		return 1;
+	}
+
+	if (json) {
+		printJson({ ok: true, checkpoint });
+	} else {
+		process.stdout.write(`Resuming ulw-loop workflow:\n`);
+		process.stdout.write(`  Task ID: ${checkpoint.taskId}\n`);
+		process.stdout.write(`  Platform: ${checkpoint.platform}\n`);
+		process.stdout.write(`  Selected Model: ${checkpoint.selectedModel}\n`);
+		process.stdout.write(`  Completed Roles: ${checkpoint.completedRoles.join(", ")}\n`);
+		process.stdout.write(`  Current/Failed Role to Resume: ${checkpoint.currentRole}\n`);
+		if (checkpoint.failedRole) process.stdout.write(`  Failed Role: ${checkpoint.failedRole}\n`);
+		if (checkpoint.errorType) process.stdout.write(`  Error Type: ${checkpoint.errorType}\n`);
+		if (checkpoint.filesChanged.length > 0) process.stdout.write(`  Files Changed: ${checkpoint.filesChanged.join(", ")}\n`);
+		if (checkpoint.commandsRun.length > 0) process.stdout.write(`  Commands Run: ${checkpoint.commandsRun.join(", ")}\n`);
+		if (checkpoint.artifactsGenerated.length > 0) process.stdout.write(`  Artifacts Generated: ${checkpoint.artifactsGenerated.join(", ")}\n`);
+		process.stdout.write(`\n`);
+		process.stdout.write(`  Next Recommended Action: ${checkpoint.nextRecommendedAction}\n`);
+		process.stdout.write(`  Resume Command: ${checkpoint.resumeCommand}\n`);
+	}
+	return 0;
+}
+
+function readList(argv: readonly string[], flag: string): string[] {
+	const repeated = readRepeated(argv, flag);
+	const values: string[] = [];
+	if (repeated.length > 0) {
+		for (const val of repeated) {
+			for (const part of val.split(",")) {
+				const trimmed = part.trim();
+				if (trimmed) values.push(trimmed);
+			}
+		}
+		return values;
+	}
+	const single = readValue(argv, flag);
+	if (!single) return [];
+	return single.split(",").map((s) => s.trim()).filter(Boolean);
 }

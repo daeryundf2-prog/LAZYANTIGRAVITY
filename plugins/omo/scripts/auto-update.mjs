@@ -14,6 +14,7 @@ import {
 	writeState,
 } from "./auto-update-state.mjs";
 import { migrateCodexConfig } from "./migrate-codex-config.mjs";
+import { getRuntimeConfig } from "./runtime-adapter.mjs";
 import { resolveSpawnInvocation } from "./spawn-command.mjs";
 
 const DEFAULT_INTERVAL_MS = 24 * 60 * 60 * 1_000;
@@ -92,6 +93,10 @@ export async function runLazyCodexManualUpdate({ env = process.env, dryRun = fal
 }
 
 export async function runAutoUpdateCheck({ env = process.env, now = Date.now() } = {}) {
+	const runtimeConfig = getRuntimeConfig(env);
+	if (!runtimeConfig.autoUpdateEnabled) {
+		return { started: false, reason: "runtime-unsupported" };
+	}
 	await runConfigMigration({ env });
 	const statePath = resolveStatePath(env);
 	const state = await readState(statePath);

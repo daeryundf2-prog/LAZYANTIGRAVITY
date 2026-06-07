@@ -65,3 +65,75 @@ The full workflow may mention OpenCode-style orchestration examples. In Codex, t
 | Clean up finished worker | `close_agent(...)` |
 
 When translating `load_skills=[...]`, include the requested skill names in the spawned agent's `message`.
+
+## Token & Quota Safety and Safe-Resume Design
+
+### 1. Limit / Error Classification
+When a model or quota limit error occurs, classify it into one of the following:
+- `context_window_exceeded`: Prompt or history size exceeds context window limit.
+- `output_token_limit`: The response token count exceeds the maximum allowed output tokens.
+- `model_rate_limited`: Rate limit (requests/min or tokens/min) has been hit.
+- `account_quota_exceeded`: The platform account has exhausted its total credits or subscription quota.
+- `provider_unavailable`: Network, HTTP 5xx, or provider endpoint is down.
+- `unknown_model_error`: Any other API error.
+
+### 2. Checkpoint Storage Structure
+Before halting or shifting modes, save the execution state using:
+`omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>]`
+Saved in: `.lazycodex/checkpoints/ulw-{timestamp}.json`
+
+### 3. Antigravity Safety Flow (No Auto-Switching)
+If rate limit/quota is detected in Antigravity:
+- **Immediately Stop**: Abort the active execution loop immediately. Do not enter a retry loop.
+- **Save Checkpoint**: Call `omo ulw-loop save-role-checkpoint` to save the failed/current role, completed roles, error type, files changed, etc.
+- **Recommend Only (Fallback Sequence)**: Present a fallback model recommendation according to this exact sequence:
+  - **Claude Opus 4.6 (Thinking) 제한 시**:
+    1. Gemini 3.1 Pro (High)
+    2. Claude Sonnet 4.6 (Thinking) (단, Sonnet 쿼터가 남아 있는 경우)
+    3. Gemini 3.5 Flash (High)
+  - **Claude Sonnet 4.6 (Thinking) 제한 시**:
+    1. Gemini 3.1 Pro (High)
+    2. Gemini 3.5 Flash (High)
+  - **Gemini 3.1 Pro (High) 제한 시**:
+    1. Gemini 3.5 Flash (High)
+    2. Gemini 3.5 Flash (Medium)
+  - **모든 모델 제한/소진 시**:
+    - 리프레시(Refresh) 시간까지 대기
+    - 또는 사용자가 동의하는 경우 "AI Credit Overages" 활성화를 권고
+- **Guide User**: Instruct the user to change the model manually in the Antigravity UI dropdown.
+- **Resume Command**: Present the `/ulw resume` command to resume the process once the model is changed.
+
+### 4. Codex Safety Flow (Auto-Routing)
+If rate limit/quota is detected in Codex:
+- **Model-Specific limit**: Attempt `fallbackChain` defined in model catalog.
+- **Account-Level quota**: Stop immediately and save checkpoint via `omo ulw-loop save-role-checkpoint`. Do not make futile retries.
+- **Retries & Backoff**: Limit automatic retries to maximum 1-2 attempts with light exponential backoff.
+
+### 5. Compact Mode (On Context Window Exceeded)
+If `context_window_exceeded` occurs, transition to Compact Mode:
+- **Summarize Logs**: Condense long test/execution logs into short summaries.
+- **Relevant Slices**: Read/display only relevant lines of files instead of printing whole files.
+- **Compress Outputs**: Limit role response size to 20-40 lines of summary in the transcript.
+- **Save Artifacts**: Save complete details/code into local files and reference them by path in the chat.
+
+### 6. Batch Mode (On Output Token Limit Expected)
+If an upcoming task will exceed the output token limit:
+- **Divide Changes**: Split edits into multiple smaller patch batches.
+- **Incremental Verification**: Verify each patch batch individually.
+- **Frequent Checkpointing**: Save the checkpoint after each successful batch.
+
+### 7. Resume Behavior (`/ulw resume`)
+To resume work:
+- Run `omo ulw-loop resume` to find the latest checkpoint.
+- Skip completed roles.
+- Resume from the current/failed role.
+- Restore conversation context by reading the listed artifacts/files.
+- Notice and adapt to any changes in the selected model.
+- Re-run verifier and finalizer steps to ensure correctness before completing.
+
+### 8. AI Credit Overages
+When all models are limited/exhausted:
+- **Automatic Toggling Prohibited**: LazyCodex/Antigravity must NEVER automatically enable "AI Credit Overages" due to potential cost/billing implications.
+- **User Notification**: Inform the user that "AI Credit Overages" can be enabled in their account settings to continue utilizing models beyond the quota, but require manual activation.
+
+

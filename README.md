@@ -1,10 +1,10 @@
 <div align="center">
-  <img src=".github/assets/lazycodex-logo.png" alt="LazyAntigravity" width="280">
+  <img src=".github/assets/lazyantigravity_banner.png" alt="LazyAntigravity Banner" width="640">
 
   <h1>LazyAntigravity</h1>
 
   <p><strong>The one and only agent harness for complex codebases.</strong><br />
-  Project memory, planning, execution, and verified completion inside Google Antigravity.</p>
+  Project memory, planning, execution, and verified completion inside Google Antigravity and Codex.</p>
 
   <p>
     <a href="https://lazycodex.ai">
@@ -15,9 +15,11 @@
   <p>
     <a href="#-what-is-this">What is this?</a>
     ·
-    <a href="https://github.com/code-yeongyu/oh-my-openagent">OmO</a>
+    <a href="#%EF%B8%8F-antigravity-integration">Antigravity Integration</a>
     ·
-    <a href="https://lazycodex.ai">lazycodex.ai (Original)</a>
+    <a href="#-token--quota-safety">Token & Quota Safety</a>
+    ·
+    <a href="https://github.com/code-yeongyu/oh-my-openagent">OmO Core</a>
   </p>
 
   <br />
@@ -26,193 +28,106 @@
 <hr />
 
 > [!NOTE]
-> **LAZYANTIGRAVITY**는 [lazycodex.ai](https://lazycodex.ai)를 오마주하여 제작된 **Google Antigravity** 플랫폼용 에이전트 하네스 플러그인 패키지입니다.
->
-> 기존 Codex 플랫폼의 대표적인 협업 에이전트 오케스트레이터인 **LazyCodex**의 개념을 오마주하여, Antigravity의 `invoke_subagent` 플로우에 맞게 포팅 및 최적화하였습니다. 원작인 **LazyCodex**의 훌륭한 인터페이스와 철학은 공식 웹사이트 [lazycodex.ai](https://lazycodex.ai)에서 확인하실 수 있습니다!
+> **LAZYANTIGRAVITY**는 [lazycodex.ai](https://lazycodex.ai)를 오마주하여 제작된 **Google Antigravity** 및 **Codex** 플랫폼용 에이전트 하네스 플러그인 패키지입니다.
+> 
+> 기존 Codex 플랫폼의 대표적인 협업 에이전트 오케스트레이터인 **LazyCodex**의 철학을 이어받아, Antigravity의 `invoke_subagent` 플로우 및 쿼터 제한 환경에 완벽하게 적응하도록 이식 및 최적화되었습니다.
 
 > [!IMPORTANT]
-> **[OmO] 60K Stars: the terrifying token burner has arrived in LazyAntigravity.**
+> **[OmO] 60K Stars: the quality-obsessed agent harness is now inside Google Antigravity.**
 >
-> Sisyphus Labs' OmO is the quality-obsessed agent harness whose public lore says it loved Anthropic models hard enough to get third-party clients blocked. Now that same OmO quality bar is available for Antigravity through LazyAntigravity.
->
-> If you wanted OmO but did not want the setup ceremony, start here:
+> Sisyphus Labs의 OmO 하네스는 엄격한 품질 게이트와 자율적인 에이전트 협업 시스템을 제공합니다. 이제 LazyAntigravity를 통해 복잡한 세정 없이 한 줄로 이 모든 기능과 안전화 설계를 사용할 수 있습니다:
 >
 > ```bash
-> npx lazyantigravity install
+> node bin/lazyantigravity.js install
 > ```
->
-> Context: [OmO 60K Stars on X](https://x.com/justsisyphus/status/2060210365338939452?s=20)
+
+---
 
 ## 🚀 Install
 
-One line. No global install, no `npm i -g`. Always use `npx`:
-
+단 한 줄의 명령어로 플러그인을 환경에 맞춰 빌드하고 복사/설정합니다.
 ```bash
-npx lazycodex-ai install
+node bin/lazyantigravity.js install
 ```
+이 스크립트는 모든 컴포넌트(`ulw-loop`, `lsp`, `rules` 등)를 빌드하고, 사용자 프로필 디렉터리(`~/.gemini/config/plugins/lazyantigravity`)에 최신 바이너리와 스킬 파일을 자동 배포합니다.
 
-This is shorthand for `npx --yes --package oh-my-openagent omo install --platform=codex`. For a fully autonomous, no-TUI setup:
+---
 
+## ⚡ Commands & Workflows
+
+LazyAntigravity는 플랫폼에 따라 최적화된 명령 방식을 지원합니다:
+
+### 1. Antigravity Slash Command `/ulw`
+- Antigravity 챗 UI 내에서 `/ulw <task>`를 입력하면 `ulw-loop`가 자율적으로 실행됩니다.
+- **자동 역할 라우팅(Role Routing)**: Planner → Researcher → Worker → Verifier → Finalizer 단계로 작업이 분해되어 각 하위 에이전트가 병렬 또는 직렬로 순차 수행됩니다.
+- **모델 상속**: Antigravity의 제한으로 모델이 자동 스위칭되지 않으며, 모든 서브에이전트는 현재 사용자가 UI에서 지정한 모델을 상속받아 동작합니다.
+
+### 2. CLI 명령어 (`omo ulw-loop`)
+로컬 개발 프로세스 및 자율 루프 검증을 위한 CLI 명령들을 제공합니다:
 ```bash
-npx lazycodex-ai install --no-tui --codex-autonomous
+# 새로운 계획 수립 및 목표 설정
+omo ulw-loop create-goals --brief "구현 요건 설명"
+
+# 현재 루프 진행 상황 및 성공 조건 판정 상태 확인
+omo ulw-loop status
+
+# 다음 미완료 목표 획득 및 실행 지침 출력
+omo ulw-loop complete-goals
+
+# 검증 완료 후 개별 성공 조건 체크포인트 기록
+omo ulw-loop checkpoint --goal-id G001 --status complete --evidence "증거 설명" --codex-goal-json <get_goal_json>
+
+# 토큰/쿼터 오류 발생 시 에이전트의 현재 작업 세션 수동 저장
+omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd>
+
+# 가장 최신 세션 체크포인트로부터 작업 재개
+omo ulw-loop resume
 ```
 
-## ⚡ Commands
+---
 
-LazyCodex installs these as OmO commands for Codex. Invoke them with the
-`$command` syntax shown by the installer.
+## 🧠 Antigravity Quota-Aware Model Recommendations
 
-| Command | Type this | What it does |
-| --- | --- | --- |
-| `$ulw-loop` | `$ulw-loop "task" [--completion-promise=TEXT] [--strategy=reset\|continue]` | Self-referential loop that runs until Oracle-verified completion. Caps at 500 iterations in ultrawork mode, 100 in normal mode. |
-| `$ulw-plan` | `$ulw-plan "what to build"` | Prometheus strategic planner. Writes a plan to `plans/<slug>.md`. Never writes product code. |
-| `$start-work` | `$start-work [plan-name] [--worktree <path>]` | Executes a plan until every checkbox is done. Prints **ORCHESTRATION COMPLETE**. |
+Antigravity의 실시간 모델 추천은 플랫폼의 가용 쿼터를 파악하여 지능적으로 분기 제안됩니다:
 
-Full documentation lives at [lazycodex.ai/docs](https://lazycodex.ai/docs).
+- **충분한 Claude quota 보유 시**: `Claude Opus 4.6 (Thinking)`
+- **Claude quota가 제한된 상태일 시**: `Gemini 3.1 Pro (High)`
+- **대규모 탐색 위주 작업 시**: `Gemini 3.5 Flash (High)`
+- **빠른 코드 수정 위주 작업 시**: `Gemini 3.5 Flash (Medium)`
 
-## Use the built-in workflows
+### ⚠️ Fallback 수동 추천 순서
+실행 도중 한도가 도달할 경우, 에이전트는 즉시 대기 상태로 진입하며 아래와 같은 구체적인 Fallback 전환을 사용자에게 추천합니다:
+1. **Claude Opus 제한 시**: `Gemini 3.1 Pro (High)` ➡️ `Claude Sonnet 4.6 (Thinking) (Sonnet 쿼터 있을 시)` ➡️ `Gemini 3.5 Flash (High)`
+2. **Claude Sonnet 제한 시**: `Gemini 3.1 Pro (High)` ➡️ `Gemini 3.5 Flash (High)`
+3. **Gemini Pro 제한 시**: `Gemini 3.5 Flash (High)` ➡️ `Gemini 3.5 Flash (Medium)`
+4. **모든 가용 모델 소진 시**: 다음 쿼터 초기화 시각까지 대기를 권장하거나, 사용자가 원하는 경우 **AI Credit Overages**를 계정 설정에서 활성화하도록 안내합니다. *(비용 요금 부과 위험이 있으므로 에이전트가 임의로 Overages 설정을 조작하지 않습니다).*
 
-LazyCodex should be judged by the features it actually installs. It is the
-Codex distribution for OmO's agent harness: project memory, planning,
-execution, verified completion, skills, hooks, model routing, and diagnostics.
+---
 
-### 1. `/init-deep` creates project memory
+## 🛡️ Token & Quota Safety
 
-`/init-deep` generates hierarchical `AGENTS.md` context. It scores complex
-directories, writes local guidance near the code that needs it, and gives future
-agents landmarks before they edit.
+대형 코드베이스 작업 중 발생할 수 있는 토큰 및 크레딧 소진 문제를 최소화하기 위해 다음의 3중 방어막이 가동됩니다:
 
-Use it when the repository is too large to explain from memory. Run it again
-when the shape of the codebase changes.
+### 1. Safe-Resume 체크포인트
+- 오류가 발생하면 그 즉시 실행을 중단하고 `.lazycodex/checkpoints/ulw-{timestamp}.json` 파일에 실행 컨텍스트(수정된 파일 목록, 실행한 CLI 명령어, 생성된 아티팩트, 완료된 역할 및 실패한 역할 등)를 저장합니다.
+- 사용자는 수동으로 드롭다운에서 가용 모델로 전환한 후 `/ulw resume`을 입력하면 이전 작업의 중복 소모 없이 실패 지점부터 이어서 작업을 계속해 나갈 수 있습니다.
 
-### 2. The three command pillars stay up front
+### 2. Compact Mode (컨텍스트 초과 대처)
+- 컨텍스트 크기가 한도에 임박하거나 초과(`context_window_exceeded`)되면 로그 요약 기법이 활성화됩니다.
+- 변경이 필요하지 않은 코드 파일을 지면 단위로 로드하지 않고, 구문 타겟 slices만 추출하여 수정 도구에 주입합니다.
+- 서브에이전트의 출력 양을 20~40줄 수준으로 압축하고, 전체 산출물은 로컬 아티팩트 파일로 보관하여 메모리 사용량을 줄입니다.
 
-Use `$ulw-plan` when the work needs decisions before implementation. It writes a
-plan to `plans/<slug>.md` and does not touch product code.
+### 3. Batch Mode (출력 토큰 제한 대처)
+- 대규모 패치가 한 번에 수정될 수 없는 상황(`output_token_limit`)이 예측되면, 작업 단위를 여러 조각의 배치(batches)로 자동 분할합니다.
+- 각 분할 배치마다 독립적인 빌드 검증 및 린트를 통과시키며, 배치 성공 시마다 내부 체크포인트를 점진적으로 저장해 나갑니다.
 
-Use `$start-work` when a plan is ready. It executes the checklist with durable
-Boulder progress and stops only when the plan is complete.
+---
 
-Use `$ulw-loop` when the task should keep moving until the result is verified by
-evidence instead of a hopeful status update.
+## 👷 Maintainer & Homage
 
-### 3. Skills cover specialized work
-
-The command layer stays simple. The skill layer adds specialist judgment for the
-actual work:
-
-| Feature | Use it for |
-| --- | --- |
-| `/init-deep` | Hierarchical project memory through `AGENTS.md` |
-| `$ulw-plan` | Decision-complete planning before code changes |
-| `$start-work` | Durable plan execution with Boulder progress |
-| `$ulw-loop` | Verified completion for open-ended tasks |
-| `review-work` | Multi-angle post-implementation review |
-| `remove-ai-slops` | Behavior-preserving cleanup of AI-looking code |
-| `frontend-ui-ux` | Polished UI surfaces |
-| `programming` | Strict TypeScript, Rust, Python, or Go discipline |
-| `LSP` | Diagnostics, definitions, references, symbols, and renames |
-| `AST-grep` | Structural search and rewrite across code |
-| `rules` | Project instructions from AGENTS, rules, and instruction files |
-| `comment-checker` | Feedback after edit-like operations |
-
-Start at [https://lazycodex.ai](https://lazycodex.ai).
-
-<hr />
-
-## 💤 What is this?
-
-**LazyCodex** packages [OmO (oh-my-openagent)](https://github.com/code-yeongyu/oh-my-openagent) as the Codex agent harness for complex codebases.
-
-Think [LazyVim](https://github.com/LazyVim/LazyVim) for [lazy.nvim](https://github.com/folke/lazy.nvim), but for Codex.
-
-OmO is the agent harness: discipline agents, parallel orchestration, multi-model routing, skills, hooks, and verified completion. LazyCodex packages that harness for Codex.
-
-> _"LazyVim made Neovim usable for the rest of us. LazyCodex does the same for Codex."_
-
-Credit: The LazyCodex name idea is inspired by [LazyVim](https://github.com/LazyVim/LazyVim). The Ultragoal and UltraQA ideas are inspired by [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex), reimplemented from concept for this Codex setup.
-
-## 🧩 What you get
-
-| Feature | Description |
-| --- | --- |
-| 🤖 **Discipline Agents** | Sisyphus orchestrates Hephaestus, Oracle, Librarian. A full AI dev team |
-| 🔀 **Parallel Execution** | Multiple agents working simultaneously on subtasks |
-| 🎯 **Multi-Model Routing** | Automatic model selection per task category |
-| 🛠️ **Skills System** | Extensible skill library for specialized tasks |
-| 📋 **Hooks & Lifecycle** | Pre/post hooks for every agent action |
-| 🔧 **Zero Config** | Sensible defaults, override when you want |
-
-## 🧠 Why different GPT models appear
-
-Do not be surprised if an OmO/LazyCodex run shows models like `gpt-5.2`
-with `xhigh`, `gpt-5.4-mini`, `gpt-5.3-codex`, or newer equivalents like
-`gpt-5.5` with `xhigh`. That is intentional.
-
-OmO does not blindly spend your best model on every subtask. Its source
-defines task categories and fallback chains so the agent can pick the most
-appropriate model for the job: `quick` routes to `gpt-5.4-mini` for small
-edits, `ultrabrain` uses a high-reasoning GPT model for hard logic, and
-agentic coding paths can use Codex-tuned GPT models when available. See
-[`openai-categories.ts`](src/src/tools/delegate-task/openai-categories.ts)
-and [`model-requirements.ts`](src/packages/model-core/src/model-requirements.ts).
-
-The point is quota discipline: use the strongest model when the task needs
-deep reasoning, use a cheaper/faster model when that is enough, and keep
-parallel agent work efficient instead of burning premium quota on routine
-steps. This is benchmark-driven routing, not random model churn:
-
-- [GPT-5.2](https://openai.com/index/introducing-gpt-5-2/) is documented by
-  OpenAI as stronger at code review, bug finding, and complex tool use; the
-  announcement notes that its maximum API reasoning effort uses `xhigh`.
-- [GPT-5.3-Codex](https://developers.openai.com/api/docs/models/gpt-5.3-codex)
-  is OpenAI's Codex-tuned model for agentic software engineering, with public
-  coding-agent benchmarks such as SWE-Bench Pro, Terminal-Bench 2.0, and
-  OSWorld Verified reported in the
-  [GPT-5.3-Codex announcement](https://openai.com/index/introducing-gpt-5-3-codex).
-- [GPT-5.4 mini](https://openai.com/index/introducing-gpt-5-4-mini-and-nano/)
-  is positioned for efficient everyday coding, computer use, and subagents;
-  that is why lightweight OmO tasks can land there instead of spending a
-  frontier reasoning model.
-
-Reference links:
-
-- [OpenAI GPT-5.2 announcement](https://openai.com/index/introducing-gpt-5-2/)
-- [OpenAI GPT-5.2 model docs](https://platform.openai.com/docs/models/gpt-5.2/)
-- [OpenAI GPT-5.3-Codex model docs](https://developers.openai.com/api/docs/models/gpt-5.3-codex)
-- [OpenAI GPT-5.4 mini and nano announcement](https://openai.com/index/introducing-gpt-5-4-mini-and-nano/)
-- [OpenAI latest model guide](https://platform.openai.com/docs/guides/latest-model)
-
-## 🏗️ Architecture
-
-LazyCodex is a thin distribution layer. The core engine is [oh-my-openagent (OmO)](https://github.com/code-yeongyu/oh-my-openagent), included as a submodule under `src/`.
-
-```
-lazycodex/
-├── src/                     → oh-my-openagent (submodule)
-├── packages/
-│   └── web/                 → Next.js 15 + Tailwind v4 + opennextjs-cloudflare
-│                              (deployed to lazycodex.ai via Cloudflare Workers)
-├── .github/workflows/       → web-ci.yml + web-deploy.yml
-├── README.md
-└── ...
-```
-
-LazyCodex is part of the [omo.dev](https://omo.dev) project. **omo in Codex**, packaged for the lazy.
-
-## 👷 Maintainer
-
-LazyCodex is maintained by **Jobdori**, the AI assistant that builds and ships [OmO](https://github.com/code-yeongyu/oh-my-openagent) in real-time.
-
-<div align="center">
-
-[![Sisyphus Labs](.github/assets/sisyphuslabs.png)](https://sisyphuslabs.ai)
-
-> **Meet your own Jobdori, Dori.**
-> **Learn more at [sisyphuslabs.ai](https://sisyphuslabs.ai).**
-
-</div>
+- **LazyAntigravity**는 **Jobdori**가 Google Antigravity 및 Codex 플러그인 호환성 유지보수를 위해 빌드하고 배포합니다.
+- 본 프로젝트는 [lazycodex.ai](https://lazycodex.ai)의 아이디어와 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 에이전트의 엄격한 품질 지율에 깊은 존경을 보냅니다.
 
 ## 📄 License
 
-MIT
+MIT License

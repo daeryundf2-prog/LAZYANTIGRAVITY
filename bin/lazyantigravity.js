@@ -79,6 +79,13 @@ async function install() {
 	// Copy hooks/hooks.json to hooks.json
 	await cp(join(sourceDir, "hooks", "hooks.json"), join(targetPluginDir, "hooks.json"));
 
+	// 5. Write runtime hint for adapter detection
+	const runtimeHint = { target: "antigravity", installedAt: new Date().toISOString() };
+	await writeFile(
+		join(targetPluginDir, ".runtime-hint.json"),
+		JSON.stringify(runtimeHint, null, 2) + "\n"
+	);
+
 	console.log("LazyAntigravity successfully installed!");
 	console.log(`Verify the plugin is active in your Antigravity environment.`);
 }
