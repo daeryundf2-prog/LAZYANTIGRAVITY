@@ -71,6 +71,15 @@ test("hooks do not contain LazyCodex branding in statusMessage", () => {
 	assert.ok(content.includes('"statusMessage": "LazyAntigravity'), "Hooks should contain 'LazyAntigravity' statusMessage prefix");
 });
 
+test("verify-drift dry-run policy checks", () => {
+	const cliPath = join(rootDir, "plugins/omo/components/ulw-loop/dist/cli.js");
+	assert.ok(existsSync(cliPath), "cli.js should exist");
+
+	const jsonOutStr = execFileSync("node", [cliPath, "ulw-loop", "dry-run", "--scenario", "quota-opus-exhausted", "--json"], { encoding: "utf8" });
+	const jsonOut = JSON.parse(jsonOutStr);
+	assert.equal(jsonOut.wouldSwitchModel, false, "wouldSwitchModel must be false in dry-run JSON");
+});
+
 test("verify-drift script exits with code 0 on clean workspace", () => {
 	try {
 		execFileSync("node", [join(rootDir, "scripts/verify-drift.mjs"), "--strict"], { stdio: "pipe" });
@@ -78,3 +87,4 @@ test("verify-drift script exits with code 0 on clean workspace", () => {
 		assert.fail(`verify-drift.mjs --strict failed: ${error.message}\nStdout: ${error.stdout?.toString()}\nStderr: ${error.stderr?.toString()}`);
 	}
 });
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, existsSync, readdirSync, lstatSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, lstatSync, rmSync } from "node:fs";
 import { dirname, join, resolve, delimiter } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
@@ -163,7 +163,7 @@ try {
 		"## Antigravity Routing Semantics",
 		"## Antigravity Model Recommendation",
 		"## Antigravity Quota-Aware Recommendation",
-		"## Antigravity 권장 모델 구성 가이드"
+		"## Antigravity \\uAD8C\\uC7A5 \\uBAA8\\uB378 \\uAD6C\\uC131 \\uAC00\\uC774\\uB4DC"
 	];
 
 	const omoSkillsDir = join(rootDir, "plugins/omo/skills");
@@ -440,6 +440,71 @@ try {
 	}
 } catch (e) {
 	recordResult("Submodule Check Failure", "WARNING", e.message);
+}
+
+// ----------------------------------------------------
+// 9. Dry-Run Simulator Policy Verification
+// ----------------------------------------------------
+try {
+	const cliPath = join(rootDir, "plugins/omo/components/ulw-loop/dist/cli.js");
+	if (!existsSync(cliPath)) {
+		recordResult("Dry-Run CLI Executable Exists", "FAIL", `CLI executable missing at: ${cliPath}`);
+	} else {
+		// 1. Dry-run subcommand exists in help
+		const helpOut = execSync(`node "${cliPath}" ulw-loop help`, { encoding: "utf8", cwd: rootDir });
+		if (helpOut.includes("dry-run")) {
+			recordResult("Dry-Run Command Presence", "PASS", "dry-run subcommand listed in ulw-loop help");
+		} else {
+			recordResult("Dry-Run Command Presence", "FAIL", "dry-run subcommand not found in ulw-loop help");
+		}
+
+		// 2. Validate --json output and wouldSwitchModel === false
+		const tempCheckpointsDir = join(rootDir, ".lazycodex");
+		if (existsSync(tempCheckpointsDir)) {
+			rmSync(tempCheckpointsDir, { recursive: true, force: true });
+		}
+
+		const jsonOutStr = execSync(`node "${cliPath}" ulw-loop dry-run --scenario quota-opus-exhausted --json`, { encoding: "utf8", cwd: rootDir });
+		const jsonOut = JSON.parse(jsonOutStr);
+		const createdNoFlag = existsSync(tempCheckpointsDir);
+
+		// Now write a checkpoint explicitly
+		const jsonOutStr2 = execSync(`node "${cliPath}" ulw-loop dry-run --scenario quota-opus-exhausted --json --write-checkpoint`, { encoding: "utf8", cwd: rootDir });
+		const jsonOut2 = JSON.parse(jsonOutStr2);
+		const createdWithFlag = existsSync(tempCheckpointsDir) && jsonOut2.checkpointPath !== null && existsSync(jsonOut2.checkpointPath);
+
+		if (jsonOut.dryRun === true && jsonOut.wouldSwitchModel === false && jsonOut.wouldCallModelApi === false && jsonOut.wouldModifySourceFiles === false && !createdNoFlag && createdWithFlag) {
+			recordResult("Dry-Run JSON Policy Check", "PASS", "Dry-run executed successfully with wouldSwitchModel=false, wouldCallModelApi=false, wouldModifySourceFiles=false (checkpoints conditionally written)");
+		} else {
+			recordResult("Dry-Run JSON Policy Check", "FAIL", `Dry-run policy failed: dryRun=${jsonOut.dryRun}, wouldSwitchModel=${jsonOut.wouldSwitchModel}, createdNoFlag=${createdNoFlag}, createdWithFlag=${createdWithFlag}`);
+		}
+
+		// 3. Antigravity auto-routing representation check
+		const textOut = execSync(`node "${cliPath}" ulw-loop dry-run --scenario quota-opus-exhausted`, { encoding: "utf8", cwd: rootDir });
+		const cleanText = textOut.replace(/~~.*?~~/g, "");
+		const prohibitedAg = [
+			"auto model routing enabled",
+			"automatic model switching enabled",
+			"wouldSwitchModel: true"
+		];
+		let foundProhibitedAg = false;
+		for (const term of prohibitedAg) {
+			if (cleanText.includes(term)) {
+				foundProhibitedAg = true;
+				recordResult("Dry-Run Prohibited Copy", "FAIL", `Found prohibited auto-routing representation: "${term}"`);
+			}
+		}
+		if (!foundProhibitedAg) {
+			recordResult("Dry-Run Prohibited Copy", "PASS", "No active auto-routing claims found in dry-run output");
+		}
+
+		// Clean up created checkpoints in workspace
+		if (existsSync(tempCheckpointsDir)) {
+			rmSync(tempCheckpointsDir, { recursive: true, force: true });
+		}
+	}
+} catch (e) {
+	recordResult("Dry-Run Policy Check Failure", "FAIL", e.message);
 }
 
 // ----------------------------------------------------

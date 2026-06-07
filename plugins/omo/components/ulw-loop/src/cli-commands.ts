@@ -5,6 +5,7 @@ import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, r
 import { blockedDecisionHandoff, normalizeCodexGoalMode, printJson, printStatus, ULW_LOOP_HELP } from "./cli-output.js";
 import { parseSteeringProposal, printSteerResult } from "./cli-steering.js";
 import { buildCodexGoalInstruction } from "./codex-goal-instruction.js";
+import { dryRunCmd } from "./dry-run.js";
 import { recordEvidence } from "./evidence.js";
 import { resolveUlwLoopSessionIdFromEnv, type UlwLoopScope } from "./paths.js";
 import { addUlwLoopGoal, createUlwLoopPlan, startNextUlwLoop, summarizeUlwLoopPlan } from "./plan-crud.js";
@@ -37,6 +38,7 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 			case "record-review-blockers": return await reviewBlockers(repoRoot, rest, json, scope);
 			case "save-role-checkpoint": return await saveRoleCheckpointCmd(repoRoot, rest, json);
 			case "resume": return await resumeCmd(repoRoot, json);
+			case "dry-run": return await dryRunCmd(repoRoot, rest, json);
 			default: process.stdout.write(`${ULW_LOOP_HELP}\n`); return 1;
 		}
 	} catch (error) {

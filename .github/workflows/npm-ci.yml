@@ -75,6 +75,14 @@ jobs:
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop help
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop resume
 
+      - name: Verify dry-run scenarios
+        run: |
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario happy-path
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario quota-opus-exhausted
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario quota-opus-exhausted --json
+          node -e "JSON.parse(require('child_process').execSync('node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario quota-opus-exhausted --json').toString())"
+
+
       - name: Install plugin to isolated GEMINI_HOME
         run: node bin/lazyantigravity.js install
 

@@ -13,6 +13,7 @@ export const ULW_LOOP_HELP = `Usage:
   omo ulw-loop record-review-blockers --goal-id <id> --title "..." --objective "..." --evidence "..." --codex-goal-json <...> [--json]
   omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>] [--json]
   omo ulw-loop resume [--json]
+  omo ulw-loop dry-run [--scenario <scenario>] [--json]
 
 All subcommands accept [--session-id <id>] to isolate state under .omo/ulw-loop/<id>/; without it, Codex session env is used when present.`;
 

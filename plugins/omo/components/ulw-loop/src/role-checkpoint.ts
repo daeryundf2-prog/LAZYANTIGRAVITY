@@ -25,6 +25,7 @@ export interface UlwRoleCheckpoint {
 	readonly userResumeCommand: string;
 	readonly internalResumeCommand: string;
 	readonly timestamp: string;
+	readonly dryRun?: boolean;
 }
 
 export async function saveRoleCheckpoint(
@@ -38,7 +39,7 @@ export async function saveRoleCheckpoint(
 	const timestamp = new Date().toISOString();
 	// Replace colons for Windows filename compatibility
 	const safeTimestamp = timestamp.replace(/:/g, "-");
-	const filename = `ulw-${safeTimestamp}.json`;
+	const filename = `${data.dryRun ? "dryrun" : "ulw"}-${safeTimestamp}.json`;
 	const filepath = join(checkpointsDir, filename);
 
 	const checkpoint: UlwRoleCheckpoint = {
