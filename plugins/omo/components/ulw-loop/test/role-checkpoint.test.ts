@@ -1,50 +1,64 @@
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { ulwLoopCommand } from "../src/cli-commands.js";
-import { findLatestRoleCheckpoint, saveRoleCheckpoint, type UlwLimitErrorType } from "../src/role-checkpoint.js";
+import {
+	type UlwLimitErrorType,
+	findLatestRoleCheckpoint,
+	saveRoleCheckpoint,
+} from "../src/role-checkpoint.ts";
+import { ulwLoopCommand } from "../src/cli-commands.ts";
 
-let testDir: string;
-let out: string[];
-let err: string[];
+const testDir = join(
+	fileURLToPath(new URL(".", import.meta.url)),
+	"test-checkpoints-temp",
+);
 
-beforeEach(async () => {
-	testDir = await mkdtemp(join(tmpdir(), "ulw-role-checkpoint-"));
-	out = [];
-	err = [];
+let stdoutBuffer: string[] = [];
+let stderrBuffer: string[] = [];
+
+const originalWrite = process.stdout.write;
+const originalErrWrite = process.stderr.write;
+
+beforeEach(() => {
 	vi.spyOn(process, "cwd").mockReturnValue(testDir);
-	vi.spyOn(process.stdout, "write").mockImplementation((chunk: string | Uint8Array): boolean => {
-		out.push(chunk.toString());
+	stdoutBuffer = [];
+	stderrBuffer = [];
+	process.stdout.write = (str: string | Uint8Array) => {
+		stdoutBuffer.push(typeof str === "string" ? str : str.toString());
 		return true;
-	});
-	vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array): boolean => {
-		err.push(chunk.toString());
+	};
+	process.stderr.write = (str: string | Uint8Array) => {
+		stderrBuffer.push(typeof str === "string" ? str : str.toString());
 		return true;
-	});
+	};
 });
 
-afterEach(async () => {
+afterEach(() => {
 	vi.restoreAllMocks();
-	await rm(testDir, { recursive: true, force: true });
+	process.stdout.write = originalWrite;
+	process.stderr.write = originalErrWrite;
+	if (existsSync(testDir)) {
+		rmSync(testDir, { recursive: true, force: true });
+	}
 });
-
-function resetOutput(): void {
-	out = [];
-	err = [];
-}
 
 function stdoutText(): string {
-	return out.join("");
+	return stdoutBuffer.join("");
 }
 
-function stdoutJson(): Record<string, unknown> {
+function stdoutJson(): any {
 	return JSON.parse(stdoutText());
 }
 
-describe("Role Checkpoints & Error Handling", () => {
-	it("saves and finds latest role checkpoint directly", async () => {
+function resetOutput() {
+	stdoutBuffer = [];
+	stderrBuffer = [];
+}
+
+describe("saveRoleCheckpoint & findLatestRoleCheckpoint", () => {
+	it("saves a checkpoint and retrieves it", async () => {
 		const checkpoint1 = {
 			taskId: "task-1",
 			platform: "Antigravity" as const,
@@ -57,7 +71,8 @@ describe("Role Checkpoints & Error Handling", () => {
 			commandsRun: ["npm run build"],
 			artifactsGenerated: [],
 			nextRecommendedAction: "Switch to Opus and resume",
-			resumeCommand: "omo ulw-loop resume",
+			userResumeCommand: "/ulw resume",
+			internalResumeCommand: "omo ulw-loop resume",
 		};
 
 		const filepath = await saveRoleCheckpoint(testDir, checkpoint1);
@@ -79,7 +94,8 @@ describe("Role Checkpoints & Error Handling", () => {
 			completedRoles: [],
 			currentRole: "planner",
 			nextRecommendedAction: "None",
-			resumeCommand: "omo ulw-loop resume",
+			userResumeCommand: "/ulw resume",
+			internalResumeCommand: "omo ulw-loop resume",
 			filesChanged: [],
 			commandsRun: [],
 			artifactsGenerated: [],
@@ -92,7 +108,8 @@ describe("Role Checkpoints & Error Handling", () => {
 			completedRoles: ["planner"],
 			currentRole: "researcher",
 			nextRecommendedAction: "None",
-			resumeCommand: "omo ulw-loop resume",
+			userResumeCommand: "/ulw resume",
+			internalResumeCommand: "omo ulw-loop resume",
 			filesChanged: [],
 			commandsRun: [],
 			artifactsGenerated: [],
@@ -140,8 +157,8 @@ describe("Role Checkpoints & Error Handling", () => {
 
 		expect(code).toBe(0);
 		const result = stdoutJson();
-		expect(result.ok).toBe(true);
-		expect(result.checkpointPath).toBeDefined();
+		expect(result["ok"]).toBe(true);
+		expect(result["checkpointPath"]).toBeDefined();
 
 		const latest = await findLatestRoleCheckpoint(testDir);
 		expect(latest?.taskId).toBe("task-cli");
@@ -154,7 +171,7 @@ describe("Role Checkpoints & Error Handling", () => {
 		// First try resuming when no checkpoints exist
 		let code = await ulwLoopCommand(["resume", "--json"]);
 		expect(code).toBe(1);
-		expect(stdoutJson().ok).toBe(false);
+		expect(stdoutJson()["ok"]).toBe(false);
 
 		resetOutput();
 
@@ -171,15 +188,16 @@ describe("Role Checkpoints & Error Handling", () => {
 			commandsRun: ["npm test"],
 			artifactsGenerated: ["task.md"],
 			nextRecommendedAction: "Wait for quota reset or switch account",
-			resumeCommand: "omo ulw-loop resume",
+			userResumeCommand: "/ulw resume",
+			internalResumeCommand: "omo ulw-loop resume",
 		});
 
 		code = await ulwLoopCommand(["resume", "--json"]);
 		expect(code).toBe(0);
 		const result = stdoutJson();
-		expect(result.ok).toBe(true);
-		expect(result.checkpoint.taskId).toBe("task-resume");
-		expect(result.checkpoint.errorType).toBe("account_quota_exceeded");
+		expect(result["ok"]).toBe(true);
+		expect(result["checkpoint"]["taskId"]).toBe("task-resume");
+		expect(result["checkpoint"]["errorType"]).toBe("account_quota_exceeded");
 
 		resetOutput();
 
@@ -215,7 +233,8 @@ describe("Role Checkpoints & Error Handling", () => {
 				commandsRun: [],
 				artifactsGenerated: [],
 				nextRecommendedAction: "action-x",
-				resumeCommand: "omo ulw-loop resume",
+				userResumeCommand: "/ulw resume",
+				internalResumeCommand: "omo ulw-loop resume",
 			});
 
 			const latest = await findLatestRoleCheckpoint(testDir);

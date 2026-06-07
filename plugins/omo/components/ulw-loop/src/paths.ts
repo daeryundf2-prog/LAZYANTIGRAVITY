@@ -42,7 +42,7 @@ export function ulwLoopRelativeDir(scope?: UlwLoopScope): string {
 }
 
 export function ulwLoopDir(repoRoot: string, scope?: UlwLoopScope): string {
-	return join(repoRoot, ulwLoopRelativeDir(scope));
+	return join(repoRoot, ulwLoopRelativeDir(scope)).split("\\").join("/");
 }
 
 export function ulwLoopBriefRelativePath(scope?: UlwLoopScope): string {
@@ -58,15 +58,15 @@ export function ulwLoopLedgerRelativePath(scope?: UlwLoopScope): string {
 }
 
 export function ulwLoopBriefPath(repoRoot: string, scope?: UlwLoopScope): string {
-	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_BRIEF);
+	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_BRIEF).split("\\").join("/");
 }
 
 export function ulwLoopGoalsPath(repoRoot: string, scope?: UlwLoopScope): string {
-	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_GOALS);
+	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_GOALS).split("\\").join("/");
 }
 
 export function ulwLoopLedgerPath(repoRoot: string, scope?: UlwLoopScope): string {
-	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_LEDGER);
+	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_LEDGER).split("\\").join("/");
 }
 
 export function repoRelative(absolutePath: string, repoRoot: string): string {

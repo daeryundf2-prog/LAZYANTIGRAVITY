@@ -4,7 +4,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 const HANGUL_PATTERN = /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af]/u
-const IGNORED_PREFIXES = [".omo/", "plugins/omo/"]
+const IGNORED_PREFIXES = [".omo/", "plugins/omo/", "README.md"]
 
 function trackedFiles() {
   return execFileSync("git", ["ls-files"], { encoding: "utf8" })

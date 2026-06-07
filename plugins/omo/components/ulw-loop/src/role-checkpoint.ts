@@ -22,7 +22,8 @@ export interface UlwRoleCheckpoint {
 	readonly commandsRun: readonly string[];
 	readonly artifactsGenerated: readonly string[];
 	readonly nextRecommendedAction: string;
-	readonly resumeCommand: string;
+	readonly userResumeCommand: string;
+	readonly internalResumeCommand: string;
 	readonly timestamp: string;
 }
 

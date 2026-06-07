@@ -3,16 +3,17 @@ import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { spawnSync } from "node:child_process"
 import { describe, it } from "node:test"
+import { fileURLToPath } from "node:url"
 
-const root = new URL("..", import.meta.url).pathname
+const root = fileURLToPath(new URL("..", import.meta.url))
 const packageJsonPath = join(root, "package.json")
 const packageLockPath = join(root, "package-lock.json")
 const publishWorkflowPath = join(root, ".github", "workflows", "npm-publish.yml")
-const binPath = join(root, "bin", "lazycodex-ai.js")
+const binPath = join(root, "bin", "lazyantigravity.js")
 const releaseVersion = "0.2.2"
 
-describe("lazycodex-ai npm package", () => {
-  it("maps the package name and bin to lazycodex-ai", () => {
+describe("lazyantigravity npm package", () => {
+  it("maps the package name and bin to lazyantigravity", () => {
     // given
     assert.equal(existsSync(packageJsonPath), true, "root package.json must exist")
 
@@ -20,9 +21,9 @@ describe("lazycodex-ai npm package", () => {
     const manifest = JSON.parse(readFileSync(packageJsonPath, "utf8"))
 
     // then
-    assert.equal(manifest.name, "lazycodex-ai")
+    assert.equal(manifest.name, "lazyantigravity")
     assert.equal(manifest.version, releaseVersion)
-    assert.equal(manifest.bin?.["lazycodex-ai"], "bin/lazycodex-ai.js")
+    assert.equal(manifest.bin?.["lazyantigravity"], "bin/lazyantigravity.js")
     assert.equal(manifest.private, undefined)
   })
 
@@ -44,37 +45,18 @@ describe("lazycodex-ai npm package", () => {
     assert.match(publishWorkflow, new RegExp(`default: "${releaseVersion}"`))
   })
 
-  it("dry-runs install through oh-my-openagent with the Codex platform default", () => {
+  it("prints usage when run with no arguments", () => {
     // given
-    assert.equal(existsSync(binPath), true, "lazycodex-ai bin must exist")
+    assert.equal(existsSync(binPath), true, "lazyantigravity bin must exist")
 
     // when
-    const result = spawnSync(
-      process.execPath,
-      [binPath, "--dry-run", "install", "--no-tui", "--codex-autonomous"],
-      { cwd: root, encoding: "utf8" },
-    )
-
-    // then
-    assert.equal(result.status, 0, result.stderr)
-    assert.equal(
-      result.stdout.trim(),
-      "npx --yes --package oh-my-openagent omo install --platform=codex --no-tui --codex-autonomous",
-    )
-  })
-
-  it("dry-runs non-install commands through oh-my-openagent", () => {
-    // given
-    assert.equal(existsSync(binPath), true, "lazycodex-ai bin must exist")
-
-    // when
-    const result = spawnSync(process.execPath, [binPath, "--dry-run", "doctor"], {
+    const result = spawnSync(process.execPath, [binPath], {
       cwd: root,
       encoding: "utf8",
     })
 
     // then
-    assert.equal(result.status, 0, result.stderr)
-    assert.equal(result.stdout.trim(), "npx --yes --package oh-my-openagent omo doctor")
+    assert.equal(result.status, 1)
+    assert.match(result.stdout, /Usage: lazyantigravity install/)
   })
 })

@@ -60,7 +60,7 @@ When a model or quota limit error occurs, classify it into one of the following:
 
 ### 2. Checkpoint Storage Structure
 Before halting or shifting modes, save the execution state using:
-`omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>]`
+`omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --user-resume-command <cmd> --internal-resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>]`
 Saved in: `.lazycodex/checkpoints/ulw-{timestamp}.json`
 
 ### 3. Antigravity Safety Flow (No Auto-Switching)
@@ -103,14 +103,17 @@ If an upcoming task will exceed the output token limit:
 - **Incremental Verification**: Verify each patch batch individually.
 - **Frequent Checkpointing**: Save the checkpoint after each successful batch.
 
-### 7. Resume Behavior (`/ulw resume`)
+### 7. Resume Behavior (`/ulw resume` 또는 `omo ulw-loop resume`)
 To resume work:
-- Run `omo ulw-loop resume` to find the latest checkpoint.
-- Skip completed roles.
-- Resume from the current/failed role.
-- Restore conversation context by reading the listed artifacts/files.
-- Notice and adapt to any changes in the selected model.
-- Re-run verifier and finalizer steps to ensure correctness before completing.
+- **실제 수행하는 작업**:
+  - 최신 checkpoint 로드
+  - 완료된 role 표시
+  - 실패한/중단된 role 표시
+  - next recommended action 출력
+  - 후속 에이전트가 중단된 지점부터 이어서 실행할 수 있도록 지침 제공
+- **자동화하지 않는 작업 (에이전트 지침이나 사용자 개입 필요)**:
+  - 자동으로 worker subagent를 직접 실행하거나 verifier/finalizer 단계를 직접 재시작하지 않음 (출력된 지침을 기반으로 에이전트가 `invoke_subagent`를 적절히 다시 수행해야 함)
+  - Antigravity 상에서 API 수준의 모델 자동 전환을 시도하지 않음 (사용자가 UI에서 수동으로 모델을 전환한 후 이어서 호출해야 함)
 
 ### 8. AI Credit Overages
 When all models are limited/exhausted:

@@ -1,8 +1,9 @@
 // biome-ignore-all format: smoke test pulls verbatim JSON for structural assertion.
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -33,9 +34,23 @@ function bootstrapScriptFrom(text: string): string {
 	return text.slice(codeStart, blockEnd);
 }
 
+function getShellExecutable(): string {
+	if (process.platform !== "win32") {
+		return "/bin/sh";
+	}
+	const candidates = [
+		"C:\\Program Files\\Git\\bin\\sh.exe",
+		"C:\\Program Files\\Git\\usr\\bin\\sh.exe",
+	];
+	for (const c of candidates) {
+		if (existsSync(c)) return c;
+	}
+	return "sh";
+}
+
 async function runShell(script: string, env: NodeJS.ProcessEnv): Promise<ShellResult> {
 	return new Promise((resolvePromise, reject) => {
-		const child = spawn("/bin/sh", ["-c", script], { env });
+		const child = spawn(getShellExecutable(), ["-c", script], { env });
 		const stdout: Buffer[] = [];
 		const stderr: Buffer[] = [];
 		child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
@@ -202,7 +217,7 @@ describe("skills/ulw-loop/SKILL.md", () => {
 				...process.env,
 				CODEX_HOME: codexHome,
 				HOME: home,
-				PATH: `${badBin}:${process.env["PATH"] ?? ""}`,
+				PATH: `${badBin}${delimiter}${process.env["PATH"] ?? ""}`,
 			});
 
 			expect(result.code).toBe(0);

@@ -174,7 +174,11 @@ async function saveRoleCheckpointCmd(
 	const commandsRun = readList(argv, "--commands-run");
 	const artifactsGenerated = readList(argv, "--artifacts-generated");
 	const nextRecommendedAction = required(argv, "--next-recommended-action");
-	const resumeCommand = required(argv, "--resume-command");
+	const userResumeCommand = readValue(argv, "--user-resume-command") || "/ulw resume";
+	let internalResumeCommand = readValue(argv, "--internal-resume-command");
+	if (!internalResumeCommand) {
+		internalResumeCommand = readValue(argv, "--resume-command") || "omo ulw-loop resume";
+	}
 
 	const path = await saveRoleCheckpoint(repoRoot, {
 		taskId,
@@ -186,7 +190,8 @@ async function saveRoleCheckpointCmd(
 		commandsRun,
 		artifactsGenerated,
 		nextRecommendedAction,
-		resumeCommand,
+		userResumeCommand,
+		internalResumeCommand,
 		...(failedRole !== undefined ? { failedRole } : {}),
 		...(errorType !== undefined ? { errorType } : {}),
 	});
@@ -226,7 +231,8 @@ async function resumeCmd(repoRoot: string, json: boolean): Promise<number> {
 		if (checkpoint.artifactsGenerated.length > 0) process.stdout.write(`  Artifacts Generated: ${checkpoint.artifactsGenerated.join(", ")}\n`);
 		process.stdout.write(`\n`);
 		process.stdout.write(`  Next Recommended Action: ${checkpoint.nextRecommendedAction}\n`);
-		process.stdout.write(`  Resume Command: ${checkpoint.resumeCommand}\n`);
+		process.stdout.write(`  User Resume Command (Recommended): ${checkpoint.userResumeCommand || "/ulw resume"}\n`);
+		process.stdout.write(`  Internal Resume Command: ${checkpoint.internalResumeCommand || (checkpoint as any).resumeCommand || "omo ulw-loop resume"}\n`);
 	}
 	return 0;
 }

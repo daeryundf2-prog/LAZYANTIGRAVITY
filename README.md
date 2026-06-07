@@ -25,9 +25,8 @@
 > **LAZYANTIGRAVITY**는 Google Antigravity 플랫폼용 에이전트 하네스 플러그인 패키지입니다.
 > 
 > 복잡한 코드베이스 분석, 다중 에이전트 자율 협업, 엄격한 품질 게이트 제어 및 모델 쿼터 초과 방지 설계를 Antigravity의 `invoke_subagent` 플로우에 최적화하여 제공합니다.
->
-> 본 프로그램은 **Yeongyu Kim*님이 만든 Lazycodex를 antigravity에서도 사용하기 위하여 제작되었습니다.
->  [lazycodex.ai](https://lazycodex.ai) 에 접속해서 확인해주세요.
+> 
+> 본 프로젝트는 codex만을 위한 lazycodex ([lazycodex.ai](https://lazycodex.ai))를 antigravity에서 사용하기 위하여 제작되었으며, [Yeongyu Kim (김연규)](https://github.com/code-yeongyu)의 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)를 기반으로 작동합니다.
 
 ---
 
@@ -114,8 +113,9 @@ API 호출 쿼터 또는 토큰 소진 상황에서도 작업 내용이 유실�
 
 ## 👷 Maintainer & Homage
 
-- **LazyAntigravity**는 Google Antigravity 플러그인 호환성 및 에이전트 자율성 유지를 위해 @yohak2 님에 의해서 유지 보수됩니다.
-- 본 프로젝트는 **Yeongyu Kim*님이 제작하신 [lazycodex.ai](https://lazycodex.ai)의 아이디어와 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 에이전트의 엄격한 품질 지율에 깊은 존경을 보냅니다.
+- **LazyAntigravity**는 Google Antigravity 플러그인 호환성 및 에이전트 자율성 유지를 위해 @yohak2 님에 의해서 유지 보수 및 빌드됩니다.
+- 본 프로젝트는 **Yeongyu Kim (김연규)**님에게 존경을 담고 있습니다.
+- 본 프로젝트는 [lazycodex.ai](https://lazycodex.ai)의 아이디어와 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 에이전트의 엄격한 품질 지율에 깊은 존경을 보냅니다.
 
 ## 📄 License
 
