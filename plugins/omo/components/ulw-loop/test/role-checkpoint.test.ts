@@ -1,19 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-
-import {
-	type UlwLimitErrorType,
-	findLatestRoleCheckpoint,
-	saveRoleCheckpoint,
-} from "../src/role-checkpoint.ts";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ulwLoopCommand } from "../src/cli-commands.ts";
+import { findLatestRoleCheckpoint, saveRoleCheckpoint, type UlwLimitErrorType } from "../src/role-checkpoint.ts";
 
-const testDir = join(
-	fileURLToPath(new URL(".", import.meta.url)),
-	"test-checkpoints-temp",
-);
+const testDir = join(fileURLToPath(new URL(".", import.meta.url)), "test-checkpoints-temp");
 
 let stdoutBuffer: string[] = [];
 let stderrBuffer: string[] = [];
@@ -48,7 +40,7 @@ function stdoutText(): string {
 	return stdoutBuffer.join("");
 }
 
-function stdoutJson(): any {
+function stdoutJson(): unknown {
 	return JSON.parse(stdoutText());
 }
 

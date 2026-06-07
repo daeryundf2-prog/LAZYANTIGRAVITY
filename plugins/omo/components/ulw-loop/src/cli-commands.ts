@@ -232,7 +232,7 @@ async function resumeCmd(repoRoot: string, json: boolean): Promise<number> {
 		process.stdout.write(`\n`);
 		process.stdout.write(`  Next Recommended Action: ${checkpoint.nextRecommendedAction}\n`);
 		process.stdout.write(`  User Resume Command (Recommended): ${checkpoint.userResumeCommand || "/ulw resume"}\n`);
-		process.stdout.write(`  Internal Resume Command: ${checkpoint.internalResumeCommand || (checkpoint as any).resumeCommand || "omo ulw-loop resume"}\n`);
+		process.stdout.write(`  Internal Resume Command: ${checkpoint.internalResumeCommand || (checkpoint as { resumeCommand?: string }).resumeCommand || "omo ulw-loop resume"}\n`);
 	}
 	return 0;
 }

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "bin/**"
+      - "plugins/**"
       - "test/**"
       - "package.json"
       - "package-lock.json"
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - "bin/**"
+      - "plugins/**"
       - "test/**"
       - "package.json"
       - "package-lock.json"
@@ -24,22 +26,60 @@ concurrency:
 
 jobs:
   test-pack:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [20, 22]
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 22.x
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            plugins/omo/package-lock.json
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: npm ci
 
-      - name: Test
+      - name: Install plugin dependencies
+        run: npm ci --prefix plugins/omo
+
+      - name: Build components
+        run: npm run build --prefix plugins/omo
+
+      - name: Run root tests
         run: npm test
+
+      - name: Biome check
+        run: npm run lint --prefix plugins/omo/components/ulw-loop
+
+      - name: Run ulw-loop component tests
+        run: npm test --prefix plugins/omo/components/ulw-loop
+
+      - name: Verify CLI Help
+        run: |
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop save-role-checkpoint --help
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop resume --help
+
+      - name: Install smoke test
+        run: |
+          mkdir -p test-home-smoke
+          export GEMINI_HOME="$GITHUB_WORKSPACE/test-home-smoke/.gemini"
+          node bin/lazyantigravity.js install
+          echo "Verifying installed skills exist..."
+          ls -la "$GEMINI_HOME/config/plugins/lazyantigravity/skills/ulw-loop/SKILL.md"
+          ls -la "$GEMINI_HOME/config/plugins/lazyantigravity/skills/ulw/SKILL.md"
 
       - name: Dry-run package
         run: npm pack --dry-run --json
