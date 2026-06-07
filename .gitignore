@@ -12,3 +12,5 @@ git-bash-mcp/
 shared-skills/
 scripts/
 plugins/scripts/
+.lazycodex/
+.omo/
