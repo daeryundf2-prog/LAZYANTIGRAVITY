@@ -14,7 +14,7 @@ test("README documents built-in LazyAntigravity workflows", () => {
     "Yeongyu Kim",
     "yohak2",
     "License",
-    "MIT",
+    "free License",
   ]
 
   for (const snippet of requiredSnippets) {
