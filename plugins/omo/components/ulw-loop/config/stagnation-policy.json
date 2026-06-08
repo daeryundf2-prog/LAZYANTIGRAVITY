@@ -5,5 +5,11 @@
   "oscillationWindow": 4,
   "heartbeatOnlyThreshold": 5,
   "noEvidenceProgressThreshold": 5,
-  "actionOnStagnation": "emit_event"
+  "actionOnStagnation": "emit_event",
+  "minimumEventsForDetection": 5,
+  "cooldownEventsAfterDetection": 5,
+  "requireSameAgentForRepeatedError": true,
+  "requireSameRoleForOscillation": true,
+  "ignoreHeartbeatOnlyWhenRoleIsWaiting": true,
+  "defaultSeverity": "high"
 }

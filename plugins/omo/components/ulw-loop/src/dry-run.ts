@@ -67,6 +67,7 @@ Options:
 	}
 
 	const writeCheckpoint = argv.includes("--write-checkpoint") || argv.includes("--persist-checkpoint");
+	const writeLedger = argv.includes("--write-ledger");
 
 	// Find scenario argument or default to happy-path
 	let scenario = "happy-path";
@@ -326,7 +327,7 @@ Options:
 				process.stdout.write(`[Dry-Run] Reconstructed agent state: ${state.agents["worker-1"]?.state}\n`);
 			}
 		} finally {
-			if (!writeCheckpoint && existsSync(runDir)) {
+			if (!writeCheckpoint && !writeLedger && existsSync(runDir)) {
 				rmSync(runDir, { recursive: true, force: true });
 			}
 		}
@@ -351,7 +352,7 @@ Options:
 				);
 			}
 		} finally {
-			if (!writeCheckpoint && existsSync(runDir)) {
+			if (!writeCheckpoint && !writeLedger && existsSync(runDir)) {
 				rmSync(runDir, { recursive: true, force: true });
 			}
 		}
@@ -377,7 +378,7 @@ Options:
 				}
 			}
 		} finally {
-			if (!writeCheckpoint && existsSync(runDir)) {
+			if (!writeCheckpoint && !writeLedger && existsSync(runDir)) {
 				rmSync(runDir, { recursive: true, force: true });
 			}
 		}
@@ -404,7 +405,7 @@ Options:
 				process.stdout.write(`[Dry-Run] Researcher progress: ${state.agents["researcher-1"]?.lastProgress}\n`);
 			}
 		} finally {
-			if (!writeCheckpoint && existsSync(runDir)) {
+			if (!writeCheckpoint && !writeLedger && existsSync(runDir)) {
 				rmSync(runDir, { recursive: true, force: true });
 			}
 		}
@@ -441,7 +442,7 @@ Options:
 				}
 			}
 		} finally {
-			if (!writeCheckpoint && existsSync(runDir)) {
+			if (!writeCheckpoint && !writeLedger && existsSync(runDir)) {
 				rmSync(runDir, { recursive: true, force: true });
 			}
 		}
@@ -490,6 +491,16 @@ Options:
 		return 1;
 	}
 
+	let isStagnationScenario = false;
+	if (
+		scenario === "same-error-loop" ||
+		scenario === "oscillating-patch" ||
+		scenario === "heartbeat-only-stall" ||
+		scenario === "no-evidence-progress"
+	) {
+		isStagnationScenario = true;
+	}
+
 	if (json) {
 		printJson({
 			ok: true,
@@ -509,6 +520,14 @@ Options:
 			wouldSwitchModel,
 			wouldCallModelApi: false,
 			wouldModifySourceFiles: false,
+			// Stagnation specific
+			...(isStagnationScenario && {
+				stagnationDetected: true,
+				eventType: "parent.stagnation_detected",
+				wouldFailRun: false,
+				wouldKillSubagent: false,
+				parentActionRequired: true,
+			}),
 		});
 	} else {
 		process.stdout.write(`[Dry-Run] Output details:\n`);
@@ -523,6 +542,13 @@ Options:
 		process.stdout.write(`  Next Recommended Action: ${nextRecommendedAction || "None"}\n`);
 		process.stdout.write(`  User Resume Command: ${userResumeCommand}\n`);
 		process.stdout.write(`  Model Auto-Switch: Disabled (wouldSwitchModel: ${wouldSwitchModel})\n`);
+		if (isStagnationScenario) {
+			process.stdout.write(`  Stagnation Detected: true\n`);
+			process.stdout.write(`  Event Type: parent.stagnation_detected\n`);
+			process.stdout.write(`  Would Fail Run: false\n`);
+			process.stdout.write(`  Would Kill Subagent: false\n`);
+			process.stdout.write(`  Parent Action Required: true\n`);
+		}
 	}
 
 	return 0;

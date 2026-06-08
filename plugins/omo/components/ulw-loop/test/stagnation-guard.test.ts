@@ -19,12 +19,14 @@ describe("StagnationGuard", () => {
 		expect(res.status).toBe("ok");
 	});
 
+	const policy = { ...DEFAULT_STAGNATION_POLICY, minimumEventsForDetection: 0 };
+
 	it("should detect same_error_loop", () => {
 		const events: LedgerEvent[] = [];
 		for (let i = 0; i < 3; i++) {
 			events.push(createEvent("agent.progress", { error: "SyntaxError: Unexpected token", errorCode: 1 }));
 		}
-		const res = checkStagnation(events, DEFAULT_STAGNATION_POLICY);
+		const res = checkStagnation(events, policy);
 		expect(res.status).toBe("same_error_loop");
 	});
 
@@ -35,7 +37,7 @@ describe("StagnationGuard", () => {
 			createEvent("agent.progress", { diff: "+ patch A" }),
 			createEvent("agent.progress", { diff: "+ patch B" }),
 		];
-		const res = checkStagnation(events, DEFAULT_STAGNATION_POLICY);
+		const res = checkStagnation(events, policy);
 		expect(res.status).toBe("oscillation_detected");
 	});
 
@@ -44,7 +46,7 @@ describe("StagnationGuard", () => {
 		for (let i = 0; i < 5; i++) {
 			events.push(createEvent("agent.heartbeat", undefined));
 		}
-		const res = checkStagnation(events, DEFAULT_STAGNATION_POLICY);
+		const res = checkStagnation(events, policy);
 		expect(res.status).toBe("heartbeat_only_stall");
 	});
 
@@ -54,7 +56,7 @@ describe("StagnationGuard", () => {
 			// Progress without diff, filesChanged, or commandsRun
 			events.push(createEvent("agent.progress", { summary: "Thinking..." }));
 		}
-		const res = checkStagnation(events, DEFAULT_STAGNATION_POLICY);
+		const res = checkStagnation(events, policy);
 		expect(res.status).toBe("no_evidence_progress");
 	});
 
@@ -63,7 +65,7 @@ describe("StagnationGuard", () => {
 		for (let i = 0; i < 5; i++) {
 			events.push(createEvent("agent.progress", { summary: "Thinking...", commandsRun: ["ls"] }));
 		}
-		const res = checkStagnation(events, DEFAULT_STAGNATION_POLICY);
+		const res = checkStagnation(events, policy);
 		expect(res.status).toBe("ok");
 	});
 });

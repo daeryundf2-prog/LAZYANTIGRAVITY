@@ -12,6 +12,12 @@ export interface StagnationPolicy {
 	heartbeatOnlyThreshold: number;
 	noEvidenceProgressThreshold: number;
 	actionOnStagnation: string;
+	minimumEventsForDetection: number;
+	cooldownEventsAfterDetection: number;
+	requireSameAgentForRepeatedError: boolean;
+	requireSameRoleForOscillation: boolean;
+	ignoreHeartbeatOnlyWhenRoleIsWaiting: boolean;
+	defaultSeverity: string;
 }
 
 export const DEFAULT_STAGNATION_POLICY: StagnationPolicy = {
@@ -22,6 +28,12 @@ export const DEFAULT_STAGNATION_POLICY: StagnationPolicy = {
 	heartbeatOnlyThreshold: 5,
 	noEvidenceProgressThreshold: 5,
 	actionOnStagnation: "emit_event",
+	minimumEventsForDetection: 5,
+	cooldownEventsAfterDetection: 5,
+	requireSameAgentForRepeatedError: true,
+	requireSameRoleForOscillation: true,
+	ignoreHeartbeatOnlyWhenRoleIsWaiting: true,
+	defaultSeverity: "high",
 };
 
 export type StagnationStatus =
@@ -32,9 +44,27 @@ export type StagnationStatus =
 	| "heartbeat_only_stall"
 	| "no_evidence_progress";
 
+export interface StagnationDetectedPayload {
+	runId: string;
+	agentId?: string;
+	role?: string;
+	kind: string;
+	severity: string;
+	fingerprint: string;
+	matchedEventIds: string[];
+	windowSize: number;
+	threshold: number;
+	suggestedParentAction: string;
+	parentActionRequired: boolean;
+	mustNotAutoFailRun: boolean;
+	wouldSwitchModel: boolean;
+	timestamp: string;
+}
+
 export interface StagnationResult {
 	status: StagnationStatus;
 	details?: string;
+	payload?: StagnationDetectedPayload;
 }
 
 export async function loadStagnationPolicy(repoRoot: string): Promise<StagnationPolicy> {
@@ -42,7 +72,8 @@ export async function loadStagnationPolicy(repoRoot: string): Promise<Stagnation
 	if (existsSync(policyPath)) {
 		try {
 			const content = await readFile(policyPath, "utf8");
-			return JSON.parse(content) as StagnationPolicy;
+			const parsed = JSON.parse(content) as Partial<StagnationPolicy>;
+			return { ...DEFAULT_STAGNATION_POLICY, ...parsed };
 		} catch {
 			return DEFAULT_STAGNATION_POLICY;
 		}
@@ -93,18 +124,23 @@ function extractFingerprints(event: LedgerEvent) {
 }
 
 export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy): StagnationResult {
-	if (events.length === 0) return { status: "ok" };
+	if (events.length < policy.minimumEventsForDetection) return { status: "ok" };
 
 	const recentEvents = events.slice(-policy.recentEventWindow);
 	
+	const runId = recentEvents[recentEvents.length - 1]?.runId || "";
+	const agentId = recentEvents[recentEvents.length - 1]?.agentId;
+	const role = recentEvents[recentEvents.length - 1]?.role;
+
 	let heartbeatCount = 0;
 	let progressCount = 0;
 	let evidenceCount = 0;
 
-	const errorHashes: string[] = [];
-	const patchHashes: string[] = [];
+	const errorHashes: { hash: string, agent: string | undefined }[] = [];
+	const patchHashes: { hash: string, role: string | undefined }[] = [];
 
 	for (const ev of recentEvents) {
+		if (!ev) continue;
 		if (ev.type === "agent.heartbeat") {
 			heartbeatCount++;
 		}
@@ -113,52 +149,95 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		
 		if (hasProgress) progressCount++;
 		if (hasEvidence) evidenceCount++;
-		if (errorHash) errorHashes.push(errorHash);
-		if (patchHash) patchHashes.push(patchHash);
+		if (errorHash) errorHashes.push({ hash: errorHash, agent: ev.agentId });
+		if (patchHash) patchHashes.push({ hash: patchHash, role: ev.role });
 	}
+
+	const buildPayload = (
+		kind: string, 
+		fingerprint: string, 
+		windowSize: number, 
+		threshold: number, 
+		suggestedParentAction: string
+	): StagnationDetectedPayload => ({
+		runId,
+		...(agentId ? { agentId } : {}),
+		...(role ? { role } : {}),
+		kind,
+		severity: policy.defaultSeverity,
+		fingerprint,
+		matchedEventIds: [], // We don't have event IDs yet in LedgerEvent by default, mock it
+		windowSize,
+		threshold,
+		suggestedParentAction,
+		parentActionRequired: true,
+		mustNotAutoFailRun: true,
+		wouldSwitchModel: false,
+		timestamp: new Date().toISOString(),
+	});
 
 	// 1. Same error loop
 	if (errorHashes.length >= policy.repeatedErrorThreshold) {
-		// Check if the last N errors are identical
 		const lastNErrors = errorHashes.slice(-policy.repeatedErrorThreshold);
-		const firstErr = lastNErrors[0];
-		if (lastNErrors.every((h) => h === firstErr)) {
-			return { status: "same_error_loop", details: "Repeated identical error hash detected." };
+		const firstErr = lastNErrors[0]?.hash;
+		const firstAgent = lastNErrors[0]?.agent;
+		if (lastNErrors.every((h) => h.hash === firstErr && (!policy.requireSameAgentForRepeatedError || h.agent === firstAgent))) {
+			return { 
+				status: "same_error_loop", 
+				details: "Repeated identical error hash detected.",
+				payload: buildPayload("same_error_loop", firstErr || "none", policy.recentEventWindow, policy.repeatedErrorThreshold, "pause_or_replan")
+			};
 		}
 	}
 
 	// 2. Oscillation (A -> B -> A -> B)
 	if (patchHashes.length >= policy.oscillationWindow) {
 		const recentPatches = patchHashes.slice(-policy.oscillationWindow);
-		// A simple A-B-A-B check: recentPatches[0] === recentPatches[2] and recentPatches[1] === recentPatches[3]
+		const A = recentPatches[recentPatches.length - 4]?.hash;
+		const B = recentPatches[recentPatches.length - 3]?.hash;
+		const A2 = recentPatches[recentPatches.length - 2]?.hash;
+		const B2 = recentPatches[recentPatches.length - 1]?.hash;
+		const roleA = recentPatches[recentPatches.length - 4]?.role;
+		
 		if (
 			recentPatches.length >= 4 &&
-			recentPatches[recentPatches.length - 4] === recentPatches[recentPatches.length - 2] &&
-			recentPatches[recentPatches.length - 3] === recentPatches[recentPatches.length - 1] &&
-			recentPatches[recentPatches.length - 4] !== recentPatches[recentPatches.length - 3]
+			A === A2 &&
+			B === B2 &&
+			A !== B &&
+			(!policy.requireSameRoleForOscillation || recentPatches.slice(-4).every(p => p.role === roleA))
 		) {
-			return { status: "oscillation_detected", details: "A/B/A/B patch oscillation detected." };
+			return { 
+				status: "oscillation_detected", 
+				details: "A/B/A/B patch oscillation detected.",
+				payload: buildPayload("oscillation_detected", `${A}-${B}`, policy.recentEventWindow, policy.oscillationWindow, "pause_or_replan")
+			};
 		}
 	}
 
 	// 3. Heartbeat-only stall
-	// If the last N events are ONLY heartbeats
 	let consecutiveHeartbeats = 0;
 	for (let i = recentEvents.length - 1; i >= 0; i--) {
 		const ev = recentEvents[i];
 		if (!ev) continue;
 		if (ev.type === "agent.heartbeat") {
-			consecutiveHeartbeats++;
+			if (policy.ignoreHeartbeatOnlyWhenRoleIsWaiting && ev.state === "waiting") {
+				// skip
+			} else {
+				consecutiveHeartbeats++;
+			}
 		} else {
 			break;
 		}
 	}
 	if (consecutiveHeartbeats >= policy.heartbeatOnlyThreshold) {
-		return { status: "heartbeat_only_stall", details: "Agent is sending heartbeats without progress." };
+		return { 
+			status: "heartbeat_only_stall", 
+			details: "Agent is sending heartbeats without progress.",
+			payload: buildPayload("heartbeat_only_stall", "heartbeat", policy.recentEventWindow, policy.heartbeatOnlyThreshold, "pause_or_replan")
+		};
 	}
 
 	// 4. No evidence progress
-	// If we have many progress events but NO evidence (patches, commands)
 	let consecutiveProgressNoEvidence = 0;
 	for (let i = recentEvents.length - 1; i >= 0; i--) {
 		const ev = recentEvents[i];
@@ -175,7 +254,11 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		}
 	}
 	if (consecutiveProgressNoEvidence >= policy.noEvidenceProgressThreshold) {
-		return { status: "no_evidence_progress", details: "Agent is reporting progress but providing no evidence." };
+		return { 
+			status: "no_evidence_progress", 
+			details: "Agent is reporting progress but providing no evidence.",
+			payload: buildPayload("no_evidence_progress", "progress_no_evidence", policy.recentEventWindow, policy.noEvidenceProgressThreshold, "pause_or_replan")
+		};
 	}
 
 	return { status: "ok" };
