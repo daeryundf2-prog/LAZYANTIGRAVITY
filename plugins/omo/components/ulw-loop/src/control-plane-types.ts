@@ -35,6 +35,7 @@ export type EventType =
 	| "parent.rejected"
 	| "parent.paused"
 	| "parent.resumed"
+	| "parent.stagnation_detected"
 	| "run.completed"
 	| "run.failed";
 

@@ -26,6 +26,10 @@ Scenarios:
   polling-loop-prevented     Simulates prevention of multiple active pollers on a run
   parent-progress-reconstruct Reconstructs run progress from an events ledger file
   subagent-wrong-role-envelope Simulates rejection of a subagent with mismatched role envelope
+  same-error-loop            Simulates a subagent stuck in an identical error loop
+  oscillating-patch          Simulates a subagent generating A/B/A/B alternating patches
+  heartbeat-only-stall       Simulates a subagent sending heartbeats but no progress
+  no-evidence-progress       Simulates a subagent reporting progress without actionable evidence
 
 Options:
   --scenario <scenario>      Select the simulation scenario (default: happy-path)
@@ -49,6 +53,10 @@ Options:
 					"polling-loop-prevented",
 					"parent-progress-reconstruct",
 					"subagent-wrong-role-envelope",
+					"same-error-loop",
+					"oscillating-patch",
+					"heartbeat-only-stall",
+					"no-evidence-progress",
 				],
 				options: ["--scenario", "--json", "--write-checkpoint", "--persist-checkpoint"],
 			});
@@ -436,6 +444,46 @@ Options:
 			if (!writeCheckpoint && existsSync(runDir)) {
 				rmSync(runDir, { recursive: true, force: true });
 			}
+		}
+	} else if (scenario === "same-error-loop") {
+		completedRoles = ["planner"];
+		failedRole = null;
+		nextRecommendedAction = "Parent handles stagnation: pause, replan, or human intervention";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing same-error-loop scenario...\n`);
+			process.stdout.write(`[Dry-Run] Subagent worker repeatedly failing with identical errors.\n`);
+			process.stdout.write(`[Dry-Run] StagnationGuard triggered: same_error_loop\n`);
+			process.stdout.write(`[Dry-Run] Emitting parent.stagnation_detected event. Run not marked failed directly.\n`);
+		}
+	} else if (scenario === "oscillating-patch") {
+		completedRoles = ["planner"];
+		failedRole = null;
+		nextRecommendedAction = "Parent handles stagnation: pause, replan, or human intervention";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing oscillating-patch scenario...\n`);
+			process.stdout.write(`[Dry-Run] Subagent generating A/B/A/B alternating patches.\n`);
+			process.stdout.write(`[Dry-Run] StagnationGuard triggered: oscillation_detected\n`);
+			process.stdout.write(`[Dry-Run] Emitting parent.stagnation_detected event. Run not marked failed directly.\n`);
+		}
+	} else if (scenario === "heartbeat-only-stall") {
+		completedRoles = ["planner"];
+		failedRole = null;
+		nextRecommendedAction = "Parent handles stagnation: pause, replan, or human intervention";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing heartbeat-only-stall scenario...\n`);
+			process.stdout.write(`[Dry-Run] Subagent sending heartbeats but no progress.\n`);
+			process.stdout.write(`[Dry-Run] StagnationGuard triggered: heartbeat_only_stall\n`);
+			process.stdout.write(`[Dry-Run] Emitting parent.stagnation_detected event. Run not marked failed directly.\n`);
+		}
+	} else if (scenario === "no-evidence-progress") {
+		completedRoles = ["planner"];
+		failedRole = null;
+		nextRecommendedAction = "Parent handles stagnation: pause, replan, or human intervention";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing no-evidence-progress scenario...\n`);
+			process.stdout.write(`[Dry-Run] Subagent reporting progress without actionable evidence.\n`);
+			process.stdout.write(`[Dry-Run] StagnationGuard triggered: no_evidence_progress\n`);
+			process.stdout.write(`[Dry-Run] Emitting parent.stagnation_detected event. Run not marked failed directly.\n`);
 		}
 	} else {
 		process.stderr.write(`[Dry-Run] Unknown scenario: ${scenario}\n`);

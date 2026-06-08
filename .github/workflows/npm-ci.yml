@@ -86,7 +86,10 @@ jobs:
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario polling-loop-prevented
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario parent-progress-reconstruct
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario subagent-wrong-role-envelope
-
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario same-error-loop
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario oscillating-patch
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario heartbeat-only-stall
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario no-evidence-progress
 
       - name: Install plugin to isolated GEMINI_HOME
         run: node bin/lazyantigravity.js install
