@@ -508,6 +508,72 @@ try {
 }
 
 // ----------------------------------------------------
+// 10. Subagent Control Plane Verification
+// ----------------------------------------------------
+try {
+	const planePath = join(rootDir, "plugins/omo/components/ulw-loop/src/control-plane.ts");
+	const typesPath = join(rootDir, "plugins/omo/components/ulw-loop/src/control-plane-types.ts");
+	const cliPath = join(rootDir, "plugins/omo/components/ulw-loop/dist/cli.js");
+
+	if (!existsSync(planePath) || !existsSync(typesPath)) {
+		recordResult("Control Plane Schema Files", "FAIL", "control-plane.ts or control-plane-types.ts missing");
+	} else {
+		recordResult("Control Plane Schema Files", "PASS", "Control plane schema and types files exist");
+
+		// Validate validation logic and forbidden copy checking
+		const { validateResultEnvelope } = await import("../plugins/omo/components/ulw-loop/dist/control-plane.js");
+		try {
+			validateResultEnvelope({
+				runId: "run-1",
+				agentId: "agent-1",
+				role: "worker",
+				status: "success",
+				summary: "I completed the whole task successfully",
+				filesChanged: ["src/index.ts"],
+				commandsRun: [],
+				artifactsGenerated: [],
+				blockers: [],
+				nextRecommendedAction: "None",
+				requiresParentAck: true
+			}, "run-1", "worker");
+			recordResult("Control Plane Forbidden Copy Check", "FAIL", "Failed to reject forbidden self-finalization phrase");
+		} catch (err) {
+			recordResult("Control Plane Forbidden Copy Check", "PASS", `Successfully rejected forbidden phrase: ${err.message}`);
+		}
+
+		// Verify that all 5 new dry-run scenarios run via CLI
+		const scenarios = [
+			"subagent-self-finalizes",
+			"stale-heartbeat-missed",
+			"polling-loop-prevented",
+			"parent-progress-reconstruct",
+			"subagent-wrong-role-envelope"
+		];
+
+		let allScenariosPass = true;
+		for (const scenario of scenarios) {
+			try {
+				const outStr = execSync(`node "${cliPath}" ulw-loop dry-run --scenario ${scenario} --json`, { encoding: "utf8", cwd: rootDir });
+				const out = JSON.parse(outStr);
+				if (out.ok !== true) {
+					allScenariosPass = false;
+					recordResult(`Control Plane Scenario ${scenario}`, "FAIL", `Scenario did not report ok=true`);
+				}
+			} catch (err) {
+				allScenariosPass = false;
+				recordResult(`Control Plane Scenario ${scenario}`, "FAIL", err.message);
+			}
+		}
+
+		if (allScenariosPass) {
+			recordResult("Control Plane Dry-Run Scenarios Check", "PASS", "All 5 new control-plane scenarios ran successfully");
+		}
+	}
+} catch (e) {
+	recordResult("Control Plane Check Failure", "FAIL", e.message);
+}
+
+// ----------------------------------------------------
 // Report and Exit
 // ----------------------------------------------------
 let overallPass = true;

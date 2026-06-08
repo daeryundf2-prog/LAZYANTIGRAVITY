@@ -81,6 +81,11 @@ jobs:
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario quota-opus-exhausted
           node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario quota-opus-exhausted --json
           node -e "JSON.parse(require('child_process').execSync('node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario quota-opus-exhausted --json').toString())"
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario subagent-self-finalizes
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario stale-heartbeat-missed
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario polling-loop-prevented
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario parent-progress-reconstruct
+          node plugins/omo/components/ulw-loop/dist/cli.js ulw-loop dry-run --scenario subagent-wrong-role-envelope
 
 
       - name: Install plugin to isolated GEMINI_HOME

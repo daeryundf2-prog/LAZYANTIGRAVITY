@@ -46,6 +46,13 @@ Every worker message MUST carry: goal + exact files in scope; the baseline chara
 
 Codex subagent reliability:
 - Start every `spawn_agent` message with `TASK: <imperative assignment>`, then name `DELIVERABLE`, `SCOPE`, and `VERIFY`. State that it is an executable assignment, not a context handoff.
+- Before invoking a subagent, you must construct a role envelope and pass it to the subagent. The subagent envelope must configure:
+  - `mayFinalizeRun=false`
+  - `mayModifyGlobalRunState=false`
+  - `mustReturn=SubagentResultEnvelope`
+  - `requiresParentAck=true`
+  - Do not claim the whole /ulw task is complete.
+  - Do not mark run as completed or failed.
 - Prefer `fork_turns: "none"` unless full history is truly required; paste only the context the child needs. Full-history forks can make the child continue old parent context instead of the delegated task.
 - Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short wait_agent cycles. Never use a single long blocking wait for them.
 - For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long reading, testing, or review passes, and `BLOCKED: <reason>` only when it cannot progress.

@@ -290,6 +290,7 @@ describe("source LOC budget", () => {
 			"src/evidence.ts", "src/quality-gate.ts", "src/checkpoint.ts", "src/review-blockers.ts",
 			"src/steering.ts", "src/codex-goal-instruction.ts", "src/codex-goal-snapshot.ts", "src/codex-hook.ts",
 			"src/cli.ts", "src/cli-arg-parser.ts", "src/cli-output.ts", "src/cli-steering.ts", "src/cli-commands.ts",
+			"src/control-plane.ts", "src/cli-control-plane.ts", "src/control-plane-types.ts"
 		];
 		for (const file of files) {
 			const text = await readText(file);

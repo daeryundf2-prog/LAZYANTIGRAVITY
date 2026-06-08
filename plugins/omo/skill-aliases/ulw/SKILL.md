@@ -20,6 +20,7 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 - **Role routing**: Automatic. Work is decomposed into planner → researcher → worker → verifier → finalizer.
 - **Model auto-routing**: NOT available on Antigravity. `canAutoRoute = false`.
 - **Subagent model inheritance**: All subagents inherit the user's currently selected Antigravity model.
+- **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, you must construct and pass a role envelope with `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, and `requiresParentAck=true`. Do not claim the whole /ulw task is complete, and do not mark run as completed or failed.
 - **Model recommendation**: Display once per session, then never repeat.
 - **Resume Guidance**: 만약 실행 중 쿼터 제한 등으로 중단된 경우, Antigravity UI에서 모델을 수동 변경한 뒤 `/ulw resume`을 입력하여 진행 상황을 이어서 안전하게 시작할 수 있습니다.
 

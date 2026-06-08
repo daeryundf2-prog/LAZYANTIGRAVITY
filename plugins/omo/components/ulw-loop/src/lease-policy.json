@@ -1,0 +1,12 @@
+{
+  "subagentLease": {
+    "defaultLeaseMs": 30000,
+    "maxLeaseMs": 120000,
+    "heartbeatIntervalMs": 10000,
+    "staleGraceMs": 5000,
+    "maxMissedHeartbeats": 3
+  },
+  "pollingGuard": {
+    "pollerLeaseMs": 10000
+  }
+}

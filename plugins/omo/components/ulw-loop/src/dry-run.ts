@@ -1,4 +1,13 @@
+import { existsSync, rmSync } from "node:fs";
 import { printJson } from "./cli-output.js";
+import {
+	appendRunEvent,
+	checkLeases,
+	getRunDir,
+	reconstructStateFromEvents,
+	registerPoller,
+	validateResultEnvelope,
+} from "./control-plane.js";
 import { saveRoleCheckpoint, type UlwLimitErrorType } from "./role-checkpoint.js";
 
 export async function dryRunCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
@@ -12,6 +21,11 @@ Scenarios:
   context-window-exceeded    Simulates context window limit hit with Compact Mode transition
   output-token-limit         Simulates output token limit hit with Batch Mode transition
   provider-unavailable       Simulates provider API endpoint down with retry mitigation
+  subagent-self-finalizes    Simulates subagent attempting to self-finalize the global run
+  stale-heartbeat-missed     Simulates a subagent lease expiration transitioning to stale_candidate
+  polling-loop-prevented     Simulates prevention of multiple active pollers on a run
+  parent-progress-reconstruct Reconstructs run progress from an events ledger file
+  subagent-wrong-role-envelope Simulates rejection of a subagent with mismatched role envelope
 
 Options:
   --scenario <scenario>      Select the simulation scenario (default: happy-path)
@@ -29,14 +43,14 @@ Options:
 					"quota-opus-exhausted",
 					"context-window-exceeded",
 					"output-token-limit",
-					"provider-unavailable"
+					"provider-unavailable",
+					"subagent-self-finalizes",
+					"stale-heartbeat-missed",
+					"polling-loop-prevented",
+					"parent-progress-reconstruct",
+					"subagent-wrong-role-envelope",
 				],
-				options: [
-					"--scenario",
-					"--json",
-					"--write-checkpoint",
-					"--persist-checkpoint"
-				]
+				options: ["--scenario", "--json", "--write-checkpoint", "--persist-checkpoint"],
 			});
 		} else {
 			process.stdout.write(`${usage}\n`);
@@ -257,6 +271,170 @@ Options:
 			});
 			if (!json) {
 				process.stdout.write(`[Dry-Run] Saved checkpoint: ${checkpointPath}\n`);
+			}
+		}
+	} else if (scenario === "subagent-self-finalizes") {
+		const runId = `dry-run-self-finalizes-${Date.now()}`;
+		const runDir = getRunDir(repoRoot, runId);
+		try {
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing subagent-self-finalizes scenario...\n`);
+			}
+			await appendRunEvent(repoRoot, runId, "run.created", {});
+			await appendRunEvent(repoRoot, runId, "run.state_changed", { state: "working" });
+			await appendRunEvent(repoRoot, runId, "agent.dispatched", { agentId: "worker-1", role: "worker" });
+			await appendRunEvent(repoRoot, runId, "agent.claimed", { agentId: "worker-1" });
+
+			const badResult = {
+				runId,
+				agentId: "worker-1",
+				role: "worker",
+				status: "success",
+				summary: "I completed the whole task successfully",
+				filesChanged: ["src/index.ts"],
+				commandsRun: [],
+				artifactsGenerated: [],
+				blockers: [],
+				nextRecommendedAction: "None",
+				requiresParentAck: true,
+			};
+
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Subagent worker-1 reports completion with self-finalizing phrase.\n`);
+			}
+
+			try {
+				validateResultEnvelope(badResult, runId, "worker");
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				if (!json) {
+					process.stdout.write(`[Dry-Run] Parent rejected result envelope: ${msg}\n`);
+				}
+				await appendRunEvent(repoRoot, runId, "parent.rejected", { agentId: "worker-1", reason: msg });
+			}
+
+			const state = await reconstructStateFromEvents(repoRoot, runId);
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Reconstructed agent state: ${state.agents["worker-1"]?.state}\n`);
+			}
+		} finally {
+			if (!writeCheckpoint && existsSync(runDir)) {
+				rmSync(runDir, { recursive: true, force: true });
+			}
+		}
+	} else if (scenario === "stale-heartbeat-missed") {
+		const runId = `dry-run-stale-${Date.now()}`;
+		const runDir = getRunDir(repoRoot, runId);
+		try {
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing stale-heartbeat-missed scenario...\n`);
+			}
+			await appendRunEvent(repoRoot, runId, "run.created", {});
+			await appendRunEvent(repoRoot, runId, "run.state_changed", { state: "working" });
+			await appendRunEvent(repoRoot, runId, "agent.dispatched", { agentId: "worker-stale", role: "worker" });
+			await appendRunEvent(repoRoot, runId, "agent.claimed", { agentId: "worker-stale" });
+
+			const futureTime = new Date(Date.now() + 150000); // 150 seconds later (> 120s max lease)
+			const state = await checkLeases(repoRoot, runId, futureTime);
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Checking leases at future time: ${futureTime.toISOString()}\n`);
+				process.stdout.write(
+					`[Dry-Run] Agent worker-stale assignment state: ${state.agents["worker-stale"]?.state}\n`,
+				);
+			}
+		} finally {
+			if (!writeCheckpoint && existsSync(runDir)) {
+				rmSync(runDir, { recursive: true, force: true });
+			}
+		}
+	} else if (scenario === "polling-loop-prevented") {
+		const runId = `dry-run-polling-${Date.now()}`;
+		const runDir = getRunDir(repoRoot, runId);
+		try {
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing polling-loop-prevented scenario...\n`);
+			}
+			await appendRunEvent(repoRoot, runId, "run.created", {});
+			await registerPoller(repoRoot, runId, "poller-1");
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Registered poller-1 successfully.\n`);
+			}
+
+			try {
+				await registerPoller(repoRoot, runId, "poller-2");
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				if (!json) {
+					process.stdout.write(`[Dry-Run] Registering poller-2 failed: ${msg}\n`);
+				}
+			}
+		} finally {
+			if (!writeCheckpoint && existsSync(runDir)) {
+				rmSync(runDir, { recursive: true, force: true });
+			}
+		}
+	} else if (scenario === "parent-progress-reconstruct") {
+		const runId = `dry-run-reconstruct-${Date.now()}`;
+		const runDir = getRunDir(repoRoot, runId);
+		try {
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing parent-progress-reconstruct scenario...\n`);
+			}
+			await appendRunEvent(repoRoot, runId, "run.created", {});
+			await appendRunEvent(repoRoot, runId, "run.state_changed", { state: "researching" });
+			await appendRunEvent(repoRoot, runId, "agent.dispatched", { agentId: "researcher-1", role: "researcher" });
+			await appendRunEvent(repoRoot, runId, "agent.claimed", { agentId: "researcher-1" });
+			await appendRunEvent(repoRoot, runId, "agent.progress", {
+				agentId: "researcher-1",
+				progress: "Searching files...",
+			});
+
+			const state = await reconstructStateFromEvents(repoRoot, runId);
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Reconstructed global run state: ${state.state}\n`);
+				process.stdout.write(`[Dry-Run] Researcher state: ${state.agents["researcher-1"]?.state}\n`);
+				process.stdout.write(`[Dry-Run] Researcher progress: ${state.agents["researcher-1"]?.lastProgress}\n`);
+			}
+		} finally {
+			if (!writeCheckpoint && existsSync(runDir)) {
+				rmSync(runDir, { recursive: true, force: true });
+			}
+		}
+	} else if (scenario === "subagent-wrong-role-envelope") {
+		const runId = `dry-run-wrong-role-${Date.now()}`;
+		const runDir = getRunDir(repoRoot, runId);
+		try {
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing subagent-wrong-role-envelope scenario...\n`);
+			}
+			await appendRunEvent(repoRoot, runId, "run.created", {});
+			await appendRunEvent(repoRoot, runId, "agent.dispatched", { agentId: "worker-1", role: "worker" });
+
+			const wrongEnvelope = {
+				runId,
+				agentId: "worker-1",
+				role: "researcher", // Wrong role! Expected worker
+				status: "success",
+				summary: "I completed the worker task",
+				filesChanged: [],
+				commandsRun: [],
+				artifactsGenerated: [],
+				blockers: [],
+				nextRecommendedAction: "None",
+				requiresParentAck: true,
+			};
+
+			try {
+				validateResultEnvelope(wrongEnvelope, runId, "worker");
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				if (!json) {
+					process.stdout.write(`[Dry-Run] Rejects wrong role envelope: ${msg}\n`);
+				}
+			}
+		} finally {
+			if (!writeCheckpoint && existsSync(runDir)) {
+				rmSync(runDir, { recursive: true, force: true });
 			}
 		}
 	} else {

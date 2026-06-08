@@ -24,6 +24,13 @@ This Codex skill is intentionally compact to avoid adding a large operating manu
 - Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
 - Record evidence through the CLI only after cleanup receipts are available.
 - Delegate code edits, test writes, fixes, and QA execution to right-sized Codex subagents when the workflow requires it.
+- When invoking a subagent (using `invoke_subagent`), you must construct and pass a role envelope with the following parameters:
+  - `mayFinalizeRun=false`
+  - `mayModifyGlobalRunState=false`
+  - `mustReturn=SubagentResultEnvelope`
+  - `requiresParentAck=true`
+  - Do not claim the whole /ulw task is complete.
+  - Do not mark run as completed or failed.
 - Every `spawn_agent` message starts with `TASK:`, then names `DELIVERABLE`, `SCOPE`, and `VERIFY`; role selection requires `agent_type`, while `model` + `reasoning_effort` alone creates a default agent, not a reviewer or worker; prefer `fork_turns: "none"` unless full history is truly required.
 - Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short wait_agent cycles. Never use a single long blocking wait for them.
 - For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long reading, testing, or review passes, and `BLOCKED: <reason>` only when it cannot progress.
