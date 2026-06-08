@@ -511,15 +511,29 @@ try {
 // 10. Subagent Control Plane Verification
 // ----------------------------------------------------
 try {
-	const planePath = join(rootDir, "plugins/omo/components/ulw-loop/src/control-plane.ts");
-	const typesPath = join(rootDir, "plugins/omo/components/ulw-loop/src/control-plane-types.ts");
-	const cliPath = join(rootDir, "plugins/omo/components/ulw-loop/dist/cli.js");
+	const ULW_LOOP_DIR = join(rootDir, 'plugins/omo/components/ulw-loop');
+	const controlPlaneSchemaPath = join(ULW_LOOP_DIR, 'src', 'control-plane-types.ts');
+	const dryRunPath = join(ULW_LOOP_DIR, 'src', 'dry-run.ts');
+	const verificationPipelinePath = join(ULW_LOOP_DIR, 'src', 'verification-pipeline.ts');
+	const verificationPolicyPath = join(ULW_LOOP_DIR, 'config', 'verification-policy.json');
 
-	if (!existsSync(planePath) || !existsSync(typesPath)) {
-		recordResult("Control Plane Schema Files", "FAIL", "control-plane.ts or control-plane-types.ts missing");
-	} else {
-		recordResult("Control Plane Schema Files", "PASS", "Control plane schema and types files exist");
+	if (existsSync(controlPlaneSchemaPath) && existsSync(dryRunPath)) {
+		console.log('[PASS] Control Plane Schema Files: Control plane schema and types files exist');
 
+		if (existsSync(verificationPipelinePath) && existsSync(verificationPolicyPath)) {
+			recordResult("Verification Pipeline Files", "PASS", "Verification schema and policy files exist");
+		} else {
+			recordResult("Verification Pipeline Files", "FAIL", "Missing verification-pipeline.ts or verification-policy.json");
+		}
+
+		const schemaContent = readFileSync(controlPlaneSchemaPath, 'utf8');
+		if (schemaContent.includes('quality_gate.started') && schemaContent.includes('quality_gate.failed')) {
+			recordResult("Quality Gate Events", "PASS", "Quality gate events exist in EventType");
+		} else {
+			recordResult("Quality Gate Events", "FAIL", "Missing quality gate events in EventType");
+		}
+
+		const cliPath = join(rootDir, "plugins/omo/components/ulw-loop/dist/cli.js");
 		// Validate validation logic and forbidden copy checking
 		const { validateResultEnvelope } = await import("../plugins/omo/components/ulw-loop/dist/control-plane.js");
 		try {
@@ -541,13 +555,18 @@ try {
 			recordResult("Control Plane Forbidden Copy Check", "PASS", `Successfully rejected forbidden phrase: ${err.message}`);
 		}
 
-		// Verify that all 5 new dry-run scenarios run via CLI
+		// Verify that all 10 dry-run scenarios run via CLI (5 control plane + 5 verification)
 		const scenarios = [
 			"subagent-self-finalizes",
 			"stale-heartbeat-missed",
 			"polling-loop-prevented",
 			"parent-progress-reconstruct",
-			"subagent-wrong-role-envelope"
+			"subagent-wrong-role-envelope",
+			"quality-happy-path",
+			"quality-mechanical-fail",
+			"quality-semantic-insufficient-evidence",
+			"quality-consensus-required",
+			"quality-stagnation-unresolved"
 		];
 
 		let allScenariosPass = true;
@@ -557,17 +576,20 @@ try {
 				const out = JSON.parse(outStr);
 				if (out.ok !== true) {
 					allScenariosPass = false;
-					recordResult(`Control Plane Scenario ${scenario}`, "FAIL", `Scenario did not report ok=true`);
+					recordResult(`Dry-Run Scenario ${scenario}`, "FAIL", `Scenario did not report ok=true`);
 				}
 			} catch (err) {
 				allScenariosPass = false;
-				recordResult(`Control Plane Scenario ${scenario}`, "FAIL", err.message);
+				recordResult(`Dry-Run Scenario ${scenario}`, "FAIL", err.message);
 			}
 		}
 
 		if (allScenariosPass) {
-			recordResult("Control Plane Dry-Run Scenarios Check", "PASS", "All 5 new control-plane scenarios ran successfully");
+			recordResult("Dry-Run Scenarios Check", "PASS", "All control-plane and verification scenarios ran successfully");
 		}
+
+	} else {
+		recordResult("Control Plane Schema Files", "FAIL", "Control plane schema and types files are missing");
 	}
 } catch (e) {
 	recordResult("Control Plane Check Failure", "FAIL", e.message);

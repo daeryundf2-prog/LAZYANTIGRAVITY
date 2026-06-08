@@ -36,6 +36,14 @@ export type EventType =
 	| "parent.paused"
 	| "parent.resumed"
 	| "parent.stagnation_detected"
+	| "quality_gate.started"
+	| "quality_gate.mechanical_passed"
+	| "quality_gate.mechanical_failed"
+	| "quality_gate.semantic_passed"
+	| "quality_gate.semantic_failed"
+	| "quality_gate.consensus_required"
+	| "quality_gate.completed"
+	| "quality_gate.failed"
 	| "run.completed"
 	| "run.failed";
 

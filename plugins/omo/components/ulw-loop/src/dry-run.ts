@@ -30,6 +30,11 @@ Scenarios:
   oscillating-patch          Simulates a subagent generating A/B/A/B alternating patches
   heartbeat-only-stall       Simulates a subagent sending heartbeats but no progress
   no-evidence-progress       Simulates a subagent reporting progress without actionable evidence
+  quality-happy-path         Simulates passing all quality gates
+  quality-mechanical-fail    Simulates a mechanical gate failure (no tests run)
+  quality-semantic-insufficient-evidence Simulates a semantic gate failure (empty goal or evidence mismatch)
+  quality-consensus-required Simulates high risk condition requiring consensus
+  quality-stagnation-unresolved Simulates semantic failure due to unresolved stagnation
 
 Options:
   --scenario <scenario>      Select the simulation scenario (default: happy-path)
@@ -57,6 +62,11 @@ Options:
 					"oscillating-patch",
 					"heartbeat-only-stall",
 					"no-evidence-progress",
+					"quality-happy-path",
+					"quality-mechanical-fail",
+					"quality-semantic-insufficient-evidence",
+					"quality-consensus-required",
+					"quality-stagnation-unresolved",
 				],
 				options: ["--scenario", "--json", "--write-checkpoint", "--persist-checkpoint"],
 			});
@@ -67,10 +77,14 @@ Options:
 	}
 
 	const writeCheckpoint = argv.includes("--write-checkpoint") || argv.includes("--persist-checkpoint");
+	let isQualityScenario = false;
+	let qualityStatus = "";
+	let qualityStage = "";
+
 	const writeLedger = argv.includes("--write-ledger");
 
 	// Find scenario argument or default to happy-path
-	let scenario = "happy-path";
+	let scenario: string = "happy-path";
 	const scenarioIdx = argv.indexOf("--scenario");
 	if (scenarioIdx !== -1) {
 		const val = argv[scenarioIdx + 1];
@@ -486,6 +500,52 @@ Options:
 			process.stdout.write(`[Dry-Run] StagnationGuard triggered: no_evidence_progress\n`);
 			process.stdout.write(`[Dry-Run] Emitting parent.stagnation_detected event. Run not marked failed directly.\n`);
 		}
+	} else if (scenario === "quality-happy-path") {
+		isQualityScenario = true;
+		qualityStatus = "passed";
+		qualityStage = "all";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing quality-happy-path scenario...\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Mechanical PASSED\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Semantic PASSED\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Consensus SKIPPED\n`);
+		}
+	} else if (scenario === "quality-mechanical-fail") {
+		isQualityScenario = true;
+		qualityStatus = "failed";
+		qualityStage = "mechanical";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing quality-mechanical-fail scenario...\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Mechanical FAILED (No commands run to verify changes)\n`);
+		}
+	} else if (scenario === "quality-semantic-insufficient-evidence") {
+		isQualityScenario = true;
+		qualityStatus = "failed";
+		qualityStage = "semantic";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing quality-semantic-insufficient-evidence scenario...\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Mechanical PASSED\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Semantic FAILED (Goal or evidence mismatch)\n`);
+		}
+	} else if (scenario === "quality-consensus-required") {
+		isQualityScenario = true;
+		qualityStatus = "required";
+		qualityStage = "consensus";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing quality-consensus-required scenario...\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Mechanical PASSED\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Semantic PASSED\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Consensus REQUIRED (riskLevel=high)\n`);
+		}
+	} else if (scenario === "quality-stagnation-unresolved") {
+		isQualityScenario = true;
+		qualityStatus = "failed";
+		qualityStage = "semantic";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing quality-stagnation-unresolved scenario...\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Mechanical PASSED\n`);
+			process.stdout.write(`[Dry-Run] Quality Gate: Semantic FAILED (Unresolved stagnation detected)\n`);
+		}
 	} else {
 		process.stderr.write(`[Dry-Run] Unknown scenario: ${scenario}\n`);
 		return 1;
@@ -528,6 +588,15 @@ Options:
 				wouldKillSubagent: false,
 				parentActionRequired: true,
 			}),
+			...(isQualityScenario && {
+				qualityGateTriggered: true,
+				qualityStage,
+				qualityStatus,
+				eventType: qualityStatus === "passed" ? "quality_gate.completed" : (qualityStatus === "required" ? "quality_gate.consensus_required" : "quality_gate.failed"),
+				wouldFailRun: false,
+				wouldKillSubagent: false,
+				parentActionRequired: qualityStatus !== "passed",
+			}),
 		});
 	} else {
 		process.stdout.write(`[Dry-Run] Output details:\n`);
@@ -548,6 +617,13 @@ Options:
 			process.stdout.write(`  Would Fail Run: false\n`);
 			process.stdout.write(`  Would Kill Subagent: false\n`);
 			process.stdout.write(`  Parent Action Required: true\n`);
+		}
+		if (isQualityScenario) {
+			process.stdout.write(`  Quality Gate Triggered: true\n`);
+			process.stdout.write(`  Quality Stage: ${qualityStage}\n`);
+			process.stdout.write(`  Quality Status: ${qualityStatus}\n`);
+			process.stdout.write(`  Would Fail Run: false\n`);
+			process.stdout.write(`  Would Kill Subagent: false\n`);
 		}
 	}
 
