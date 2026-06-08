@@ -1,20 +1,18 @@
 import { describe, expect, it } from "vitest";
-import type { LedgerEvent, SubagentResultEnvelope } from "../src/control-plane-types.js";
+import type { LedgerEvent, QualityEvidenceEnvelope } from "../src/control-plane-types.js";
 import { runVerificationPipeline, type VerificationContext } from "../src/verification-pipeline.js";
 import { DEFAULT_VERIFICATION_POLICY } from "../src/verification-pipeline-types.js";
 
-const mockEnvelope: SubagentResultEnvelope = {
-	runId: "run-1",
-	agentId: "agent-1",
-	role: "worker",
-	status: "success",
+const mockEvidence: QualityEvidenceEnvelope = {
+	goal: "Fix bug",
 	summary: "Completed work",
 	filesChanged: ["src/index.ts"],
 	commandsRun: ["npm test"],
+	testResults: ["1 pass"],
 	artifactsGenerated: [],
-	blockers: [],
-	nextRecommendedAction: "",
-	requiresParentAck: false,
+	completedRoles: ["worker"],
+	acknowledgedRoles: [],
+	dryRunSafety: true,
 };
 
 describe("Verification Pipeline", () => {
@@ -22,7 +20,7 @@ describe("Verification Pipeline", () => {
 		const ctx: VerificationContext = {
 			runId: "run-1",
 			events: [],
-			envelope: mockEnvelope,
+			evidence: mockEvidence,
 			goal: "Fix bug",
 		};
 
@@ -40,7 +38,7 @@ describe("Verification Pipeline", () => {
 		const ctx: VerificationContext = {
 			runId: "run-1",
 			events: [],
-			envelope: { ...mockEnvelope, commandsRun: [] },
+			evidence: { ...mockEvidence, commandsRun: [] },
 			goal: "Fix bug",
 		};
 
@@ -55,7 +53,7 @@ describe("Verification Pipeline", () => {
 		const ctx: VerificationContext = {
 			runId: "run-1",
 			events: [],
-			envelope: mockEnvelope,
+			evidence: mockEvidence,
 			goal: "", // empty
 		};
 
@@ -70,11 +68,12 @@ describe("Verification Pipeline", () => {
 			timestamp: new Date().toISOString(),
 			type: "parent.stagnation_detected",
 			runId: "run-1",
+			fingerprint: "stagnation-hash-123"
 		};
 		const ctx: VerificationContext = {
 			runId: "run-1",
 			events: [stagnationEvent],
-			envelope: mockEnvelope,
+			evidence: mockEvidence,
 			goal: "Fix bug",
 		};
 
@@ -89,7 +88,7 @@ describe("Verification Pipeline", () => {
 		const ctx: VerificationContext = {
 			runId: "run-1",
 			events: [],
-			envelope: mockEnvelope,
+			evidence: mockEvidence,
 			goal: "Fix bug",
 			riskLevel: "high",
 		};

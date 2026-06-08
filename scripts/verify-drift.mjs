@@ -596,6 +596,32 @@ try {
 }
 
 // ----------------------------------------------------
+// 11. P1-A Verification Policy Constraints
+// ----------------------------------------------------
+try {
+	const ULW_LOOP_DIR = join(rootDir, 'plugins/omo/components/ulw-loop');
+	const pipelineContent = readFileSync(join(ULW_LOOP_DIR, 'src', 'verification-pipeline.ts'), 'utf8');
+
+	if (pipelineContent.includes('"run.failed"') || pipelineContent.includes('"run.completed"')) {
+		recordResult("Verification Run State Policy", "FAIL", "run.failed or run.completed is directly referenced in verification pipeline");
+	} else {
+		recordResult("Verification Run State Policy", "PASS", "run.failed and run.completed are not directly written by verification pipeline");
+	}
+
+	const cliPath = join(rootDir, "plugins/omo/components/ulw-loop/dist/cli.js");
+	const outStr = execSync(`node "${cliPath}" ulw-loop dry-run --scenario quality-consensus-required --json`, { encoding: "utf8", cwd: rootDir });
+	const out = JSON.parse(outStr);
+	
+	if (out.wouldCallModelApi === false && out.wouldSwitchModel === false && out.finalizerAllowed === false) {
+		recordResult("Consensus Gate Sandbox Policy", "PASS", "Consensus gate properly blocks model API, auto-switch, and finalizer");
+	} else {
+		recordResult("Consensus Gate Sandbox Policy", "FAIL", "Consensus gate violates sandbox policies");
+	}
+} catch (e) {
+	recordResult("P1-A Policy Constraints Check Failure", "FAIL", e.message);
+}
+
+// ----------------------------------------------------
 // Report and Exit
 // ----------------------------------------------------
 let overallPass = true;

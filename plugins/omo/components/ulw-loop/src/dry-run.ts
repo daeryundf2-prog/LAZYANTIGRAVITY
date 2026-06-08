@@ -100,12 +100,6 @@ Options:
 	const wouldSwitchModel = false;
 
 	const allRoles = ["planner", "researcher", "worker", "verifier", "finalizer"];
-	const wouldInvokeSubagents = [
-		{ TypeName: "self", Role: "Prometheus Planner" },
-		{ TypeName: "research", Role: "Codebase Researcher" },
-		{ TypeName: "self", Role: "Hephaestus Worker" },
-		{ TypeName: "self", Role: "Oracle Reviewer" },
-	];
 
 	let completedRoles: string[] = [];
 	let failedRole: string | null = null;
@@ -562,9 +556,11 @@ Options:
 	}
 
 	if (json) {
+		const finalizerAllowed = isQualityScenario ? qualityStatus === "passed" : false;
 		printJson({
 			ok: true,
 			dryRun: true,
+			finalizerAllowed,
 			platform,
 			scenario,
 			selectedModel,
@@ -576,26 +572,23 @@ Options:
 			nextRecommendedAction,
 			userResumeCommand,
 			internalResumeCommand,
-			wouldInvokeSubagents,
-			wouldSwitchModel,
 			wouldCallModelApi: false,
 			wouldModifySourceFiles: false,
-			// Stagnation specific
+			wouldSwitchModel: false,
+			wouldFailRun: false,
+			wouldCompleteRun: false,
+			wouldKillSubagent: false,
+			parentActionRequired: isQualityScenario ? qualityStatus !== "passed" : true,
 			...(isStagnationScenario && {
-				stagnationDetected: true,
+				stagnationTriggered: true,
+				stagnationReason: scenario,
 				eventType: "parent.stagnation_detected",
-				wouldFailRun: false,
-				wouldKillSubagent: false,
-				parentActionRequired: true,
 			}),
 			...(isQualityScenario && {
 				qualityGateTriggered: true,
 				qualityStage,
 				qualityStatus,
 				eventType: qualityStatus === "passed" ? "quality_gate.completed" : (qualityStatus === "required" ? "quality_gate.consensus_required" : "quality_gate.failed"),
-				wouldFailRun: false,
-				wouldKillSubagent: false,
-				parentActionRequired: qualityStatus !== "passed",
 			}),
 		});
 	} else {

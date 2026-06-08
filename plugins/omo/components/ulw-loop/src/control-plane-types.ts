@@ -58,6 +58,8 @@ export interface LedgerEvent {
 	result?: unknown;
 	reason?: string;
 	pollerId?: string;
+	fingerprint?: string;
+	qualityInputFingerprint?: string;
 }
 
 export interface AgentState {
@@ -97,6 +99,18 @@ export interface LeasePolicy {
 	pollingGuard: {
 		pollerLeaseMs: number;
 	};
+}
+
+export interface QualityEvidenceEnvelope {
+	goal: string;
+	summary: string;
+	filesChanged: string[];
+	commandsRun: string[];
+	testResults: string[];
+	artifactsGenerated: string[];
+	completedRoles: string[];
+	acknowledgedRoles: string[];
+	dryRunSafety: boolean;
 }
 
 export interface SubagentResultEnvelope {

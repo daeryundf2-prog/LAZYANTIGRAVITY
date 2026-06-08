@@ -15,6 +15,7 @@ import type {
 	RunState,
 	RunStateSchema,
 	SubagentResultEnvelope,
+	QualityEvidenceEnvelope,
 } from "./control-plane-types.js";
 
 export type {
@@ -174,6 +175,31 @@ export async function checkLeases(repoRoot: string, runId: string, nowOverride?:
 	if (!existsSync(runDir)) await mkdir(runDir, { recursive: true });
 	await writeFile(join(runDir, "state.json"), JSON.stringify(state, null, 2), "utf8");
 	return state;
+}
+
+export function validateQualityEvidenceEnvelope(
+	envelope: unknown,
+): QualityEvidenceEnvelope {
+	if (!envelope || typeof envelope !== "object") throw new Error("Invalid envelope: must be an object");
+	const env = envelope as QualityEvidenceEnvelope;
+	
+	if (typeof env.goal !== "string") throw new Error("Missing or invalid 'goal'");
+	if (typeof env.summary !== "string") throw new Error("Missing or invalid 'summary'");
+	if (!Array.isArray(env.filesChanged)) throw new Error("Missing or invalid 'filesChanged'");
+	if (!Array.isArray(env.commandsRun)) throw new Error("Missing or invalid 'commandsRun'");
+	if (!Array.isArray(env.testResults)) throw new Error("Missing or invalid 'testResults'");
+	if (!Array.isArray(env.artifactsGenerated)) throw new Error("Missing or invalid 'artifactsGenerated'");
+	if (!Array.isArray(env.completedRoles)) throw new Error("Missing or invalid 'completedRoles'");
+	if (!Array.isArray(env.acknowledgedRoles)) throw new Error("Missing or invalid 'acknowledgedRoles'");
+	if (typeof env.dryRunSafety !== "boolean") throw new Error("Missing or invalid 'dryRunSafety'");
+
+	const texts = [env.summary];
+	for (const text of texts) {
+		for (const pattern of FORBIDDEN_PHRASES) {
+			if (pattern.test(text)) throw new Error(`Forbidden phrase detected: "${text}" matched ${pattern.toString()}`);
+		}
+	}
+	return env;
 }
 
 export function validateResultEnvelope(
