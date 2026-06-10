@@ -1,7 +1,7 @@
 {
   "name": "lazyantigravity",
-  "version": "0.2.2",
-  "description": "Antigravity install alias for oh-my-openagent. Run `npx lazyantigravity install` to set up the Antigravity platform.",
+  "version": "0.4.0",
+  "description": "Google Antigravity harness plugin for the Ouroboros Guard control plane. Implements durable workflow loops, safety consensus, and quota resilience.",
   "type": "module",
   "bin": {
     "lazyantigravity": "bin/lazyantigravity.js"
@@ -18,10 +18,12 @@
     "verify:sync": "npm run verify:drift"
   },
   "keywords": [
-    "codex",
-    "oh-my-openagent",
+    "antigravity",
+    "ouroboros-guard",
     "ai-agents",
-    "orchestration"
+    "orchestration",
+    "consensus-gate",
+    "quota-safety"
   ],
   "author": "Sisyphus Labs",
   "license": "MIT",

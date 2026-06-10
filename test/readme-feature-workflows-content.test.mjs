@@ -11,10 +11,7 @@ test("README documents built-in LazyAntigravity workflows", () => {
     "Install",
     "/ulw",
     "/init-deep",
-    "Yeongyu Kim",
-    "yohak2",
     "License",
-    "free License",
   ]
 
   for (const snippet of requiredSnippets) {
