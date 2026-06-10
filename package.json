@@ -23,14 +23,14 @@
     "ai-agents",
     "orchestration"
   ],
-  "author": "Yeongyu Kim",
+  "author": "Sisyphus Labs",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/code-yeongyu/lazycodex.git"
+    "url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
   },
   "bugs": {
-    "url": "https://github.com/code-yeongyu/lazycodex/issues"
+    "url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
   },
-  "homepage": "https://lazycodex.ai"
+  "homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY"
 }

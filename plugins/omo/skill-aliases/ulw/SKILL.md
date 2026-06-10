@@ -5,38 +5,38 @@ metadata:
   short-description: "/ulw shorthand — runs ulw-loop"
 ---
 
-# /ulw — ulw-loop 단축 명령
+# /ulw — Shorthand for ulw-loop
 
-This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <task>`, execute the complete ulw-loop workflow.
+This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <task>`, execute the complete `ulw-loop` workflow.
 
 ## Instructions
 
 1. Read the `ulw-loop` skill by opening `../ulw-loop/SKILL.md` with `view_file`. Follow all instructions there exactly.
-2. Read `../ulw-loop/references/full-workflow.md` as the ulw-loop skill instructs.
-3. Execute the full ulw-loop procedure. Do NOT stop at the alias — run the entire workflow.
+2. Read `../ulw-loop/references/full-workflow.md` as the `ulw-loop` skill instructs.
+3. Execute the full `ulw-loop` procedure. Do NOT stop at the alias — run the entire workflow.
 
 ## Antigravity Routing Semantics (inherited from ulw-loop)
 
-- **Role routing**: Automatic. Work is decomposed into planner → researcher → worker → verifier → finalizer.
+- **Role routing**: Automatic. Work is decomposed into planner ➡️ researcher ➡️ worker ➡️ verifier ➡️ finalizer.
 - **Model auto-routing**: NOT available on Antigravity. `canAutoRoute = false`.
 - **Subagent model inheritance**: All subagents inherit the user's currently selected Antigravity model.
-- **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, you must construct and pass a role envelope with `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, and `requiresParentAck=true`. Do not claim the whole /ulw task is complete, and do not mark run as completed or failed.
+- **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, you must construct and pass a role envelope with `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, and `requiresParentAck=true`. Do not claim the whole `/ulw` task is complete, and do not mark run as completed or failed.
 - **Model recommendation**: Display once per session, then never repeat.
-- **Resume Guidance**: 만약 실행 중 쿼터 제한 등으로 중단된 경우, Antigravity UI에서 모델을 수동 변경한 뒤 `/ulw resume`을 입력하여 진행 상황을 이어서 안전하게 시작할 수 있습니다.
+- **Resume Guidance**: If execution is interrupted due to quota limits, switch the model manually in the Antigravity UI dropdown and type `/ulw resume` to safely resume progress from where it was paused.
 
 ### Session-once model recommendation
 
 At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocation, output this message **exactly once**:
 
-> 💡 **Antigravity 권장 모델 구성 가이드**
-> - **충분한 Claude quota 보유 시**: Claude Opus 4.6 (Thinking)
-> - **Claude quota가 제한된 상태일 시**: Gemini 3.1 Pro (High)
-> - **대규모 탐색 위주 작업 시**: Gemini 3.5 Flash (High)
-> - **빠른 코드 수정 위주 작업 시**: Gemini 3.5 Flash (Medium)
+> 💡 **Antigravity Recommended Model Configuration Guide**
+> - **With sufficient Claude quota**: Claude Opus 4.6 (Thinking)
+> - **With limited Claude quota**: Gemini 3.1 Pro (High)
+> - **For extensive codebase exploration**: Gemini 3.5 Flash (High)
+> - **For rapid iterative bug fixes**: Gemini 3.5 Flash (Medium)
 > 
-> *주의: Antigravity는 role별 모델 자동 전환을 지원하지 않으므로, 모든 하위 단계(planner, researcher, worker, verifier)는 현재 선택된 모델을 상속합니다.*
+> *Note: Antigravity does not support automatic per-role model switching. All subagents (planner, researcher, worker, verifier) inherit the currently selected active model.*
 
-**Suppression**: If the user's message contains "조용히 실행", "추천 메시지 생략", "no model hint", or "quiet", skip this recommendation and proceed directly.
+**Suppression**: If the user's message contains "quiet run", "skip model recommendation", "no model hint", or "quiet", skip this recommendation and proceed directly.
 
 **Do not repeat**: If the recommendation was already shown in this conversation (by either `/ulw` or `/ulw-loop`), do not show it again.
 

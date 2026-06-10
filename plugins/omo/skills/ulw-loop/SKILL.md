@@ -94,19 +94,19 @@ If rate limit/quota is detected in Antigravity:
 - **Immediately Stop**: Abort the active execution loop immediately. Do not enter a retry loop.
 - **Save Checkpoint**: Call `omo ulw-loop save-role-checkpoint` to save the failed/current role, completed roles, error type, files changed, etc.
 - **Recommend Only (Fallback Sequence)**: Present a fallback model recommendation according to this exact sequence:
-  - **Claude Opus 4.6 (Thinking) 제한 시**:
+  - **When Claude Opus 4.6 (Thinking) is limited**:
     1. Gemini 3.1 Pro (High)
-    2. Claude Sonnet 4.6 (Thinking) (단, Sonnet 쿼터가 남아 있는 경우)
+    2. Claude Sonnet 4.6 (Thinking) (if Sonnet quota is available)
     3. Gemini 3.5 Flash (High)
-  - **Claude Sonnet 4.6 (Thinking) 제한 시**:
+  - **When Claude Sonnet 4.6 (Thinking) is limited**:
     1. Gemini 3.1 Pro (High)
     2. Gemini 3.5 Flash (High)
-  - **Gemini 3.1 Pro (High) 제한 시**:
+  - **When Gemini 3.1 Pro (High) is limited**:
     1. Gemini 3.5 Flash (High)
     2. Gemini 3.5 Flash (Medium)
-  - **모든 모델 제한/소진 시**:
-    - 리프레시(Refresh) 시간까지 대기
-    - 또는 사용자가 동의하는 경우 "AI Credit Overages" 활성화를 권고
+  - **When all models are limited/exhausted**:
+    - Wait until the rate-limit/quota refresh window.
+    - Or recommend that the user enable "AI Credit Overages" in settings.
 - **Guide User**: Instruct the user to change the model manually in the Antigravity UI dropdown.
 - **Resume Command**: Present the `/ulw resume` command to resume the process once the model is changed.
 
@@ -129,21 +129,19 @@ If an upcoming task will exceed the output token limit:
 - **Incremental Verification**: Verify each patch batch individually.
 - **Frequent Checkpointing**: Save the checkpoint after each successful batch.
 
-### 7. Resume Behavior (`/ulw resume` 또는 `omo ulw-loop resume`)
+### 7. Resume Behavior (`/ulw resume` or `omo ulw-loop resume`)
 To resume work:
-- **실제 수행하는 작업**:
-  - 최신 checkpoint 로드
-  - 완료된 role 표시
-  - 실패한/중단된 role 표시
-  - next recommended action 출력
-  - 후속 에이전트가 중단된 지점부터 이어서 실행할 수 있도록 지침 제공
-- **자동화하지 않는 작업 (에이전트 지침이나 사용자 개입 필요)**:
-  - 자동으로 worker subagent를 직접 실행하거나 verifier/finalizer 단계를 직접 재시작하지 않음 (출력된 지침을 기반으로 에이전트가 `invoke_subagent`를 적절히 다시 수행해야 함)
-  - Antigravity 상에서 API 수준의 모델 자동 전환을 시도하지 않음 (사용자가 UI에서 수동으로 모델을 전환한 후 이어서 호출해야 함)
+- **Actions performed directly**:
+  - Load the latest checkpoint.
+  - Display completed roles.
+  - Display failed/halted roles.
+  - Print the next recommended action.
+  - Provide guidance so the succeeding agent can resume execution from where it paused.
+- **Actions NOT automated (requires manual agent/user intervention)**:
+  - Does not automatically spawn the worker subagent or restart the verifier/finalizer steps directly (the agent should trigger `invoke_subagent` as appropriate based on the output guidelines).
+  - Does not attempt API-level automatic model switching in Antigravity (the user must manually switch the model in the UI dropdown before resuming).
 
 ### 8. AI Credit Overages
 When all models are limited/exhausted:
 - **Automatic Toggling Prohibited**: LazyCodex/Antigravity must NEVER automatically enable "AI Credit Overages" due to potential cost/billing implications.
 - **User Notification**: Inform the user that "AI Credit Overages" can be enabled in their account settings to continue utilizing models beyond the quota, but require manual activation.
-
-

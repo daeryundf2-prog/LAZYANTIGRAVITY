@@ -22,44 +22,44 @@
 <hr />
 
 > [!NOTE]
-> **LAZYANTIGRAVITY**는 Google Antigravity 플랫폼용 에이전트 하네스 플러그인 패키지입니다.
+> **LAZYANTIGRAVITY** is an agent harness plugin package designed specifically for the Google Antigravity platform.
 > 
-> 복잡한 코드베이스 분석, 다중 에이전트 자율 협업, 엄격한 품질 게이트 제어 및 모델 쿼터 초과 방지 설계를 Antigravity의 `invoke_subagent` 플로우에 최적화하여 제공합니다.
-> 
-> 본 프로젝트는 codex만을 위한 lazycodex ([lazycodex.ai](https://lazycodex.ai))를 antigravity에서 사용하기 위하여 제작되었으며, [Yeongyu Kim (김연규)](https://github.com/code-yeongyu)의 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent)를 기반으로 작동합니다.
+> It provides complex codebase analysis, multi-agent autonomous collaboration, strict quality gate controls, and API quota overrun mitigation optimized for Google Antigravity's `invoke_subagent` flow.
+>
+> This project is designed to adapt robust autonomous developer workflows to the Antigravity architecture, relying on oh-my-openagent components to execute reliable, structured goals.
 
 ---
 
 ## 🚀 Install
 
-한 줄의 명령어로 플러그인 컴포넌트를 빌드하고 Google Antigravity 환경에 배포합니다:
+Build and deploy the plugin components to your Google Antigravity environment with a single command:
 ```bash
 node bin/lazyantigravity.js install
 ```
-이 스크립트는 모든 컴포넌트(`ulw-loop`, `lsp`, `rules` 등)를 빌드하고, 사용자 프로필 디렉터리(`~/.gemini/config/plugins/lazyantigravity`)에 최신 바이너리와 스킬 파일을 자동 복사합니다.
+This script builds all underlying components (`ulw-loop`, `lsp`, `rules`, etc.) and automatically synchronizes the latest binaries and skill files to your user profile directory (`~/.gemini/config/plugins/lazyantigravity`).
 
 ---
 
 ## ⚡ Workflows & Slash Commands
 
-LazyAntigravity를 설치하면 Antigravity UI 내에서 아래의 전용 슬래시 명령어를 즉시 사용할 수 있습니다.
+Once installed, the following dedicated slash commands become immediately available inside the Antigravity developer chat UI:
 
-### 1. `/ulw <task>` (또는 `/ulw-loop <task>`)
-- 복잡하고 긴 실행이 필요한 태스크를 수행할 때 사용하는 핵심 자율 워크플로우 루프입니다.
-- **자율 역할 분해(Role Routing)**를 수행하여 Planner ➡️ Researcher ➡️ Worker ➡️ Verifier ➡️ Finalizer로 이어지는 작업을 하위 에이전트들을 통해 자율적으로 처리합니다.
-- 모든 서브에이전트는 현재 사용자가 UI에서 선택한 모델을 상속(`MODEL_TIER_INHERIT`)하여 실행됩니다.
+### 1. `/ulw <task>` (or `/ulw-loop <task>`)
+- The core autonomous workflow loop used to execute complex, multi-step tasks.
+- Triggers **Autonomous Role Routing** which decomposes the task into consecutive phases handled by dedicated subagents: Planner ➡️ Researcher ➡️ Worker ➡️ Verifier ➡️ Finalizer.
+- All subagents automatically inherit the model currently selected by the user in the UI (`MODEL_TIER_INHERIT`).
 
 ### 2. `/init-deep`
-- 디렉터리 구조를 계층적으로 스캔하여 `AGENTS.md`라는 컨텍스트 랜드마크를 생성합니다.
-- 에이전트가 넓은 폴더 구조에서 길을 잃지 않고 코드 근처에 마련된 가이드라인을 스스로 참고하여 고품질의 작업을 할 수 있게 합니다.
+- Scans the codebase directory structure hierarchically and generates an `AGENTS.md` context landmark file.
+- Prevents agents from losing context in massive folder structures by providing local guidance files situated near the relevant code.
 
-### 3. CLI 명령어 및 안전 복구 (`omo ulw-loop`)
-에이전트가 백그라운드에서 오류를 제어하고 수동으로 상태를 관리하기 위한 CLI 도구를 내장하고 있습니다:
+### 3. CLI Commands and Safe Recovery (`omo ulw-loop`)
+An internal command-line tool is shipped to help agents manage state, recover from halts, and handle errors:
 ```bash
-# 현재 작업 흐름의 쿼터 제한 도달 시 상태 체크포인트 저장
+# Save a state checkpoint when hitting quota limits
 omo ulw-loop save-role-checkpoint --task-id <id> --platform Antigravity --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd>
 
-# 체크포인트로부터 쿼터 리프레시 후 흐름 안전 복구
+# Safely resume execution from the checkpoint after model refresh
 omo ulw-loop resume
 ```
 
@@ -67,56 +67,54 @@ omo ulw-loop resume
 
 ## 🤖 Role Routing & Model Recommendations
 
-Antigravity는 모델의 API 수준 자동 전환을 지원하지 않기 때문에, LazyAntigravity는 자율 역할 분해와 최적의 쿼터 맞춤형 모델 제안 가이드를 노출합니다.
+Since Google Antigravity does not support automatic model switching via API calls, LazyAntigravity guides the user through autonomous role routing and optimal quota-aware manual model recommendations.
 
-### 1. 하위 에이전트 역할 구조
-에이전트가 `/ulw` 워크플로우를 받으면 다음과 같이 하위 역할을 설계하여 작업을 분담합니다:
+### 1. Subagent Role Architecture
+When the `/ulw` workflow is initiated, the task is split among specialized subagents with strict sandbox constraints:
 
-| 역할 (Role) | Antigravity Subagent 구동 명령어 | 역할 및 목적 |
+| Role | Antigravity Subagent Invocation | Objective & Responsibilities |
 |---|---|---|
-| **planner** | `invoke_subagent(TypeName: "self", Role: "Prometheus Planner")` | 요구사항 분석, 구현 체크리스트 및 검증 계획 설계 |
-| **researcher** | `invoke_subagent(TypeName: "research", Role: "Codebase Researcher")` | 관련 소스 코드 파일 탐색 및 의존성 관계 분석 |
-| **worker** | `invoke_subagent(TypeName: "self", Role: "Hephaestus Worker")` | 실제 소스 코드 수정, 유닛 테스트 작성 및 에러 수정 |
-| **verifier** | `invoke_subagent(TypeName: "self", Role: "Oracle Reviewer")` | Diff 분석, 품질 게이트(Quality Gate) 및 Lint 검사 수행 |
-| **finalizer** | Parent Agent 실행 영역 | 잔여 임시 파일 정리, 깃 커밋 작성 및 최종 증거 기록 |
+| **planner** | `invoke_subagent(TypeName: "self", Role: "Prometheus Planner")` | Requirements gathering, implementation checklists, and verification plan design. |
+| **researcher** | `invoke_subagent(TypeName: "research", Role: "Codebase Researcher")` | Codebase code discovery and dependency relationship scanning. |
+| **worker** | `invoke_subagent(TypeName: "self", Role: "Hephaestus Worker")` | Code modifications, unit test implementation, and inline error resolving. |
+| **verifier** | `invoke_subagent(TypeName: "self", Role: "Oracle Reviewer")` | Diff analysis, verification pipeline execution, and static analysis/lint checks. |
+| **finalizer** | Parent Agent Context Execution | Cleanup of temporary files, git commit generation, and final evidence compilation. |
 
-### 2. 쿼터 맞춤 가이드라인 (Session-once)
-세션 시작 시 가용 모델 상황에 맞춰 최적의 드롭다운 선택안을 제안합니다:
-- **충분한 Claude 쿼터 보유 시**: `Claude Opus 4.6 (Thinking)`
-- **Claude 쿼터 제한 시**: `Gemini 3.1 Pro (High)`
-- **대규모 코드 탐색 중심 작업 시**: `Gemini 3.5 Flash (High)`
-- **신속한 반복 구현 작업 시**: `Gemini 3.5 Flash (Medium)`
+### 2. Quota-Aware Model Recommendations (Session-once)
+At the start of a session, optimal models are recommended to match the current quota state:
+- **With sufficient Claude quota**: `Claude Opus 4.6 (Thinking)`
+- **With limited Claude quota**: `Gemini 3.1 Pro (High)`
+- **For extensive codebase exploration**: `Gemini 3.5 Flash (High)`
+- **For rapid iterative bug fixes**: `Gemini 3.5 Flash (Medium)`
 
 ---
 
 ## 🛡️ Token & Quota Safety
 
-API 호출 쿼터 또는 토큰 소진 상황에서도 작업 내용이 유실되지 않도록 3중 방어막이 구현되어 있습니다.
+A triple-layer defense mechanism is implemented to ensure work progress is never lost during token exhaustion or API rate limit events.
 
-### 1. Safe-Resume 체크포인트
-- 오류 발생 시 `save-role-checkpoint`를 트리거하여 완료된 역할과 파일 변경 내역을 `.lazycodex/checkpoints/` 하위에 백업한 뒤 실행을 안전하게 멈춥니다.
-- 사용자가 UI 드롭다운에서 모델을 변경한 후 `/ulw resume`을 통해 중복 소모 없이 재개할 수 있습니다.
-- **수동 전환 권장 시나리오**:
-  - **Claude Opus 제한 시**: `Gemini 3.1 Pro (High)` ➡️ `Claude Sonnet 4.6 (Thinking) (Sonnet 쿼터 존재 시)` ➡️ `Gemini 3.5 Flash (High)`
-  - **Claude Sonnet 제한 시**: `Gemini 3.1 Pro (High)` ➡️ `Gemini 3.5 Flash (High)`
-  - **Gemini Pro 제한 시**: `Gemini 3.5 Flash (High)` ➡️ `Gemini 3.5 Flash (Medium)`
-  - **모든 모델 소진 시**: 갱신 시간까지 대기하거나 사용자가 원할 경우 계정 설정의 `AI Credit Overages`를 켜도록 안내합니다 (에이전트가 자동 활성화하지 않음).
+### 1. Safe-Resume Checkpointing
+- In case of an API error, `save-role-checkpoint` is triggered immediately, saving the completed roles and changed files to `.lazycodex/checkpoints/` before pausing.
+- The user can then switch the active model in the Antigravity UI dropdown and run `/ulw resume` to seamlessly pick up where the workflow left off.
+- **Recommended Fallback Sequence**:
+  - **Claude Opus limited**: `Gemini 3.1 Pro (High)` ➡️ `Claude Sonnet 4.6 (Thinking)` (if Sonnet quota is available) ➡️ `Gemini 3.5 Flash (High)`
+  - **Claude Sonnet limited**: `Gemini 3.1 Pro (High)` ➡️ `Gemini 3.5 Flash (High)`
+  - **Gemini Pro limited**: `Gemini 3.5 Flash (High)` ➡️ `Gemini 3.5 Flash (Medium)`
+  - **All models exhausted**: Wait for rate-limit refresh, or manually enable `AI Credit Overages` in user settings (the agent will never enable this automatically).
 
-### 2. Compact Mode (컨텍스트 절약)
-- `context_window_exceeded` 상황이 감지되면 소스 코드의 전체 파일을 읽지 않고, 수정 대상이 되는 코드 범위의 slices만 파싱하여 주입합니다.
-- 서브에이전트 출력 글자수를 핵심 요약본(20~40줄)으로 축소하며, 대규모 정보 아티팩트는 로컬 파일에 보관하고 본문에는 경로 링크만 연결하여 토큰 소모를 극적으로 절약합니다.
+### 2. Compact Mode (Context Saving)
+- If `context_window_exceeded` is detected, the agent shifts to compact mode, reading only specific lines of code slices instead of printing full files.
+- Role outputs are truncated to summaries (20–40 lines), and large file artifacts are referenced via local paths rather than dumped directly into the context window.
 
-### 3. Batch Mode (출력 토큰 제한 극복)
-- 코드 수정량이 출력 한도를 넘어설 것으로 예상되는 경우, 여러 개의 패치 배치(patch batch) 단위로 수정 작업을 쪼개어 단계적으로 수정 및 유효성 검증을 밟아 나갑니다.
+### 3. Batch Mode (Output Token Limits)
+- When changes exceed the output token limits, modifications are split into multiple patch batches, verified incrementally, and checkpointed progressively.
 
 ---
 
-## 👷 Maintainer & Homage
+## 👷 Maintainers & Support
 
-- **LazyAntigravity**는 Google Antigravity 플러그인 호환성 및 에이전트 자율성 유지를 위해 @yohak2 님에 의해서 유지 보수 및 빌드됩니다.
-- 본 프로젝트는 **Yeongyu Kim (김연규)**님에게 존경을 담고 있습니다.
-- 본 프로젝트는 [lazycodex.ai](https://lazycodex.ai)의 아이디어와 [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 에이전트의 엄격한 품질 지율에 깊은 존경을 보냅니다.
+- **LazyAntigravity** is maintained and built by **Sisyphus Labs** to preserve plugin compatibility and agent autonomy within the Google Antigravity harness environment.
 
 ## 📄 License
 
-free License로 김연규님이 위반으로 삭제하라고 하면 삭제할 예정입니다.
+This project is licensed under the MIT License.
