@@ -43,7 +43,6 @@ function stderrText(): string {
 	return stderrBuffer.join("");
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: parsed JSON output test helper
 function stdoutJson(): any {
 	return JSON.parse(stdoutText());
 }

@@ -15,9 +15,10 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.1.0): Recording Session Telemetry"
+						"statusMessage": "LazyAntigravity(0.1.0): Recording Session Telemetry",
+						"failurePolicy": "FAIL_OPEN"
 					}
 				]
 			},
@@ -82,9 +83,18 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook pre-tool-use",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_SAFE eyJob29rU3BlY2lmaWNPdXRwdXQiOnsiaG9va0V2ZW50TmFtZSI6IlByZVRvb2xVc2UiLCJwZXJtaXNzaW9uRGVjaXNpb24iOiJkZW55IiwicGVybWlzc2lvbkRlY2lzaW9uUmVhc29uIjoiRkFJTF9TQUZFIGRlZmF1bHQgYmxvY2siLCJhZGRpdGlvbmFsQ29udGV4dCI6Ikhvb2sgcnVubmVyIGNyYXNoZWQsIHVzaW5nIHNhZmUgZmFsbGJhY2suIn19 none node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook pre-tool-use",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.1.0): Enforcing Unlimited Goal Budget"
+						"statusMessage": "LazyAntigravity(0.1.0): Enforcing Unlimited Goal Budget",
+						"failurePolicy": "FAIL_SAFE",
+						"fallbackPayload": {
+							"hookSpecificOutput": {
+								"hookEventName": "PreToolUse",
+								"permissionDecision": "deny",
+								"permissionDecisionReason": "FAIL_SAFE default block",
+								"additionalContext": "Hook runner crashed, using safe fallback."
+							}
+						}
 					}
 				]
 			}

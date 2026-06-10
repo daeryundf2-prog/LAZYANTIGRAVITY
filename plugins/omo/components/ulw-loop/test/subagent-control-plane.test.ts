@@ -60,4 +60,38 @@ describe("Subagent Control Plane & Event Ledger", () => {
 		state = await reconstructStateFromEvents(testDir, runId);
 		expect(state.agents["agent-1"]?.state).toBe("acknowledged");
 	});
+
+	it("handles parent.hitl_required and parent.resumed transitions", async () => {
+		const runId = "run-hitl-1";
+		await appendRunEvent(testDir, runId, "run.created", {});
+		await appendRunEvent(testDir, runId, "run.state_changed", { state: "working" });
+
+		let state = await reconstructStateFromEvents(testDir, runId);
+		expect(state.state).toBe("working");
+
+		await appendRunEvent(testDir, runId, "parent.hitl_required", { reason: "Hook execution failed" });
+		state = await reconstructStateFromEvents(testDir, runId);
+		expect(state.state).toBe("paused");
+		expect(state.hitlReason).toBe("Hook execution failed");
+
+		await appendRunEvent(testDir, runId, "parent.resumed", { state: "working" });
+		state = await reconstructStateFromEvents(testDir, runId);
+		expect(state.state).toBe("working");
+		expect(state.hitlReason).toBeUndefined();
+	});
+
+	it("handles ledger rewind correctly", async () => {
+		const runId = "run-rewind-1";
+		await appendRunEvent(testDir, runId, "run.created", {});
+		const e2 = await appendRunEvent(testDir, runId, "run.state_changed", { state: "working" });
+		await appendRunEvent(testDir, runId, "run.state_changed", { state: "failed" });
+
+		let state = await reconstructStateFromEvents(testDir, runId);
+		expect(state.state).toBe("failed");
+
+		// Import dynamically since it's added
+		const { rewindLedger } = await import("../src/control-plane.ts");
+		state = await rewindLedger(testDir, runId, e2.eventId ?? "");
+		expect(state.state).toBe("working");
+	});
 });

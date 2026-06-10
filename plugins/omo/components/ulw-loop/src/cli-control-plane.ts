@@ -1,5 +1,6 @@
 import { readValue } from "./cli-arg-parser.js";
 import { printJson } from "./cli-output.js";
+import { aggregateConsensus, dispatchConsensus, reportConsensusResult } from "./consensus-dispatcher.js";
 import {
 	appendRunEvent,
 	checkLeases,
@@ -8,6 +9,7 @@ import {
 	type RunState,
 	reconstructStateFromEvents,
 	registerPoller,
+	rewindLedger,
 	validateResultEnvelope,
 } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
@@ -158,6 +160,10 @@ export async function checkLeasesCmd(repoRoot: string, argv: readonly string[], 
 	if (json) printJson({ ok: true, state });
 	else {
 		process.stdout.write(`Checked leases for run ${runId}.\n`);
+		process.stdout.write(`  Run State: ${state.state}\n`);
+		if (state.hitlReason) {
+			process.stdout.write(`  [HITL_REQUIRED: ${state.hitlReason}]\n`);
+		}
 		for (const agentId of Object.keys(state.agents)) {
 			const agent = state.agents[agentId];
 			if (agent) {
@@ -174,5 +180,71 @@ export async function registerPollerCmd(repoRoot: string, argv: readonly string[
 	const poller = await registerPoller(repoRoot, runId, pollerId);
 	if (json) printJson({ ok: true, poller });
 	else process.stdout.write(`Registered poller ${pollerId} for run ${runId}. Expires at ${poller.expiresAt}\n`);
+	return 0;
+}
+
+export async function rewindRunCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
+	const runId = required(argv, "--run-id");
+	const toEventId = required(argv, "--to-event");
+	const isDestructive = argv.includes("--destructive");
+	const state = await rewindLedger(repoRoot, runId, toEventId, { destructive: isDestructive });
+	if (json) printJson({ ok: true, state, destructive: isDestructive });
+	else {
+		process.stdout.write(`Run ${runId} rewinded to event ${toEventId}.\n`);
+		process.stdout.write(`  Destructive Truncate: ${isDestructive}\n`);
+		process.stdout.write(`  State is now: ${state.state}\n`);
+	}
+	return 0;
+}
+
+export async function dispatchConsensusCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
+	const runId = required(argv, "--run-id");
+	const fingerprint = readValue(argv, "--quality-input-fingerprint")?.trim();
+	const live = argv.includes("--live");
+	const mockLive = argv.includes("--mock-live");
+	const prompt = readValue(argv, "--prompt")?.trim();
+	const voterTimeoutStr = readValue(argv, "--voter-timeout-ms")?.trim();
+	const voterTimeoutMs = voterTimeoutStr ? parseInt(voterTimeoutStr, 10) : undefined;
+	const consensusTimeoutStr = readValue(argv, "--consensus-timeout-ms")?.trim();
+	const consensusTimeoutMs = consensusTimeoutStr ? parseInt(consensusTimeoutStr, 10) : undefined;
+	const opencodeBaseUrl = readValue(argv, "--opencode-base-url")?.trim();
+
+	const result = await dispatchConsensus(repoRoot, runId, fingerprint, {
+		live,
+		mockLive,
+		...(prompt !== undefined && { prompt }),
+		...(voterTimeoutMs !== undefined && { voterTimeoutMs }),
+		...(consensusTimeoutMs !== undefined && { consensusTimeoutMs }),
+		...(opencodeBaseUrl !== undefined && { opencodeBaseUrl }),
+	});
+	if (json) printJson({ ok: true, ...result });
+	else process.stdout.write(`Dispatched consensus ${result.consensusId} for run ${runId}.\n`);
+	return 0;
+}
+
+export async function reportConsensusResultCmd(
+	repoRoot: string,
+	argv: readonly string[],
+	json: boolean,
+): Promise<number> {
+	const runId = required(argv, "--run-id");
+	const consensusId = required(argv, "--consensus-id");
+	const agentId = required(argv, "--agent-id");
+	const resultJsonStr = required(argv, "--result-json");
+	const result = await readJsonOrPath(resultJsonStr, repoRoot);
+
+	await reportConsensusResult(repoRoot, runId, consensusId, agentId, result);
+	if (json) printJson({ ok: true, consensusId, agentId });
+	else process.stdout.write(`Reported consensus result for agent ${agentId} in consensus ${consensusId}.\n`);
+	return 0;
+}
+
+export async function aggregateConsensusCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
+	const runId = required(argv, "--run-id");
+	const consensusId = required(argv, "--consensus-id");
+	const verdict = await aggregateConsensus(repoRoot, runId, consensusId);
+
+	if (json) printJson({ ok: true, consensusId, verdict });
+	else process.stdout.write(`Aggregated consensus ${consensusId}. Verdict: ${verdict}\n`);
 	return 0;
 }

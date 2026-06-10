@@ -1,9 +1,29 @@
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents } from "./reconstruct.js";
+import {
+	checkLeases,
+	heartbeatAgent,
+	registerPoller,
+	validateQualityEvidenceEnvelope,
+	validateResultEnvelope,
+} from "./control-plane-helpers.js";
+import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
+import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 
-export { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents };
+export {
+	checkLeases,
+	heartbeatAgent,
+	readRunEvents,
+	reconstructAndSaveState,
+	reconstructStateFromEvents,
+	registerPoller,
+	repairLedgerFile,
+	stripSensitiveData,
+	validateQualityEvidenceEnvelope,
+	validateResultEnvelope,
+};
 
 import type {
 	AgentState,
@@ -15,7 +35,6 @@ import type {
 	RunState,
 	RunStateSchema,
 	SubagentResultEnvelope,
-	QualityEvidenceEnvelope,
 } from "./control-plane-types.js";
 
 export type {
@@ -43,7 +62,7 @@ const DEFAULT_POLICY: LeasePolicy = {
 	},
 };
 
-const FORBIDDEN_PHRASES = [
+export const FORBIDDEN_PHRASES = [
 	/completed the whole task/i,
 	/completed the entire task/i,
 	/finished the entire \/ulw/i,
@@ -56,12 +75,10 @@ const FORBIDDEN_PHRASES = [
 	/completed the global task/i,
 ];
 
-// Helper to get run directory
 export function getRunDir(repoRoot: string, runId: string): string {
 	return join(repoRoot, ".lazycodex", "runs", runId);
 }
 
-// Load lease policy
 export async function loadLeasePolicy(repoRoot: string): Promise<LeasePolicy> {
 	const policyPath = join(repoRoot, "plugins", "omo", "components", "ulw-loop", "src", "lease-policy.json");
 	if (existsSync(policyPath)) {
@@ -75,7 +92,6 @@ export async function loadLeasePolicy(repoRoot: string): Promise<LeasePolicy> {
 	return DEFAULT_POLICY;
 }
 
-// Append event to ledger
 export async function appendRunEvent(
 	repoRoot: string,
 	runId: string,
@@ -83,141 +99,105 @@ export async function appendRunEvent(
 	data: Omit<LedgerEvent, "timestamp" | "type" | "runId">,
 ): Promise<LedgerEvent> {
 	const runDir = getRunDir(repoRoot, runId);
-	if (!existsSync(runDir)) {
-		await mkdir(runDir, { recursive: true });
-	}
-
+	if (!existsSync(runDir)) await mkdir(runDir, { recursive: true });
 	const event: LedgerEvent = {
+		eventId: randomUUID(),
 		timestamp: new Date().toISOString(),
 		type,
 		runId,
 		...data,
 	};
-
+	const cleanEvent = stripSensitiveData(event);
 	const eventsFile = join(runDir, "events.jsonl");
-	await writeFile(eventsFile, `${JSON.stringify(event)}\n`, { flag: "a", encoding: "utf8" });
-
-	// Reconstruct state and save it
+	await writeFile(eventsFile, `${JSON.stringify(cleanEvent)}\n`, { flag: "a", encoding: "utf8" });
 	await reconstructAndSaveState(repoRoot, runId);
-
-	// Also save agent file if agentId is present
 	if (event.agentId) {
 		const agentsDir = join(runDir, "agents");
-		if (!existsSync(agentsDir)) {
-			await mkdir(agentsDir, { recursive: true });
-		}
+		if (!existsSync(agentsDir)) await mkdir(agentsDir, { recursive: true });
 		const agentState = await getAgentState(repoRoot, runId, event.agentId);
 		if (agentState) {
-			await writeFile(join(agentsDir, `${event.agentId}.json`), JSON.stringify(agentState, null, 2), "utf8");
+			await writeFile(
+				join(agentsDir, `${event.agentId}.json`),
+				JSON.stringify(stripSensitiveData(agentState), null, 2),
+				"utf8",
+			);
 		}
 	}
-
-	return event;
+	return cleanEvent;
 }
 
-// Get agent state
 export async function getAgentState(repoRoot: string, runId: string, agentId: string): Promise<AgentState | null> {
 	const state = await reconstructStateFromEvents(repoRoot, runId);
 	return state.agents[agentId] || null;
 }
 
-// Polling Guard: register poller
-export async function registerPoller(
+export async function rewindLedger(
 	repoRoot: string,
 	runId: string,
-	pollerId: string,
-	nowOverride?: Date,
-): Promise<PollerState> {
-	const now = nowOverride || new Date();
-	const state = await reconstructStateFromEvents(repoRoot, runId, now);
-
-	if (state.activePoller && state.activePoller.pollerId !== pollerId) {
-		const expires = new Date(state.activePoller.expiresAt);
-		if (now < expires) {
-			throw new Error(
-				`Double poller registration blocked: Run ${runId} has active poller ${state.activePoller.pollerId} expiring at ${state.activePoller.expiresAt}`,
-			);
-		}
-	}
-
-	const policy = await loadLeasePolicy(repoRoot);
-	const expiresAt = new Date(now.getTime() + policy.pollingGuard.pollerLeaseMs).toISOString();
-	const poller: PollerState = { pollerId, expiresAt };
-
-	state.activePoller = poller;
-
+	toEventId: string,
+	options?: { destructive?: boolean },
+): Promise<RunStateSchema> {
 	const runDir = getRunDir(repoRoot, runId);
-	if (!existsSync(runDir)) {
-		await mkdir(runDir, { recursive: true });
-	}
-	await writeFile(join(runDir, "state.json"), JSON.stringify(state, null, 2), "utf8");
-
-	return poller;
-}
-
-export async function heartbeatAgent(repoRoot: string, runId: string, agentId: string): Promise<LedgerEvent> {
-	const event = await appendRunEvent(repoRoot, runId, "agent.heartbeat", { agentId });
-	const runDir = getRunDir(repoRoot, runId);
-	const heartbeatsDir = join(runDir, "heartbeats");
-	if (!existsSync(heartbeatsDir)) await mkdir(heartbeatsDir, { recursive: true });
-	await writeFile(
-		join(heartbeatsDir, `${agentId}.json`),
-		JSON.stringify({ agentId, timestamp: event.timestamp }, null, 2),
-		"utf8",
-	);
-	return event;
-}
-
-export async function checkLeases(repoRoot: string, runId: string, nowOverride?: Date): Promise<RunStateSchema> {
-	const now = nowOverride || new Date();
-	const state = await reconstructStateFromEvents(repoRoot, runId, now);
-	const runDir = getRunDir(repoRoot, runId);
-	if (!existsSync(runDir)) await mkdir(runDir, { recursive: true });
-	await writeFile(join(runDir, "state.json"), JSON.stringify(state, null, 2), "utf8");
-	return state;
-}
-
-export function validateQualityEvidenceEnvelope(
-	envelope: unknown,
-): QualityEvidenceEnvelope {
-	if (!envelope || typeof envelope !== "object") throw new Error("Invalid envelope: must be an object");
-	const env = envelope as QualityEvidenceEnvelope;
-	
-	if (typeof env.goal !== "string") throw new Error("Missing or invalid 'goal'");
-	if (typeof env.summary !== "string") throw new Error("Missing or invalid 'summary'");
-	if (!Array.isArray(env.filesChanged)) throw new Error("Missing or invalid 'filesChanged'");
-	if (!Array.isArray(env.commandsRun)) throw new Error("Missing or invalid 'commandsRun'");
-	if (!Array.isArray(env.testResults)) throw new Error("Missing or invalid 'testResults'");
-	if (!Array.isArray(env.artifactsGenerated)) throw new Error("Missing or invalid 'artifactsGenerated'");
-	if (!Array.isArray(env.completedRoles)) throw new Error("Missing or invalid 'completedRoles'");
-	if (!Array.isArray(env.acknowledgedRoles)) throw new Error("Missing or invalid 'acknowledgedRoles'");
-	if (typeof env.dryRunSafety !== "boolean") throw new Error("Missing or invalid 'dryRunSafety'");
-
-	const texts = [env.summary];
-	for (const text of texts) {
-		for (const pattern of FORBIDDEN_PHRASES) {
-			if (pattern.test(text)) throw new Error(`Forbidden phrase detected: "${text}" matched ${pattern.toString()}`);
+	if (!existsSync(runDir)) throw new Error(`Run ${runId} not found`);
+	const events = await readRunEvents(repoRoot, runId);
+	const targetIdx = events.findIndex((e) => e.eventId === toEventId);
+	if (targetIdx === -1) throw new Error(`Event ID ${toEventId} not found in ledger for run ${runId}`);
+	if (options?.destructive === true) {
+		const backupsDir = join(runDir, "backups");
+		if (!existsSync(backupsDir)) await mkdir(backupsDir, { recursive: true });
+		await writeFile(
+			join(backupsDir, `events-before-rewind-${Date.now()}.jsonl`),
+			`${events.map((e) => JSON.stringify(e)).join("\n")}\n`,
+			"utf8",
+		);
+		await writeFile(
+			join(runDir, "events.jsonl"),
+			`${events
+				.slice(0, targetIdx + 1)
+				.map((e) => JSON.stringify(e))
+				.join("\n")}\n`,
+			"utf8",
+		);
+	} else {
+		const attemptId = `attempt-${Date.now()}`;
+		await appendRunEvent(repoRoot, runId, "lineage.rewind_requested" as EventType, {
+			rewindTargetEventId: toEventId,
+		});
+		await appendRunEvent(repoRoot, runId, "lineage.branch_created" as EventType, {
+			attemptId,
+			createdFromEventId: toEventId,
+			previousState: events[targetIdx]?.state || "working",
+		});
+		const lineageFile = join(runDir, "lineage.json");
+		const attemptsDir = join(runDir, "attempts");
+		if (!existsSync(attemptsDir)) await mkdir(attemptsDir, { recursive: true });
+		let lineageData = { runId, currentAttemptId: attemptId, history: [attemptId] };
+		if (existsSync(lineageFile)) {
+			try {
+				const parsed = JSON.parse(await readFile(lineageFile, "utf8"));
+				lineageData = { ...parsed, currentAttemptId: attemptId };
+				lineageData.history.push(attemptId);
+			} catch {}
 		}
+		await writeFile(lineageFile, JSON.stringify(lineageData, null, 2), "utf8");
+		const prevAttempt = lineageData.history.length > 1 ? lineageData.history[lineageData.history.length - 2] : null;
+		await writeFile(
+			join(attemptsDir, `${attemptId}.json`),
+			JSON.stringify(
+				{
+					attemptId,
+					parentAttemptId: prevAttempt,
+					branchId: `branch-${runId}-${attemptId}`,
+					rewindTargetEventId: toEventId,
+					supersedesAttemptId: prevAttempt,
+					createdFromEventId: toEventId,
+					createdAt: new Date().toISOString(),
+				},
+				null,
+				2,
+			),
+			"utf8",
+		);
 	}
-	return env;
-}
-
-export function validateResultEnvelope(
-	envelope: unknown,
-	expectedRunId: string,
-	expectedRole: string,
-): SubagentResultEnvelope {
-	if (!envelope || typeof envelope !== "object") throw new Error("Invalid envelope: must be an object");
-	const env = envelope as SubagentResultEnvelope;
-	if (env.runId !== expectedRunId) throw new Error(`Run ID mismatch: expected ${expectedRunId}, got ${env.runId}`);
-	if (env.role !== expectedRole) throw new Error(`Role mismatch: expected ${expectedRole}, got ${env.role}`);
-	if (env.requiresParentAck === false) throw new Error("Validation rejected: requiresParentAck must be true");
-
-	const texts = [env.summary || "", env.nextRecommendedAction || ""];
-	for (const text of texts) {
-		for (const pattern of FORBIDDEN_PHRASES) {
-			if (pattern.test(text)) throw new Error(`Forbidden phrase detected: "${text}" matched ${pattern.toString()}`);
-		}
-	}
-	return env;
+	return await reconstructAndSaveState(repoRoot, runId);
 }

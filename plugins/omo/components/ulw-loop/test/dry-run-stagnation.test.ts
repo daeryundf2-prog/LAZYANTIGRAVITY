@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { dryRunCmd } from "../src/dry-run.js";
 
 // Mock process.stdout.write to capture output

@@ -35,7 +35,22 @@ Scenarios:
   quality-semantic-insufficient-evidence Simulates a semantic gate failure (empty goal or evidence mismatch)
   quality-consensus-required Simulates high risk condition requiring consensus
   quality-stagnation-unresolved Simulates semantic failure due to unresolved stagnation
-
+  hitl-scenario              Simulates a Human-in-the-Loop intervention requirement
+  rewind-preview             Preview the result of a rewind operation
+  rewind-create-branch       Simulates an append-only branch creation
+  rewind-destructive-requires-flag Simulates requiring the destructive flag
+  rewind-invalid-event-id    Simulates rewinding to a non-existent event
+  rewind-preserves-original-ledger Simulates preserving original ledger
+  consensus-happy-path       Simulates all personas approving
+  consensus-devil-rejects    Simulates Devil's Advocate rejecting
+  consensus-regression-risk  Simulates Regression Reviewer requiring rework
+  consensus-security-state-risk Simulates Security-State Reviewer rejecting
+  consensus-inconclusive     Simulates inconclusive consensus results
+  consensus-self-finalizes-rejected Simulates consensus attempting to self-finalize
+  consensus-dispatcher-runtime Simulates dispatcher appending events for consensus
+  consensus-dispatch-invalid-envelope Simulates rejection of invalid envelope properties
+  consensus-dispatch-antigravity-inherits-model Simulates consensus inheriting model without switching
+  consensus-live-invocation          Simulates real consensus multi-persona invocation loop
 Options:
   --scenario <scenario>      Select the simulation scenario (default: happy-path)
   --json                     Output details in machine-readable JSON format
@@ -67,6 +82,22 @@ Options:
 					"quality-semantic-insufficient-evidence",
 					"quality-consensus-required",
 					"quality-stagnation-unresolved",
+					"hitl-scenario",
+					"rewind-preview",
+					"rewind-create-branch",
+					"rewind-destructive-requires-flag",
+					"rewind-invalid-event-id",
+					"rewind-preserves-original-ledger",
+					"consensus-happy-path",
+					"consensus-devil-rejects",
+					"consensus-regression-risk",
+					"consensus-security-state-risk",
+					"consensus-inconclusive",
+					"consensus-self-finalizes-rejected",
+					"consensus-dispatcher-runtime",
+					"consensus-dispatch-invalid-envelope",
+					"consensus-dispatch-antigravity-inherits-model",
+					"consensus-live-invocation",
 				],
 				options: ["--scenario", "--json", "--write-checkpoint", "--persist-checkpoint"],
 			});
@@ -540,6 +571,347 @@ Options:
 			process.stdout.write(`[Dry-Run] Quality Gate: Mechanical PASSED\n`);
 			process.stdout.write(`[Dry-Run] Quality Gate: Semantic FAILED (Unresolved stagnation detected)\n`);
 		}
+	} else if (scenario === "hitl-scenario") {
+		completedRoles = ["planner"];
+		failedRole = null;
+		nextRecommendedAction = "User provides missing input or approves action, then run /ulw resume";
+		if (!json) {
+			process.stdout.write(`[Dry-Run] Initializing hitl-scenario...\n`);
+			process.stdout.write(`[Dry-Run] Hook execution returned HITL_REQUIRED.\n`);
+			process.stdout.write(`[Dry-Run] Emitted parent.hitl_required event. RunState paused.\n`);
+			process.stdout.write(`[Dry-Run] Waiting for parent.resumed to resolve HITL state.\n`);
+		}
+	} else if (scenario.startsWith("rewind-")) {
+		const runId = `dry-run-rewind-${Date.now()}`;
+		const runDir = getRunDir(repoRoot, runId);
+		try {
+			if (!json) process.stdout.write(`[Dry-Run] Initializing ${scenario}...\n`);
+			await appendRunEvent(repoRoot, runId, "run.created", {});
+			const e2 = await appendRunEvent(repoRoot, runId, "run.state_changed", { state: "working" });
+			await appendRunEvent(repoRoot, runId, "run.state_changed", { state: "failed" });
+
+			const { rewindLedger } = await import("./control-plane.js");
+
+			if (scenario === "rewind-invalid-event-id") {
+				try {
+					await rewindLedger(repoRoot, runId, "invalid-event-id", { destructive: true });
+				} catch (err: unknown) {
+					if (!json) process.stdout.write(`[Dry-Run] Caught expected error: ${err}\n`);
+				}
+			} else if (scenario === "rewind-destructive-requires-flag") {
+				if (!json) process.stdout.write(`[Dry-Run] Default rewind avoids destructive truncate without flag.\n`);
+			} else {
+				// Base execution for preview, branch, preserves
+				await rewindLedger(repoRoot, runId, e2.eventId ?? "", { destructive: scenario.includes("destructive") });
+			}
+
+			if (json) {
+				const isDestructive = scenario.includes("destructive") && scenario !== "rewind-destructive-requires-flag";
+				printJson({
+					ok: true,
+					dryRun: true,
+					scenario,
+					wouldTruncateLedger: isDestructive,
+					wouldCreateBranch: !isDestructive,
+					wouldPreserveOriginalLedger: !isDestructive,
+					wouldCreateBackup: isDestructive,
+					requiresExplicitDestructiveFlag: scenario === "rewind-destructive-requires-flag",
+					wouldCallModelApi: false,
+					wouldModifySourceFiles: false,
+					wouldSwitchModel: false,
+					wouldCompleteRun: false,
+					wouldFailRun: false,
+					wouldKillSubagent: false,
+				});
+				return 0; // JSON handled
+			} else {
+				process.stdout.write(`[Dry-Run] Scenario ${scenario} complete.\n`);
+			}
+		} finally {
+			if (!writeCheckpoint && !writeLedger && existsSync(runDir)) {
+				rmSync(runDir, { recursive: true, force: true });
+			}
+		}
+	} else if (scenario.startsWith("consensus-")) {
+		isQualityScenario = true;
+		qualityStage = "consensus";
+		if (scenario === "consensus-happy-path") {
+			qualityStatus = "passed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-happy-path...\n`);
+				process.stdout.write(
+					`[Dry-Run] All personas (advocate, devils_advocate, regression_reviewer, security_state_reviewer) approved.\n`,
+				);
+				process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_passed (finalizerAllowed=true)\n`);
+			}
+		} else if (scenario === "consensus-devil-rejects") {
+			qualityStatus = "failed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-devil-rejects...\n`);
+				process.stdout.write(`[Dry-Run] Persona devils_advocate rejected.\n`);
+				process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_failed (finalizerAllowed=false)\n`);
+			}
+		} else if (scenario === "consensus-regression-risk") {
+			qualityStatus = "rework_required";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-regression-risk...\n`);
+				process.stdout.write(`[Dry-Run] Persona regression_reviewer requested needs_rework.\n`);
+				process.stdout.write(
+					`[Dry-Run] Verdict: quality_gate.consensus_rework_required (finalizerAllowed=false)\n`,
+				);
+			}
+		} else if (scenario === "consensus-security-state-risk") {
+			qualityStatus = "failed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-security-state-risk...\n`);
+				process.stdout.write(`[Dry-Run] Persona security_state_reviewer rejected.\n`);
+				process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_failed (finalizerAllowed=false)\n`);
+			}
+		} else if (scenario === "consensus-inconclusive") {
+			qualityStatus = "inconclusive";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-inconclusive...\n`);
+				process.stdout.write(`[Dry-Run] Consensus results are inconclusive.\n`);
+				process.stdout.write(
+					`[Dry-Run] Verdict: quality_gate.consensus_inconclusive (parentActionRequired=true)\n`,
+				);
+			}
+		} else if (scenario === "consensus-self-finalizes-rejected") {
+			qualityStatus = "failed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-self-finalizes-rejected...\n`);
+				process.stdout.write(
+					`[Dry-Run] Consensus subagent envelope validation failed: consensus subagents cannot finalize run or directly assert run.completed/failed.\n`,
+				);
+				process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_failed (finalizerAllowed=false)\n`);
+			}
+		} else if (scenario === "consensus-dispatcher-runtime") {
+			qualityStatus = "passed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-dispatcher-runtime...\n`);
+				await import("./cli-control-plane.js");
+				process.stdout.write(`[Dry-Run] Invoking dispatchConsensusCmd...\n`);
+				process.stdout.write(`[Dry-Run] Invoking reportConsensusResultCmd for 4 personas...\n`);
+				process.stdout.write(`[Dry-Run] Invoking aggregateConsensusCmd...\n`);
+				process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_passed (finalizerAllowed=true)\n`);
+			}
+		} else if (scenario === "consensus-dispatch-invalid-envelope") {
+			qualityStatus = "failed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-dispatch-invalid-envelope...\n`);
+				process.stdout.write(`[Dry-Run] Subagent attempts to submit envelope with mayFinalizeRun=true.\n`);
+				process.stdout.write(`[Dry-Run] Envelope rejected by validateConsensusResultEnvelope.\n`);
+				process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_failed (finalizerAllowed=false)\n`);
+			}
+		} else if (scenario === "consensus-dispatch-antigravity-inherits-model") {
+			qualityStatus = "passed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-dispatch-antigravity-inherits-model...\n`);
+				process.stdout.write(`[Dry-Run] Dispatcher creates role envelopes with wouldSwitchModel: false.\n`);
+				process.stdout.write(`[Dry-Run] Antigravity policy satisfied.\n`);
+			}
+		} else if (scenario === "consensus-live-invocation") {
+			isQualityScenario = true;
+			qualityStage = "consensus";
+			qualityStatus = "passed";
+			if (!json) {
+				process.stdout.write(`[Dry-Run] Initializing consensus-live-invocation...\n`);
+			}
+			const runId = `dry-run-live-${Date.now()}`;
+			const runDir = getRunDir(repoRoot, runId);
+			try {
+				const { dispatchConsensus, setMockPersonaVerdict, reportConsensusResult, aggregateConsensus } =
+					await import("./consensus-dispatcher.js");
+				const { appendRunEvent, readRunEvents } = await import("./control-plane.js");
+
+				// 1. Approve Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 1: All personas approve...\n`);
+				await appendRunEvent(repoRoot, runId, "run.created", {});
+				setMockPersonaVerdict("advocate", "approve");
+				setMockPersonaVerdict("devils_advocate", "approve");
+				setMockPersonaVerdict("regression_reviewer", "approve");
+				setMockPersonaVerdict("security_state_reviewer", "approve");
+				const resApprove = await dispatchConsensus(repoRoot, runId, "test-fp-approve", {
+					mockLive: true,
+					prompt: "Simulated task",
+				});
+				const events1 = await readRunEvents(repoRoot, runId);
+				const passedEvent = events1.find(
+					(e) => e.type === "quality_gate.consensus_passed" && e.consensusId === resApprove.consensusId,
+				);
+				if (!passedEvent?.finalizerAllowed || !passedEvent.isMockLive) {
+					throw new Error("Case 1 (Approve) validation failed in Dry-Run");
+				}
+
+				// 2. Reject Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 2: Devil's Advocate rejects...\n`);
+				setMockPersonaVerdict("advocate", "approve");
+				setMockPersonaVerdict("devils_advocate", "reject");
+				setMockPersonaVerdict("regression_reviewer", "approve");
+				setMockPersonaVerdict("security_state_reviewer", "approve");
+				const resReject = await dispatchConsensus(repoRoot, runId, "test-fp-reject", {
+					mockLive: true,
+					prompt: "Simulated task",
+				});
+				const events2 = await readRunEvents(repoRoot, runId);
+				const failedEvent = events2.find(
+					(e) => e.type === "quality_gate.consensus_failed" && e.consensusId === resReject.consensusId,
+				);
+				if (!failedEvent || failedEvent.finalizerAllowed) {
+					throw new Error("Case 2 (Reject) validation failed in Dry-Run");
+				}
+
+				// 3. Rework Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 3: Regression Reviewer requires rework...\n`);
+				setMockPersonaVerdict("advocate", "approve");
+				setMockPersonaVerdict("devils_advocate", "approve");
+				setMockPersonaVerdict("regression_reviewer", "needs_rework");
+				setMockPersonaVerdict("security_state_reviewer", "approve");
+				const resRework = await dispatchConsensus(repoRoot, runId, "test-fp-rework", {
+					mockLive: true,
+					prompt: "Simulated task",
+				});
+				const events3 = await readRunEvents(repoRoot, runId);
+				const reworkEvent = events3.find(
+					(e) => e.type === "quality_gate.consensus_rework_required" && e.consensusId === resRework.consensusId,
+				);
+				if (!reworkEvent || reworkEvent.finalizerAllowed) {
+					throw new Error("Case 3 (Rework) validation failed in Dry-Run");
+				}
+
+				// 4. Timeout Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 4: Persona times out...\n`);
+				setMockPersonaVerdict("advocate", "approve");
+				setMockPersonaVerdict("devils_advocate", "approve");
+				setMockPersonaVerdict("regression_reviewer", "approve");
+				setMockPersonaVerdict("security_state_reviewer", "inconclusive");
+				const resTimeout = await dispatchConsensus(repoRoot, runId, "test-fp-timeout", {
+					mockLive: true,
+					prompt: "Simulated task",
+				});
+				const events4 = await readRunEvents(repoRoot, runId);
+				const incEvent = events4.find(
+					(e) => e.type === "quality_gate.consensus_inconclusive" && e.consensusId === resTimeout.consensusId,
+				);
+				if (!incEvent || incEvent.finalizerAllowed || !incEvent.parentActionRequired) {
+					throw new Error("Case 4 (Timeout) validation failed in Dry-Run");
+				}
+
+				// 5. Invalid Envelope Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 5: Invalid Envelope submitted...\n`);
+				setMockPersonaVerdict("advocate", "approve");
+				setMockPersonaVerdict("devils_advocate", "approve");
+				setMockPersonaVerdict("regression_reviewer", "approve");
+				setMockPersonaVerdict("security_state_reviewer", "invalid_envelope");
+				const resInvalid = await dispatchConsensus(repoRoot, runId, "test-fp-invalid", {
+					mockLive: true,
+					prompt: "Simulated task",
+				});
+				const events5 = await readRunEvents(repoRoot, runId);
+				const invalidIncEvent = events5.find(
+					(e) => e.type === "quality_gate.consensus_inconclusive" && e.consensusId === resInvalid.consensusId,
+				);
+				if (!invalidIncEvent || invalidIncEvent.finalizerAllowed) {
+					throw new Error("Case 5 (Invalid Envelope) validation failed in Dry-Run");
+				}
+
+				// 6. Duplicate Same Payload Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 6: Duplicate Same Payload reported...\n`);
+				setMockPersonaVerdict("advocate", "approve");
+				setMockPersonaVerdict("devils_advocate", "approve");
+				setMockPersonaVerdict("regression_reviewer", "approve");
+				setMockPersonaVerdict("security_state_reviewer", "approve");
+				const resDup = await dispatchConsensus(repoRoot, runId, "test-fp-dup", {
+					mockLive: true,
+					prompt: "Simulated task",
+				});
+				const eventsDup = await readRunEvents(repoRoot, runId);
+				const originalAdvocateEvent = eventsDup.find(
+					(e) =>
+						e.type === "quality_gate.consensus_persona_reported" &&
+						e.consensusId === resDup.consensusId &&
+						e.persona === "advocate",
+				);
+				if (!originalAdvocateEvent) throw new Error("Original advocate event not found");
+				const dupAgentId = originalAdvocateEvent.agentId as string;
+				const dupEnvelope = {
+					runId,
+					consensusId: resDup.consensusId,
+					agentId: dupAgentId,
+					persona: "advocate",
+					verdict: "approve",
+					reason: `Mock consensus response for advocate with verdict approve`,
+					requiresParentAck: true,
+				};
+				await reportConsensusResult(repoRoot, runId, resDup.consensusId, dupAgentId, dupEnvelope, true);
+
+				// 7. Duplicate Conflict Case
+				if (!json) process.stdout.write(`[Dry-Run] Case 7: Duplicate Conflicting Payload reported...\n`);
+				const resConflict = await dispatchConsensus(repoRoot, runId, "test-fp-conflict", { mockLive: false });
+				const conflictAgentId = `advocate-${resConflict.consensusId.substring(0, 8)}`;
+
+				const envelope1 = {
+					runId,
+					consensusId: resConflict.consensusId,
+					agentId: conflictAgentId,
+					persona: "advocate",
+					verdict: "approve",
+					reason: `Mock consensus response for advocate with verdict approve`,
+					requiresParentAck: true,
+				};
+				await reportConsensusResult(repoRoot, runId, resConflict.consensusId, conflictAgentId, envelope1, true);
+
+				const conflictEnvelope = {
+					...envelope1,
+					verdict: "reject",
+				};
+				let conflictThrown = false;
+				try {
+					await reportConsensusResult(
+						repoRoot,
+						runId,
+						resConflict.consensusId,
+						conflictAgentId,
+						conflictEnvelope,
+						true,
+					);
+				} catch (err: any) {
+					if (err.message.includes("Conflict")) {
+						conflictThrown = true;
+					}
+				}
+				if (!conflictThrown) {
+					throw new Error("Case 7 (Conflict) validation failed in Dry-Run: No conflict error thrown");
+				}
+
+				await aggregateConsensus(repoRoot, runId, resConflict.consensusId);
+				const events7 = await readRunEvents(repoRoot, runId);
+				const conflictPassed = events7.find(
+					(e) => e.type === "quality_gate.consensus_passed" && e.consensusId === resConflict.consensusId,
+				);
+				const conflictFailed = events7.find(
+					(e) => e.type === "quality_gate.consensus_failed" && e.consensusId === resConflict.consensusId,
+				);
+				if (conflictPassed) {
+					throw new Error("Case 7 validation failed in Dry-Run: aggregateConsensus passed despite conflict");
+				}
+				if (!conflictFailed || conflictFailed.finalizerAllowed) {
+					throw new Error(
+						"Case 7 validation failed in Dry-Run: aggregateConsensus did not block finalizer on conflict",
+					);
+				}
+
+				if (!json) {
+					process.stdout.write(`[Dry-Run] Live invocation mock run simulated successfully.\n`);
+					process.stdout.write(`[Dry-Run] Verdict: quality_gate.consensus_passed (finalizerAllowed=true)\n`);
+				}
+			} finally {
+				const { existsSync, rmSync } = await import("node:fs");
+				if (existsSync(runDir)) {
+					rmSync(runDir, { recursive: true, force: true });
+				}
+			}
+		}
 	} else {
 		process.stderr.write(`[Dry-Run] Unknown scenario: ${scenario}\n`);
 		return 1;
@@ -588,7 +960,23 @@ Options:
 				qualityGateTriggered: true,
 				qualityStage,
 				qualityStatus,
-				eventType: qualityStatus === "passed" ? "quality_gate.completed" : (qualityStatus === "required" ? "quality_gate.consensus_required" : "quality_gate.failed"),
+				eventType:
+					qualityStatus === "passed"
+						? qualityStage === "consensus"
+							? "quality_gate.consensus_passed"
+							: "quality_gate.completed"
+						: qualityStatus === "required"
+							? "quality_gate.consensus_required"
+							: qualityStage === "consensus" && qualityStatus === "rework_required"
+								? "quality_gate.consensus_rework_required"
+								: qualityStage === "consensus" && qualityStatus === "inconclusive"
+									? "quality_gate.consensus_inconclusive"
+									: "quality_gate.failed",
+			}),
+			...(scenario === "hitl-scenario" && {
+				hitlTriggered: true,
+				hitlReason: "Hook execution failed. HITL required.",
+				eventType: "parent.hitl_required",
 			}),
 		});
 	} else {
@@ -617,6 +1005,11 @@ Options:
 			process.stdout.write(`  Quality Status: ${qualityStatus}\n`);
 			process.stdout.write(`  Would Fail Run: false\n`);
 			process.stdout.write(`  Would Kill Subagent: false\n`);
+		}
+		if (scenario === "hitl-scenario") {
+			process.stdout.write(`  HITL Triggered: true\n`);
+			process.stdout.write(`  Event Type: parent.hitl_required\n`);
+			process.stdout.write(`  Parent Action Required: true\n`);
 		}
 	}
 

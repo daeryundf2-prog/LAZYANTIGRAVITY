@@ -3,14 +3,17 @@ import type { LedgerEvent } from "../src/control-plane-types.js";
 import { checkStagnation, DEFAULT_STAGNATION_POLICY } from "../src/stagnation-guard.js";
 
 function createEvent(type: LedgerEvent["type"], result: unknown, reason?: string): LedgerEvent {
-	return {
+	const event: any = {
 		timestamp: new Date().toISOString(),
 		type,
 		runId: "run-1",
 		agentId: "agent-1",
 		result,
-		reason,
 	};
+	if (reason !== undefined) {
+		event.reason = reason;
+	}
+	return event as LedgerEvent;
 }
 
 describe("StagnationGuard", () => {

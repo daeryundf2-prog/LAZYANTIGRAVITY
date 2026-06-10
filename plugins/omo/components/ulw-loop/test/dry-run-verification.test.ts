@@ -1,19 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dryRunCmd } from "../src/dry-run.js";
 
-// Mock printJson and process.stdout.write
-const mockStdout = {
-	output: "",
-	write(chunk: string) {
-		this.output += chunk;
-		return true;
-	},
-	clear() {
-		this.output = "";
-	},
-};
-const originalStdoutWrite = process.stdout.write.bind(process.stdout);
-
 describe("Dry Run: Verification Pipeline", () => {
 	it("should simulate quality-happy-path", async () => {
 		const logs: string[] = [];
@@ -40,8 +27,8 @@ describe("Dry Run: Verification Pipeline", () => {
 	it("should simulate quality-mechanical-fail", async () => {
 		const logs: string[] = [];
 		const origStdoutWrite = process.stdout.write.bind(process.stdout);
-		process.stdout.write = (msg: string | Uint8Array, cb?: any) => {
-			if (typeof msg === 'string') logs.push(msg);
+		process.stdout.write = (msg: string | Uint8Array, _cb?: any) => {
+			if (typeof msg === "string") logs.push(msg);
 			return true;
 		};
 		try {
@@ -63,8 +50,8 @@ describe("Dry Run: Verification Pipeline", () => {
 	it("should simulate quality-semantic-insufficient-evidence", async () => {
 		const logs: string[] = [];
 		const origStdoutWrite = process.stdout.write.bind(process.stdout);
-		process.stdout.write = (msg: string | Uint8Array, cb?: any) => {
-			if (typeof msg === 'string') logs.push(msg);
+		process.stdout.write = (msg: string | Uint8Array, _cb?: any) => {
+			if (typeof msg === "string") logs.push(msg);
 			return true;
 		};
 		try {
@@ -83,8 +70,8 @@ describe("Dry Run: Verification Pipeline", () => {
 	it("should simulate quality-consensus-required", async () => {
 		const logs: string[] = [];
 		const origStdoutWrite = process.stdout.write.bind(process.stdout);
-		process.stdout.write = (msg: string | Uint8Array, cb?: any) => {
-			if (typeof msg === 'string') logs.push(msg);
+		process.stdout.write = (msg: string | Uint8Array, _cb?: any) => {
+			if (typeof msg === "string") logs.push(msg);
 			return true;
 		};
 		try {
@@ -104,8 +91,8 @@ describe("Dry Run: Verification Pipeline", () => {
 	it("should simulate quality-stagnation-unresolved", async () => {
 		const logs: string[] = [];
 		const origStdoutWrite = process.stdout.write.bind(process.stdout);
-		process.stdout.write = (msg: string | Uint8Array, cb?: any) => {
-			if (typeof msg === 'string') logs.push(msg);
+		process.stdout.write = (msg: string | Uint8Array, _cb?: any) => {
+			if (typeof msg === "string") logs.push(msg);
 			return true;
 		};
 		try {

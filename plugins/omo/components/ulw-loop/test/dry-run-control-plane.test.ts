@@ -73,4 +73,13 @@ describe("Dry-run Control Plane Scenarios CLI", () => {
 		expect(text).toContain("[Dry-Run] Initializing subagent-wrong-role-envelope scenario...");
 		expect(text).toContain("Rejects wrong role envelope: Role mismatch: expected worker, got researcher");
 	});
+
+	it("runs hitl-scenario", async () => {
+		const code = await ulwLoopCommand(["dry-run", "--scenario", "hitl-scenario"]);
+		expect(code).toBe(0);
+		const text = stdoutText();
+		expect(text).toContain("[Dry-Run] Initializing hitl-scenario...");
+		expect(text).toContain("HITL Triggered: true");
+		expect(text).toContain("Event Type: parent.hitl_required");
+	});
 });

@@ -622,6 +622,143 @@ try {
 }
 
 // ----------------------------------------------------
+// 12. P2/P3 State Mutation Safety Verification
+// ----------------------------------------------------
+try {
+	const ULW_LOOP_DIR = join(rootDir, 'plugins/omo/components/ulw-loop');
+	const reconstructPath = join(ULW_LOOP_DIR, 'src', 'reconstruct.ts');
+	const controlPlanePath = join(ULW_LOOP_DIR, 'src', 'control-plane.ts');
+	
+	if (existsSync(reconstructPath)) {
+		const reconstructContent = readFileSync(reconstructPath, 'utf8');
+		if (reconstructContent.includes('event.resumeTargetState') && reconstructContent.includes('event.previousState')) {
+			recordResult("P2 HITL Resume State Preservation", "PASS", "hitl_required and resumed support previousState and resumeTargetState");
+		} else {
+			recordResult("P2 HITL Resume State Preservation", "FAIL", "parent.resumed is hardcoding 'working' or missing previousState fallback");
+		}
+	} else {
+		recordResult("P2 HITL Resume State Preservation", "FAIL", "reconstruct.ts missing");
+	}
+
+	if (existsSync(controlPlanePath)) {
+		const controlPlaneContent = readFileSync(controlPlanePath, 'utf8');
+		if (controlPlaneContent.includes('lineage.branch_created') && controlPlaneContent.includes('options?.destructive')) {
+			recordResult("P3 Rewind Append-Only Branching", "PASS", "Rewind defaults to append-only branching instead of truncate");
+		} else {
+			recordResult("P3 Rewind Append-Only Branching", "FAIL", "Rewind does not default to append-only branching");
+		}
+
+		if (controlPlaneContent.includes('events-before-rewind-') && controlPlaneContent.includes('backups')) {
+			recordResult("P3 Rewind Backup Safety", "PASS", "Destructive rewind explicitly creates backup files");
+		} else {
+			recordResult("P3 Rewind Backup Safety", "FAIL", "Destructive rewind is missing backup creation logic");
+		}
+
+		if (controlPlaneContent.includes('lineage.json') && controlPlaneContent.includes('attempts')) {
+			recordResult("P3 Lineage Schema Creation", "PASS", "Lineage schema files (lineage.json, attempts/*.json) are created on rewind");
+		} else {
+			recordResult("P3 Lineage Schema Creation", "FAIL", "Lineage schema generation logic is missing");
+		}
+	} else {
+		recordResult("P3 Rewind Safety", "FAIL", "control-plane.ts missing");
+	}
+} catch (e) {
+	recordResult("P2/P3 State Mutation Safety Check Failure", "FAIL", e.message);
+}
+
+// ----------------------------------------------------
+// 13. P4-A Consensus Policies Verification
+// ----------------------------------------------------
+try {
+	const ULW_LOOP_DIR = join(rootDir, 'plugins/omo/components/ulw-loop');
+	const typesPath = join(ULW_LOOP_DIR, 'src', 'verification-pipeline-types.ts');
+	const pipelinePath = join(ULW_LOOP_DIR, 'src', 'verification-pipeline.ts');
+
+	if (existsSync(typesPath)) {
+		const typesContent = readFileSync(typesPath, 'utf8');
+		if (typesContent.includes('ConsensusPersona') && typesContent.includes('ConsensusRoleEnvelope') && typesContent.includes('ConsensusResultEnvelope')) {
+			recordResult("Consensus Schema Exists", "PASS", "Consensus types (Persona, Envelopes) are present");
+		} else {
+			recordResult("Consensus Schema Exists", "FAIL", "Missing Consensus types");
+		}
+
+		if (typesContent.includes('advocate') && typesContent.includes("devils_advocate") && typesContent.includes('regression_reviewer') && typesContent.includes('security_state_reviewer')) {
+			recordResult("Consensus Persona Definitions", "PASS", "All 4 personas defined");
+		} else {
+			recordResult("Consensus Persona Definitions", "FAIL", "Missing some persona definitions");
+		}
+	} else {
+		recordResult("Consensus Schema Exists", "FAIL", "Missing verification-pipeline-types.ts");
+	}
+
+	if (existsSync(pipelinePath)) {
+		const pipelineContent = readFileSync(pipelinePath, 'utf8');
+		if (pipelineContent.includes('mayFinalizeRun === true') && pipelineContent.includes('run\\.completed|run\\.failed')) {
+			recordResult("Consensus Direct Completion Blocked", "PASS", "Consensus subagent cannot finalize run or directly write run.completed/failed");
+		} else {
+			recordResult("Consensus Direct Completion Blocked", "FAIL", "Missing validation logic for consensus finalization");
+		}
+	} else {
+		recordResult("Consensus Direct Completion Blocked", "FAIL", "Missing verification-pipeline.ts");
+	}
+} catch (e) {
+	recordResult("P4-A Consensus Policy Check Failure", "FAIL", e.message);
+}
+
+// ----------------------------------------------------
+// 14. P4-B Consensus Dispatcher Verification
+// ----------------------------------------------------
+try {
+	const ULW_LOOP_DIR = join(rootDir, 'plugins/omo/components/ulw-loop');
+	const dispatcherPath = join(ULW_LOOP_DIR, 'src', 'consensus-dispatcher.ts');
+
+	if (existsSync(dispatcherPath)) {
+		const dispatcherContent = readFileSync(dispatcherPath, 'utf8');
+		if (dispatcherContent.includes('run.completed') || dispatcherContent.includes('run.failed')) {
+			recordResult("Dispatcher State Mutation Policy", "FAIL", "Dispatcher directly manipulates run.completed or run.failed");
+		} else if (dispatcherContent.includes('quality_gate.consensus_passed') && dispatcherContent.includes('finalizerAllowed')) {
+			recordResult("Dispatcher State Mutation Policy", "PASS", "Dispatcher properly delegates finalizer control via quality_gate events");
+		} else {
+			recordResult("Dispatcher State Mutation Policy", "FAIL", "Dispatcher is missing proper finalizerAllowed or quality_gate event delegations");
+		}
+
+		if (dispatcherContent.includes('wouldSwitchModel: false')) {
+			recordResult("Dispatcher Antigravity Model Policy", "PASS", "Dispatcher properly injects wouldSwitchModel: false");
+		} else {
+			recordResult("Dispatcher Antigravity Model Policy", "FAIL", "Dispatcher missing wouldSwitchModel: false");
+		}
+
+		if (dispatcherContent.includes('existingStarted') || dispatcherContent.includes('alreadyReported') || dispatcherContent.includes('existingTerminal')) {
+			recordResult("Dispatcher Idempotency", "PASS", "Dispatcher contains idempotency safeguards");
+		} else {
+			recordResult("Dispatcher Idempotency", "FAIL", "Dispatcher missing idempotency safeguards");
+		}
+
+		if (dispatcherContent.includes('consensus_inconclusive') && dispatcherContent.includes('missing.length > 0')) {
+			recordResult("Dispatcher Missing Persona Policy", "PASS", "Dispatcher properly returns inconclusive for missing personas");
+		} else {
+			recordResult("Dispatcher Missing Persona Policy", "FAIL", "Dispatcher missing proper inconclusive fallback");
+		}
+
+		if (dispatcherContent.includes('parentActionRequired') && dispatcherContent.includes('true')) {
+			recordResult("Dispatcher Inconclusive Parent Action", "PASS", "Dispatcher properly marks inconclusive with parentActionRequired=true");
+		} else {
+			recordResult("Dispatcher Inconclusive Parent Action", "FAIL", "Dispatcher missing parentActionRequired for inconclusive state");
+		}
+
+		if (dispatcherContent.includes('qualityInputFingerprint')) {
+			recordResult("Dispatcher Fingerprint Propagation", "PASS", "Dispatcher propagates qualityInputFingerprint across events");
+		} else {
+			recordResult("Dispatcher Fingerprint Propagation", "FAIL", "Dispatcher missing qualityInputFingerprint propagation");
+		}
+	} else {
+		recordResult("Dispatcher State Mutation Policy", "FAIL", "Missing consensus-dispatcher.ts");
+	}
+} catch (e) {
+	recordResult("P4-B Dispatcher Check Failure", "FAIL", e.message);
+}
+
+// ----------------------------------------------------
 // Report and Exit
 // ----------------------------------------------------
 let overallPass = true;

@@ -26,12 +26,12 @@ describe("Verification Pipeline", () => {
 
 		const results = runVerificationPipeline(ctx, DEFAULT_VERIFICATION_POLICY);
 		expect(results.length).toBe(3);
-		expect(results[0].status).toBe("passed");
-		expect(results[0].stage).toBe("mechanical");
-		expect(results[1].status).toBe("passed");
-		expect(results[1].stage).toBe("semantic");
-		expect(results[2].status).toBe("skipped");
-		expect(results[2].stage).toBe("consensus");
+		expect(results[0]?.status).toBe("passed");
+		expect(results[0]?.stage).toBe("mechanical");
+		expect(results[1]?.status).toBe("passed");
+		expect(results[1]?.stage).toBe("semantic");
+		expect(results[2]?.status).toBe("skipped");
+		expect(results[2]?.stage).toBe("consensus");
 	});
 
 	it("should fail mechanical if tests are required but no commands run", () => {
@@ -44,9 +44,9 @@ describe("Verification Pipeline", () => {
 
 		const results = runVerificationPipeline(ctx, DEFAULT_VERIFICATION_POLICY);
 		expect(results.length).toBe(1);
-		expect(results[0].status).toBe("failed");
-		expect(results[0].stage).toBe("mechanical");
-		expect(results[0].parentActionRequired).toBe(true);
+		expect(results[0]?.status).toBe("failed");
+		expect(results[0]?.stage).toBe("mechanical");
+		expect(results[0]?.parentActionRequired).toBe(true);
 	});
 
 	it("should fail semantic if goal is missing", () => {
@@ -59,8 +59,8 @@ describe("Verification Pipeline", () => {
 
 		const results = runVerificationPipeline(ctx, DEFAULT_VERIFICATION_POLICY);
 		expect(results.length).toBe(2);
-		expect(results[1].status).toBe("failed");
-		expect(results[1].stage).toBe("semantic");
+		expect(results[1]?.status).toBe("failed");
+		expect(results[1]?.stage).toBe("semantic");
 	});
 
 	it("should fail semantic if unresolved stagnation event exists", () => {
@@ -68,7 +68,7 @@ describe("Verification Pipeline", () => {
 			timestamp: new Date().toISOString(),
 			type: "parent.stagnation_detected",
 			runId: "run-1",
-			fingerprint: "stagnation-hash-123"
+			fingerprint: "stagnation-hash-123",
 		};
 		const ctx: VerificationContext = {
 			runId: "run-1",
@@ -79,9 +79,9 @@ describe("Verification Pipeline", () => {
 
 		const results = runVerificationPipeline(ctx, DEFAULT_VERIFICATION_POLICY);
 		expect(results.length).toBe(2);
-		expect(results[1].status).toBe("failed");
-		expect(results[1].stage).toBe("semantic");
-		expect(results[1].reason).toContain("Unresolved stagnation detected");
+		expect(results[1]?.status).toBe("failed");
+		expect(results[1]?.stage).toBe("semantic");
+		expect(results[1]?.reason).toContain("Unresolved stagnation detected");
 	});
 
 	it("should require consensus if risk level is high", () => {
@@ -95,8 +95,8 @@ describe("Verification Pipeline", () => {
 
 		const results = runVerificationPipeline(ctx, DEFAULT_VERIFICATION_POLICY);
 		expect(results.length).toBe(3);
-		expect(results[2].status).toBe("required");
-		expect(results[2].stage).toBe("consensus");
-		expect(results[2].parentActionRequired).toBe(true);
+		expect(results[2]?.status).toBe("required");
+		expect(results[2]?.stage).toBe("consensus");
+		expect(results[2]?.parentActionRequired).toBe(true);
 	});
 });

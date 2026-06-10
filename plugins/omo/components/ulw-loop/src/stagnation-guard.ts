@@ -93,7 +93,11 @@ function extractFingerprints(event: LedgerEvent) {
 	let hasEvidence = false;
 	let hasProgress = false;
 
-	if (event.type === "agent.progress" || event.type === "agent.completed_reported" || event.type === "agent.failed_reported") {
+	if (
+		event.type === "agent.progress" ||
+		event.type === "agent.completed_reported" ||
+		event.type === "agent.failed_reported"
+	) {
 		hasProgress = true;
 		if (event.result && typeof event.result === "object") {
 			const res = event.result as any;
@@ -127,38 +131,38 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 	if (events.length < policy.minimumEventsForDetection) return { status: "ok" };
 
 	const recentEvents = events.slice(-policy.recentEventWindow);
-	
+
 	const runId = recentEvents[recentEvents.length - 1]?.runId || "";
 	const agentId = recentEvents[recentEvents.length - 1]?.agentId;
 	const role = recentEvents[recentEvents.length - 1]?.role;
 
-	let heartbeatCount = 0;
-	let progressCount = 0;
-	let evidenceCount = 0;
+	let _heartbeatCount = 0;
+	let _progressCount = 0;
+	let _evidenceCount = 0;
 
-	const errorHashes: { hash: string, agent: string | undefined }[] = [];
-	const patchHashes: { hash: string, role: string | undefined }[] = [];
+	const errorHashes: { hash: string; agent: string | undefined }[] = [];
+	const patchHashes: { hash: string; role: string | undefined }[] = [];
 
 	for (const ev of recentEvents) {
 		if (!ev) continue;
 		if (ev.type === "agent.heartbeat") {
-			heartbeatCount++;
+			_heartbeatCount++;
 		}
-		
+
 		const { errorHash, patchHash, hasEvidence, hasProgress } = extractFingerprints(ev);
-		
-		if (hasProgress) progressCount++;
-		if (hasEvidence) evidenceCount++;
+
+		if (hasProgress) _progressCount++;
+		if (hasEvidence) _evidenceCount++;
 		if (errorHash) errorHashes.push({ hash: errorHash, agent: ev.agentId });
 		if (patchHash) patchHashes.push({ hash: patchHash, role: ev.role });
 	}
 
 	const buildPayload = (
-		kind: string, 
-		fingerprint: string, 
-		windowSize: number, 
-		threshold: number, 
-		suggestedParentAction: string
+		kind: string,
+		fingerprint: string,
+		windowSize: number,
+		threshold: number,
+		suggestedParentAction: string,
 	): StagnationDetectedPayload => ({
 		runId,
 		...(agentId ? { agentId } : {}),
@@ -181,11 +185,21 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		const lastNErrors = errorHashes.slice(-policy.repeatedErrorThreshold);
 		const firstErr = lastNErrors[0]?.hash;
 		const firstAgent = lastNErrors[0]?.agent;
-		if (lastNErrors.every((h) => h.hash === firstErr && (!policy.requireSameAgentForRepeatedError || h.agent === firstAgent))) {
-			return { 
-				status: "same_error_loop", 
+		if (
+			lastNErrors.every(
+				(h) => h.hash === firstErr && (!policy.requireSameAgentForRepeatedError || h.agent === firstAgent),
+			)
+		) {
+			return {
+				status: "same_error_loop",
 				details: "Repeated identical error hash detected.",
-				payload: buildPayload("same_error_loop", firstErr || "none", policy.recentEventWindow, policy.repeatedErrorThreshold, "pause_or_replan")
+				payload: buildPayload(
+					"same_error_loop",
+					firstErr || "none",
+					policy.recentEventWindow,
+					policy.repeatedErrorThreshold,
+					"pause_or_replan",
+				),
 			};
 		}
 	}
@@ -198,18 +212,24 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		const A2 = recentPatches[recentPatches.length - 2]?.hash;
 		const B2 = recentPatches[recentPatches.length - 1]?.hash;
 		const roleA = recentPatches[recentPatches.length - 4]?.role;
-		
+
 		if (
 			recentPatches.length >= 4 &&
 			A === A2 &&
 			B === B2 &&
 			A !== B &&
-			(!policy.requireSameRoleForOscillation || recentPatches.slice(-4).every(p => p.role === roleA))
+			(!policy.requireSameRoleForOscillation || recentPatches.slice(-4).every((p) => p.role === roleA))
 		) {
-			return { 
-				status: "oscillation_detected", 
+			return {
+				status: "oscillation_detected",
 				details: "A/B/A/B patch oscillation detected.",
-				payload: buildPayload("oscillation_detected", `${A}-${B}`, policy.recentEventWindow, policy.oscillationWindow, "pause_or_replan")
+				payload: buildPayload(
+					"oscillation_detected",
+					`${A}-${B}`,
+					policy.recentEventWindow,
+					policy.oscillationWindow,
+					"pause_or_replan",
+				),
 			};
 		}
 	}
@@ -230,10 +250,16 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		}
 	}
 	if (consecutiveHeartbeats >= policy.heartbeatOnlyThreshold) {
-		return { 
-			status: "heartbeat_only_stall", 
+		return {
+			status: "heartbeat_only_stall",
 			details: "Agent is sending heartbeats without progress.",
-			payload: buildPayload("heartbeat_only_stall", "heartbeat", policy.recentEventWindow, policy.heartbeatOnlyThreshold, "pause_or_replan")
+			payload: buildPayload(
+				"heartbeat_only_stall",
+				"heartbeat",
+				policy.recentEventWindow,
+				policy.heartbeatOnlyThreshold,
+				"pause_or_replan",
+			),
 		};
 	}
 
@@ -254,10 +280,16 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		}
 	}
 	if (consecutiveProgressNoEvidence >= policy.noEvidenceProgressThreshold) {
-		return { 
-			status: "no_evidence_progress", 
+		return {
+			status: "no_evidence_progress",
 			details: "Agent is reporting progress but providing no evidence.",
-			payload: buildPayload("no_evidence_progress", "progress_no_evidence", policy.recentEventWindow, policy.noEvidenceProgressThreshold, "pause_or_replan")
+			payload: buildPayload(
+				"no_evidence_progress",
+				"progress_no_evidence",
+				policy.recentEventWindow,
+				policy.noEvidenceProgressThreshold,
+				"pause_or_replan",
+			),
 		};
 	}
 

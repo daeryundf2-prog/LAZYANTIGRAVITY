@@ -2,20 +2,7 @@
 import { readFile } from "node:fs/promises";
 import { type CheckpointUlwLoopArgs, checkpointUlwLoop } from "./checkpoint.js";
 import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, readRepeated, readStdin, readValue } from "./cli-arg-parser.js";
-import {
-	ackAgentCmd,
-	checkLeasesCmd,
-	claimAgentCmd,
-	dispatchAgentCmd,
-	heartbeatAgentCmd,
-	initRunCmd,
-	progressAgentCmd,
-	registerPollerCmd, 
-	rejectAgentCmd,
-	reportCompleteCmd,
-	reportFailedCmd,
-	setRunStateCmd
-} from "./cli-control-plane.js";
+import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, dispatchAgentCmd, dispatchConsensusCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, reportFailedCmd, rewindRunCmd, setRunStateCmd } from "./cli-control-plane.js";
 import { blockedDecisionHandoff, normalizeCodexGoalMode, printJson, printStatus, ULW_LOOP_HELP } from "./cli-output.js";
 import { parseSteeringProposal, printSteerResult } from "./cli-steering.js";
 import { buildCodexGoalInstruction } from "./codex-goal-instruction.js";
@@ -65,6 +52,10 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 			case "reject-agent": return await rejectAgentCmd(repoRoot, rest, json);
 			case "check-leases": return await checkLeasesCmd(repoRoot, rest, json);
 			case "register-poller": return await registerPollerCmd(repoRoot, rest, json);
+			case "rewind": return await rewindRunCmd(repoRoot, rest, json);
+			case "dispatch-consensus": return await dispatchConsensusCmd(repoRoot, rest, json);
+			case "report-consensus-result": return await reportConsensusResultCmd(repoRoot, rest, json);
+			case "aggregate-consensus": return await aggregateConsensusCmd(repoRoot, rest, json);
 			default: process.stdout.write(`${ULW_LOOP_HELP}\n`); return 1;
 		}
 	} catch (error) {

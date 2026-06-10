@@ -30,3 +30,28 @@ export interface QualityGateResult {
 	reason?: string;
 	parentActionRequired?: boolean;
 }
+
+export type ConsensusPersona = "advocate" | "devils_advocate" | "regression_reviewer" | "security_state_reviewer";
+
+export interface ConsensusRoleEnvelope {
+	runId: string;
+	consensusId: string;
+	agentId: string;
+	persona: ConsensusPersona;
+	mayFinalizeRun: false;
+	mayModifyGlobalRunState: false;
+	mayChangeModel: false;
+	wouldSwitchModel: false;
+	requiresParentAck: true;
+	mustReturn: "ConsensusResultEnvelope";
+}
+
+export interface ConsensusResultEnvelope {
+	runId: string;
+	consensusId: string;
+	agentId: string;
+	persona: ConsensusPersona;
+	verdict: "approve" | "reject" | "needs_rework" | "inconclusive";
+	reason: string;
+	requiresParentAck: true;
+}

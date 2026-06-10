@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getRunDir, loadLeasePolicy } from "./control-plane.js";
 import type { LedgerEvent, RunState, RunStateSchema } from "./control-plane-types.js";
+import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 
 // Read events
 export async function readRunEvents(repoRoot: string, runId: string): Promise<LedgerEvent[]> {
@@ -13,10 +14,17 @@ export async function readRunEvents(repoRoot: string, runId: string): Promise<Le
 	}
 
 	const content = await readFile(eventsFile, "utf8");
-	return content
-		.split("\n")
-		.filter((line) => line.trim().length > 0)
-		.map((line) => JSON.parse(line) as LedgerEvent);
+	const events: LedgerEvent[] = [];
+	const lines = content.split("\n");
+	for (const line of lines) {
+		if (line.trim().length === 0) continue;
+		try {
+			events.push(JSON.parse(line) as LedgerEvent);
+		} catch {
+			// Ignore corrupted line
+		}
+	}
+	return events;
 }
 
 // Reconstruct state from events
@@ -44,9 +52,36 @@ export async function reconstructStateFromEvents(
 		if (event.type === "run.created") runState.state = "created";
 		else if (event.type === "run.state_changed") runState.state = event.state as RunState;
 		else if (event.type === "parent.paused") runState.state = "paused";
-		else if (event.type === "parent.resumed") runState.state = (event.state as RunState) || "working";
-		else if (event.type === "run.completed") runState.state = "completed";
-		else if (event.type === "run.failed") runState.state = "failed";
+		else if (event.type === "parent.hitl_required") {
+			runState.state = "paused";
+			runState.hitlReason = event.reason || event.hitlReason || "Human intervention required";
+			if (event.hitlId) runState.activeHitlId = event.hitlId;
+			else delete runState.activeHitlId;
+		} else if (event.type === "parent.resumed") {
+			if (runState.activeHitlId && event.hitlId && runState.activeHitlId !== event.hitlId) {
+				// Invalid hitlId, ignore
+			} else {
+				if (event.resumeTargetState) {
+					runState.state = event.resumeTargetState as RunState;
+				} else if (event.previousState) {
+					runState.state = event.previousState as RunState;
+				} else {
+					runState.state = (event.state as RunState) || "working";
+				}
+				delete runState.hitlReason;
+				delete runState.activeHitlId;
+			}
+		} else if (event.type === "run.completed") {
+			// HITL pending 상태에서 run.completed 직접 기록 금지 (무시 또는 저장)
+			if (runState.activeHitlId) {
+				// Ignore run.completed if HITL is active
+			} else {
+				runState.state = "completed";
+			}
+		} else if (event.type === "run.failed") runState.state = "failed";
+		else if ((event.type as string) === "lineage.branch_created") {
+			runState.state = (event.previousState as RunState) || "working";
+		}
 
 		if (event.agentId) {
 			const agentId = event.agentId;
@@ -135,6 +170,40 @@ export async function reconstructAndSaveState(repoRoot: string, runId: string): 
 	if (!existsSync(runDir)) {
 		await mkdir(runDir, { recursive: true });
 	}
-	await writeFile(join(runDir, "state.json"), JSON.stringify(state, null, 2), "utf8");
+	await writeFile(join(runDir, "state.json"), JSON.stringify(stripSensitiveData(state), null, 2), "utf8");
 	return state;
+}
+
+// Repair corrupted ledger file
+export async function repairLedgerFile(
+	repoRoot: string,
+	runId: string,
+): Promise<{ repairedCount: number; corruptedCount: number }> {
+	const runDir = getRunDir(repoRoot, runId);
+	const eventsFile = join(runDir, "events.jsonl");
+	if (!existsSync(eventsFile)) {
+		return { repairedCount: 0, corruptedCount: 0 };
+	}
+
+	const content = await readFile(eventsFile, "utf8");
+	const validEvents: LedgerEvent[] = [];
+	const lines = content.split("\n");
+	let corruptedCount = 0;
+
+	for (const line of lines) {
+		if (line.trim().length === 0) continue;
+		try {
+			validEvents.push(JSON.parse(line) as LedgerEvent);
+		} catch {
+			corruptedCount++;
+		}
+	}
+
+	if (corruptedCount > 0) {
+		const newContent = `${validEvents.map((e) => JSON.stringify(e)).join("\n")}\n`;
+		await writeFile(eventsFile, newContent, "utf8");
+		await reconstructAndSaveState(repoRoot, runId);
+	}
+
+	return { repairedCount: validEvents.length, corruptedCount };
 }

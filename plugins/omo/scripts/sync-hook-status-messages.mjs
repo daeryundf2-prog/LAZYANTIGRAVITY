@@ -51,6 +51,15 @@ function syncHooksJson(hooksJson, versionForCommand) {
 				if (hook.type !== "command") continue;
 				const label = normalizeLazyCodexHookStatusLabel(hook.statusMessage);
 				hook.statusMessage = formatLazyCodexHookStatusMessage(versionForCommand(hook.command), label);
+				
+				// Wrap command if failurePolicy is defined and not already wrapped
+				if (hook.failurePolicy && !hook.command.includes("hook-runner.mjs")) {
+					const policy = hook.failurePolicy;
+					const fallback = hook.fallbackPayload ? Buffer.from(JSON.stringify(hook.fallbackPayload)).toString("base64") : "none";
+					const hitlEvent = hook.hitlEventName || "none";
+					// Wrap the original command in the hook runner
+					hook.command = `node "\${PLUGIN_ROOT}/scripts/hook-runner.mjs" ${policy} ${fallback} ${hitlEvent} ${hook.command}`;
+				}
 			}
 		}
 	}
