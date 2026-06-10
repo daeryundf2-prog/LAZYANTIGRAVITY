@@ -88,11 +88,11 @@ When a task requires consensus, the **Consensus Dispatcher** spawns four sandbox
 4. **Security-State Reviewer**: Evaluates concurrency, authorization holes, state corruption, and credential leaks.
 
 #### Consensus Aggregation Rule:
-Let $V_i \in \{\text{approve}, \text{reject}, \text{needs\_rework}, \text{inconclusive}\}$ be the verdict of voter $i$ for $i \in \{1, 2, 3, 4\}$.
+Let $V_i \in \{\text{approve}, \text{reject}, \text{needs-rework}, \text{inconclusive}\}$ be the verdict of voter $i$ for $i \in \{1, 2, 3, 4\}$.
 The aggregated verdict $V_{agg}$ is calculated as follows:
 
 - **Consensus Failed**: If $\exists i$ such that $V_i = \text{reject}$, then $V_{agg} = \text{failed}$ (Finalizer blocked, status set to `failed`).
-- **Consensus Rework Required**: If $\exists i$ such that $V_i = \text{needs\_rework}$ (and no voter rejected), then $V_{agg} = \text{rework\_required}$ (Goal remains `in_progress`, worker is asked to fix reported issues).
+- **Consensus Rework Required**: If $\exists i$ such that $V_i = \text{needs-rework}$ (and no voter rejected), then $V_{agg} = \text{rework-required}$ (Goal remains `in_progress` (rework_required), worker is asked to fix reported issues).
 - **Consensus Inconclusive**: If $\exists i$ such that $V_i = \text{inconclusive}$ (or a voter session timed out / failed to return a valid schema), then $V_{agg} = \text{inconclusive}$ (Finalizer blocked, transitions to HITL state `needs_user_decision`).
 - **Consensus Passed**: If $\forall i, V_i = \text{approve}$, then $V_{agg} = \text{passed}$ (Finalizer allowed, status set to `complete`).
 
