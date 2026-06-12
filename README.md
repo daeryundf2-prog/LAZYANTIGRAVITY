@@ -2,7 +2,7 @@
 
 이 디렉터리는 **LazyAntigravity** 플러그인의 소스 및 패키징 루트입니다. 모든 에이전트 하네스 컴포넌트(`components/`)들을 하나의 단일 플러그인 네임스페이스로 통합하여 Google Antigravity에 제공합니다.
 
-간단한 작업은 그냥 시키고, 어려운 작업은 /ulw 시키세요.
+간단한 작업은 그냥 시키고, 어려운 작업은 /ulw 시키세요. ultrawork는 신입니다.
 ---
 
 ## ⚙️ 설치 및 사용 방법 (Installation & Usage)
