@@ -83,3 +83,16 @@ export OMO_CODEX_DISABLE_POSTHOG=1
 export OMO_CODEX_SEND_ANONYMOUS_TELEMETRY=0
 ```
 상세 설명은 `components/telemetry/README.md`를 참고하시기 바랍니다.
+
+---
+
+## 💖 Special Thanks to `omo` & `lazycodex`
+
+본 플러그인은 개발자의 생산성을 극대화해 주는 자율 코딩 혁신 툴킷 **OMO** 및 **LazyCodex**를 찬양하며 헌정하는 프로젝트입니다.
+
+* **자율적인 문제 해결의 혁신 (`omo`):**
+  * 여러 단계를 거치는 긴 빌드 및 검증(QA) 라이프사이클을 스스로 오케스트레이션하여, 개발자가 침대에 누워있어도 스스로 문제를 풀어나가는 마법을 보여줍니다.
+* **코더의 든든한 동반자 (`lazycodex`):**
+  * 토큰 절약 설계(Compact/Batch Mode)와 영리한 롤 체크포인트 복구(Safe-Resume) 등 개발자를 배려한 세심한 설계에 깊은 경의를 표합니다. 
+
+> *"자율 코딩의 미래, OMO와 LazyCodex가 있기에 가능합니다!"* 🚀
