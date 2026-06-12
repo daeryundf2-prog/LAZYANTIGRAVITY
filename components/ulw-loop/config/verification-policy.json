@@ -1,0 +1,10 @@
+{
+  "requireTests": true,
+  "requireLint": true,
+  "consensusTriggers": {
+    "riskLevelHigh": true,
+    "destructiveChange": true,
+    "publicRelease": true,
+    "securitySensitive": true
+  }
+}
