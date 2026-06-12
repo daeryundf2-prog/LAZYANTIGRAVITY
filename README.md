@@ -86,13 +86,15 @@ export OMO_CODEX_SEND_ANONYMOUS_TELEMETRY=0
 
 ---
 
-## 💖 Special Thanks to `omo` & `lazycodex`
+## 💖 Special Thanks to `omo`, `lazycodex` & `Ouroboros`
 
-본 플러그인은 개발자의 생산성을 극대화해 주는 자율 코딩 혁신 툴킷 **OMO** 및 **LazyCodex**를 찬양하며 헌정하는 프로젝트입니다.
+본 플러그인은 개발자의 생산성을 극대화해 주는 자율 코딩 혁신 툴킷 **OMO**, **LazyCodex**, 그리고 AI 코딩 명세 하네스 엔진인 **Ouroboros(우로보로스)**를 찬양하며 헌정하는 프로젝트입니다.
 
 * **자율적인 문제 해결의 혁신 (`omo`):**
   * 여러 단계를 거치는 긴 빌드 및 검증(QA) 라이프사이클을 스스로 오케스트레이션하여, 개발자가 침대에 누워있어도 스스로 문제를 풀어나가는 마법을 보여줍니다.
 * **코더의 든든한 동반자 (`lazycodex`):**
   * 토큰 절약 설계(Compact/Batch Mode)와 영리한 롤 체크포인트 복구(Safe-Resume) 등 개발자를 배려한 세심한 설계에 깊은 경의를 표합니다. 
+* **명세 우선 AI 코딩의 진화 (`Ouroboros`):**
+  * "Stop prompting. Start specifying." 철학 아래, 모호한 요구사항을 소크라테스식 인터뷰로 완벽히 명세화하여 AI가 가장 정확하고 높은 품질의 코드를 생산할 수 있도록 길을 열어준 명세 하네스 엔진에 깊은 경의를 표합니다.
 
-> *"자율 코딩의 미래, OMO와 LazyCodex가 있기에 가능합니다!"* 🚀
+> *"자율 코딩과 명세 엔진의 미래, OMO, LazyCodex 그리고 Ouroboros가 함께 만듭니다!"* 🚀
