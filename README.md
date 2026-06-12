@@ -18,7 +18,7 @@ cd C:\Users\<사용자명>\.gemini\config\plugins
 ### 2단계: 저장소 클론 (Git Clone)
 해당 폴더 안에서 깃 저장소를 `lazyantigravity` 폴더명으로 직접 클론합니다.
 ```bash
-git clone <이_저장소_깃허브_주소> lazyantigravity
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 ```
 
 ### 3단계: 확인 및 실행
