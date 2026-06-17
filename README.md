@@ -4,6 +4,48 @@
 
 간단한 작업은 그냥 시키고, 어려운 작업은 /ulw 시키세요. ultrawork는 신입니다.
 
+## Quick Start On This PC
+
+This repository is an Antigravity plugin root, not a standalone npm CLI package. Do not run `node bin/lazyantigravity.js install --verify` for this GitHub checkout.
+
+On this PC the plugin lives here:
+
+```text
+C:\Users\Daeryun\.gemini\config\plugins\lazyantigravity
+```
+
+Update the existing install in PowerShell:
+
+```powershell
+cd $env:USERPROFILE\.gemini\config\plugins\lazyantigravity
+git pull --ff-only
+```
+
+Fresh install in PowerShell:
+
+```powershell
+mkdir $env:USERPROFILE\.gemini\config\plugins -Force
+cd $env:USERPROFILE\.gemini\config\plugins
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
+```
+
+Fresh install in Git Bash, macOS, or Linux:
+
+```bash
+mkdir -p ~/.gemini/config/plugins
+cd ~/.gemini/config/plugins
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
+```
+
+Restart Google Antigravity after installing or updating. Then type one of these inside Antigravity:
+
+```text
+/ulw <task>
+/ulw resume
+```
+
+Use `/ulw <task>` when you want the agent to plan, implement, verify, and keep evidence. Use `/ulw resume` after quota/model interruptions when you want to continue the same work.
+
 ## ULW in Antigravity
 
 ![LazyAntigravity ULW command picker](assets/readme/lazyantigravity-ulw-command.png)
