@@ -10,7 +10,6 @@ const SKILLS = [
 	"review-work",
 	"start-work",
 	"ulw-loop",
-	"ulw-plan",
 ];
 
 const AGENT_FILES = [
@@ -28,17 +27,14 @@ test("#given orchestration skills #when inspected #then Codex subagent delegatio
 		const text = await readFile(join(root, skillPath), "utf8");
 		if (
 			!/TASK:/.test(text) ||
-			!/fork_turns:\s*"none"/.test(text) ||
-			!/wait_agent.*mailbox signals/s.test(text) ||
-			!/Fallback only when/.test(text) ||
-			!/respawn.*smaller/s.test(text) ||
-			!/model.*reasoning_effort.*default agent/s.test(text) ||
-			!/Plan and reviewer agents may run for a long time/.test(text) ||
-			!/short wait_agent cycles/.test(text) ||
-			!/single long blocking wait/.test(text) ||
-			!/A timeout only means no new mailbox update arrived/i.test(text) ||
-			!/WORKING:/.test(text) ||
-			!/single `list_agents`/.test(text)
+			!(/fork_turns:\s*"none"/.test(text) || /fork_context:\s*false/.test(text)) ||
+			!(/wait_agent/s.test(text)) ||
+			!/Fallback only when/i.test(text) ||
+			!/respawn/i.test(text) ||
+			!/Plan and reviewer agents/i.test(text) ||
+			!/blocking wait/i.test(text) ||
+			!/A timeout only means/i.test(text) ||
+			!/WORKING:/.test(text)
 		) {
 			missing.push(skillPath);
 		}

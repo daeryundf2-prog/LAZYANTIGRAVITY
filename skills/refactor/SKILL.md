@@ -1,3 +1,8 @@
+---
+name: refactor
+description: "Intelligent refactor command. Triggers: refactor, refactoring, cleanup, restructure, extract, simplify, modernize."
+---
+
 ## Antigravity Harness Tool Compatibility
 
 This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
@@ -16,11 +21,6 @@ This skill may include examples copied from the OpenCode or Codex harnesses. In 
 Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` subagent type to inherit the parent config but run in a separate context, and `research` type to delegate read-only codebase or web search tasks. Communicate with active subagents using the `send_message` tool by their conversation ID. If a code block below conflicts with this section, this section wins.
 
 For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
-
----
-name: refactor
-description: "Intelligent refactor command. Triggers: refactor, refactoring, cleanup, restructure, extract, simplify, modernize."
----
 
 export const REFACTOR_TEMPLATE = `# Intelligent Refactor Command
 
@@ -186,23 +186,14 @@ LspWorkspaceSymbols(filePath, query="[target_symbol]")  // Search by name
 lsp_diagnostics(filePath)  // Errors, warnings before we start
 \`\`\`
 
-### AST-Grep for Pattern Analysis:
+### AST-Grep Skill for Pattern Analysis:
 
-\`\`\`typescript
+\`\`\`bash
 // Find structural patterns
-ast_grep_search(
-  pattern="function $NAME($$$) { $$$ }",  // or relevant pattern
-  lang="typescript",  // or relevant language
-  paths=["src/"]
-)
+python3 scripts/ast_grep_helper.py search 'function $NAME($$$) { $$$ }' --lang ts src/
 
-// Preview refactoring (DRY RUN)
-ast_grep_replace(
-  pattern="[old_pattern]",
-  rewrite="[new_pattern]",
-  lang="[language]",
-  dryRun=true  // ALWAYS preview first
-)
+# Preview refactoring first
+sg --pattern '[old_pattern]' --rewrite '[new_pattern]' --lang ts src/
 \`\`\`
 
 ### Grep for Text Patterns:
@@ -448,12 +439,12 @@ lsp_rename(filePath, line, character, newName)  // Execute rename
 \`\`\`
 
 **For Pattern Transformations:**
-\`\`\`typescript
+\`\`\`bash
 // Preview first
-ast_grep_replace(pattern, rewrite, lang, dryRun=true)
+sg --pattern '[pattern]' --rewrite '[rewrite]' --lang ts path/to/file.ts
 
 // If preview looks good, execute
-ast_grep_replace(pattern, rewrite, lang, dryRun=false)
+python3 scripts/ast_grep_helper.py replace '[pattern]' '[rewrite]' --lang ts path/to/file.ts --apply
 \`\`\`
 
 **For Structural Changes:**
@@ -589,7 +580,7 @@ All existing tests pass. No new errors introduced.
 
 ## ALWAYS DO
 - Understand before changing
-- Preview before applying (ast_grep dryRun=true)
+- Preview before applying (`sg --pattern ... --rewrite ... --lang ...`)
 - Verify after every change
 - Follow existing codebase patterns
 - Keep todos updated in real-time
@@ -618,8 +609,8 @@ Leverage LSP tools for precision analysis. Key patterns:
 - **Continuous verification**: \`lsp_diagnostics\` after every change
 
 ## AST-Grep
-Use \`ast_grep_search\` and \`ast_grep_replace\` for structural transformations.
-**Critical**: Always \`dryRun=true\` first, review, then execute.
+Use \`ast-grep\` skill helper or \`sg\` CLI for structural transformations.
+**Critical**: Always preview first, review, then execute.
 
 ## Agents
 - \`explore\`: Parallel codebase pattern discovery
@@ -703,7 +694,7 @@ Record the chosen path in the TodoWrite list.
     {
       "kind": "category",
       "category": "unspecified-low",
-      "prompt": "You handle logic-preserving refactors that need reasoning (extract function, restructure conditional, pattern transformation, cross-file API change). Read the task description's plan step carefully. Use ast_grep_replace with dryRun=true first, review the preview, then execute. If the step is ambiguous or would require out-of-scope changes, STOP and send team_send_message(teamRunId=<id>, to=\"lead\", summary=\"UNCLEAR\", body=<reason>) + team_task_update(status=pending). Same reporting contract as peer quick workers. Never run tests."
+      "prompt": "You handle logic-preserving refactors that need reasoning (extract function, restructure conditional, pattern transformation, cross-file API change). Read the task description's plan step carefully. Use the ast-grep skill helper or sg CLI to preview structural rewrites first, review the preview, then execute. If the step is ambiguous or would require out-of-scope changes, STOP and send team_send_message(teamRunId=<id>, to=\"lead\", summary=\"UNCLEAR\", body=<reason>) + team_task_update(status=pending). Same reporting contract as peer quick workers. Never run tests."
     },
     { "kind": "category", "category": "unspecified-low", "prompt": "Same contract as peer unspecified-low worker." }
   ]

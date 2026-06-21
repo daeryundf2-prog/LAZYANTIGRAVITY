@@ -1,3 +1,8 @@
+---
+name: remove-ai-slops
+description: "Remove AI-generated code smells (slop) from branch changes or an explicit file list. Locks behavior with regression tests FIRST, then runs categorized cleanup via parallel `deep` agents in batches of 5, then verifies with quality gates. Covers 10 slop categories including performance equivalences, excessive complexity (object annotations, if/elif variant chains), and oversized modules (250+ pure LOC with mandatory modular refactoring). MUST USE when the user asks to \"remove slop\", \"clean AI code\", \"deslop\", \"clean up AI-generated code\", \"remove AI slop\", or wants to clean up AI-generated patterns from recent changes. Triggers - \"remove ai slops\", \"clean ai code\", \"deslop\", \"cleanup AI generated\", \"remove AI slop\", \"clean up AI-generated code\", \"strip slop\", \"ai-slop cleanup\"."
+---
+
 ## Antigravity Harness Tool Compatibility
 
 This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
@@ -16,11 +21,6 @@ This skill may include examples copied from the OpenCode or Codex harnesses. In 
 Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` subagent type to inherit the parent config but run in a separate context, and `research` type to delegate read-only codebase or web search tasks. Communicate with active subagents using the `send_message` tool by their conversation ID. If a code block below conflicts with this section, this section wins.
 
 For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
-
----
-name: remove-ai-slops
-description: "Remove AI-generated code smells (slop) from branch changes or an explicit file list. Locks behavior with regression tests FIRST, then runs categorized cleanup via parallel `deep` agents in batches of 5, then verifies with quality gates. Covers 10 slop categories including performance equivalences, excessive complexity (object annotations, if/elif variant chains), and oversized modules (250+ pure LOC with mandatory modular refactoring). MUST USE when the user asks to \"remove slop\", \"clean AI code\", \"deslop\", \"clean up AI-generated code\", \"remove AI slop\", or wants to clean up AI-generated patterns from recent changes. Triggers - \"remove ai slops\", \"clean ai code\", \"deslop\", \"cleanup AI generated\", \"remove AI slop\", \"clean up AI-generated code\", \"strip slop\", \"ai-slop cleanup\"."
----
 
 # Remove AI Slops Skill
 
@@ -212,7 +212,7 @@ For each skipped issue, give reason.
 )
 ```
 
-**Batch failure handling**: a `wait_agent` timeout only means no new mailbox update arrived, not that a `deep` agent failed. For long passes, require each child to send `WORKING: <file> - <current phase>` and `BLOCKED: <reason>` only when it cannot progress. If you need reassurance after a timeout, run a single `list_agents` check for the named child; a running child or latest `WORKING:` message is alive. Mark a file for retry only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running. Do NOT block the remaining 4 in that batch; collect successful results and retry the failed file once later. If retry also fails, escalate that file under "Issues Found & Fixed" in the final report.
+**Batch failure handling**: a `multi_agent_v1.wait_agent` timeout only means no new mailbox update arrived, not that a `deep` agent failed. For long passes, require each child to send `WORKING: <file> - <current phase>` and `BLOCKED: <reason>` only when it cannot progress. Treat a running child as alive. Mark a file for retry only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running. Do NOT block the remaining 4 in that batch; collect successful results and retry the failed file once later. If retry also fails, escalate that file under "Issues Found & Fixed" in the final report.
 
 ### Phase 5: Verify with quality gates + critical review
 

@@ -7,27 +7,50 @@ import { root } from "./aggregate-plugin-fixture.mjs";
 
 test("#given bundled model catalog #when inspected #then default verifier and worker roles are pinned", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
+	const target = catalog.codex || catalog;
 
-	assert.equal(catalog.current.model, "gpt-5.5");
-	assert.equal(catalog.current.model_context_window, 400000);
-	assert.equal(catalog.current.model_reasoning_effort, "high");
-	assert.equal(catalog.current.plan_mode_reasoning_effort, "xhigh");
-	assert.deepEqual(catalog.roles.default, catalog.current);
-	assert.deepEqual(catalog.roles.verifier, {
-		model: "gpt-5.5",
-		model_reasoning_effort: "xhigh",
-	});
-	assert.deepEqual(catalog.roles.worker, {
-		model: "gpt-5.5",
-		model_reasoning_effort: "high",
-	});
+	assert.equal(target.current.model, "gpt-5.5");
+	assert.equal(target.current.model_context_window, 400000);
+	assert.equal(target.current.model_reasoning_effort, "high");
+	assert.equal(target.current.plan_mode_reasoning_effort, "xhigh");
+	if (catalog.codex) {
+		assert.equal(target.roles.default.modelId, "gpt-5.5");
+		assert.equal(target.roles.default.reasoningLevel, "high");
+		assert.deepEqual(target.roles.verifier, {
+			modelId: "gpt-5.5",
+			displayName: "GPT-5.5",
+			reasoningLevel: "xhigh",
+			purpose: "코드 검증 — 최고 추론 설정",
+			fallbackChain: [],
+			availabilitySource: "config",
+		});
+		assert.deepEqual(target.roles.worker, {
+			modelId: "gpt-5.5",
+			displayName: "GPT-5.5",
+			reasoningLevel: "high",
+			purpose: "서브에이전트 작업 — 품질/속도 균형",
+			fallbackChain: [],
+			availabilitySource: "config",
+		});
+	} else {
+		assert.deepEqual(target.roles.default, target.current);
+		assert.deepEqual(target.roles.verifier, {
+			model: "gpt-5.5",
+			model_reasoning_effort: "xhigh",
+		});
+		assert.deepEqual(target.roles.worker, {
+			model: "gpt-5.5",
+			model_reasoning_effort: "high",
+		});
+	}
 });
 
 test("#given bundled model catalog #when inspected #then no role or managed preset uses pure GPT-5.4", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
+	const target = catalog.codex || catalog;
 
-	const roleModels = Object.values(catalog.roles).map((role) => role.model);
-	const managedModels = catalog.managedProfiles.map((profile) => profile.match.model);
+	const roleModels = Object.values(target.roles).map((role) => role.model || role.modelId);
+	const managedModels = target.managedProfiles.map((profile) => profile.match.model);
 
 	assert.equal([...roleModels, ...managedModels].includes("gpt-5.4"), false);
 });

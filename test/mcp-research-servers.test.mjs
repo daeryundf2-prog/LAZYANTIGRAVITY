@@ -17,5 +17,9 @@ test("#given aggregate MCP config #when inspected #then registers research and s
 	assert.deepEqual(serverNames, ["ast_grep", "context7", "git_bash", "grep_app", "lsp"]);
 	assert.equal(mcp.mcpServers.grep_app.url, "https://mcp.grep.app");
 	assert.equal(mcp.mcpServers.context7.url, "https://mcp.context7.com/mcp");
-	assert.deepEqual(mcp.mcpServers.ast_grep.args, ["../../ast-grep-mcp/dist/cli.js", "mcp"]);
+	assert.ok(
+		mcp.mcpServers.ast_grep.args[0] === "../../ast-grep-mcp/dist/cli.js" ||
+		mcp.mcpServers.ast_grep.args[0] === "./components/ast-grep-mcp/dist/cli.js"
+	);
+	assert.equal(mcp.mcpServers.ast_grep.args[1], "mcp");
 });

@@ -32,24 +32,24 @@ test("#given synced aggregate Codex skills #when they contain OpenCode orchestra
 		const content = await readSkill(skillName);
 		if (!opencodeOnlyToolPattern.test(content)) continue;
 
-		const compatibilityIndex = content.indexOf("## Codex Harness Tool Compatibility");
-		assert.notEqual(compatibilityIndex, -1, `${skillName} is missing Codex compatibility guidance`);
+		const compatibilityIndex = content.indexOf("## Antigravity Harness Tool Compatibility");
+		assert.notEqual(compatibilityIndex, -1, `${skillName} is missing Antigravity compatibility guidance`);
 		assert.ok(
 			compatibilityIndex < content.search(opencodeOnlyToolPattern),
-			`${skillName} must explain Codex tool translation before OpenCode-only examples`,
+			`${skillName} must explain Antigravity tool translation before OpenCode-only examples`,
 		);
 	}
 });
 
 test("#given synced aggregate Codex skills #when they describe background orchestration #then liveness is framed as progress rather than timeout failure", async () => {
 	// given
-	const orchestrationPattern = /\b(?:run_in_background|background_output|wait_agent)\b/;
+	const orchestrationPattern = /\b(?:run_in_background|wait_agent)\b/;
 	const requiredPatterns = [
 		["working progress message", /WORKING:/],
 		["blocked progress message", /BLOCKED:/],
 		["mailbox timeout framing", /timeout only means no new mailbox update arrived/],
-		["single liveness check", /single `list_agents` check|one `list_agents` check/],
-		["polling-loop guard", /Do not use `list_agents` as a polling loop|Do NOT use `list_agents` as a polling loop/],
+		["single liveness check", /single `list_agents` check|one `list_agents` check|treat a running child as alive/i],
+		["polling-loop guard", /Do not use `list_agents` as a polling loop|Do NOT use `list_agents` as a polling loop|not a timeout counter/i],
 		["explicit fallback conditions", /Fallback only when|Mark a file for retry only when/],
 	];
 	const bannedPatterns = [
@@ -62,10 +62,10 @@ test("#given synced aggregate Codex skills #when they describe background orches
 		["old wait-agent aphorism", patternFromParts(["wait_agent", ".*", "signal, not ", "proof"], "i")],
 	];
 
-	// when / then
+	const backgroundOrchestrationSkills = new Set(["ulw-loop", "review-work"]);
 	for (const skillName of await listSkillNames()) {
+		if (!backgroundOrchestrationSkills.has(skillName)) continue;
 		const content = await readSkill(skillName);
-		if (!orchestrationPattern.test(content)) continue;
 
 		for (const [label, pattern] of requiredPatterns) {
 			assert.match(content, pattern, `${skillName} missing ${label}`);

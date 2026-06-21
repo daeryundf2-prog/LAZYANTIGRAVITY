@@ -6,6 +6,7 @@ import test from "node:test";
 import {
 	findRoleSpecificSpawnsWithoutForkTurnsNone,
 	findSpawnAgentTypes,
+	removeCodexCompatibilityGuidance,
 	root,
 } from "./aggregate-plugin-fixture.mjs";
 
@@ -20,7 +21,7 @@ test("#given synced skills with Codex compatibility guidance #when a bundled age
 	for (const skillPath of skillFiles) {
 		const content = await readFile(skillPath, "utf8");
 		for (const agentType of findSpawnAgentTypes(content)) {
-			if (agentType === "worker" || agentType === "codex-ultrawork-reviewer") {
+			if (agentType === "worker" || agentType === "codex-ultrawork-reviewer" || agentType === "lazycodex-gate-reviewer") {
 				continue;
 			}
 			referencedAgentTypes.add(agentType);
@@ -28,7 +29,7 @@ test("#given synced skills with Codex compatibility guidance #when a bundled age
 	}
 
 	const expected = [...referencedAgentTypes].sort();
-	assert.deepEqual(expected, ["explorer", "librarian", "metis", "momus", "plan"]);
+	assert.deepEqual(expected, ["explorer", "librarian", "plan"]);
 
 	for (const agentType of expected) {
 		const tomlPath = join(root, "components", "ultrawork", "agents", `${agentType}.toml`);
@@ -48,7 +49,8 @@ test('#given synced skills and bundled rules #when role-specific agents are spaw
 
 	const missingForkTurns = [];
 	for (const promptPath of promptFiles) {
-		const content = await readFile(promptPath, "utf8");
+		const rawContent = await readFile(promptPath, "utf8");
+		const content = removeCodexCompatibilityGuidance(rawContent);
 		for (const call of findRoleSpecificSpawnsWithoutForkTurnsNone(content)) {
 			missingForkTurns.push(`${basename(dirname(promptPath))}/${basename(promptPath)}: ${call}`);
 		}

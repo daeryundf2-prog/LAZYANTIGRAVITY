@@ -179,6 +179,7 @@ function resolveCurrentVersion(env) {
 	return (
 		readVersionManifest(resolveInstalledVersionPath(env, pluginRoot)) ??
 		readVersionManifest(join(pluginRoot, "..", "..", "..", "package.json")) ??
+		readVersionManifest(join(pluginRoot, "plugin.json")) ??
 		readVersionManifest(join(pluginRoot, ".codex-plugin", "plugin.json"))
 	);
 }

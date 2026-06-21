@@ -5,25 +5,6 @@ metadata:
   short-description: Goal-like ultrawork loop for systematic decomposition
 ---
 
-## Antigravity Harness Tool Compatibility
-
-This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
-
-| OpenCode/Codex example | Antigravity tool to use |
-| --- | --- |
-| `call_omo_agent(subagent_type="explore", ...)` or `spawn_agent(agent_type="explorer", ...)` | `invoke_subagent(Subagents: [{TypeName: "research", Role: "Codebase Researcher", Prompt: "..."}])` |
-| `call_omo_agent(subagent_type="librarian", ...)` or `spawn_agent(agent_type="librarian", ...)` | `invoke_subagent(Subagents: [{TypeName: "research", Role: "Codebase Researcher", Prompt: "..."}])` |
-| `task(subagent_type="plan", ...)` or `spawn_agent(agent_type="plan", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Prometheus Planner", Prompt: "..."}])` |
-| `task(subagent_type="oracle", ...)` or `spawn_agent(agent_type="codex-ultrawork-reviewer", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Oracle Reviewer", Prompt: "..."}])` |
-| `task(category="...", ...)` or `spawn_agent(agent_type="worker", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Hephaestus Worker", Prompt: "..."}])` |
-| `background_output(task_id="...")` or `wait_agent(...)` | Antigravity is reactive: you will automatically be resumed when a subagent sends a message. Simply stop calling tools/go idle while waiting. |
-| `team_*(...)` | Use `invoke_subagent` to start concurrent subagents, then communicate with `send_message(Recipient, Message)`. |
-| `close_agent(...)` or `kill` | `manage_subagents(Action="kill", ConversationIds=[...])` |
-
-Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` subagent type to inherit the parent config but run in a separate context, and `research` type to delegate read-only codebase or web search tasks. Communicate with active subagents using the `send_message` tool by their conversation ID. If a code block below conflicts with this section, this section wins.
-
-For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
-
 # ulw-loop
 
 Use this skill when the user asks for `ulw-loop`, `ulw`, durable goal execution, evidence-led work, manual QA, or checkpointed long-running delivery.
@@ -43,13 +24,6 @@ This Codex skill is intentionally compact to avoid adding a large operating manu
 - Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
 - Record evidence through the CLI only after cleanup receipts are available.
 - Delegate code edits, test writes, fixes, and QA execution to right-sized Codex subagents when the workflow requires it.
-- When invoking a subagent (using `invoke_subagent`), you must construct and pass a role envelope with the following parameters:
-  - `mayFinalizeRun=false`
-  - `mayModifyGlobalRunState=false`
-  - `mustReturn=SubagentResultEnvelope`
-  - `requiresParentAck=true`
-  - Do not claim the whole /ulw task is complete.
-  - Do not mark run as completed or failed.
 - Every `spawn_agent` message starts with `TASK:`, then names `DELIVERABLE`, `SCOPE`, and `VERIFY`; role selection requires `agent_type`, while `model` + `reasoning_effort` alone creates a default agent, not a reviewer or worker; prefer `fork_turns: "none"` unless full history is truly required.
 - Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short wait_agent cycles. Never use a single long blocking wait for them.
 - For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long reading, testing, or review passes, and `BLOCKED: <reason>` only when it cannot progress.
@@ -94,19 +68,19 @@ If rate limit/quota is detected in Antigravity:
 - **Immediately Stop**: Abort the active execution loop immediately. Do not enter a retry loop.
 - **Save Checkpoint**: Call `omo ulw-loop save-role-checkpoint` to save the failed/current role, completed roles, error type, files changed, etc.
 - **Recommend Only (Fallback Sequence)**: Present a fallback model recommendation according to this exact sequence:
-  - **When Claude Opus 4.6 (Thinking) is limited**:
+  - **Claude Opus 4.6 (Thinking) 제한 시**:
     1. Gemini 3.1 Pro (High)
-    2. Claude Sonnet 4.6 (Thinking) (if Sonnet quota is available)
+    2. Claude Sonnet 4.6 (Thinking) (단, Sonnet 쿼터가 남아 있는 경우)
     3. Gemini 3.5 Flash (High)
-  - **When Claude Sonnet 4.6 (Thinking) is limited**:
+  - **Claude Sonnet 4.6 (Thinking) 제한 시**:
     1. Gemini 3.1 Pro (High)
     2. Gemini 3.5 Flash (High)
-  - **When Gemini 3.1 Pro (High) is limited**:
+  - **Gemini 3.1 Pro (High) 제한 시**:
     1. Gemini 3.5 Flash (High)
     2. Gemini 3.5 Flash (Medium)
-  - **When all models are limited/exhausted**:
-    - Wait until the rate-limit/quota refresh window.
-    - Or recommend that the user enable "AI Credit Overages" in settings.
+  - **모든 모델 제한/소진 시**:
+    - 리프레시(Refresh) 시간까지 대기
+    - 또는 사용자가 동의하는 경우 "AI Credit Overages" 활성화를 권고
 - **Guide User**: Instruct the user to change the model manually in the Antigravity UI dropdown.
 - **Resume Command**: Present the `/ulw resume` command to resume the process once the model is changed.
 
@@ -129,19 +103,21 @@ If an upcoming task will exceed the output token limit:
 - **Incremental Verification**: Verify each patch batch individually.
 - **Frequent Checkpointing**: Save the checkpoint after each successful batch.
 
-### 7. Resume Behavior (`/ulw resume` or `omo ulw-loop resume`)
+### 7. Resume Behavior (`/ulw resume` 또는 `omo ulw-loop resume`)
 To resume work:
-- **Actions performed directly**:
-  - Load the latest checkpoint.
-  - Display completed roles.
-  - Display failed/halted roles.
-  - Print the next recommended action.
-  - Provide guidance so the succeeding agent can resume execution from where it paused.
-- **Actions NOT automated (requires manual agent/user intervention)**:
-  - Does not automatically spawn the worker subagent or restart the verifier/finalizer steps directly (the agent should trigger `invoke_subagent` as appropriate based on the output guidelines).
-  - Does not attempt API-level automatic model switching in Antigravity (the user must manually switch the model in the UI dropdown before resuming).
+- **실제 수행하는 작업**:
+  - 최신 checkpoint 로드
+  - 완료된 role 표시
+  - 실패한/중단된 role 표시
+  - next recommended action 출력
+  - 후속 에이전트가 중단된 지점부터 이어서 실행할 수 있도록 지침 제공
+- **자동화하지 않는 작업 (에이전트 지침이나 사용자 개입 필요)**:
+  - 자동으로 worker subagent를 직접 실행하거나 verifier/finalizer 단계를 직접 재시작하지 않음 (출력된 지침을 기반으로 에이전트가 `invoke_subagent`를 적절히 다시 수행해야 함)
+  - Antigravity 상에서 API 수준의 모델 자동 전환을 시도하지 않음 (사용자가 UI에서 수동으로 모델을 전환한 후 이어서 호출해야 함)
 
 ### 8. AI Credit Overages
 When all models are limited/exhausted:
 - **Automatic Toggling Prohibited**: LazyCodex/Antigravity must NEVER automatically enable "AI Credit Overages" due to potential cost/billing implications.
 - **User Notification**: Inform the user that "AI Credit Overages" can be enabled in their account settings to continue utilizing models beyond the quota, but require manual activation.
+
+

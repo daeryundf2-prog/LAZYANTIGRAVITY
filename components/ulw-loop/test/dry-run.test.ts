@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,6 +43,7 @@ function stderrText(): string {
 	return stderrBuffer.join("");
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: parsed JSON output test helper
 function stdoutJson(): any {
 	return JSON.parse(stdoutText());
 }
@@ -57,7 +58,7 @@ describe("ulw-loop dry-run simulator", () => {
 		const helpArgs = [
 			["dry-run", "--help"],
 			["dry-run", "-h"],
-			["dry-run", "help"],
+			["dry-run", "help"]
 		];
 		for (const args of helpArgs) {
 			resetOutput();
@@ -158,13 +159,7 @@ describe("ulw-loop dry-run simulator", () => {
 	});
 
 	it("executes quota-opus-exhausted scenario with --write-checkpoint and saves checkpoint", async () => {
-		const code = await ulwLoopCommand([
-			"dry-run",
-			"--scenario",
-			"quota-opus-exhausted",
-			"--json",
-			"--write-checkpoint",
-		]);
+		const code = await ulwLoopCommand(["dry-run", "--scenario", "quota-opus-exhausted", "--json", "--write-checkpoint"]);
 		expect(code).toBe(0);
 
 		const data = stdoutJson();
@@ -184,13 +179,7 @@ describe("ulw-loop dry-run simulator", () => {
 	});
 
 	it("executes context-window-exceeded scenario and guides on compact mode", async () => {
-		const code = await ulwLoopCommand([
-			"dry-run",
-			"--scenario",
-			"context-window-exceeded",
-			"--json",
-			"--write-checkpoint",
-		]);
+		const code = await ulwLoopCommand(["dry-run", "--scenario", "context-window-exceeded", "--json", "--write-checkpoint"]);
 		expect(code).toBe(0);
 
 		const data = stdoutJson();
@@ -204,13 +193,7 @@ describe("ulw-loop dry-run simulator", () => {
 	});
 
 	it("executes output-token-limit scenario and guides on batch mode", async () => {
-		const code = await ulwLoopCommand([
-			"dry-run",
-			"--scenario",
-			"output-token-limit",
-			"--json",
-			"--write-checkpoint",
-		]);
+		const code = await ulwLoopCommand(["dry-run", "--scenario", "output-token-limit", "--json", "--write-checkpoint"]);
 		expect(code).toBe(0);
 
 		const data = stdoutJson();
@@ -224,13 +207,7 @@ describe("ulw-loop dry-run simulator", () => {
 	});
 
 	it("executes provider-unavailable scenario and guides on waiting/retries", async () => {
-		const code = await ulwLoopCommand([
-			"dry-run",
-			"--scenario",
-			"provider-unavailable",
-			"--json",
-			"--write-checkpoint",
-		]);
+		const code = await ulwLoopCommand(["dry-run", "--scenario", "provider-unavailable", "--json", "--write-checkpoint"]);
 		expect(code).toBe(0);
 
 		const data = stdoutJson();

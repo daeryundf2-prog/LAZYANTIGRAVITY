@@ -2,7 +2,6 @@
 import { readFile } from "node:fs/promises";
 import { type CheckpointUlwLoopArgs, checkpointUlwLoop } from "./checkpoint.js";
 import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, readRepeated, readStdin, readValue } from "./cli-arg-parser.js";
-import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, dispatchAgentCmd, dispatchConsensusCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, reportFailedCmd, rewindRunCmd, setRunStateCmd } from "./cli-control-plane.js";
 import { blockedDecisionHandoff, normalizeCodexGoalMode, printJson, printStatus, ULW_LOOP_HELP } from "./cli-output.js";
 import { parseSteeringProposal, printSteerResult } from "./cli-steering.js";
 import { buildCodexGoalInstruction } from "./codex-goal-instruction.js";
@@ -40,22 +39,6 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 			case "save-role-checkpoint": return await saveRoleCheckpointCmd(repoRoot, rest, json);
 			case "resume": return await resumeCmd(repoRoot, json);
 			case "dry-run": return await dryRunCmd(repoRoot, rest, json);
-			case "init-run": return await initRunCmd(repoRoot, rest, json);
-			case "set-run-state": return await setRunStateCmd(repoRoot, rest, json);
-			case "dispatch-agent": return await dispatchAgentCmd(repoRoot, rest, json);
-			case "claim-agent": return await claimAgentCmd(repoRoot, rest, json);
-			case "heartbeat-agent": return await heartbeatAgentCmd(repoRoot, rest, json);
-			case "progress-agent": return await progressAgentCmd(repoRoot, rest, json);
-			case "report-complete": return await reportCompleteCmd(repoRoot, rest, json);
-			case "report-failed": return await reportFailedCmd(repoRoot, rest, json);
-			case "ack-agent": return await ackAgentCmd(repoRoot, rest, json);
-			case "reject-agent": return await rejectAgentCmd(repoRoot, rest, json);
-			case "check-leases": return await checkLeasesCmd(repoRoot, rest, json);
-			case "register-poller": return await registerPollerCmd(repoRoot, rest, json);
-			case "rewind": return await rewindRunCmd(repoRoot, rest, json);
-			case "dispatch-consensus": return await dispatchConsensusCmd(repoRoot, rest, json);
-			case "report-consensus-result": return await reportConsensusResultCmd(repoRoot, rest, json);
-			case "aggregate-consensus": return await aggregateConsensusCmd(repoRoot, rest, json);
 			default: process.stdout.write(`${ULW_LOOP_HELP}\n`); return 1;
 		}
 	} catch (error) {
@@ -237,7 +220,21 @@ async function resumeCmd(repoRoot: string, json: boolean): Promise<number> {
 	if (json) {
 		printJson({ ok: true, checkpoint });
 	} else {
-		process.stdout.write(`Resuming ulw-loop workflow:\n  Task ID: ${checkpoint.taskId}\n  Platform: ${checkpoint.platform}\n  Selected Model: ${checkpoint.selectedModel}\n  Completed Roles: ${checkpoint.completedRoles.join(", ")}\n  Current/Failed Role to Resume: ${checkpoint.currentRole}\n${checkpoint.failedRole ? `  Failed Role: ${checkpoint.failedRole}\n` : ""}${checkpoint.errorType ? `  Error Type: ${checkpoint.errorType}\n` : ""}${checkpoint.filesChanged.length > 0 ? `  Files Changed: ${checkpoint.filesChanged.join(", ")}\n` : ""}${checkpoint.commandsRun.length > 0 ? `  Commands Run: ${checkpoint.commandsRun.join(", ")}\n` : ""}${checkpoint.artifactsGenerated.length > 0 ? `  Artifacts Generated: ${checkpoint.artifactsGenerated.join(", ")}\n` : ""}\n  Next Recommended Action: ${checkpoint.nextRecommendedAction}\n  User Resume Command (Recommended): ${checkpoint.userResumeCommand || "/ulw resume"}\n  Internal Resume Command: ${checkpoint.internalResumeCommand || (checkpoint as { resumeCommand?: string }).resumeCommand || "omo ulw-loop resume"}\n`);
+		process.stdout.write(`Resuming ulw-loop workflow:\n`);
+		process.stdout.write(`  Task ID: ${checkpoint.taskId}\n`);
+		process.stdout.write(`  Platform: ${checkpoint.platform}\n`);
+		process.stdout.write(`  Selected Model: ${checkpoint.selectedModel}\n`);
+		process.stdout.write(`  Completed Roles: ${checkpoint.completedRoles.join(", ")}\n`);
+		process.stdout.write(`  Current/Failed Role to Resume: ${checkpoint.currentRole}\n`);
+		if (checkpoint.failedRole) process.stdout.write(`  Failed Role: ${checkpoint.failedRole}\n`);
+		if (checkpoint.errorType) process.stdout.write(`  Error Type: ${checkpoint.errorType}\n`);
+		if (checkpoint.filesChanged.length > 0) process.stdout.write(`  Files Changed: ${checkpoint.filesChanged.join(", ")}\n`);
+		if (checkpoint.commandsRun.length > 0) process.stdout.write(`  Commands Run: ${checkpoint.commandsRun.join(", ")}\n`);
+		if (checkpoint.artifactsGenerated.length > 0) process.stdout.write(`  Artifacts Generated: ${checkpoint.artifactsGenerated.join(", ")}\n`);
+		process.stdout.write(`\n`);
+		process.stdout.write(`  Next Recommended Action: ${checkpoint.nextRecommendedAction}\n`);
+		process.stdout.write(`  User Resume Command (Recommended): ${checkpoint.userResumeCommand || "/ulw resume"}\n`);
+		process.stdout.write(`  Internal Resume Command: ${checkpoint.internalResumeCommand || (checkpoint as { resumeCommand?: string }).resumeCommand || "omo ulw-loop resume"}\n`);
 	}
 	return 0;
 }

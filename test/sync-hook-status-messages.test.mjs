@@ -5,6 +5,10 @@ import { tmpdir } from "node:os";
 import test from "node:test";
 
 import { syncHookStatusMessages } from "../scripts/sync-hook-status-messages.mjs";
+import { getRuntimeConfig } from "../scripts/runtime-adapter.mjs";
+
+const PRODUCT_NAME = getRuntimeConfig().productName;
+
 
 async function writeJson(path, value) {
 	await writeFile(path, `${JSON.stringify(value, null, "\t")}\n`);
@@ -88,10 +92,10 @@ test("#given source package versions and component without hooks #when hook stat
 	const aggregateHooks = await readJson(join(root, "hooks", "hooks.json"));
 	const componentHooks = await readJson(join(root, "components", "comment-checker", "hooks", "hooks.json"));
 	const lspHooks = await readJson(join(root, "components", "lsp", "hooks", "hooks.json"));
-	assert.equal(aggregateHooks.hooks.PostToolUse[0].hooks[0].statusMessage, "LazyCodex(0.1.0): Checking Comments");
-	assert.equal(aggregateHooks.hooks.PostToolUse[0].hooks[1].statusMessage, "LazyCodex(0.1.0): Checking LSP Diagnostics");
-	assert.equal(componentHooks.hooks.PostToolUse[0].hooks[0].statusMessage, "LazyCodex(0.1.1): Checking Comments");
-	assert.equal(lspHooks.hooks.PostToolUse[0].hooks[0].statusMessage, "LazyCodex(0.2.0): Checking LSP Diagnostics");
+	assert.equal(aggregateHooks.hooks.PostToolUse[0].hooks[0].statusMessage, `${PRODUCT_NAME}(0.1.0): Checking Comments`);
+	assert.equal(aggregateHooks.hooks.PostToolUse[0].hooks[1].statusMessage, `${PRODUCT_NAME}(0.1.0): Checking LSP Diagnostics`);
+	assert.equal(componentHooks.hooks.PostToolUse[0].hooks[0].statusMessage, `${PRODUCT_NAME}(0.1.1): Checking Comments`);
+	assert.equal(lspHooks.hooks.PostToolUse[0].hooks[0].statusMessage, `${PRODUCT_NAME}(0.2.0): Checking LSP Diagnostics`);
 });
 
 test("#given release version override #when hook status messages sync #then aggregate hooks use release version", async () => {
@@ -139,6 +143,6 @@ test("#given release version override #when hook status messages sync #then aggr
 	// then
 	const aggregateHooks = await readJson(join(root, "hooks", "hooks.json"));
 	const componentHooks = await readJson(join(root, "components", "comment-checker", "hooks", "hooks.json"));
-	assert.equal(aggregateHooks.hooks.PostToolUse[0].hooks[0].statusMessage, "LazyCodex(4.8.0): Checking Comments");
-	assert.equal(componentHooks.hooks.PostToolUse[0].hooks[0].statusMessage, "LazyCodex(4.8.0): Checking Comments");
+	assert.equal(aggregateHooks.hooks.PostToolUse[0].hooks[0].statusMessage, `${PRODUCT_NAME}(4.8.0): Checking Comments`);
+	assert.equal(componentHooks.hooks.PostToolUse[0].hooks[0].statusMessage, `${PRODUCT_NAME}(4.8.0): Checking Comments`);
 });

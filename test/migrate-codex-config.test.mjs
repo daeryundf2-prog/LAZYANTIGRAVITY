@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
+process.env.OMO_FORCE_RUNTIME = "codex";
+
 import { ensureCodexReasoningConfig, migrateCodexConfig } from "../scripts/migrate-codex-config.mjs";
 
 test("#given stale root reasoning config #when ensuring config #then replaces stale values without duplicate keys", () => {

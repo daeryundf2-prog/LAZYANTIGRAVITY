@@ -15,15 +15,24 @@ test("#given aggregate plugin manifest #when inspected #then it owns the omo nam
 	const mcpPath = manifest.mcpServers;
 
 	// then
-	assert.equal(manifest.name, "omo");
-	assert.equal(hookPath, "./hooks/hooks.json");
-	assert.equal(skillsPath, "./skills/");
-	assert.equal(mcpPath, "./.mcp.json");
+	if (manifest.name === "lazyantigravity") {
+		assert.equal(hookPath, "./hooks.json");
+		assert.equal(skillsPath, "./skills/");
+		assert.equal(mcpPath, "./mcp_config.json");
+	} else {
+		assert.equal(manifest.name, "omo");
+		assert.equal(hookPath, "./hooks/hooks.json");
+		assert.equal(skillsPath, "./skills/");
+		assert.equal(mcpPath, "./.mcp.json");
+	}
 });
 
 test("#given aggregate plugin metadata #when inspected #then ulw-loop is the public loop name", async () => {
 	// given
-	const manifestText = await readFile(join(root, ".codex-plugin", "plugin.json"), "utf8");
+	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
+	const manifestText = isStandalone
+		? await readFile(join(root, "plugin.json"), "utf8")
+		: await readFile(join(root, ".codex-plugin", "plugin.json"), "utf8");
 	const manifest = JSON.parse(manifestText);
 
 	// when
@@ -37,6 +46,7 @@ test("#given component directories #when scanned #then only intentional resource
 	// given
 	const components = await readdir(join(root, "components"), { withFileTypes: true });
 	const expectedComponentManifests = new Map([["rules", { hooks: "./hooks/hooks.json" }]]);
+	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
 
 	// when
 	const componentNames = [];
@@ -59,7 +69,7 @@ test("#given component directories #when scanned #then only intentional resource
 		"ulw-loop",
 	]);
 	for (const name of componentNames) {
-		const expectedManifest = expectedComponentManifests.get(name);
+		const expectedManifest = isStandalone ? undefined : expectedComponentManifests.get(name);
 		if (expectedManifest !== undefined) {
 			assert.deepEqual(await readJson(join("components", name, ".codex-plugin", "plugin.json")), expectedManifest);
 			continue;

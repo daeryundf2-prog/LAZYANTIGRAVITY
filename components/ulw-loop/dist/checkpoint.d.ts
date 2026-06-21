@@ -1,4 +1,4 @@
-import type { UlwLoopScope } from "./paths.js";
+import { type UlwLoopScope } from "./paths.js";
 import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopLedgerEntry, UlwLoopPlan } from "./types.js";
 export interface CheckpointUlwLoopArgs {
     readonly goalId: string;

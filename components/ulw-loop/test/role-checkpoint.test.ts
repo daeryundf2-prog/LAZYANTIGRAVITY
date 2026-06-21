@@ -40,7 +40,7 @@ function stdoutText(): string {
 	return stdoutBuffer.join("");
 }
 
-function stdoutJson(): any {
+function stdoutJson(): unknown {
 	return JSON.parse(stdoutText());
 }
 

@@ -6,9 +6,19 @@ import { fileURLToPath } from "node:url";
 
 const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(dirname(pluginRoot)));
-const startWorkSkillPaths = [
+let startWorkSkillPaths = [
 	join(repoRoot, "packages", "shared-skills", "skills", "start-work", "SKILL.md"),
 ];
+try {
+	const pkg = JSON.parse(await readFile(join(pluginRoot, "package.json"), "utf8"));
+	if (pkg.name === "lazyantigravity") {
+		startWorkSkillPaths = [
+			join(pluginRoot, "shared-skills", "skills", "start-work", "SKILL.md"),
+		];
+	}
+} catch {
+	// ignore
+}
 const stopHookPath = join(
 	pluginRoot,
 	"components",

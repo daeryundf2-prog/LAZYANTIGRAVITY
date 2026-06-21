@@ -25,21 +25,38 @@ test("#given aggregate MCP config #when inspected #then code MCPs reference pack
 	const componentLocalMcpSources = lspSources.filter((name) => name.startsWith("lazy-mcp") || name === "lazy-lsp-mcp.ts");
 
 	// then
+	const isStandalone = packageJson.name === "lazyantigravity";
 	assert.deepEqual(codeMcpNames, ["ast_grep", "git_bash", "lsp"]);
 	assert.equal(packageJson.workspaces.includes("components/lsp/packages/lsp-tools-mcp"), false);
 	assert.equal(packageJson.workspaces.includes("components/ast-grep/packages/ast-grep-mcp"), false);
-	assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:../../shared-skills" });
+	if (isStandalone) {
+		assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:./shared-skills" });
+	} else {
+		assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:../../shared-skills" });
+	}
 	assert.match(bundledMcpBuildScript, /ast-grep-mcp/);
 	assert.match(bundledMcpBuildScript, /git-bash-mcp/);
 	assert.doesNotMatch(packageJson.scripts.build, /--workspaces/);
 	assert.equal(lspServer.command, "node");
-	assert.deepEqual(lspServer.args, ["../../lsp-tools-mcp/dist/cli.js", "mcp"]);
+	if (isStandalone) {
+		assert.deepEqual(lspServer.args, ["./components/lsp-tools-mcp/dist/cli.js", "mcp"]);
+	} else {
+		assert.deepEqual(lspServer.args, ["../../lsp-tools-mcp/dist/cli.js", "mcp"]);
+	}
 	assert.equal(lspServer.cwd, ".");
 	assert.equal(astGrepServer.command, "node");
-	assert.deepEqual(astGrepServer.args, ["../../ast-grep-mcp/dist/cli.js", "mcp"]);
+	if (isStandalone) {
+		assert.deepEqual(astGrepServer.args, ["./components/ast-grep-mcp/dist/cli.js", "mcp"]);
+	} else {
+		assert.deepEqual(astGrepServer.args, ["../../ast-grep-mcp/dist/cli.js", "mcp"]);
+	}
 	assert.equal(astGrepServer.cwd, ".");
 	assert.equal(gitBashServer.command, "node");
-	assert.deepEqual(gitBashServer.args, ["../../git-bash-mcp/dist/cli.js", "mcp"]);
+	if (isStandalone) {
+		assert.deepEqual(gitBashServer.args, ["./components/git-bash-mcp/dist/cli.js", "mcp"]);
+	} else {
+		assert.deepEqual(gitBashServer.args, ["../../git-bash-mcp/dist/cli.js", "mcp"]);
+	}
 	assert.equal(gitBashServer.cwd, ".");
 	assert.deepEqual(componentLocalMcpSources, []);
 });

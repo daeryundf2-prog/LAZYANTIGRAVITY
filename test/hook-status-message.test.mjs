@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -9,9 +10,11 @@ import {
 	normalizeLazyCodexHookStatusLabel,
 	parseLazyCodexHookStatusMessage,
 } from "../scripts/hook-status-message.mjs";
+import { getRuntimeConfig } from "../scripts/runtime-adapter.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const repoRoot = join(root, "..", "..", "..");
+const repoRoot = existsSync(join(root, "..", "..", "..", "package.json")) ? join(root, "..", "..", "..") : root;
+const PRODUCT_NAME = getRuntimeConfig().productName;
 
 const AGGREGATE_EXPECTED_LABELS = new Map([
 	["hooks/hooks.json:SessionStart:0:0", "Loading Project Rules"],
@@ -55,7 +58,10 @@ async function readRepoJson(relativePath) {
 }
 
 async function readPluginVersion() {
-	return (await readJson(".codex-plugin/plugin.json")).version;
+	if (await exists(".codex-plugin/plugin.json")) {
+		return (await readJson(".codex-plugin/plugin.json")).version;
+	}
+	return (await readJson("plugin.json")).version;
 }
 
 async function readComponentVersion(componentName) {
@@ -113,7 +119,7 @@ test("#given hook status label #when formatting #then prefixes LazyCodex with cu
 	const message = formatLazyCodexHookStatusMessage(version, label);
 
 	// then
-	assert.equal(message, `LazyCodex(${version}): Checking Comments`);
+	assert.equal(message, `${PRODUCT_NAME}(${version}): Checking Comments`);
 });
 
 test("#given hook status label with blank version #when formatting #then prefixes LazyCodex with local version", () => {
@@ -125,7 +131,7 @@ test("#given hook status label with blank version #when formatting #then prefixe
 	const message = formatLazyCodexHookStatusMessage(version, label);
 
 	// then
-	assert.equal(message, "LazyCodex(local): Checking Comments");
+	assert.equal(message, `${PRODUCT_NAME}(local): Checking Comments`);
 });
 
 test("#given loose legacy status label #when normalizing #then removes OMO wording and title-cases label", async () => {
@@ -139,7 +145,7 @@ test("#given loose legacy status label #when normalizing #then removes OMO wordi
 
 	// then
 	assert.equal(normalized, "Checking Comments");
-	assert.equal(message, `LazyCodex(${version}): Checking Comments`);
+	assert.equal(message, `${PRODUCT_NAME}(${version}): Checking Comments`);
 });
 
 test("#given aggregate comment-checker hook #when status is inspected #then it uses LazyCodex comments label", async () => {

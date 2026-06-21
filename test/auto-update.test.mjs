@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+process.env.OMO_FORCE_RUNTIME = "codex";
+
 import { resolveAutoUpdatePlan, resolveLazyCodexUpdatePlan, runAutoUpdateCheck } from "../scripts/auto-update.mjs";
 import { resolveSpawnInvocation } from "../scripts/spawn-command.mjs";
 

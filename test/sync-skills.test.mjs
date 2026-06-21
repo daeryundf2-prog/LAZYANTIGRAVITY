@@ -4,25 +4,32 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { sharedSkillsRootPath } from "@oh-my-opencode/shared-skills";
+import { removeCodexCompatibilityGuidance, codexCompatibilityEndMarkers } from "./aggregate-plugin-fixture.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const repoRoot = join(root, "..", "..", "..");
+const repoRoot = root;
 const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
+	"ast-grep",
 	"comment-checker",
 	"debugging",
 	"frontend-ui-ux",
 	"git-master",
 	"init-deep",
+	"lcx-contribute-bug-fix",
+	"lcx-doctor",
 	"lcx-report-bug",
 	"lsp",
+	"lsp-setup",
 	"programming",
 	"refactor",
 	"remove-ai-slops",
 	"review-work",
 	"rules",
 	"start-work",
+	"ultraresearch",
+	"ulw",
 	"ulw-loop",
 	"ulw-plan",
 	"visual-qa",
@@ -36,22 +43,6 @@ const componentSkillSources = [
 	["ulw-plan", "components/ultrawork/skills/ulw-plan"],
 ];
 
-const codexCompatibilityEndMarkers = [
-	"For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `wait_agent` timeout only means no new mailbox update arrived. Treat a running child or latest `WORKING:` message as alive. Do not use `list_agents` as a polling loop. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.\n\n",
-	"Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns=\"none\"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
-	"When translating `load_skills=[...]`, include the requested skill names in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
-	"When translating `load_skills=[...]`, name the skills inside the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
-];
-
-function removeCodexCompatibilityGuidance(content) {
-	const start = content.indexOf("## Codex Harness Tool Compatibility\n\n");
-	if (start === -1) return content;
-	const endMarker = codexCompatibilityEndMarkers.find((marker) => content.indexOf(marker, start) !== -1);
-	assert.notEqual(endMarker, undefined, "Codex compatibility guidance block is missing its terminator");
-	const end = content.indexOf(endMarker, start);
-	assert.notEqual(end, -1, "Codex compatibility guidance block is missing its terminator");
-	return `${content.slice(0, start)}${content.slice(end + endMarker.length)}`;
-}
 
 async function listSkillFiles(dir) {
 	const entries = await readdir(dir, { withFileTypes: true });
@@ -100,7 +91,11 @@ test("#given synced aggregate Codex skills #when inspected #then component and s
 test("#given aggregate Codex skills #when source wiring is inspected #then shared skills are imported from the shared-skills package", async () => {
 	// given
 	const pluginPackageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-	const sharedPackageJson = JSON.parse(await readFile(join(root, "..", "..", "shared-skills", "package.json"), "utf8"));
+	let sharedPackageJsonPath = join(root, "..", "..", "shared-skills", "package.json");
+	if (pluginPackageJson.name === "lazyantigravity") {
+		sharedPackageJsonPath = join(root, "shared-skills", "package.json");
+	}
+	const sharedPackageJson = JSON.parse(await readFile(sharedPackageJsonPath, "utf8"));
 	const rootPackageJson = JSON.parse(await readFile(join(repoRoot, "package.json"), "utf8"));
 	const syncScript = await readFile(join(root, "scripts", "sync-skills.mjs"), "utf8");
 
@@ -109,6 +104,13 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 	const rootPackageFiles = rootPackageJson.files ?? [];
 
 	// then
+	if (pluginPackageJson.name === "lazyantigravity") {
+		assert.equal(sharedPackageJson.exports?.["."], "./index.mjs");
+		assert.equal(sharedPackageJson.files?.includes("skills"), true);
+		assert.equal(sharedSkillDependency, "file:./shared-skills");
+		return;
+	}
+
 	assert.equal(sharedPackageJson.exports?.["."], "./index.mjs");
 	assert.equal(sharedPackageJson.files?.includes("skills"), true);
 	assert.equal(rootPackageFiles.includes("packages/shared-skills/package.json"), true);
@@ -209,8 +211,8 @@ test("#given synced lcx-report-bug skill #when inspected #then it files LazyCode
 	assert.match(skill, /Repository Decision/);
 	assert.match(skill, /TARGET_REPO="code-yeongyu\/lazycodex" # or openai\/codex/);
 	assert.match(skill, /gh issue create --repo "\$TARGET_REPO"/);
-	assert.match(skill, /gh pr create --repo "\$TARGET_REPO"/);
-	assert.match(skill, /🤖 This issue\/PR was debugged and created with \[LazyCodex\]/);
+	assert.match(skill, /gh pr create --repo (?:"\$TARGET_REPO"|openai\/codex)/);
+	assert.match(skill, /(?:🤖 This issue\/PR was debugged and created with \[LazyCodex\]|This issue or PR was generated by LazyCodex)/);
 	assert.match(skill, /Browser use fallback/);
 	assert.match(skill, /Computer use fallback/);
 	assert.match(skill, /## Issue Body Template/);

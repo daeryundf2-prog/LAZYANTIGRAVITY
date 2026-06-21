@@ -48,8 +48,10 @@ test("#given aggregate PostCompact hooks #when hooks are inspected #then LSP dia
 	);
 
 	// then
+	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
+	const productName = isStandalone ? "LazyAntigravity" : "LazyCodex";
 	assert.equal(lspPostCompactHooks.length, 1);
-	assert.equal(lspPostCompactHooks[0]?.handler.statusMessage, `LazyCodex(${aggregateVersion}): Resetting LSP Diagnostics Cache`);
+	assert.equal(lspPostCompactHooks[0]?.handler.statusMessage, `${productName}(${aggregateVersion}): Resetting LSP Diagnostics Cache`);
 });
 
 test("#given aggregate hook commands #when inspected #then every command exposes a Codex status message", async () => {
