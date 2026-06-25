@@ -1,8 +1,17 @@
 #!/usr/bin/env node
-import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sharedSkillsRootPath } from "@oh-my-opencode/shared-skills";
+
+async function exists(path) {
+	try {
+		await access(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const sharedSkillsRoot = sharedSkillsRootPath();
@@ -59,8 +68,10 @@ async function adaptSkillForAntigravity(skillName) {
 	}
 }
 
-await rm(skillsRoot, { recursive: true, force: true });
-await mkdir(skillsRoot, { recursive: true });
+const existsSkillsRoot = await exists(skillsRoot);
+if (!existsSkillsRoot) {
+	await mkdir(skillsRoot, { recursive: true });
+}
 
 for (const [name, source] of skillSources) {
 	await cp(join(root, source), join(skillsRoot, name), { recursive: true });
