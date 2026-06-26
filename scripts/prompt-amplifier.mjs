@@ -86,7 +86,7 @@ function sanitizeSecrets(text) {
 
 // Dynamically resolve supported LSP extensions from config files
 function getLspSupportedExtensions(cwd) {
-	const defaultExts = ["ts", "tsx", "js", "jsx", "go", "py", "rs", "c", "cpp", "h", "hpp", "java", "kt", "cs", "swift", "rb", "php", "dart", "ex", "exs", "zig", "sh", "bat"];
+	const defaultExts = ["ts", "tsx", "go", "py", "rs"];
 	const extensions = new Set(defaultExts);
 	
 	// Check .codex/lsp-client.json to append config-specific languages/extensions
@@ -262,6 +262,7 @@ async function main() {
 			})
 			.filter(item => {
 				if (!item || !item.file) return false;
+				if (!existsSync(join(cwd, item.file))) return false;
 				const ext = item.file.split(".").pop();
 				return supportedExts.includes(ext);
 			})

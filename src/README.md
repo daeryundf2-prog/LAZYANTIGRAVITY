@@ -386,8 +386,8 @@ Specific architectural optimizations are integrated into the plugin to leverage 
    - **Improvement**: Added a `BACKGROUND` execution policy to `hook-runner.mjs` to spawn these processes in a completely detached background mode, cutting initial session prompt latency down to less than 60ms.
 
 7. **Dynamic LSP Target Extensions & Priority Sorting**
-   - **Gemini Trait**: Static file extensions lists prevent LSP validation on diverse projects, and unsorted scan results prioritize blank files over modified core business logic.
-   - **Improvement**: Expanded the default extension list to 22 popular web/system file types and integrated automatic dynamic file parsing from `.codex/lsp-client.json`. Added git status priority sorting to ensure modified files (`M`) are scanned first.
+   - **Gemini Trait**: Blindly expanding scanned extensions risks triggering useless IPC timeouts (800ms per file) for languages without local LSP server installations. In addition, deleted files or invalid paths can hog active diagnosis slots.
+   - **Improvement**: Reverted default target extensions to the core 5 languages (`ts, tsx, go, py, rs`) and designed it to dynamically append other extensions only when explicit LSP configurations are detected in `.codex/lsp-client.json`. Added git status priority weights (Modified = 3, Added = 2) and integrated physical file existence filters (`fs.existsSync`) to prune deleted or malformed files from the scan queue.
 
 ### ULW-Loop: Evidence-Audited Orchestration
 
