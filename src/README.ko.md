@@ -1,4 +1,4 @@
-# 🌌 lazyantigravity — 한국어 상세 가이드
+# 🌌 LAZYANTIGRAVITY — 한국어 상세 가이드
 
 > *[Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity)에 최적화된 가장 기능이 풍부한 AI 에이전트 오케스트레이션 플러그인. 우로보로스(Ouroboros)와 lazycodex의 검증된 기반 위에 구축되었습니다.*
 >

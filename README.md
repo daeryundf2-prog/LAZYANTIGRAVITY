@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌌 lazyantigravity
+# 🌌 LAZYANTIGRAVITY
 
 **The most feature-rich AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).**
 
