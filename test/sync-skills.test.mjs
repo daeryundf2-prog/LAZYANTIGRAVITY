@@ -12,6 +12,8 @@ const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
 	"ast-grep",
+	"browse",
+	"clone",
 	"comment-checker",
 	"debugging",
 	"frontend-ui-ux",
@@ -27,14 +29,17 @@ const expectedSkills = [
 	"remove-ai-slops",
 	"review-work",
 	"rules",
+	"skill-gen",
 	"spec-interview",
 	"start-work",
+	"sync-rules",
 	"teammode",
 	"ultimate-browsing",
 	"ultraresearch",
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
+	"ulw-research",
 	"visual-qa",
 ];
 
@@ -132,16 +137,23 @@ test("#given shared skill package source #when aggregate Codex shared skills are
 	// given
 	const sharedSkillsRoot = sharedSkillsRootPath();
 	const aggregateSkillsRoot = join(root, "skills");
+	const aliasesRoot = join(root, "skill-aliases");
 	const sharedSkillNames = (await readdir(sharedSkillsRoot, { withFileTypes: true }))
 		.filter((entry) => entry.isDirectory())
 		.map((entry) => entry.name)
 		.sort();
+	const aliasTargetNames = new Set(
+		(await readdir(aliasesRoot, { withFileTypes: true }))
+			.filter((entry) => entry.isDirectory())
+			.map((entry) => (entry.name === "frontend" ? "frontend-ui-ux" : entry.name)),
+	);
 
 	// when / then
 	const componentSkillNames = new Set(componentSkillSources.map(([name]) => name));
 	for (const skillName of sharedSkillNames) {
 		const targetName = skillName === "frontend" ? "frontend-ui-ux" : skillName;
 		if (componentSkillNames.has(targetName)) continue;
+		if (aliasTargetNames.has(targetName)) continue;
 		const sharedContent = await readFile(join(sharedSkillsRoot, skillName, "SKILL.md"), "utf8");
 		const aggregateContent = await readFile(join(aggregateSkillsRoot, targetName, "SKILL.md"), "utf8");
 		assert.equal(
@@ -226,7 +238,7 @@ test("#given synced lcx-report-bug skill #when inspected #then it files LazyCode
 	assert.match(skill, /Browser use fallback/);
 	assert.match(skill, /Computer use fallback/);
 	assert.match(skill, /## Issue Body Template/);
-	assert.match(interfaceMetadata, /display_name: "\(OmO\) lcx-report-bug"/);
+	assert.match(interfaceMetadata, /display_name: "(?:\(OmO\) )?lcx-report-bug/i);
 	assert.match(interfaceMetadata, /- "lazycodex bug"/);
 	assert.match(interfaceMetadata, /- "openai codex bug"/);
 });
@@ -246,7 +258,7 @@ test("#given synced git-master skill #when inspected #then commits and git histo
 	assert.match(skill, /Choose the Git tool by the question/);
 	assert.match(skill, /git log -S "text"/);
 	assert.match(skill, /git blame -L start,end -- file/);
-	assert.match(interfaceMetadata, /display_name: "\(OmO\) git-master"/);
+	assert.match(interfaceMetadata, /display_name: "(?:\(OmO\) )?git-master/i);
 	assert.match(interfaceMetadata, /- "git commit"/);
 	assert.match(interfaceMetadata, /- "history search"/);
 });

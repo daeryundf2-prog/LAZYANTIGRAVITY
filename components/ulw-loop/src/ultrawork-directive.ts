@@ -1,6 +1,16 @@
 import { readFileSync } from "node:fs";
 
-import type { UserPromptSubmitPayload } from "./codex-hook.js";
+export interface UltraworkDirectiveInput {
+	readonly prompt: string;
+	readonly transcript_path?: string | null;
+}
+
+interface UserPromptSubmitHookOutput {
+	readonly hookSpecificOutput: {
+		readonly hookEventName: "UserPromptSubmit";
+		readonly additionalContext: string;
+	};
+}
 
 const ULTRAWORK_DIRECTIVE = readFileSync(new URL("../directive.md", import.meta.url), "utf8");
 const ULTRAWORK_CURRENT_PROMPT_PATTERN = /(?:ultrawork|ulw)/i;
@@ -16,22 +26,11 @@ const CONTEXT_PRESSURE_MARKERS = [
 	"long threads and multiple compactions",
 ] as const;
 
-interface UserPromptSubmitHookOutput {
-	readonly hookSpecificOutput: {
-		readonly hookEventName: "UserPromptSubmit";
-		readonly additionalContext: string;
-	};
-}
-
-export function buildUltraworkDirectiveOutput(payload: UserPromptSubmitPayload): string {
-	if (isContextPressureRecoveryPrompt(payload.prompt)) return "";
-	if (hasUltraworkDirectiveAlreadyInTranscript(payload.transcript_path)) return "";
-	if (isContextPressureTranscript(payload.transcript_path)) return "";
-	return isUltraworkPrompt(payload.prompt) ? formatAdditionalContextOutput(ULTRAWORK_DIRECTIVE) : "";
-}
-
-export function isUltraworkPrompt(prompt: string): boolean {
-	return ULTRAWORK_CURRENT_PROMPT_PATTERN.test(prompt);
+export function buildUltraworkDirectiveOutput(input: UltraworkDirectiveInput): string {
+	if (isContextPressureRecoveryPrompt(input.prompt)) return "";
+	if (hasUltraworkDirectiveAlreadyInTranscript(input.transcript_path)) return "";
+	if (isContextPressureTranscript(input.transcript_path)) return "";
+	return isUltraworkPrompt(input.prompt) ? formatAdditionalContextOutput(ULTRAWORK_DIRECTIVE) : "";
 }
 
 function hasUltraworkDirectiveAlreadyInTranscript(transcriptPath: string | null | undefined): boolean {
@@ -41,7 +40,6 @@ function hasUltraworkDirectiveAlreadyInTranscript(transcriptPath: string | null 
 		for (const line of rawTranscript.split(/\r?\n/)) {
 			const parsed = parseJsonLine(line);
 			if (!isRecord(parsed)) continue;
-
 			const hookSpecificOutput = parsed["hookSpecificOutput"];
 			if (!isRecord(hookSpecificOutput)) continue;
 			if (hookSpecificOutput["hookEventName"] !== "UserPromptSubmit") continue;
@@ -56,13 +54,16 @@ function hasUltraworkDirectiveAlreadyInTranscript(transcriptPath: string | null 
 		if (error instanceof Error) return false;
 		throw error;
 	}
-
 	return false;
 }
 
 function readTranscriptTail(transcriptPath: string): string {
 	const rawTranscript = readFileSync(transcriptPath);
 	return rawTranscript.subarray(Math.max(0, rawTranscript.byteLength - TRANSCRIPT_SEARCH_BYTES)).toString("utf8");
+}
+
+export function isUltraworkPrompt(prompt: string): boolean {
+	return ULTRAWORK_CURRENT_PROMPT_PATTERN.test(prompt);
 }
 
 function isContextPressureRecoveryPrompt(prompt: string): boolean {
@@ -99,7 +100,8 @@ function normalizeAdditionalContext(additionalContext: string): string {
 function parseJsonLine(line: string): unknown | null {
 	if (line.trim().length === 0) return null;
 	try {
-		return JSON.parse(line) as unknown;
+		const parsed: unknown = JSON.parse(line);
+		return parsed;
 	} catch (error) {
 		if (error instanceof Error) return null;
 		throw error;
