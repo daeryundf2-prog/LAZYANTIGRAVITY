@@ -133,7 +133,8 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 
 ## 🎮 Core Commands & Magic Keywords
 
-> 💡 **핵심 권장 사항 (Just use `ulw`!)**:
+> [!IMPORTANT]
+> **핵심 권장 사항 (Just use `ulw`!)**
 > - **다른 복잡한 스킬들은 몰라도, 그냥 `ulw` (또는 `ultrawork`) 하나만 입력해서 사용하면 됩니다!** 이 스킬이 코드를 알아서 분석/수정하고 테스트를 수행하여 100% 검증될 때까지 자동으로 루프를 수행하는 핵심 코딩 엔진입니다.
 > - **`ulw`와 `ralph`는 어떻게 다른가요?**
 >   - **`ulw` (실행 엔진)**: 실제로 파일을 생성/수정하고 테스트 코드를 돌리며 기능을 구현하는 **주요 동력**입니다.
@@ -141,7 +142,7 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 > 
 > ---
 > 
-> 💡 **Key Recommendation (Just use `ulw`!)**:
+> **Key Recommendation (Just use `ulw`!)**
 > - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and runs iterative loops until the codebase is 100% verified.
 > - **How does `ulw` differ from `ralph`?**
 >   - **`ulw` (Execution Engine)**: The actual workhorse modifying files, running test suites, and resolving issues.
@@ -200,27 +201,25 @@ A Next.js–powered local dashboard that replaces the chaos of scrolling termina
 
 Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 
-> 💡 **How it works / 작동 원리**:
-> - **Workflow Engines (6개)**: 전체 자율 코딩 루프와 에이전트 조율을 주도하는 **뇌(Brain)** 역할을 합니다.
-> - **Specialized Skills (20개)**: 코딩 루프 실행 중 코드를 수정하거나 검증할 때 백그라운드 훅(Lifecycle Hooks)으로 자동 연동되거나 필요에 따라 엔진에 의해 호출(Call)되는 **도구 및 품질 게이트** 역할을 합니다.
-> 
-> - **Workflow Engines (6 skills)**: Act as the **"Brain/Orchestrator"** leading the autonomous loop.
-> - **Specialized Skills (20 skills)**: Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks (like type checking, comment protection, and pixel-diff QA).
+> [!NOTE]
+> **How it works / 작동 원리**
+> - **Workflow Engines (6개 / 6 skills)**: 전체 자율 코딩 루프와 에이전트 조율을 주도하는 **뇌(Brain)** 역할을 합니다. / Act as the **"Brain/Orchestrator"** leading the autonomous loop.
+> - **Specialized Skills (20개 / 20 skills)**: 코딩 루프 실행 중 코드를 수정하거나 검증할 때 백그라운드 훅(Lifecycle Hooks)으로 자동 연동되거나 필요에 따라 엔진에 의해 호출(Call)되는 **도구 및 품질 게이트** 역할을 합니다. / Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks.
 
 | Category | Skills | Description |
 | :--- | :--- | :--- |
-| **Workflow Engines** | `ultrawork` / `ulw`, `ulw-loop`, `ulw-plan`, `ralph`, `autopilot`, `start-work` | Autonomous coding loops, evidence-audited orchestration, persistence |
-| **Research** | `ultraresearch` | Parallel swarm research with empirical verification |
-| **Team & Orchestration** | `teammode` | Multi-agent collaboration with tmux visualization |
-| **Code Quality** | `programming`, `refactor`, `remove-ai-slops`, `review-work`, `comment-checker` | Strict types, AI slop removal, post-implementation review |
-| **Code Intelligence** | `lsp`, `lsp-setup`, `ast-grep` | Language server diagnostics, structural code search |
-| **Frontend & Design** | `frontend`, `visual-qa` | UI/UX design, Lighthouse audits, pixel-diff QA |
-| **Debugging** | `debugging` | Hypothesis-driven debugging with Oracle spawning |
-| **Web & Browsing** | `browse`, `ultimate-browsing` | Session dashboard, WAF bypass, stealth browsing |
-| **Git** | `git-master` | Atomic commits, bisect, blame, rebase, squash |
-| **Product & Spec** | `spec-interview` | Socratic interview → requirements report |
-| **Config & Setup** | `init-deep`, `rules` | Hierarchical AGENTS.md generation, project rules |
-| **Plugin Health** | `lcx-doctor`, `lcx-report-bug`, `lcx-contribute-bug-fix` | Diagnose, report, and fix lazycodex/plugin issues |
+| ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) | `ultrawork` / `ulw`, `ulw-loop`, `ulw-plan`, `ralph`, `autopilot`, `start-work` | Autonomous coding loops, evidence-audited orchestration, persistence |
+| ![Research](https://img.shields.io/badge/Research-34A853?style=flat-square) | `ultraresearch` | Parallel swarm research with empirical verification |
+| ![Team & Orchestration](https://img.shields.io/badge/Team_%26_Orchestration-EA4335?style=flat-square) | `teammode` | Multi-agent collaboration with tmux visualization |
+| ![Code Quality](https://img.shields.io/badge/Code_Quality-FBBC05?style=flat-square) | `programming`, `refactor`, `remove-ai-slops`, `review-work`, `comment-checker` | Strict types, AI slop removal, post-implementation review |
+| ![Code Intelligence](https://img.shields.io/badge/Code_Intelligence-7C3AED?style=flat-square) | `lsp`, `lsp-setup`, `ast-grep` | Language server diagnostics, structural code search |
+| ![Frontend & Design](https://img.shields.io/badge/Frontend_%26_Design-00D4FF?style=flat-square) | `frontend`, `visual-qa` | UI/UX design, Lighthouse audits, pixel-diff QA |
+| ![Debugging](https://img.shields.io/badge/Debugging-FF6B6B?style=flat-square) | `debugging` | Hypothesis-driven debugging with Oracle spawning |
+| ![Web & Browsing](https://img.shields.io/badge/Web_%26_Browsing-9333EA?style=flat-square) | `browse`, `ultimate-browsing` | Session dashboard, WAF bypass, stealth browsing |
+| ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square) | `git-master` | Atomic commits, bisect, blame, rebase, squash |
+| ![Product & Spec](https://img.shields.io/badge/Product_%26_Spec-EC4899?style=flat-square) | `spec-interview` | Socratic interview → requirements report |
+| ![Config & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) | `init-deep`, `rules` | Hierarchical AGENTS.md generation, project rules |
+| ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) | `lcx-doctor`, `lcx-report-bug`, `lcx-contribute-bug-fix` | Diagnose, report, and fix lazycodex/plugin issues |
 
 ---
 

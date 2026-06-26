@@ -87,13 +87,12 @@ lazyantigravity works with **all models available in Antigravity**. While optimi
 
 ## 🎮 Core Commands
 
-> 💡 **Key Recommendation (Just use `ulw`!)**:
+> [!IMPORTANT]
+> **Key Recommendation (Just use `ulw`!)**
 > - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and runs iterative loops until the codebase is 100% verified.
 > - **How does `ulw` differ from `ralph`?**
 >   - **`ulw` (Execution Engine)**: The actual workhorse modifying files, running test suites, and resolving issues.
 >   - **`ralph` (Safety Net / Persistence Loop)**: A self-referential continuation loop. If a long-running execution gets interrupted (due to quota limits, network issues, or timeouts), `ralph` restores state and resumes exactly where it left off.
-> 
-> ---
 
 These commands can be typed directly in your **Antigravity agent session** or included in your prompts:
 
@@ -172,7 +171,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 > - **Workflow Engines (6 skills)**: Act as the **"Brain/Orchestrator"** leading the autonomous loop.
 > - **Specialized Skills (20 skills)**: Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks (like type checking, comment protection, and pixel-diff QA) during execution.
 
-### Workflow Engines (6 skills)
+### ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) Workflow Engines (6 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
@@ -183,7 +182,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 | **ralph** | `ralph`, `don't stop`, `keep going` | Self-referential persistence loop (inherited from Ouroboros) |
 | **autopilot** | `autopilot`, `build me` | Idea → working code autonomous pipeline |
 
-### Research (1 skill)
+### ![Research](https://img.shields.io/badge/Research-34A853?style=flat-square) Research (1 skill)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
@@ -194,7 +193,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
   <br /><em>Ultraresearch parallel swarm — synthesizing knowledge from 4 source types simultaneously</em>
 </div>
 
-### Team & Orchestration (1 skill)
+### ![Team & Orchestration](https://img.shields.io/badge/Team_%26_Orchestration-EA4335?style=flat-square) Team & Orchestration (1 skill)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
@@ -205,7 +204,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
   <br /><em>Multi-agent team swarm — parallel collaboration with tmux monitoring</em>
 </div>
 
-### Code Quality (5 skills)
+### ![Code Quality](https://img.shields.io/badge/Code_Quality-FBBC05?style=flat-square) Code Quality (5 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
@@ -215,7 +214,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 | **review-work** | `review work`, `check my work` | 5 parallel review agents: goal verification, code quality, security, QA, context mining |
 | **comment-checker** | Automatic (PostToolUse hook) | Prevents AI from silently removing user comments during edits |
 
-### Code Intelligence (3 skills)
+### ![Code Intelligence](https://img.shields.io/badge/Code_Intelligence-7C3AED?style=flat-square) Code Intelligence (3 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
@@ -228,46 +227,46 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
   <br /><em>Real-time LSP diagnostics — type errors and warnings caught instantly</em>
 </div>
 
-### Frontend & Design (2 skills)
+### ![Frontend & Design](https://img.shields.io/badge/Frontend_%26_Design-00D4FF?style=flat-square) Frontend & Design (2 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **frontend** | `frontend`, `UI`, `UX`, `design` | Anti-slop taste router with 12 taste skills + 69 brand design refs. React dev tooling: react-scan, react-doctor. Lighthouse 100 via Playwright Chromium audits |
 | **visual-qa** | `visual QA`, `screenshot diff`, `UI looks wrong` | Pixel-diff analysis + CJK text precision + two parallel oracle passes for design-system and functional integrity |
 
-### Debugging (1 skill)
+### ![Debugging](https://img.shields.io/badge/Debugging-FF6B6B?style=flat-square) Debugging (1 skill)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **debugging** | `debug this`, `why is X not working`, `trace this bug` | Hypothesis-driven loop: form ≥3 hypotheses → investigate in parallel → after 2 failures, spawn Oracles from orthogonal angles → confirm root cause → lock with failing test → fix minimally |
 
-### Web & Browsing (2 skills)
+### ![Web & Browsing](https://img.shields.io/badge/Web_%26_Browsing-9333EA?style=flat-square) Web & Browsing (2 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **browse** | `$browse`, `browse` | Opens asbrowse dashboard, auto-boots Next.js server |
 | **ultimate-browsing** | `blocked site`, `bypass bot detection`, `stealth browser` | Tiered WAF bypass: curl_cffi TLS impersonation → platform readers (Xiaohongshu, Douyin, etc.) → CloakBrowser stealth Chromium |
 
-### Git (1 skill)
+### ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square) Git (1 skill)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **git-master** | Commit/history tasks | Atomic commits, staging, rebase, squash, fixup/autosquash, blame, bisect, reflog, git log -S/-G |
 
-### Product & Specification (1 skill)
+### ![Product & Specification](https://img.shields.io/badge/Product_%26_Spec-EC4899?style=flat-square) Product & Specification (1 skill)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **spec-interview** | `spec interview`, `grill me` | Socratic Q&A → ambiguity scoring → polished requirements report (pm.md) + slide outline |
 
-### Configuration & Setup (2 skills)
+### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) Configuration & Setup (2 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **init-deep** | `/init-deep` | Generates hierarchical `AGENTS.md` knowledge base across project directories |
 | **rules** | Rules-related questions | Explains Codex Rules behavior, rule file locations, matching, environment config |
 
-### Plugin Health (3 skills)
+### ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) Plugin Health (3 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |

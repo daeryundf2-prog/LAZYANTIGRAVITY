@@ -87,13 +87,12 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 
 ## 🎮 핵심 명령어
 
-> 💡 **핵심 권장 사항 (Just use `ulw`!)**:
+> [!IMPORTANT]
+> **핵심 권장 사항 (Just use `ulw`!)**
 > - **다른 복잡한 스킬들은 몰라도, 그냥 `ulw` (또는 `ultrawork`) 하나만 입력해서 사용하면 됩니다!** 이 스킬이 코드를 알아서 분석/수정하고 테스트를 수행하여 100% 검증될 때까지 자동으로 루프를 수행하는 핵심 코딩 엔진입니다.
 > - **`ulw`와 `ralph`는 어떻게 다른가요?**
 >   - **`ulw` (실행 엔진)**: 실제로 파일을 생성/수정하고 테스트 코드를 돌리며 기능을 구현하는 **주요 동력**입니다.
 >   - **`ralph` (안전 장치 / 복원 루프)**: 오랜 작업 중 API 호출 한도 초과나 세션 끊김으로 에이전트가 멈추었을 때, **기존의 에이전트 상태를 ledger(로그)로부터 복구하여 멈춘 자리에서부터 안전하게 작업을 이어가도록 보장하는 영속성 장치**입니다.
-> 
-> ---
 
 에이전트 터미널에서 직접 입력하거나 프롬프트에 포함할 수 있는 명령어입니다:
 
@@ -172,7 +171,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 > - **워크플로우 엔진 (6개)**: 전체 자율 코딩 루프와 에이전트 조율을 주도하는 **뇌(Brain)** 역할을 합니다.
 > - **전문화된 스킬 (20개)**: 코딩 루프 실행 중 코드를 수정하거나 검증할 때 백그라운드 훅(Lifecycle Hooks)으로 자동 연동되거나 필요에 따라 엔진에 의해 호출(Call)되는 **도구 및 품질 게이트** 역할을 합니다.
 
-### 워크플로우 엔진 (6개)
+### ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) 워크플로우 엔진 (6개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
@@ -183,7 +182,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 | **ralph** | `ralph`, `don't stop`, `keep going` | 자기참조 영속 루프 (우로보로스에서 상속) |
 | **autopilot** | `autopilot`, `build me` | 아이디어 → 작동 코드 자율 파이프라인 |
 
-### 리서치 (1개)
+### ![Research](https://img.shields.io/badge/Research-34A853?style=flat-square) 리서치 (1개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
@@ -194,7 +193,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
   <br /><em>Ultraresearch 병렬 스웜 — 4가지 소스에서 동시에 지식을 합성</em>
 </div>
 
-### 팀 & 오케스트레이션 (1개)
+### ![Team & Orchestration](https://img.shields.io/badge/Team_%26_Orchestration-EA4335?style=flat-square) 팀 & 오케스트레이션 (1개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
@@ -205,7 +204,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
   <br /><em>멀티 에이전트 팀 스웜 — tmux 모니터링과 병렬 협업</em>
 </div>
 
-### 코드 품질 (5개)
+### ![Code Quality](https://img.shields.io/badge/Code_Quality-FBBC05?style=flat-square) 코드 품질 (5개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
@@ -215,7 +214,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 | **review-work** | `review work`, `check my work` | 5개 병렬 리뷰 에이전트: 목표 검증, 코드 품질, 보안, QA, 컨텍스트 마이닝 |
 | **comment-checker** | 자동 (PostToolUse 훅) | AI가 편집 중 사용자 주석을 조용히 삭제하는 것 방지 |
 
-### 코드 인텔리전스 (3개)
+### ![Code Intelligence](https://img.shields.io/badge/Code_Intelligence-7C3AED?style=flat-square) 코드 인텔리전스 (3개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
@@ -228,46 +227,46 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
   <br /><em>실시간 LSP 진단 — 타입 에러와 경고를 즉시 포착</em>
 </div>
 
-### 프론트엔드 & 디자인 (2개)
+### ![Frontend & Design](https://img.shields.io/badge/Frontend_%26_Design-00D4FF?style=flat-square) 프론트엔드 & 디자인 (2개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **frontend** | `frontend`, `UI`, `UX`, `design` | 12개 테이스트 스킬 + 69개 브랜드 디자인 레퍼런스의 안티슬롭 테이스트 라우터. React 개발 도구: react-scan, react-doctor. Playwright Chromium 오딧으로 Lighthouse 100 |
 | **visual-qa** | `visual QA`, `screenshot diff`, `UI looks wrong` | 픽셀 디프 분석 + CJK 텍스트 정밀도 + 디자인 시스템 및 기능 무결성을 위한 2개 병렬 Oracle 패스 |
 
-### 디버깅 (1개)
+### ![Debugging](https://img.shields.io/badge/Debugging-FF6B6B?style=flat-square) 디버깅 (1개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **debugging** | `debug this`, `why is X not working`, `trace this bug` | 가설 기반 루프: 3개 이상의 가설 수립 → 병렬 조사 → 2회 실패 후 직교 각도에서 Oracle 스폰 → 근본 원인 확인 → 실패 테스트로 고정 → 최소 수정 |
 
-### 웹 & 브라우징 (2개)
+### ![Web & Browsing](https://img.shields.io/badge/Web_%26_Browsing-9333EA?style=flat-square) 웹 & 브라우징 (2개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **browse** | `$browse`, `browse` | asbrowse 대시보드 오픈, Next.js 서버 자동 부팅 |
 | **ultimate-browsing** | `blocked site`, `bypass bot detection`, `stealth browser` | 계층형 WAF 우회: curl_cffi TLS 위장 → 플랫폼 리더 (샤오홍슈, 더우인 등) → CloakBrowser 스텔스 Chromium |
 
-### Git (1개)
+### ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square) Git (1개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **git-master** | 커밋/히스토리 작업 | 아토믹 커밋, 스테이징, 리베이스, 스쿼시, fixup/autosquash, blame, bisect, reflog, git log -S/-G |
 
-### 제품 & 명세 (1개)
+### ![Product & Specification](https://img.shields.io/badge/Product_%26_Spec-EC4899?style=flat-square) 제품 & 명세 (1개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **spec-interview** | `spec interview`, `grill me` | 소크라테스식 Q&A → 모호성 점수 → 정제된 요구사항 보고서 (pm.md) + 슬라이드 개요 |
 
-### 설정 & 구성 (2개)
+### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) 설정 & 구성 (2개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **init-deep** | `/init-deep` | 프로젝트 디렉토리 전역에 계층형 `AGENTS.md` 지식 베이스 생성 |
 | **rules** | 규칙 관련 질문 | Codex 규칙 동작, 규칙 파일 위치, 매칭, 환경 설정 설명 |
 
-### 플러그인 건강 관리 (3개)
+### ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) 플러그인 건강 관리 (3개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
