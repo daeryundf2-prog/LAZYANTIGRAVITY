@@ -62,21 +62,31 @@ async function main() {
 		score += 2;
 	}
 
-	// XML or structural tags check
-	if (/<[a-zA-Z0-9_-]+>/.test(prompt) && /<\/[a-zA-Z0-9_-]+>/.test(prompt)) {
+	// XML or structural tags check (ensuring matching tag pairs)
+	if (/<([a-zA-Z0-9_-]+)>(?:[\s\S]*?)<\/\1>/.test(prompt)) {
 		score += 2;
+	}
+
+	// Negation detection to prevent false positives from phrases like "skip test" or "제외"
+	const negationRegex = /(?:don't|do not|no|not|skip|without|제외|하지\s*말|생략|없(?:이|음|습니다))/i;
+	function isNegated(text, word) {
+		const idx = text.indexOf(word);
+		if (idx === -1) return false;
+		const beforeContext = text.slice(Math.max(0, idx - 15), idx);
+		const afterContext = text.slice(idx + word.length, idx + word.length + 15);
+		return negationRegex.test(beforeContext) || negationRegex.test(afterContext);
 	}
 
 	// Few-shot/Example pattern check
 	const exampleWords = ["example", "예시", "예제", "few-shot", "유사 사례"];
 	const lowerPrompt = prompt.toLowerCase();
-	if (exampleWords.some(word => lowerPrompt.includes(word))) {
+	if (exampleWords.some(word => lowerPrompt.includes(word) && !isNegated(lowerPrompt, word))) {
 		score += 1;
 	}
 
 	// Verification check
 	const verifyWords = ["test", "verify", "run", "spec", "assertion", "evidence", "check", "검증", "테스트", "실행"];
-	if (verifyWords.some(word => lowerPrompt.includes(word))) {
+	if (verifyWords.some(word => lowerPrompt.includes(word) && !isNegated(lowerPrompt, word))) {
 		score += 1;
 	}
 

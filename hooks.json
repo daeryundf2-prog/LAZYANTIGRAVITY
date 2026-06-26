@@ -15,10 +15,10 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
-						"timeout": 5,
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" BACKGROUND none none node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
+						"timeout": 1,
 						"statusMessage": "(OmO) Recording Session Telemetry",
-						"failurePolicy": "FAIL_OPEN"
+						"failurePolicy": "BACKGROUND"
 					}
 				]
 			},
@@ -27,9 +27,10 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/scripts/auto-update.mjs\" hook session-start",
-						"timeout": 5,
-						"statusMessage": "(OmO) Checking Auto Update"
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" BACKGROUND none none node \"${PLUGIN_ROOT}/scripts/auto-update.mjs\" hook session-start",
+						"timeout": 1,
+						"statusMessage": "(OmO) Checking Auto Update",
+						"failurePolicy": "BACKGROUND"
 					}
 				]
 			}

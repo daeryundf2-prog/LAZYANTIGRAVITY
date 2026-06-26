@@ -31,17 +31,98 @@ function runCmd(cmd, cwd) {
 	}
 }
 
+// Safely slice markdown ensuring unclosed code blocks are handled
+function safeMarkdownSlice(text, limit) {
+	if (text.length <= limit) return text;
+	let sliced = text.slice(0, limit);
+	const codeBlocks = (sliced.match(/```/g) || []).length;
+	if (codeBlocks % 2 !== 0) {
+		sliced += "\n```";
+	}
+	return sliced + "\n... [truncated]";
+}
+
+// Safely slice JSON content and repair bracket balances
+function safeJsonSlice(obj, limit) {
+	const str = JSON.stringify(obj, null, 2);
+	if (str.length <= limit) return str;
+	
+	let sliced = str.slice(0, limit);
+	sliced = sliced.replace(/,\s*$/, "");
+	
+	let openBraces = (sliced.match(/\{/g) || []).length;
+	let closeBraces = (sliced.match(/\}/g) || []).length;
+	let openBrackets = (sliced.match(/\[/g) || []).length;
+	let closeBrackets = (sliced.match(/\]/g) || []).length;
+	
+	while (openBrackets > closeBrackets) {
+		sliced += "\n]";
+		closeBrackets++;
+	}
+	while (openBraces > closeBraces) {
+		sliced += "\n}";
+		closeBraces++;
+	}
+	
+	return sliced + "\n/* ... [truncated] */";
+}
+
+// Sanitize sensitive information like API keys, secrets, passwords
+function sanitizeSecrets(text) {
+	if (typeof text !== "string") return text;
+	const secretRegexes = [
+		/(?:api[_-]?key|secret|password|passwd|token|private[_-]?key|auth[_-]?key|credentials|jwt|session[_-]?id)\s*[:=]\s*["']?([a-zA-Z0-9_\-\.\~]{10,})["']?/gi,
+		/(?:aws[_-]?access[_-]?key[_-]?id|aws[_-]?secret[_-]?access[_-]?key)\s*[:=]\s*["']?([a-zA-Z0-9_\-\.\~]{16,})["']?/gi,
+		/(?:bearer\s+)(eyJ[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9_\-\.]+\.[a-zA-Z0-9_\-\.]+)/gi
+	];
+	let sanitized = text;
+	for (const regex of secretRegexes) {
+		sanitized = sanitized.replace(regex, (match, captured) => {
+			return match.replace(captured, "[REDACTED_SECRET]");
+		});
+	}
+	return sanitized;
+}
+
+// Dynamically resolve supported LSP extensions from config files
+function getLspSupportedExtensions(cwd) {
+	const defaultExts = ["ts", "tsx", "js", "jsx", "go", "py", "rs", "c", "cpp", "h", "hpp", "java", "kt", "cs", "swift", "rb", "php", "dart", "ex", "exs", "zig", "sh", "bat"];
+	const extensions = new Set(defaultExts);
+	
+	// Check .codex/lsp-client.json to append config-specific languages/extensions
+	const codexConfigPath = join(cwd, ".codex", "lsp-client.json");
+	if (existsSync(codexConfigPath)) {
+		try {
+			const config = JSON.parse(readFileSync(codexConfigPath, "utf8"));
+			if (config && typeof config === "object") {
+				for (const key of Object.keys(config)) {
+					if (key.startsWith(".")) {
+						extensions.add(key.slice(1));
+					} else if (key.includes(".")) {
+						const part = key.split(".").pop();
+						if (part) extensions.add(part);
+					} else {
+						extensions.add(key);
+					}
+				}
+			}
+		} catch {}
+	}
+	
+	return Array.from(extensions);
+}
+
 async function getLspDiagnostics(cwd, files) {
 	try {
 		const { callDiagnosticsViaDaemon, currentRequestContext } = require("@code-yeongyu/lsp-daemon");
 		const diagnostics = [];
-		const promises = files.slice(0, 3).map(async (file) => {
+		const promises = files.slice(0, 5).map(async (file) => {
 			const absolutePath = join(cwd, file);
 			if (!existsSync(absolutePath)) return;
 			try {
 				const result = await Promise.race([
 					callDiagnosticsViaDaemon(absolutePath, { context: currentRequestContext() }),
-					new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 1500))
+					new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 800))
 				]);
 				const text = result.content.map((block) => block.text).join("\n").trim();
 				if (text && !text.includes("No diagnostics found")) {
@@ -129,7 +210,7 @@ async function main() {
 			const content = readFileSync(agentsMdPath, "utf8");
 			// Extract first 2500 characters
 			const rulesSnippet = content.slice(0, 2500).trim();
-			additionalContextParts.push(`<project-rules>\n${rulesSnippet}\n</project-rules>`);
+			additionalContextParts.push(`<project-rules>\n${sanitizeSecrets(rulesSnippet)}\n</project-rules>`);
 		} catch {}
 	}
 
@@ -139,7 +220,7 @@ async function main() {
 		try {
 			const content = readFileSync(notepadPath, "utf8").trim();
 			if (content) {
-				additionalContextParts.push(`<notepad>\n${content.slice(0, 2000)}\n</notepad>`);
+				additionalContextParts.push(`<notepad>\n${sanitizeSecrets(safeMarkdownSlice(content, 2000))}\n</notepad>`);
 			}
 		} catch {}
 	}
@@ -151,8 +232,7 @@ async function main() {
 			const rawMem = readFileSync(memoryPath, "utf8").trim();
 			const parsed = JSON.parse(rawMem);
 			if (parsed && typeof parsed === "object") {
-				const memorySnippet = JSON.stringify(parsed, null, 2);
-				additionalContextParts.push(`<project-memory>\n${memorySnippet.slice(0, 2000)}\n</project-memory>`);
+				additionalContextParts.push(`<project-memory>\n${sanitizeSecrets(safeJsonSlice(parsed, 2000))}\n</project-memory>`);
 			}
 		} catch {}
 	}
@@ -160,13 +240,33 @@ async function main() {
 	// 4. Gather LSP diagnostics for recently modified files
 	const modifiedFilesRaw = runCmd("git status --porcelain", cwd);
 	if (modifiedFilesRaw) {
+		const supportedExts = getLspSupportedExtensions(cwd);
 		const files = modifiedFilesRaw
 			.split("\n")
-			.map(line => line.trim().slice(3).trim())
-			.filter(file => {
-				const ext = file.split(".").pop();
-				return ["ts", "tsx", "go", "py", "rs"].includes(ext);
-			});
+			.map(line => {
+				if (line.length < 4) return null;
+				const status = line.slice(0, 2);
+				const filePathPart = line.slice(3).trim();
+				let filePath = filePathPart;
+				// handle renamed files "file1 -> file2"
+				if (filePathPart.includes(" -> ")) {
+					filePath = filePathPart.split(" -> ").pop().trim().replace(/^"(.*)"$/, "$1");
+				} else {
+					filePath = filePathPart.replace(/^"(.*)"$/, "$1");
+				}
+				// Modified = 3, Added = 2, Untracked = 1
+				let priority = 1;
+				if (status.includes("M")) priority = 3;
+				else if (status.includes("A")) priority = 2;
+				return { file: filePath, priority };
+			})
+			.filter(item => {
+				if (!item || !item.file) return false;
+				const ext = item.file.split(".").pop();
+				return supportedExts.includes(ext);
+			})
+			.sort((a, b) => b.priority - a.priority)
+			.map(item => item.file);
 		if (files.length > 0) {
 			const lspFeedback = await getLspDiagnostics(cwd, files);
 			if (lspFeedback) {

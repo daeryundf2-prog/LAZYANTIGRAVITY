@@ -35,6 +35,20 @@ async function main() {
 	const command = args[3];
 	const commandArgs = args.slice(4);
 
+	if (policy === "BACKGROUND") {
+		try {
+			const child = spawn(command, commandArgs, {
+				stdio: "ignore",
+				shell: false,
+				detached: true,
+			});
+			child.unref();
+		} catch (e) {
+			// Ignore launch errors in background mode
+		}
+		process.exit(0);
+	}
+
 	// Read stdin fully to pass it down
 	const stdinData = await readAllStdin();
 
