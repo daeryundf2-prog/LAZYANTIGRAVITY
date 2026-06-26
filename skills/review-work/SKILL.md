@@ -610,4 +610,19 @@ Compile the final report in this format:
 
 If FAILED - be specific. The user should know exactly what to fix and in what order. No vague "consider improving X" - state the problem, the file, and the fix.
 
+### Review Findings Gate & Local Tracking (Fable-inspired)
+If the overall verdict is FAILED:
+1. Write the blocking issues list to `.omo/review-findings.json` in the following format:
+   ```json
+   {
+     "status": "open",
+     "findings": [
+       { "id": "RF001", "file": "path/to/file", "severity": "CRITICAL", "description": "Detailed description of the issue", "resolved": false }
+     ]
+   }
+   ```
+2. During follow-up implementation loops, the worker/executor agents must read `.omo/review-findings.json`, address each item, and update the JSON to set `"resolved": true` alongside the commit hash or manual QA evidence.
+3. The final verification gate will require all findings inside `.omo/review-findings.json` to be marked as resolved before approving the workspace.
+
 If PASSED - keep it short. Highlight any non-blocking suggestions, but don't turn a passing review into a lecture.
+
