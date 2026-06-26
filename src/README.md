@@ -10,7 +10,7 @@
 [![Gemini 3.5 Flash Optimized](https://img.shields.io/badge/Gemini%203.5%20Flash-Optimized-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://gemini.google.com)
 [![All Antigravity Models](https://img.shields.io/badge/All%20Models-Supported-8B5CF6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Built on lazycodex](https://img.shields.io/badge/Built%20on-lazycodex-7C3AED?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/lazycodex)
-[![Built on Ouroboros](https://img.shields.io/badge/Built%20on-Ouroboros-ff6b6b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/ouroboros)
+[![Built on Ouroboros](https://img.shields.io/badge/Built%20on-Ouroboros-ff6b6b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Q00/ouroboros)
 [![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](../LICENSE.md)
 [![GitHub Stars](https://img.shields.io/github/stars/daeryundf2-prog/LAZYANTIGRAVITY?style=for-the-badge&color=ffcb47&labelColor=black)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/stargazers)
 
@@ -411,6 +411,17 @@ On top of everything inherited above, lazyantigravity adds an extension layer sp
 
 ---
 
+## 🗺️ Roadmap (Upcoming Features)
+
+We are actively designing and proposing the following core features to enhance the agent toolbelt:
+
+* **Dynamic Context Optimizer (`$context-optimizer`)**: Automatically detects the active file type and goal scope to inject only the highly relevant rules, reducing prompt size by over 70% and optimizing token usage.
+* **Live UI/UX Component Workbench (`$ui-workbench`)**: Spawns a lightweight, hot-reloading dev sandbox inside the `asbrowse` visual dashboard so users can preview and interact with generated UI components in real time.
+* **Git Pre-commit AI Slop Gate (`$pre-commit-gate`)**: Integrates an AST-aware pre-commit validation hook (powered by `ast-grep`) that blocks AI-generated code smells and syntax errors before commits are finalized.
+* **Visual LSP Diagnostics Map**: Renders an interactive file-dependency and error map in the session dashboard, visualizing compile/type diagnostics to make troubleshooting intuitive.
+
+---
+
 ## 🔌 MCP Integration
 
 lazyantigravity bundles 4 MCP (Model Context Protocol) servers:
@@ -460,14 +471,14 @@ This project incorporates ideas and code from the following open-source projects
 
 | Project | Maintainer | Contribution |
 | :--- | :--- | :--- |
-| [Ouroboros](https://github.com/Q00/ouroboros) | [@code-yeongyu](https://github.com/code-yeongyu) | Agent OS, Socratic Spec-Interview, Ralph Persistence Loop |
+| [Ouroboros](https://github.com/Q00/ouroboros) | [@Q00](https://github.com/Q00) | Agent OS, Socratic Spec-Interview, Ralph Persistence Loop |
 | [lazycodex](https://github.com/code-yeongyu/lazycodex) | [@code-yeongyu](https://github.com/code-yeongyu) | Hook system, Skill registry, Comment Checker, LSP diagnostics |
 | [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) | [@code-yeongyu](https://github.com/code-yeongyu) | OMX orchestration, multi-agent delegation, model routing |
-| [asbrowse](../skills/browse/) | — | Session browser visual dashboard |
+| [asbrowse](../skills/browse/) | abworser | Session browser visual dashboard |
 | [insane-research](https://github.com/fivetaku/insane-research) | [@fivetaku](https://github.com/fivetaku) | ultraresearch verification gate idea (MIT) |
-| [open-design](../src/packages/shared-skills/upstreams/open-design/) | — | Design system skill upstream |
-| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | — | UI/UX taste router |
-| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | — | Design power references |
+| [open-design](../src/packages/shared-skills/upstreams/open-design/) | [@nexu-io](https://github.com/nexu-io) | Design system skill upstream |
+| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | [@Leonxlnx](https://github.com/Leonxlnx) | UI/UX taste router |
+| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | [@Owl-Listener](https://github.com/Owl-Listener) | Design power references |
 | [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST structural search & codemods |
 | [Context7](https://context7.com/) | Context7 team | Official docs MCP server |
 | [Grep.app](https://grep.app/) | Grep.app team | GitHub code search MCP server |

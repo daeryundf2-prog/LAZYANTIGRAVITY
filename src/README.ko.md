@@ -10,7 +10,7 @@
 [![Gemini 3.5 Flash Optimized](https://img.shields.io/badge/Gemini%203.5%20Flash-Optimized-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://gemini.google.com)
 [![All Antigravity Models](https://img.shields.io/badge/All%20Models-Supported-8B5CF6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Built on lazycodex](https://img.shields.io/badge/Built%20on-lazycodex-7C3AED?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/lazycodex)
-[![Built on Ouroboros](https://img.shields.io/badge/Built%20on-Ouroboros-ff6b6b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/ouroboros)
+[![Built on Ouroboros](https://img.shields.io/badge/Built%20on-Ouroboros-ff6b6b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Q00/ouroboros)
 [![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](../LICENSE.md)
 [![GitHub Stars](https://img.shields.io/github/stars/daeryundf2-prog/LAZYANTIGRAVITY?style=for-the-badge&color=ffcb47&labelColor=black)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/stargazers)
 
@@ -413,6 +413,17 @@ Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합�
 
 ---
 
+## 🗺️ 로드맵 (향후 추가 예정 기능)
+
+에이전트 개발 도구의 성능을 극대화하기 위해 다음과 같은 핵심 기능들을 검토 및 설계하고 있습니다:
+
+* **동적 컨텍스트 최적화 엔진 (`$context-optimizer`)**: 현재 다루고 있는 파일 확장자와 작업 스코프를 분석하여 필요한 규칙과 가이드만 선별 주입함으로써 프롬프트 크기를 70% 이상 절감합니다.
+* **대시보드 실시간 컴포넌트 프리뷰어 (`$ui-workbench`)**: 컴포넌트 수정 시 `asbrowse` 대시보드 내 독립된 핫 리로딩 개발 샌드박스에서 실시간으로 결과물을 미리보고 조작할 수 있는 기능입니다.
+* **Git Pre-commit AI 슬롭 차단기 (`$pre-commit-gate`)**: 커밋 직전에 변경된 코드 내 불필요한 AI 코딩 잔재나 타입 에러를 `ast-grep` 구문 분석으로 진단하여 커밋을 자동 제어하는 훅입니다.
+* **비주얼 LSP 진단 의존성 맵**: 대시보드에서 프로젝트 전체 파일들의 의존 관계와 LSP 타입 에러 분포를 한눈에 알아볼 수 있도록 시각화 맵을 구성합니다.
+
+---
+
 ## 🔌 MCP 통합
 
 lazyantigravity는 4개의 MCP (Model Context Protocol) 서버를 번들합니다:
@@ -462,14 +473,14 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 | Project | Maintainer | Contribution |
 | :--- | :--- | :--- |
-| [Ouroboros](https://github.com/Q00/ouroboros) | [@code-yeongyu](https://github.com/code-yeongyu) | Agent OS, Spec-Interview, Ralph Persistence Loop |
+| [Ouroboros](https://github.com/Q00/ouroboros) | [@Q00](https://github.com/Q00) | Agent OS, Spec-Interview, Ralph Persistence Loop |
 | [lazycodex](https://github.com/code-yeongyu/lazycodex) | [@code-yeongyu](https://github.com/code-yeongyu) | Hook 시스템, 스킬 레지스트리, Comment Checker, LSP 진단 |
 | [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) | [@code-yeongyu](https://github.com/code-yeongyu) | OMX 오케스트레이션, 멀티 에이전트 위임, 모델 라우팅 |
-| [asbrowse](../skills/browse/) | — | 세션 브라우저 비주얼 대시보드 |
+| [asbrowse](../skills/browse/) | abworser | 세션 브라우저 비주얼 대시보드 |
 | [insane-research](https://github.com/fivetaku/insane-research) | [@fivetaku](https://github.com/fivetaku) | ultraresearch 검증 게이트 아이디어 (MIT) |
-| [open-design](../src/packages/shared-skills/upstreams/open-design/) | — | 디자인 시스템 스킬 업스트림 |
-| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | — | UI/UX 테이스트 라우터 |
-| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | — | 디자인 파워 레퍼런스 |
+| [open-design](../src/packages/shared-skills/upstreams/open-design/) | [@nexu-io](https://github.com/nexu-io) | 디자인 시스템 스킬 업스트림 |
+| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | [@Leonxlnx](https://github.com/Leonxlnx) | UI/UX 테이스트 라우터 |
+| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | [@Owl-Listener](https://github.com/Owl-Listener) | 디자인 파워 레퍼런스 |
 | [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST 구조 검색 & 코드모드 |
 | [Context7](https://context7.com/) | Context7 team | 공식 문서 MCP 서버 |
 | [Grep.app](https://grep.app/) | Grep.app team | GitHub 코드 검색 MCP 서버 |
