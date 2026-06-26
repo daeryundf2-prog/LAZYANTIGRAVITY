@@ -25,7 +25,7 @@
 - [Core Commands](#-core-commands)
 - [Magic Keywords](#-magic-keywords)
 - [Visual Dashboard: asbrowse](#-visual-dashboard-asbrowse)
-- [Complete Skill Catalog (26 Skills)](#-complete-skill-catalog-26-skills)
+- [Complete Skill Catalog (28 Skills)](#-complete-skill-catalog-28-skills)
 - [Hook Pipeline: Automatic Quality Gates](#-hook-pipeline-automatic-quality-gates)
 - [Technical Architecture](#-technical-architecture)
 - [Heritage & Philosophy](#-heritage--philosophy)
@@ -165,7 +165,7 @@ The asbrowse dashboard replaces terminal log overload with a structured, real-ti
 
 ---
 
-## 📦 Complete Skill Catalog (26 Skills)
+## 📦 Complete Skill Catalog (28 Skills)
 
 Every skill is either auto-triggered by magic keywords or manually invoked via `$name` / `/name`.
 
@@ -229,12 +229,13 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
   <br /><em>Real-time LSP diagnostics — type errors and warnings caught instantly</em>
 </div>
 
-### ![Frontend & Design](https://img.shields.io/badge/Frontend_%26_Design-00D4FF?style=flat-square) Frontend & Design (2 skills)
+### ![Frontend & Design](https://img.shields.io/badge/Frontend_%26_Design-00D4FF?style=flat-square) Frontend & Design (3 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **frontend** | `frontend`, `UI`, `UX`, `design` | Anti-slop taste router with 12 taste skills + 69 brand design refs. React dev tooling: react-scan, react-doctor. Lighthouse 100 via Playwright Chromium audits |
 | **visual-qa** | `visual QA`, `screenshot diff`, `UI looks wrong` | Pixel-diff analysis + CJK text precision + two parallel oracle passes for design-system and functional integrity |
+| **clone** | `clone`, `clone website` | Reverse-engineer and clone target website URL into a Next.js/Tailwind v4/shadcn UI React project |
 
 ### ![Debugging](https://img.shields.io/badge/Debugging-FF6B6B?style=flat-square) Debugging (1 skill)
 
@@ -261,12 +262,13 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 | :--- | :--- | :--- |
 | **spec-interview** | `spec interview`, `grill me` | Socratic Q&A → ambiguity scoring → polished requirements report (pm.md) + slide outline |
 
-### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) Configuration & Setup (2 skills)
+### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) Configuration & Setup (3 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **init-deep** | `/init-deep` | Generates hierarchical `AGENTS.md` knowledge base across project directories |
 | **rules** | Rules-related questions | Explains Codex Rules behavior, rule file locations, matching, environment config |
+| **sync-rules** | `sync-rules`, `sync rules` | Compiles and synchronizes master AGENTS.md rules to platform-specific configuration files conditionally, supporting watch mode (--watch) |
 
 ### ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) Plugin Health (3 skills)
 
