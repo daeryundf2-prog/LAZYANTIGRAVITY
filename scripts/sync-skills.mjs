@@ -88,7 +88,8 @@ try {
 	const aliasEntries = await readdir(aliasesRoot, { withFileTypes: true });
 	for (const entry of aliasEntries) {
 		if (entry.isDirectory()) {
-			await cp(join(aliasesRoot, entry.name), join(skillsRoot, entry.name), { recursive: true });
+			const targetName = entry.name === "frontend" ? "frontend-ui-ux" : entry.name;
+			await cp(join(aliasesRoot, entry.name), join(skillsRoot, targetName), { recursive: true });
 		}
 	}
 } catch {

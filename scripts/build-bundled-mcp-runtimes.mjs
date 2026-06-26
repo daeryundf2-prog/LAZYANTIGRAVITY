@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoPackagesRoot = pluginRoot;
+
+const packageJson = JSON.parse(readFileSync(join(pluginRoot, "package.json"), "utf8"));
+const isStandalone = packageJson.name === "lazyantigravity";
 
 const runtimes = [
 	{
@@ -24,7 +27,7 @@ const runtimes = [
 		packageRoot: join(repoPackagesRoot, "git-bash-mcp"),
 		requiredOutputs: ["dist/cli.js"],
 	},
-];
+].filter((runtime) => !(runtime.label === "lsp-daemon" && isStandalone));
 
 for (const runtime of runtimes) {
 	buildRuntime(runtime);
