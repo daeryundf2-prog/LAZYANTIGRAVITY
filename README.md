@@ -32,8 +32,11 @@ Gemini 3.5 Flash의 압도적인 속도와 세련된 시각 Command Center(asbro
 
 ## 💡 Why lazyantigravity?
 
-에이전트가 코딩을 수행하는 동안, 쏟아지는 수백 줄의 터미널 텍스트 로그에 압도되어 피로하셨나요? 
-`lazyantigravity`는 기존의 낡고 복잡한 개발 플러그인을 완전히 오버홀하여, 극도의 사용성과 미학적 만족감을 제공합니다.
+**`lazyantigravity`는 강력한 자율 코딩 에이전트 프레임워크인 우로보로스(Ouroboros) 및 lazycodex (Codex CLI / oh-my-openagent)를 기반으로 구축되었습니다.** 
+
+오리지널 우로보로스와 lazycodex가 자랑하는 영속적 멀티 에이전트 루프와 완벽한 정적 분석 엔진을 100% 계승하면서, 이를 Gemini 3.5 Flash의 초고속 추론 능력에 맞춰 세부 프롬프트와 API 쿼터를 최적화하고 세련된 웹 대시보드(asbrowse)를 결합한 **최고급 시각 확장형 에디션**입니다.
+
+에이전트가 코딩을 수행하는 동안, 쏟아지는 수백 줄의 터미널 텍스트 로그에 압도되어 피로하셨다면, `lazyantigravity`를 통해 극도의 사용성과 미학적 만족감을 경험해 보세요.
 
 *   **⚡️ Gemini 3.5 Flash 완벽 튜닝**: Pro 모델 대비 최대 10배 빠른 추론 속도와 압도적인 가성비를 살려, 에이전트의 반복적인 빌드 및 디버깅 루프를 초고속으로 제어합니다.
 *   **🖥️ asbrowse (Interactive Dashboard)**: 에이전트의 상태, 진행률, 변경된 코드 Diff, 실시간 터미널 로그를 미려한 GUI 화면으로 시큐어하게 브라우징합니다.
