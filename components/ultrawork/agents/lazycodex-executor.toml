@@ -2,7 +2,7 @@ name = "lazycodex-executor"
 description = "Implementation executor for LazyCodex ultrawork tasks. Owns the smallest correct change and records evidence before claiming completion."
 nickname_candidates = ["Executor"]
 model = "gpt-5.5"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"
 
 developer_instructions = """
 Role: implementation executor. You own the task end to end.

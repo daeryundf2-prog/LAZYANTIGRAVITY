@@ -96,6 +96,13 @@ export async function syncHookStatusMessages(root = defaultRoot, options = {}) {
 	syncHooksJson(aggregateHooks, () => aggregateVersion);
 	await writeJson(aggregateHooksPath, aggregateHooks);
 
+	const rootHooksPath = join(root, "hooks.json");
+	if (await exists(rootHooksPath)) {
+		const rootHooks = await readJson(rootHooksPath);
+		syncHooksJson(rootHooks, () => aggregateVersion);
+		await writeJson(rootHooksPath, rootHooks);
+	}
+
 	for (const componentName of componentNames) {
 		const componentVersion =
 			releaseVersion ?? (await readPackageVersion(join(root, "components", componentName, "package.json")));

@@ -39,6 +39,26 @@
 				"hooks": [
 					{
 						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/check-prompt-density.mjs\"",
+						"timeout": 5,
+						"statusMessage": "(OmO) Analyzing Prompt Density"
+					}
+				]
+			},
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/prompt-amplifier.mjs\"",
+						"timeout": 5,
+						"statusMessage": "(OmO) Amplifying Prompt Constraints"
+					}
+				]
+			},
+			{
+				"hooks": [
+					{
+						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook user-prompt-submit",
 						"timeout": 10,
 						"statusMessage": "(OmO) Loading Project Rules"

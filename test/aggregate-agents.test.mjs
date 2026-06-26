@@ -19,7 +19,7 @@ const lazycodexAgentInvariants = new Map([
 	[
 		"lazycodex-executor.toml",
 		{
-			effort: "high",
+			effort: "xhigh",
 			includes: [/EVIDENCE_RECORDED: <path>/, /scenario/i, /artifact/i],
 		},
 	],
@@ -40,7 +40,7 @@ const lazycodexAgentInvariants = new Map([
 	[
 		"lazycodex-qa-executor.toml",
 		{
-			effort: "medium",
+			effort: "xhigh",
 			includes: [/not_applicable/, /surfaceEvidence/, /adversarialCases/],
 		},
 	],

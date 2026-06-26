@@ -27,6 +27,7 @@ const expectedSkills = [
 	"remove-ai-slops",
 	"review-work",
 	"rules",
+	"spec-interview",
 	"start-work",
 	"ultimate-browsing",
 	"ultraresearch",
