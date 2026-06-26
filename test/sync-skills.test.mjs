@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -14,6 +15,7 @@ const expectedSkills = [
 	"ast-grep",
 	"browse",
 	"clone",
+	"coding-agent-sessions",
 	"comment-checker",
 	"debugging",
 	"frontend-ui-ux",
@@ -147,6 +149,11 @@ test("#given shared skill package source #when aggregate Codex shared skills are
 	for (const skillName of sharedSkillNames) {
 		const targetName = skillName === "frontend" ? "frontend-ui-ux" : skillName;
 		if (componentSkillNames.has(targetName)) continue;
+
+		// Skip if overridden by an alias in skill-aliases/
+		const aliasName = skillName === "frontend-ui-ux" ? "frontend" : skillName;
+		if (existsSync(join(root, "skill-aliases", aliasName))) continue;
+
 		const sharedContent = await readFile(join(sharedSkillsRoot, skillName, "SKILL.md"), "utf8");
 		const aggregateContent = await readFile(join(aggregateSkillsRoot, targetName, "SKILL.md"), "utf8");
 		assert.equal(

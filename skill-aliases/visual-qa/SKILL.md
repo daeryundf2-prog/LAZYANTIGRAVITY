@@ -107,7 +107,7 @@ INPUTS & EVIDENCE:
 {Full source code, data summaries, plain text transcriptions, frame lists, script outputs, or image diff JSON}
 
 EVALUATION CHECKLIST:
-- For Web/TUI UI: Verify real design system tokens, fluid typography compliance, 8px grid alignment, and z-index elevation.
+- For Web/TUI UI: Verify real design system tokens, fluid typography compliance, 8px grid alignment, z-index elevation, and CJK line-breaking properties (e.g. keep-all or break-all font wrap tokens).
 - For Code: Verify compiler/type-checker diagnostics, API signature correctness, test-driven validation, and edge case coverage.
 - For Data: Verify representativeness, check class imbalances, review outlier handling (IQR), and audit missing data.
 - For Audio/STT: Verify multi-pass transcription differences, audit silence/omission segments, and check timestamp boundary synchronization.
@@ -141,7 +141,7 @@ INPUTS & EVIDENCE:
 {Captures, file contents, logs, transcription comparisons, VAD timelines, frame metadata, or OCR diff JSON}
 
 EVALUATION CHECKLIST:
-- For Web/TUI UI: Match visual layout, colors, negative space, responsive wrapping, CJK semantic line breaking, and CLS scores.
+- For Web/TUI UI: Match visual layout, colors, negative space, responsive wrapping, CJK semantic line breaking (no Korean words awkwardly split mid-syllable), zero CJK glyph drops (tofu), baseline clipping, and box-drawing border alignments (TUI).
 - For Code: Verify compliance with existing codebase patterns, check type safety (any/ignore casts), name readability, and dependency safety.
 - For Data: Verify correlation vs causation claims, check data bias skews, and audit statistical distributions.
 - For Audio/STT: Catch word-level hallucinations, skipped murmurs/phrases, and timestamp drift.
