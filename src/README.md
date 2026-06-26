@@ -101,7 +101,7 @@ These commands can be typed directly in your **Antigravity agent session** or in
 | :--- | :--- | :--- |
 | **`ultrawork`** / **`ulw`** | Ultimate autonomous coding loop. Writes code, runs tests, and iterates until the task is 100% verified. | Leverages Gemini 3.5 Flash's speed for hyper-fast feedback loops. |
 | **`ultraresearch`** / **`research`** | Maximum-saturation research orchestrator. Scans codebases, web docs, and repos. Verifies discovered code in a sandbox. | Produces cited, evidence-backed research reports. |
-| **`browse`** / **`$browse`** | Opens the asbrowse Session Browser dashboard. | Auto-boots Next.js dev server on port 3000 if inactive. |
+| **`browse`** / **`$browse`** | Opens the **asbrowse** Session Browser dashboard (Note: `asbrowse` is the dashboard name; type `browse` or `$browse` to open it). | Auto-boots Next.js dev server on port 3000 if inactive. |
 | **`/ulw-loop`** | Evidence-audited multi-goal orchestration loop with checkpoints. | Ensures auditability for large features. |
 | **`/init-deep`** | Generates hierarchical `AGENTS.md` context files across your project. | Maximizes agent domain awareness and token efficiency. |
 | **`/start-work`** | Prometheus Planner: conducts an interactive interview and establishes a plan before coding. | Eliminates ambiguity and requirement gaps upfront. |
@@ -344,6 +344,16 @@ The "Harness Problem" — when an AI agent references stale line numbers and cor
 2. The agent targets these hashes when making edits.
 3. If the file changed concurrently (another process modified it, or the agent references wrong content), the edit is **safely rejected**.
 4. Result: near-0% code corruption rate.
+
+### Reliability & Hallucination Mitigation
+
+Gemini 3.5 Flash provides exceptional speed, but LLM hallucinations (inventing non-existent API routes, deleting comments, or hallucinating code that doesn't compile) can break builds. lazyantigravity mitigates this in 5 key ways:
+
+1. **Evidence-Bound Loop (`ulw`)**: No task is marked "done" without captured execution evidence (passing tests, clean builds, valid HTTP response codes). Hallucinated code fails compile or runtime checks, forcing the model to self-correct.
+2. **LSP Quality Gates (Static Analysis)**: Instantly runs language-server type checking (e.g., TypeScript `tsc --noEmit`) immediately after file modifications, detecting type-level hallucinations (wrong parameters, fake methods) in real-time.
+3. **Comment Protection (Comment Checker)**: Monitors and prevents editing hallucinations where the model silently deletes important user comments or docstrings.
+4. **Hash Anchoring (Hashline)**: Targets edits using content hashes rather than fragile, hallucination-prone line numbers, eliminating file corruption.
+5. **Real-time Doc RAG (context7 MCP)**: Grounds the agent in actual facts by letting it look up official package documentation in real-time during execution instead of hallucinating from outdated training memory.
 
 ### ULW-Loop: Evidence-Audited Orchestration
 

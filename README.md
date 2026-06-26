@@ -61,6 +61,18 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 
 ---
 
+## 🛡️ Reliability: Hallucination Mitigation (제미나이 환각 제어)
+
+Gemini 3.5 Flash의 초고속 성능은 살리고, 코딩 에이전트의 최대 약점인 **환각(Hallucination) 현상은 아키텍처적으로 원천 봉쇄**합니다.
+
+1. **증거 기반 실행 루프 (Evidence-Bound Loop)**: `ulw`는 테스트 성공, 정상 빌드 컴파일, 실제 HTTP 응답 코드 등 **실행 결과 증거**가 수집되지 않으면 완료를 선언하지 않습니다. 환각 코드가 유입되면 자동 감지되어 자가 수정(Self-Correction)을 유도합니다.
+2. **정적 타입 검사 훅 (LSP Quality Gates)**: 코드가 변경되는 즉시 백그라운드에서 언어 서버 정적 분석(TypeScript `tsc --noEmit` 등)을 실행하여 **타입 수준의 환각(존재하지 않는 API 호출 등)을 즉각 실시간으로 검출**합니다.
+3. **주석 감시자 (Comment Checker)**: 에이전트가 코드 수정 과정에서 중요한 설명 주석이나 docstring을 지워버리는 교묘한 편집 환각 현상을 모니터링하고 차단합니다.
+4. **해시 앵커링 (Hashline)**: 기존에 오염되기 쉽던 라인 번호 참조 방식 대신 콘텐츠의 **실시간 해시 값**을 기반으로 수정 지점을 타겟팅하여 라인 밀림으로 인한 파일 깨짐 환각을 없앱니다.
+5. **실시간 공식 문서 MCP (context7)**: 에이전트가 컷오프(Cut-off) 이전의 지식으로 코드를 조작하지 않도록 **공식 패키지 문서를 실시간으로 검색**하여 정확한 사실에 입각해 코딩합니다.
+
+---
+
 ## ⚡ Quick Start
 
 > **Prerequisite / 전제 조건**: [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity) must be installed. / 설치되어 있어야 합니다.
@@ -141,7 +153,7 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 | :--- | :--- |
 | **`ultrawork`** / **`ulw`** | Autonomous code → test → fix loop. Keeps iterating until 100% verified. |
 | **`ultraresearch`** | Parallel research swarm across web, docs, and codebase with empirical verification. |
-| **`browse`** / **`$browse`** | Opens the asbrowse visual dashboard in your browser. |
+| **`browse`** / **`$browse`** | Opens the **asbrowse** visual dashboard in your browser (Note: `asbrowse` is the dashboard name; type `browse` or `$browse` to open it). |
 | **`/ulw-loop`** | Evidence-audited multi-goal orchestration loop with checkpoints. |
 | **`/init-deep`** | Auto-generates hierarchical `AGENTS.md` context files across your project. |
 | **`/start-work`** | Prometheus Planner: interactive interview → detailed plan before any code changes. |
