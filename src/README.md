@@ -18,57 +18,17 @@
 
 ## Table of Contents
 
-- [Heritage & Philosophy](#-heritage--philosophy)
 - [Quick Start & Installation](#-quick-start--installation)
 - [Supported Models](#-supported-models)
 - [Core Commands](#-core-commands)
 - [Magic Keywords](#-magic-keywords)
 - [Visual Dashboard: asbrowse](#-visual-dashboard-asbrowse)
-- [Hook Pipeline: Automatic Quality Gates](#-hook-pipeline-automatic-quality-gates)
 - [Complete Skill Catalog (26 Skills)](#-complete-skill-catalog-26-skills)
+- [Hook Pipeline: Automatic Quality Gates](#-hook-pipeline-automatic-quality-gates)
 - [Technical Architecture](#-technical-architecture)
+- [Heritage & Philosophy](#-heritage--philosophy)
 - [MCP Integration](#-mcp-integration)
 - [Telemetry & Opt-out](#-telemetry--opt-out)
-
----
-
-## 🧬 Heritage & Philosophy
-
-`lazyantigravity` is not a standalone project — it was built to bring ideas and code from **multiple proven open-source projects** into the **Google Gemini model ecosystem**.
-
-### [Ouroboros](https://github.com/Q00/ouroboros) — Agent OS
-
-**"Stop prompting. Start specifying."** An Agent OS that addresses the root cause of AI coding failures: human ambiguity.
-
-- **Spec-First Development**: Instead of vague prompts, Ouroboros conducts a **Socratic Spec-Interview** to quantify ambiguity (Ambiguity Score ≤ 0.2) and crystallize requirements before any code execution is permitted.
-- **Seed-Bound Execution**: Every agent action is ledger-recorded and seed-bound, guaranteeing auditable and replayable execution contracts.
-- **Interview → Crystallize → Execute → Evaluate → Evolve**: Evaluation results feed back into the next generation's specification — a self-evolving loop embodying the ouroboros symbol itself.
-- **Ralph Persistence Loop**: A self-referential loop that keeps agents running across session boundaries. State is reconstructed from an event store, so the agent resumes exactly where it left off even after machine restarts.
-- **Multi-Runtime Support**: Integrates with Claude Code, Codex CLI, OpenCode, Gemini, and more.
-
-### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
-
-An **agent harness for complex codebases**, installed via [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO). It goes beyond simple prompting to bring structure and discipline to AI coding agents.
-
-- **Lifecycle Hook System**: 7 events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop`) with hooks that monitor and augment every agent action.
-- **Skill Registry**: A composable, keyword-triggered skill architecture. Invoke via `$name` or magic keywords.
-- **oh-my-codex (OMX) Orchestration**: 20+ specialized agent catalogs (architect, executor, debugger, etc.), complexity-based model routing, and a team pipeline (`team-plan → team-prd → team-exec → team-verify → team-fix`).
-- **Comment Checker**: PostToolUse hook that detects and warns when AI silently deletes user comments during edits.
-- **LSP Diagnostics**: Real-time type checking and code intelligence via PostToolUse hooks.
-- **Prompt Amplifier & Density Analyzer**: UserPromptSubmit hook that scores prompt density, injects constraints, and auto-expands context from project rules.
-- **Project Rules Engine**: Auto-loads and enforces project-specific coding standards (AGENTS.md, .rules, etc.).
-- **Two Editions**: Ultimate (for OpenCode, with Sisyphus orchestration + 54+ hooks) and Light (for Codex CLI plugins, focused on core features).
-
-### lazyantigravity — This Project
-
-On top of everything inherited above, lazyantigravity adds an extension layer specifically tuned for **Google Antigravity (Gemini CLI)**:
-
-- **All-Model Support**: Compatible with all Antigravity-provided models (Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet). ULW Model Routing auto-recommends the optimal model per role.
-- **asbrowse Visual Dashboard**: A Next.js-powered Command Center replacing terminal log chaos.
-- **Hash-Anchored Edits (Hashline)**: Content hash verification eliminating the "Harness Problem" of stale line references.
-- **26 Specialized Skills**: From ultraresearch swarms to visual QA to TDD workflows.
-- **ulw-loop**: Evidence-audited multi-goal orchestration with safe-resume checkpoints.
-- **Skill-Embedded MCPs**: On-demand MCP servers that don't permanently bloat context.
 
 ---
 
@@ -196,47 +156,6 @@ The asbrowse dashboard replaces terminal log overload with a structured, real-ti
 
 ---
 
-## 🔧 Hook Pipeline: Automatic Quality Gates
-
-lazyantigravity runs **13 hooks** across **7 lifecycle events**. Every action the agent takes is automatically guarded.
-
-<div align="center">
-  <img src="../assets/readme/hook_lifecycle_diagram.png" alt="Hook Lifecycle Pipeline" width="85%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-  <br /><em>The complete hook lifecycle — from session start to agent stop</em>
-</div>
-
-<br />
-
-### Lifecycle Events
-
-| Event | Hooks | Purpose |
-| :--- | :--- | :--- |
-| **SessionStart** | Project Rules Loader, Telemetry Recorder, Auto-Update Checker | Initialize the agent's environment with rules, metrics, and latest code |
-| **UserPromptSubmit** | Prompt Density Analyzer, Prompt Amplifier, Project Rules Reloader, Ultrawork Trigger, ULW-Loop Steering | Optimize every prompt before the model processes it |
-| **PreToolUse** | Git Bash MCP Recommender, ULW-Loop Goal Budget Enforcer | Guard tool execution with smart recommendations and budget limits |
-| **PostToolUse** | Comment Checker, LSP Diagnostics, Project Rule Matcher | Validate every file edit for comment preservation, type correctness, and rule compliance |
-| **PostCompact** | Git Bash Cache Reset, Rule Cache Reset, LSP Cache Reset | Clean up caches after context window compaction |
-| **Stop** | Start-Work Continuation | Check if there's remaining planned work before the agent stops |
-| **SubagentStop** | Start-Work Continuation | Same check for child agents |
-
-### Comment Checker (PostToolUse)
-
-One of lazyantigravity's most distinctive features. AI agents frequently delete user comments during code edits without warning. The Comment Checker catches this in real-time:
-
-<div align="center">
-  <img src="../assets/readme/comment_checker_hook.png" alt="Comment Checker" width="60%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-  <br /><em>The Comment Checker detects removed comments and alerts the agent</em>
-</div>
-
-### Prompt Amplifier (UserPromptSubmit)
-
-Before the model even sees your prompt, the Prompt Amplifier analyzes and enriches it with:
-- Constraint injection for stricter adherence
-- Density scoring to warn when prompts are too vague
-- Automatic context expansion from project rules
-
----
-
 ## 📦 Complete Skill Catalog (26 Skills)
 
 Every skill is either auto-triggered by magic keywords or manually invoked via `$name` / `/name`.
@@ -346,6 +265,47 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 
 ---
 
+## 🔧 Hook Pipeline: Automatic Quality Gates
+
+lazyantigravity runs **13 hooks** across **7 lifecycle events**. Every action the agent takes is automatically guarded.
+
+<div align="center">
+  <img src="../assets/readme/hook_lifecycle_diagram.png" alt="Hook Lifecycle Pipeline" width="85%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>The complete hook lifecycle — from session start to agent stop</em>
+</div>
+
+<br />
+
+### Lifecycle Events
+
+| Event | Hooks | Purpose |
+| :--- | :--- | :--- |
+| **SessionStart** | Project Rules Loader, Telemetry Recorder, Auto-Update Checker | Initialize the agent's environment with rules, metrics, and latest code |
+| **UserPromptSubmit** | Prompt Density Analyzer, Prompt Amplifier, Project Rules Reloader, Ultrawork Trigger, ULW-Loop Steering | Optimize every prompt before the model processes it |
+| **PreToolUse** | Git Bash MCP Recommender, ULW-Loop Goal Budget Enforcer | Guard tool execution with smart recommendations and budget limits |
+| **PostToolUse** | Comment Checker, LSP Diagnostics, Project Rule Matcher | Validate every file edit for comment preservation, type correctness, and rule compliance |
+| **PostCompact** | Git Bash Cache Reset, Rule Cache Reset, LSP Cache Reset | Clean up caches after context window compaction |
+| **Stop** | Start-Work Continuation | Check if there's remaining planned work before the agent stops |
+| **SubagentStop** | Start-Work Continuation | Same check for child agents |
+
+### Comment Checker (PostToolUse)
+
+One of lazyantigravity's most distinctive features. AI agents frequently delete user comments during code edits without warning. The Comment Checker catches this in real-time:
+
+<div align="center">
+  <img src="../assets/readme/comment_checker_hook.png" alt="Comment Checker" width="60%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>The Comment Checker detects removed comments and alerts the agent</em>
+</div>
+
+### Prompt Amplifier (UserPromptSubmit)
+
+Before the model even sees your prompt, the Prompt Amplifier analyzes and enriches it with:
+- Constraint injection for stricter adherence
+- Density scoring to warn when prompts are too vague
+- Automatic context expansion from project rules
+
+---
+
 ## 🛠️ Technical Architecture
 
 ### Gemini 3.5 Flash Optimization
@@ -382,6 +342,46 @@ The `ulw-loop` is lazyantigravity's most sophisticated workflow:
 3. **Steering & Revision**: Success criteria can be revised mid-flight via `omo ulw-loop steer`.
 4. **Safe-Resume**: If interrupted, the exact checkpoint is preserved for seamless continuation.
 5. **Model Routing**: Recommends optimal model per role — Gemini 3.5 Flash for fast iteration, Claude Opus for architecture decisions.
+
+---
+
+## 🧬 Heritage & Philosophy
+
+`lazyantigravity` is not a standalone project — it was built to bring ideas and code from **multiple proven open-source projects** into the **Google Gemini model ecosystem**.
+
+### [Ouroboros](https://github.com/Q00/ouroboros) — Agent OS
+
+**"Stop prompting. Start specifying."** An Agent OS that addresses the root cause of AI coding failures: human ambiguity.
+
+- **Spec-First Development**: Instead of vague prompts, Ouroboros conducts a **Socratic Spec-Interview** to quantify ambiguity (Ambiguity Score ≤ 0.2) and crystallize requirements before any code execution is permitted.
+- **Seed-Bound Execution**: Every agent action is ledger-recorded and seed-bound, guaranteeing auditable and replayable execution contracts.
+- **Interview → Crystallize → Execute → Evaluate → Evolve**: Evaluation results feed back into the next generation's specification — a self-evolving loop embodying the ouroboros symbol itself.
+- **Ralph Persistence Loop**: A self-referential loop that keeps agents running across session boundaries. State is reconstructed from an event store, so the agent resumes exactly where it left off even after machine restarts.
+- **Multi-Runtime Support**: Integrates with Claude Code, Codex CLI, OpenCode, Gemini, and more.
+
+### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
+
+An **agent harness for complex codebases**, installed via [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO). It goes beyond simple prompting to bring structure and discipline to AI coding agents.
+
+- **Lifecycle Hook System**: 7 events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop`) with hooks that monitor and augment every agent action.
+- **Skill Registry**: A composable, keyword-triggered skill architecture. Invoke via `$name` or magic keywords.
+- **oh-my-codex (OMX) Orchestration**: 20+ specialized agent catalogs (architect, executor, debugger, etc.), complexity-based model routing, and a team pipeline (`team-plan → team-prd → team-exec → team-verify → team-fix`).
+- **Comment Checker**: PostToolUse hook that detects and warns when AI silently deletes user comments during edits.
+- **LSP Diagnostics**: Real-time type checking and code intelligence via PostToolUse hooks.
+- **Prompt Amplifier & Density Analyzer**: UserPromptSubmit hook that scores prompt density, injects constraints, and auto-expands context from project rules.
+- **Project Rules Engine**: Auto-loads and enforces project-specific coding standards (AGENTS.md, .rules, etc.).
+- **Two Editions**: Ultimate (for OpenCode, with Sisyphus orchestration + 54+ hooks) and Light (for Codex CLI plugins, focused on core features).
+
+### lazyantigravity — This Project
+
+On top of everything inherited above, lazyantigravity adds an extension layer specifically tuned for **Google Antigravity (Gemini CLI)**:
+
+- **All-Model Support**: Compatible with all Antigravity-provided models (Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet). ULW Model Routing auto-recommends the optimal model per role.
+- **asbrowse Visual Dashboard**: A Next.js-powered Command Center replacing terminal log chaos.
+- **Hash-Anchored Edits (Hashline)**: Content hash verification eliminating the "Harness Problem" of stale line references.
+- **26 Specialized Skills**: From ultraresearch swarms to visual QA to TDD workflows.
+- **ulw-loop**: Evidence-audited multi-goal orchestration with safe-resume checkpoints.
+- **Skill-Embedded MCPs**: On-demand MCP servers that don't permanently bloat context.
 
 ---
 
@@ -422,6 +422,10 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 **Made with ❤️ by shin**
 
+<br />
+
+This project inherits, extends, and adapts the innovative ideas and codebases of outstanding open-source projects including **our (Ouroboros)**, **lazycodex**, **omo (oh-my-openagent)**, and **abworser (asbrowse)** to the Google Gemini model ecosystem. We express our deepest gratitude to all the creators of these frameworks.
+
 </div>
 
 ### 🙏 Acknowledgments
@@ -441,4 +445,3 @@ This project incorporates ideas and code from the following open-source projects
 | [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST structural search & codemods |
 | [Context7](https://context7.com/) | Context7 team | Official docs MCP server |
 | [Grep.app](https://grep.app/) | Grep.app team | GitHub code search MCP server |
-

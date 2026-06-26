@@ -18,59 +18,17 @@
 
 ## 목차
 
-- [유산과 철학](#-유산과-철학-ouroboros--lazycodex--lazyantigravity)
 - [빠른 시작 & 설치](#-빠른-시작--설치)
 - [지원 모델](#-지원-모델-supported-models)
 - [핵심 명령어](#-핵심-명령어)
 - [마법 키워드](#-마법-키워드-magic-keywords)
 - [비주얼 대시보드: asbrowse](#-비주얼-대시보드-asbrowse)
-- [훅 파이프라인: 자동 품질 게이트](#-훅-파이프라인-자동-품질-게이트)
 - [전체 스킬 카탈로그 (26개)](#-전체-스킬-카탈로그-26개)
+- [훅 파이프라인: 자동 품질 게이트](#-훅-파이프라인-자동-품질-게이트)
 - [기술 아키텍처](#-기술-아키텍처)
+- [유산과 철학](#-유산과-철학-ouroboros--lazycodex--lazyantigravity)
 - [MCP 통합](#-mcp-통합)
 - [텔레메트리 & 비활성화](#-텔레메트리--비활성화)
-
----
-
-## 🧬 유산과 철학: Ouroboros → lazycodex → lazyantigravity
-
-`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 여러 검증된 오픈소스 프로젝트의 아이디어와 코드를 **Google Gemini 모델에서 사용하기 위해** 구축되었습니다.
-
-### [우로보로스 (Ouroboros)](https://github.com/Q00/ouroboros) — Agent OS
-
-**"Stop prompting. Start specifying."** 을 표방하는 Agent OS입니다. AI 코딩 실패의 근본 원인인 *인간의 모호성*을 해결합니다.
-
-- **Spec-First 개발 철학**: 모호한 프롬프트 대신, **소크라테스식 Spec-Interview**를 통해 모호성을 수치화(Ambiguity Score ≤ 0.2)하고 요구사항을 결정화(Crystallize)한 뒤에만 실행을 허용합니다.
-- **Seed-Bound Execution**: 모든 에이전트 행동이 렛저(Ledger)에 기록되고 시드에 바인딩되어, 감사 가능(Auditable)하고 리플레이 가능(Replayable)한 실행 계약을 보장합니다.
-- **Interview → Crystallize → Execute → Evaluate → Evolve**: 평가 결과가 다음 세대의 명세에 피드백되는 자기진화 루프 — 뱀이 자기 꼬리를 삼키는 우로보로스 상징 그 자체입니다.
-- **Ralph Persistence Loop**: 세션 경계를 넘어 에이전트가 지속 실행되도록 하는 자기참조 루프. 이벤트 스토어를 통해 상태를 재구성하므로 머신이 재시작되어도 정확히 중단 지점에서 재개됩니다.
-- **Multi-Runtime 지원**: Claude Code, Codex CLI, OpenCode, Gemini 등 다양한 AI CLI 도구와 통합됩니다.
-
-### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
-
-복잡한 코드베이스를 위한 **에이전트 하네스(Agent Harness)** 입니다. [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO)를 통해 설치되며, 단순한 프롬프트 대화를 넘어 AI 코딩 에이전트에 구조와 규율을 부여합니다.
-
-- **라이프사이클 훅 시스템**: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop` — 7개 이벤트에 훅을 걸어 에이전트의 모든 행동을 감시하고 보강합니다.
-- **스킬 레지스트리**: 키워드로 자동 트리거되는 조합형 스킬 아키텍처. `$name` 또는 매직 키워드로 호출됩니다.
-- **oh-my-codex (OMX) 오케스트레이션**: 20개 이상의 전문 에이전트 카탈로그(architect, executor, debugger 등), 복잡도 기반 모델 라우팅, 팀 파이프라인(`team-plan → team-prd → team-exec → team-verify → team-fix`)을 갖춘 멀티 에이전트 위임 프로토콜.
-- **Comment Checker**: PostToolUse 훅으로 동작. AI가 코드 편집 시 사용자 주석을 조용히 삭제하는 것을 실시간 감지하고 경고합니다.
-- **LSP 진단**: PostToolUse 훅으로 파일 편집 직후 실시간 타입 체크 및 코드 인텔리전스를 제공합니다.
-- **프롬프트 앰플리파이어 & 밀도 분석기**: UserPromptSubmit 훅으로 모델이 프롬프트를 처리하기 전에 AGENTS.md + notepad + project-memory + LSP 진단 결과를 자동 주입합니다. 밀도 점수가 4점 이하면 경고합니다.
-- **프로젝트 규칙 엔진**: `CONTEXT.md`, `.omo/rules/`, `.claude/rules/`, `.cursor/rules/`, `.github/instructions/` 등 다양한 소스에서 프로젝트별 코딩 표준을 자동 로드하고 강제합니다.
-- **두 에디션**: Ultimate 에디션(OpenCode용, Sisyphus 오케스트레이션 + 54개 이상 훅)과 Light 에디션(Codex CLI 플러그인용, 핵심 기능 포커스).
-
-### lazyantigravity — 이 프로젝트
-
-위의 모든 것을 상속받은 위에, **Google Antigravity(Gemini CLI)** 환경에 특화된 확장 레이어를 추가했습니다:
-
-- **All-Model Support**: Antigravity가 제공하는 모든 모델(Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet)과 호환. ULW Model Routing으로 역할별 최적 모델을 자동 추천합니다.
-- **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center.
-- **Hash-Anchored Edits (Hashline)**: AI 에이전트가 낡은 라인 번호를 참조하여 코드를 오염시키는 "Harness Problem"을 콘텐츠 해시 검증으로 제거.
-- **26개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 팀 오케스트레이션 등.
-- **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
-- **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
-
-Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
 
 ---
 
@@ -198,47 +156,6 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 
 ---
 
-## 🔧 훅 파이프라인: 자동 품질 게이트
-
-lazyantigravity는 **7개 라이프사이클 이벤트**에서 **13개 훅**을 실행합니다. 에이전트의 모든 행동이 자동으로 보호됩니다.
-
-<div align="center">
-  <img src="../assets/readme/hook_lifecycle_diagram.png" alt="훅 라이프사이클 파이프라인" width="85%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-  <br /><em>전체 훅 라이프사이클 — 세션 시작부터 에이전트 정지까지</em>
-</div>
-
-<br />
-
-### 라이프사이클 이벤트
-
-| 이벤트 | 훅 | 목적 |
-| :--- | :--- | :--- |
-| **SessionStart** | 프로젝트 규칙 로더, 텔레메트리 레코더, 자동 업데이트 체커 | 규칙, 메트릭, 최신 코드로 에이전트 환경 초기화 |
-| **UserPromptSubmit** | 프롬프트 밀도 분석기, 프롬프트 앰플리파이어, 규칙 리로더, Ultrawork 트리거, ULW-Loop 스티어링 | 모델이 처리하기 전에 모든 프롬프트를 최적화 |
-| **PreToolUse** | Git Bash MCP 추천기, ULW-Loop 골 버짓 강제기 | 스마트 추천과 버짓 한도로 도구 실행 보호 |
-| **PostToolUse** | Comment Checker, LSP 진단, 프로젝트 규칙 매처 | 모든 파일 편집에 대해 주석 보존, 타입 정확성, 규칙 준수 검증 |
-| **PostCompact** | Git Bash 캐시 리셋, 규칙 캐시 리셋, LSP 캐시 리셋 | 컨텍스트 윈도우 압축 후 캐시 정리 |
-| **Stop** | Start-Work 연속 체크 | 에이전트 중지 전 남은 계획 작업 확인 |
-| **SubagentStop** | Start-Work 연속 체크 | 자식 에이전트에 대한 동일 체크 |
-
-### Comment Checker (PostToolUse)
-
-lazyantigravity의 가장 특징적인 기능 중 하나입니다. AI 에이전트는 코드 편집 시 사용자의 주석을 경고 없이 삭제하는 경우가 빈번합니다. Comment Checker가 이를 실시간으로 포착합니다:
-
-<div align="center">
-  <img src="../assets/readme/comment_checker_hook.png" alt="Comment Checker" width="60%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-  <br /><em>Comment Checker가 삭제된 주석을 감지하고 에이전트에게 경고</em>
-</div>
-
-### 프롬프트 앰플리파이어 (UserPromptSubmit)
-
-모델이 프롬프트를 보기 전에 프롬프트 앰플리파이어가 분석하고 강화합니다:
-- 더 엄격한 준수를 위한 제약 조건 주입
-- 프롬프트가 너무 모호할 때 경고하는 밀도 점수화
-- 프로젝트 규칙에서 자동 컨텍스트 확장
-
----
-
 ## 📦 전체 스킬 카탈로그 (26개)
 
 모든 스킬은 마법 키워드로 자동 트리거되거나 `$name` / `/name`으로 수동 호출됩니다.
@@ -348,6 +265,47 @@ lazyantigravity의 가장 특징적인 기능 중 하나입니다. AI 에이전�
 
 ---
 
+## 🔧 훅 파이프라인: 자동 품질 게이트
+
+lazyantigravity는 **7개 라이프사이클 이벤트**에서 **13개 훅**을 실행합니다. 에이전트의 모든 행동이 자동으로 보호됩니다.
+
+<div align="center">
+  <img src="../assets/readme/hook_lifecycle_diagram.png" alt="훅 라이프사이클 파이프라인" width="85%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>전체 훅 라이프사이클 — 세션 시작부터 에이전트 정지까지</em>
+</div>
+
+<br />
+
+### 라이프사이클 이벤트
+
+| 이벤트 | 훅 | 목적 |
+| :--- | :--- | :--- |
+| **SessionStart** | 프로젝트 규칙 로더, 텔레메트리 레코더, 자동 업데이트 체커 | 규칙, 메트릭, 최신 코드로 에이전트 환경 초기화 |
+| **UserPromptSubmit** | 프롬프트 밀도 분석기, 프롬프트 앰플리파이어, 규칙 리로더, Ultrawork 트리거, ULW-Loop 스티어링 | 모델이 처리하기 전에 모든 프롬프트를 최적화 |
+| **PreToolUse** | Git Bash MCP 추천기, ULW-Loop 골 버짓 강제기 | 스마트 추천과 버짓 한도로 도구 실행 보호 |
+| **PostToolUse** | Comment Checker, LSP 진단, 프로젝트 규칙 매처 | 모든 파일 편집에 대해 주석 보존, 타입 정확성, 규칙 준수 검증 |
+| **PostCompact** | Git Bash 캐시 리셋, 규칙 캐시 리셋, LSP 캐시 리셋 | 컨텍스트 윈도우 압축 후 캐시 정리 |
+| **Stop** | Start-Work 연속 체크 | 에이전트 중지 전 남은 계획 작업 확인 |
+| **SubagentStop** | Start-Work 연속 체크 | 자식 에이전트에 대한 동일 체크 |
+
+### Comment Checker (PostToolUse)
+
+lazyantigravity의 가장 특징적인 기능 중 하나입니다. AI 에이전트는 코드 편집 시 사용자의 주석을 경고 없이 삭제하는 경우가 빈번합니다. Comment Checker가 이를 실시간으로 포착합니다:
+
+<div align="center">
+  <img src="../assets/readme/comment_checker_hook.png" alt="Comment Checker" width="60%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>Comment Checker가 삭제된 주석을 감지하고 에이전트에게 경고</em>
+</div>
+
+### 프롬프트 앰플리파이어 (UserPromptSubmit)
+
+모델이 프롬프트를 보기 전에 프롬프트 앰플리파이어가 분석하고 강화합니다:
+- 더 엄격한 준수를 위한 제약 조건 주입
+- 프롬프트가 너무 모호할 때 경고하는 밀도 점수화
+- 프로젝트 규칙에서 자동 컨텍스트 확장
+
+---
+
 ## 🛠️ 기술 아키텍처
 
 ### Gemini 3.5 Flash 최적화
@@ -384,6 +342,48 @@ lazyantigravity는 **Gemini 3.5 Flash**를 위해 목적 설계되었습니다:
 3. **스티어링 & 리비전**: 실행 중 `omo ulw-loop steer`로 성공 기준 수정 가능.
 4. **안전 복원**: 중단 시 정확한 체크포인트가 보존되어 원활한 재개.
 5. **모델 라우팅**: 역할별 최적 모델 추천 — 빠른 반복에는 Gemini 3.5 Flash, 아키텍처 결정에는 Claude Opus.
+
+---
+
+## 🧬 유산과 철학: Ouroboros → lazycodex → lazyantigravity
+
+`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 여러 검증된 오픈소스 프로젝트의 아이디어와 코드를 **Google Gemini 모델에서 사용하기 위해** 구축되었습니다.
+
+### [우로보로스 (Ouroboros)](https://github.com/Q00/ouroboros) — Agent OS
+
+**"Stop prompting. Start specifying."** 을 표방하는 Agent OS입니다. AI 코딩 실패의 근본 원인인 *인간의 모호성*을 해결합니다.
+
+- **Spec-First 개발 철학**: 모호한 프롬프트 대신, **소크라테스식 Spec-Interview**를 통해 모호성을 수치화(Ambiguity Score ≤ 0.2)하고 요구사항을 결정화(Crystallize)한 뒤에만 실행을 허용합니다.
+- **Seed-Bound Execution**: 모든 에이전트 행동이 렛저(Ledger)에 기록되고 시드에 바인딩되어, 감사 가능(Auditable)하고 리플레이 가능(Replayable)한 실행 계약을 보장합니다.
+- **Interview → Crystallize → Execute → Evaluate → Evolve**: 평가 결과가 다음 세대의 명세에 피드백되는 자기진화 루프 — 뱀이 자기 꼬리를 삼키는 우로보로스 상징 그 자체입니다.
+- **Ralph Persistence Loop**: 세션 경계를 넘어 에이전트가 지속 실행되도록 하는 자기참조 루프. 이벤트 스토어를 통해 상태를 재구성하므로 머신이 재시작되어도 정확히 중단 지점에서 재개됩니다.
+- **Multi-Runtime 지원**: Claude Code, Codex CLI, OpenCode, Gemini 등 다양한 AI CLI 도구와 통합됩니다.
+
+### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
+
+복잡한 코드베이스를 위한 **에이전트 하네스(Agent Harness)** 입니다. [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO)를 통해 설치되며, 단순한 프롬프트 대화를 넘어 AI 코딩 에이전트에 구조와 규율을 부여합니다.
+
+- **라이프사이클 훅 시스템**: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop` — 7개 이벤트에 훅을 걸어 에이전트의 모든 행동을 감시하고 보강합니다.
+- **스킬 레지스트리**: 키워드로 자동 트리거되는 조합형 스킬 아키텍처. `$name` 또는 매직 키워드로 호출됩니다.
+- **oh-my-codex (OMX) 오케스트레이션**: 20개 이상의 전문 에이전트 카탈로그(architect, executor, debugger 등), 복잡도 기반 모델 라우팅, 팀 파이프라인(`team-plan → team-prd → team-exec → team-verify → team-fix`)을 갖춘 멀티 에이전트 위임 프로토콜.
+- **Comment Checker**: PostToolUse 훅으로 동작. AI가 코드 편집 시 사용자 주석을 조용히 삭제하는 것을 실시간 감지하고 경고합니다.
+- **LSP 진단**: PostToolUse 훅으로 파일 편집 직후 실시간 타입 체크 및 코드 인텔리전스를 제공합니다.
+- **프롬프트 앰플리파이어 & 밀도 분석기**: UserPromptSubmit 훅으로 모델이 프롬프트를 처리하기 전에 AGENTS.md + notepad + project-memory + LSP 진단 결과를 자동 주입합니다. 밀도 점수가 4점 이하면 경고합니다.
+- **프로젝트 규칙 엔진**: `CONTEXT.md`, `.omo/rules/`, `.claude/rules/`, `.cursor/rules/`, `.github/instructions/` 등 다양한 소스에서 프로젝트별 코딩 표준을 자동 로드하고 강제합니다.
+- **두 에디션**: Ultimate 에디션(OpenCode용, Sisyphus 오케스트레이션 + 54개 이상 훅)과 Light 에디션(Codex CLI 플러그인용, 핵심 기능 포커스).
+
+### lazyantigravity — 이 프로젝트
+
+위의 모든 것을 상속받은 위에, **Google Antigravity(Gemini CLI)** 환경에 특화된 확장 레이어를 추가했습니다:
+
+- **All-Model Support**: Antigravity가 제공하는 모든 모델(Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet)과 호환. ULW Model Routing으로 역할별 최적 모델을 자동 추천합니다.
+- **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center.
+- **Hash-Anchored Edits (Hashline)**: AI 에이전트가 낡은 라인 번호를 참조하여 코드를 오염시키는 "Harness Problem"을 콘텐츠 해시 검증으로 제거.
+- **26개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 팀 오케스트레이션 등.
+- **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
+- **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
+
+Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
 
 ---
 
@@ -424,6 +424,10 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 **Made with ❤️ by shin**
 
+<br />
+
+이 프로젝트는 **our (Ouroboros)**, **lazycodex**, **omo (oh-my-openagent)**, **abworser (asbrowse)** 등 다양한 프로젝트의 혁신적인 아이디어와 코드베이스를 계승하고 확장하여 구축되었습니다. 뛰어난 설계와 영감을 나눠주신 개발자분들께 깊은 감사를 드립니다.
+
 </div>
 
 ### 🙏 Acknowledgments
@@ -443,4 +447,3 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 | [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST 구조 검색 & 코드모드 |
 | [Context7](https://context7.com/) | Context7 team | 공식 문서 MCP 서버 |
 | [Grep.app](https://grep.app/) | Grep.app team | GitHub 코드 검색 MCP 서버 |
-
