@@ -34,35 +34,41 @@
 
 ## 🧬 Heritage & Philosophy
 
-`lazyantigravity` is not a standalone project — it is the **premium extension layer** built on two proven open-source agent frameworks:
+`lazyantigravity` is not a standalone project — it is built on two proven open-source frameworks:
 
-### Ouroboros (The Foundation)
+### [Ouroboros](https://github.com/Q00/ouroboros) — Agent OS
 
-[Ouroboros](https://github.com/code-yeongyu/ouroboros) introduced:
-- **The self-referential persistence loop** (`$ralph`): an agent that never stops until the goal is verified
-- **Multi-agent spawning architecture**: coordinating specialized agents for parallel work
-- **The "don't stop" philosophy**: every task runs to full completion with evidence
+**"Stop prompting. Start specifying."** An Agent OS that addresses the root cause of AI coding failures: human ambiguity.
 
-### lazycodex (The Engine)
+- **Spec-First Development**: Instead of vague prompts, Ouroboros conducts a **Socratic Spec-Interview** to quantify ambiguity (Ambiguity Score ≤ 0.2) and crystallize requirements before any code execution is permitted.
+- **Seed-Bound Execution**: Every agent action is ledger-recorded and seed-bound, guaranteeing auditable and replayable execution contracts.
+- **Interview → Crystallize → Execute → Evaluate → Evolve**: Evaluation results feed back into the next generation's specification — a self-evolving loop embodying the ouroboros symbol itself.
+- **Ralph Persistence Loop**: A self-referential loop that keeps agents running across session boundaries. State is reconstructed from an event store, so the agent resumes exactly where it left off even after machine restarts.
+- **Multi-Runtime Support**: Integrates with Claude Code, Codex CLI, OpenCode, Gemini, and more.
 
-[lazycodex](https://github.com/code-yeongyu/lazycodex) (also known as Codex CLI / oh-my-openagent) brought:
-- **The complete hook system**: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStop lifecycle hooks
-- **The skill registry**: a composable, keyword-triggered skill architecture
-- **oh-my-codex (OMX) orchestration**: the multi-agent delegation protocol with agent catalogs, model routing, and team pipelines
-- **Comment Checker**: prevents AI agents from silently deleting user comments
-- **LSP Diagnostics**: real-time type checking and code intelligence
-- **Prompt Amplifier & Density Analyzer**: optimizes prompt quality before the model sees it
-- **Project Rules Engine**: loads and enforces project-specific coding standards
+### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
 
-### lazyantigravity (This Project)
+An **agent harness for complex codebases**, installed via [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO). It goes beyond simple prompting to bring structure and discipline to AI coding agents.
 
-On top of that inherited foundation, lazyantigravity adds:
-- **Gemini 3.5 Flash–specific prompt tuning**: optimized for sub-second inference and massive context windows
-- **asbrowse visual dashboard**: a Next.js–powered Command Center replacing terminal log chaos
-- **Hash-Anchored Edits (Hashline)**: content hash verification eliminating the "Harness Problem"
-- **26 specialized skills**: from ultraresearch swarms to visual QA to TDD workflows
-- **ulw-loop**: evidence-audited multi-goal orchestration with safe-resume checkpoints
-- **Skill-Embedded MCPs**: on-demand MCP servers that don't bloat context permanently
+- **Lifecycle Hook System**: 7 events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop`) with hooks that monitor and augment every agent action.
+- **Skill Registry**: A composable, keyword-triggered skill architecture. Invoke via `$name` or magic keywords.
+- **oh-my-codex (OMX) Orchestration**: 20+ specialized agent catalogs (architect, executor, debugger, etc.), complexity-based model routing, and a team pipeline (`team-plan → team-prd → team-exec → team-verify → team-fix`).
+- **Comment Checker**: PostToolUse hook that detects and warns when AI silently deletes user comments during edits.
+- **LSP Diagnostics**: Real-time type checking and code intelligence via PostToolUse hooks.
+- **Prompt Amplifier & Density Analyzer**: UserPromptSubmit hook that scores prompt density, injects constraints, and auto-expands context from project rules.
+- **Project Rules Engine**: Auto-loads and enforces project-specific coding standards (AGENTS.md, .rules, etc.).
+- **Two Editions**: Ultimate (for OpenCode, with Sisyphus orchestration + 54+ hooks) and Light (for Codex CLI plugins, focused on core features).
+
+### lazyantigravity — This Project
+
+On top of everything inherited above, lazyantigravity adds an extension layer specifically tuned for **Google Antigravity (Gemini CLI)**:
+
+- **All-Model Support**: Compatible with all Antigravity-provided models (Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet). ULW Model Routing auto-recommends the optimal model per role.
+- **asbrowse Visual Dashboard**: A Next.js-powered Command Center replacing terminal log chaos.
+- **Hash-Anchored Edits (Hashline)**: Content hash verification eliminating the "Harness Problem" of stale line references.
+- **26 Specialized Skills**: From ultraresearch swarms to visual QA to TDD workflows.
+- **ulw-loop**: Evidence-audited multi-goal orchestration with safe-resume checkpoints.
+- **Skill-Embedded MCPs**: On-demand MCP servers that don't permanently bloat context.
 
 ---
 
@@ -414,8 +420,9 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 <div align="center">
 
-**Made with ❤️ by [Yeongyu Kim](https://github.com/code-yeongyu)**
+**Made with ❤️ by shin**
 
-*Inheriting the best of [Ouroboros](https://github.com/code-yeongyu/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex)*
+*Special thanks to [Yeongyu Kim](https://github.com/code-yeongyu) for creating [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex) — the foundations that made this project possible*
 
 </div>
+

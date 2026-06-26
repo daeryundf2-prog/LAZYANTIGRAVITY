@@ -34,35 +34,43 @@
 
 ## 🧬 유산과 철학: Ouroboros → lazycodex → lazyantigravity
 
-`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 두 개의 검증된 오픈소스 에이전트 프레임워크 위에 구축된 **프리미엄 확장 레이어**입니다.
+`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 두 개의 검증된 오픈소스 프레임워크 위에 구축되었습니다.
 
-### 우로보로스 (Ouroboros) — 기초
+### [우로보로스 (Ouroboros)](https://github.com/Q00/ouroboros) — Agent OS
 
-[우로보로스](https://github.com/code-yeongyu/ouroboros)가 도입한 것들:
-- **자기참조 영속 루프** (`$ralph`): 목표가 검증될 때까지 절대 멈추지 않는 에이전트
-- **멀티 에이전트 스폰 아키텍처**: 전문화된 에이전트들의 병렬 작업 조율
-- **"멈추지 마라" 철학**: 모든 태스크는 증거와 함께 완료까지 수행
+**"Stop prompting. Start specifying."** 을 표방하는 Agent OS입니다. AI 코딩 실패의 근본 원인인 *인간의 모호성*을 해결합니다.
 
-### lazycodex — 엔진
+- **Spec-First 개발 철학**: 모호한 프롬프트 대신, **소크라테스식 Spec-Interview**를 통해 모호성을 수치화(Ambiguity Score ≤ 0.2)하고 요구사항을 결정화(Crystallize)한 뒤에만 실행을 허용합니다.
+- **Seed-Bound Execution**: 모든 에이전트 행동이 렛저(Ledger)에 기록되고 시드에 바인딩되어, 감사 가능(Auditable)하고 리플레이 가능(Replayable)한 실행 계약을 보장합니다.
+- **Interview → Crystallize → Execute → Evaluate → Evolve**: 평가 결과가 다음 세대의 명세에 피드백되는 자기진화 루프 — 뱀이 자기 꼬리를 삼키는 우로보로스 상징 그 자체입니다.
+- **Ralph Persistence Loop**: 세션 경계를 넘어 에이전트가 지속 실행되도록 하는 자기참조 루프. 이벤트 스토어를 통해 상태를 재구성하므로 머신이 재시작되어도 정확히 중단 지점에서 재개됩니다.
+- **Multi-Runtime 지원**: Claude Code, Codex CLI, OpenCode, Gemini 등 다양한 AI CLI 도구와 통합됩니다.
 
-[lazycodex](https://github.com/code-yeongyu/lazycodex) (Codex CLI / oh-my-openagent)가 가져온 것들:
-- **완전한 훅 시스템**: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStop 라이프사이클 훅
-- **스킬 레지스트리**: 키워드로 트리거되는 조합형 스킬 아키텍처
-- **oh-my-codex (OMX) 오케스트레이션**: 에이전트 카탈로그, 모델 라우팅, 팀 파이프라인을 갖춘 멀티 에이전트 위임 프로토콜
-- **Comment Checker**: AI가 사용자 주석을 조용히 삭제하는 것을 방지
-- **LSP 진단**: 실시간 타입 체크 및 코드 인텔리전스
-- **프롬프트 앰플리파이어 & 밀도 분석기**: 모델이 보기 전에 프롬프트 품질 최적화
-- **프로젝트 규칙 엔진**: 프로젝트별 코딩 표준 로드 및 강제
+### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
 
-### lazyantigravity (이 프로젝트)
+복잡한 코드베이스를 위한 **에이전트 하네스(Agent Harness)** 입니다. [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO)를 통해 설치되며, 단순한 프롬프트 대화를 넘어 AI 코딩 에이전트에 구조와 규율을 부여합니다.
 
-위의 상속받은 기반 위에 lazyantigravity가 추가한 것들:
-- **Gemini 3.5 Flash 전용 프롬프트 튜닝**: 서브 세컨드 추론과 거대 컨텍스트 윈도우에 최적화
-- **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center
-- **Hash-Anchored Edits (Hashline)**: "Harness Problem"을 제거하는 콘텐츠 해시 검증
-- **26개 전문 스킬**: ultraresearch 스웜부터 시각 QA, TDD 워크플로우까지
-- **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션
-- **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버
+- **라이프사이클 훅 시스템**: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop` — 7개 이벤트에 훅을 걸어 에이전트의 모든 행동을 감시하고 보강합니다.
+- **스킬 레지스트리**: 키워드로 자동 트리거되는 조합형 스킬 아키텍처. `$name` 또는 매직 키워드로 호출됩니다.
+- **oh-my-codex (OMX) 오케스트레이션**: 20개 이상의 전문 에이전트 카탈로그(architect, executor, debugger 등), 복잡도 기반 모델 라우팅, 팀 파이프라인(`team-plan → team-prd → team-exec → team-verify → team-fix`)을 갖춘 멀티 에이전트 위임 프로토콜.
+- **Comment Checker**: PostToolUse 훅으로 동작. AI가 코드 편집 시 사용자 주석을 조용히 삭제하는 것을 실시간 감지하고 경고합니다.
+- **LSP 진단**: PostToolUse 훅으로 파일 편집 직후 실시간 타입 체크 및 코드 인텔리전스를 제공합니다.
+- **프롬프트 앰플리파이어 & 밀도 분석기**: UserPromptSubmit 훅으로 모델이 프롬프트를 처리하기 전에 AGENTS.md + notepad + project-memory + LSP 진단 결과를 자동 주입합니다. 밀도 점수가 4점 이하면 경고합니다.
+- **프로젝트 규칙 엔진**: `CONTEXT.md`, `.omo/rules/`, `.claude/rules/`, `.cursor/rules/`, `.github/instructions/` 등 다양한 소스에서 프로젝트별 코딩 표준을 자동 로드하고 강제합니다.
+- **두 에디션**: Ultimate 에디션(OpenCode용, Sisyphus 오케스트레이션 + 54개 이상 훅)과 Light 에디션(Codex CLI 플러그인용, 핵심 기능 포커스).
+
+### lazyantigravity — 이 프로젝트
+
+위의 모든 것을 상속받은 위에, **Google Antigravity(Gemini CLI)** 환경에 특화된 확장 레이어를 추가했습니다:
+
+- **All-Model Support**: Antigravity가 제공하는 모든 모델(Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet)과 호환. ULW Model Routing으로 역할별 최적 모델을 자동 추천합니다.
+- **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center.
+- **Hash-Anchored Edits (Hashline)**: AI 에이전트가 낡은 라인 번호를 참조하여 코드를 오염시키는 "Harness Problem"을 콘텐츠 해시 검증으로 제거.
+- **26개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 팀 오케스트레이션 등.
+- **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
+- **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
+
+Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
 
 ---
 
@@ -414,8 +422,9 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 <div align="center">
 
-**Made with ❤️ by [김영규 (Yeongyu Kim)](https://github.com/code-yeongyu)**
+**Made with ❤️ by shin**
 
-*[우로보로스(Ouroboros)](https://github.com/code-yeongyu/ouroboros)와 [lazycodex](https://github.com/code-yeongyu/lazycodex)의 정수를 계승합니다*
+*[Ouroboros](https://github.com/Q00/ouroboros)와 [lazycodex](https://github.com/code-yeongyu/lazycodex)를 만들어주신 [김영규 (Yeongyu Kim)](https://github.com/code-yeongyu)님께 깊이 감사드립니다*
 
 </div>
+
