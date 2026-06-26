@@ -8,7 +8,7 @@ Google Antigravity 및 OpenAI Codex CLI 환경을 위한 최상위 에이전트 
 
 ---
 
-[![Gemini Optimized](https://img.shields.io/badge/Gemini-Optimized-00d4ff?style=flat-square&logo=google-gemini&logoColor=white)](https://gemini.google.com)
+[![Gemini 3.5 Flash Optimized](https://img.shields.io/badge/Gemini%203.5%20Flash-Optimized-00d4ff?style=flat-square&logo=google-gemini&logoColor=white)](https://gemini.google.com)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
 [![Bun](https://img.shields.io/badge/Bun-Runtime-f9f1e1?style=flat-square&logo=bun&logoColor=black)](https://bun.sh)
 [![License](https://img.shields.io/badge/License-MIT-white?style=flat-square)](./LICENSE.md)
@@ -22,7 +22,7 @@ Google Antigravity 및 OpenAI Codex CLI 환경을 위한 최상위 에이전트 
 에이전트가 코드를 작성하는 동안, 수백 줄의 터미널 텍스트 스크롤에 지치셨나요? 
 `lazyantigravity`는 터미널의 정보 과부하를 극복하고 에이전트의 개발 전 과정을 완벽한 정보 위계(IA) 속에서 추적할 수 있도록 돕습니다.
 
-*   **Gemini Hyper-Context Optimization**: Gemini 모델 패밀리의 거대한 컨텍스트 창을 능동 활용하는 프롬프트 최적화 아키텍처.
+*   **Gemini 3.5 Flash Hyper-Context Optimization**: Gemini 3.5 Flash 모델의 초거대 컨텍스트 창과 압도적인 추론 속도를 백분 활용하도록 설계된 프롬프트 엔진.
 *   **Visual Command Center (asbrowse)**: 코딩 진행 상황, 변경 Diff, 터미널 로그, 그리고 Playwright 시각 QA를 미려한 GUI 대시보드로 실시간 브라우징.
 *   **Zero-Configuration Automation**: 간단한 명령어 `$browse` 하나로 백그라운드 웹 서버 기동부터 브라우저 탭 오픈까지 논스톱 수행.
 
@@ -71,7 +71,7 @@ $browse
 
 | Command | Action | Key Benefit |
 | :--- | :--- | :--- |
-| **`ultrawork`** (또는 `ulw`) | 최강의 에이전트 자율 루프 구동 | 성공 기준이 100% 충족될 때까지 멈추지 않고 스스로 단계를 밟아가며 코딩과 검증을 반복합니다. |
+| **`ultrawork`** (또는 `ulw`) | 최강의 에이전트 자율 루프 구동 | 성공 기준이 100% 충족될 때까지 멈추지 않고 스스로 단계를 밟아가며 코딩과 검증을 반복합니다. (Gemini 3.5 Flash의 빠른 피드백 루프 극대화) |
 | **`ultraresearch`** | 지식 탐색 오케스트레이션 스웜 기동 | 코드베이스, 웹 문서, 오픈소스 저장소를 병렬 수집하고 실제 로컬 코드 실행 검증을 거쳐 보고서를 냅니다. |
 | **`browse`** (또는 `$browse`) | 세션 브라우저(asbrowse) 오픈 | Next.js 로컬 대시보드와 실시간 연동하여 작업 진행도, 코드 Diff, task.md 할 일을 GUI로 탐색합니다. |
 | **`/init-deep`** | 계층형 `AGENTS.md` 자동 생성 | 프로젝트 구조에 최적화된 컨텍스트를 자동 설계하여 토큰 효율을 극대화합니다. |
@@ -81,9 +81,10 @@ $browse
 
 ## 🛠️ Technical Architectural Details
 
-### 🌌 1. Gemini Engine Optimization
-*   Gemini 모델 패밀리(Gemini 1.5/2.0 Pro 등)의 초거대 컨텍스트 윈도우 특성을 능동 반영하여 프롬프트의 계층 구조를 효율적으로 재구성했습니다.
-*   API 쿼터 상황을 자동 모니터링하여 가용한 고지능 모델(Pro)과 비용 효율적인 모델(Flash) 간의 전환 가이드를 내장하고 유연하게 폴백합니다.
+### 🌌 1. Gemini 3.5 Flash Optimization
+*   Gemini 3.5 Flash 모델의 초거대 컨텍스트 윈도우 특성을 능동 반영하여 프롬프트의 계층 구조를 효율적으로 재구성했습니다.
+*   API 쿼터 상황을 자동 모니터링하여 Gemini 3.5 Flash 환경의 성능을 비용 효율적으로 보존하고 에이전트의 토큰 소모를 영리하게 통제합니다.
+*   컴파일 에러나 긴 빌드 로그가 컨텍스트 윈도우를 과포화하지 않도록 핵심 코드 조각만 압축 요약해 전송하는 Compact Mode가 내장되어 있습니다.
 
 ### 🎨 2. Frontend Diagnostics & Visual QA
 *   **프론트엔드 분석**: `react-scan` 및 `react-doctor`를 통합하여 렌더링 병목과 React 안티패턴을 감지합니다.
