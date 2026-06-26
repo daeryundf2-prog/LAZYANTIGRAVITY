@@ -2,22 +2,28 @@
 
 # 🌌 lazyantigravity
 
-**"Stop Staring at the Boring Terminal Logs."**
+**The most feature-rich AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).**
+
 <br />
-Gemini 3.5 Flash의 압도적인 속도와 세련된 시각 Command Center(asbrowse)가 결합된 차세대 AI 에이전트 오케스트레이터.
 
----
+> *Built on the foundations of **[Ouroboros](https://github.com/code-yeongyu/ouroboros)** and **[lazycodex](https://github.com/code-yeongyu/lazycodex)** — inheriting their battle-tested multi-agent loops, static analysis engines, and persistent workflow architecture — then turbocharged for the sub-second inference of **Gemini 3.5 Flash**.*
 
-[![Gemini 3.5 Flash Optimized](https://img.shields.io/badge/Gemini%203.5%20Flash-Optimized-00d4ff?style=flat-square&logo=google-gemini&logoColor=white)](https://gemini.google.com)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
-[![Bun](https://img.shields.io/badge/Bun-Runtime-f9f1e1?style=flat-square&logo=bun&logoColor=black)](https://bun.sh)
-[![License](https://img.shields.io/badge/License-MIT-white?style=flat-square)](./LICENSE.md)
-[![GitHub Stars](https://img.shields.io/github/stars/daeryundf2-prog/LAZYANTIGRAVITY?style=flat-square&color=ffcb47&labelColor=black)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/stargazers)
+<br />
+
+[![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
+[![Gemini 3.5 Flash Optimized](https://img.shields.io/badge/Gemini%203.5%20Flash-Optimized-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://gemini.google.com)
+[![All Antigravity Models](https://img.shields.io/badge/All%20Models-Supported-8B5CF6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
+[![Built on lazycodex](https://img.shields.io/badge/Built%20on-lazycodex-7C3AED?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/lazycodex)
+[![Built on Ouroboros](https://img.shields.io/badge/Built%20on-Ouroboros-ff6b6b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/ouroboros)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![Bun](https://img.shields.io/badge/Bun-Runtime-f9f1e1?style=for-the-badge&logo=bun&logoColor=black)](https://bun.sh)
+[![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](./LICENSE.md)
+[![GitHub Stars](https://img.shields.io/github/stars/daeryundf2-prog/LAZYANTIGRAVITY?style=for-the-badge&color=ffcb47&labelColor=black)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/stargazers)
 
 <br />
 <h3>
-  <a href="src/README.md">🌐 English Detail Guide</a> 
-  • 
+  <a href="src/README.md">🌐 English Detailed Guide</a>
+  •
   <a href="src/README.ko.md">🇰🇷 한국어 상세 가이드</a>
 </h3>
 
@@ -25,42 +31,68 @@ Gemini 3.5 Flash의 압도적인 속도와 세련된 시각 Command Center(asbro
 
 ---
 
-## 🌟 이 프로젝트가 도움되셨다면 Star를 눌러주세요!
-`lazyantigravity`는 더 세련되고 고도화된 에이전트 환경을 위해 지속해서 업데이트됩니다. 상단의 ⭐ **Star** 버튼을 눌러 개발팀을 응원하고 프로젝트의 유입을 도와주세요!
+## ⭐ If this project helped you, please give it a Star!
+
+`lazyantigravity` is continuously updated with new skills, hooks, and agent workflows. Click the ⭐ **Star** button at the top to support the developer and help others discover this project!
 
 ---
 
-## 💡 Why lazyantigravity?
+## 🚀 Why lazyantigravity?
 
-**`lazyantigravity`는 강력한 자율 코딩 에이전트 프레임워크인 우로보로스(Ouroboros) 및 lazycodex (Codex CLI / oh-my-openagent)를 기반으로 구축되었습니다.** 
+Antigravity is powerful out of the box. lazyantigravity makes it **dramatically more capable**:
 
-오리지널 우로보로스와 lazycodex가 자랑하는 영속적 멀티 에이전트 루프와 완벽한 정적 분석 엔진을 100% 계승하면서, 이를 Gemini 3.5 Flash의 초고속 추론 능력에 맞춰 세부 프롬프트와 API 쿼터를 최적화하고 세련된 웹 대시보드(asbrowse)를 결합한 **최고급 시각 확장형 에디션**입니다.
+| Without lazyantigravity | With lazyantigravity |
+| :--- | :--- |
+| Single agent, single task | **26 specialized skills** auto-triggered by keywords |
+| No quality gates | **13 hooks** guard every edit (comment preservation, type checking, rule compliance) |
+| Terminal log chaos | **asbrowse visual dashboard** — real-time progress, diffs, and QA in one view |
+| Manual model selection | **ULW Model Routing** — auto-recommends optimal model per role |
+| No persistence across interruptions | **Safe-Resume Checkpoints** — resume exactly where you left off |
+| Basic code editing | **Hash-Anchored Edits** — near-0% code corruption (Hashline) |
+| No built-in research | **Ultraresearch swarms** — parallel agents scan web, docs, and codebase simultaneously |
+| Solo work only | **Team Mode** — up to 8 parallel agents with tmux visualization |
 
-에이전트가 코딩을 수행하는 동안, 쏟아지는 수백 줄의 터미널 텍스트 로그에 압도되어 피로하셨다면, `lazyantigravity`를 통해 극도의 사용성과 미학적 만족감을 경험해 보세요.
-
-*   **⚡️ Gemini 3.5 Flash 완벽 튜닝**: Pro 모델 대비 최대 10배 빠른 추론 속도와 압도적인 가성비를 살려, 에이전트의 반복적인 빌드 및 디버깅 루프를 초고속으로 제어합니다.
-*   **🖥️ asbrowse (Interactive Dashboard)**: 에이전트의 상태, 진행률, 변경된 코드 Diff, 실시간 터미널 로그를 미려한 GUI 화면으로 시큐어하게 브라우징합니다.
-*   **🛡️ Hashline Edit (안전한 수술적 편집)**: 낡은 라인을 참조해 에이전트가 코드를 파괴하는 현상(Harness Problem)을 0%에 가깝게 차단하는 콘텐츠 해시 검증 엔진을 탑재했습니다.
+> **한 줄 요약**: Antigravity의 모든 모델을 활용하면서, 자율 코딩 루프 · 시각 대시보드 · 자동 품질 게이트 · 멀티 에이전트 협업을 추가하는 프리미엄 플러그인입니다.
 
 ---
 
-## 📸 Interactive Session Dashboard (asbrowse)
+## 🧬 Heritage: Ouroboros → lazycodex → lazyantigravity
 
-`DESIGN.md` 명세를 철저히 반영하여 디자인된 Senior Engineer's Command Center 스타일의 웹 대시보드입니다. HSL 기반의 세련된 다크 모드 배경과 시안(Cyan) 포인트 액센트, Geist 타이포그래피가 적용되었습니다.
+`lazyantigravity` didn't start from scratch. It stands on the shoulders of two battle-hardened open-source agent frameworks:
+
+| Ancestor | What it contributed |
+| :--- | :--- |
+| **[Ouroboros](https://github.com/code-yeongyu/ouroboros)** | The self-referential persistence loop (`$ralph`), multi-agent spawning architecture, and the philosophy of *"never stop until the goal is verified"*. |
+| **[lazycodex](https://github.com/code-yeongyu/lazycodex)** (Codex CLI / oh-my-openagent) | The complete hook system, skill registry, MCP integration, comment-checker, LSP diagnostics, prompt amplifier, project rules engine, and the `oh-my-codex` (OMX) orchestration layer. |
+| **lazyantigravity** *(this project)* | Gemini 3.5 Flash–specific prompt tuning, the `asbrowse` visual dashboard, Hash-Anchored Edits (Hashline), 26 specialized skills, and the `ulw-loop` evidence-audited orchestration system. |
+
+Every core capability of Ouroboros and lazycodex is **100% inherited and operational** — lazyantigravity extends them, never replaces them.
+
+---
+
+## 📸 Visual Command Center: asbrowse
+
+A Next.js–powered local dashboard that replaces the chaos of scrolling terminal logs with a structured, real-time GUI.
 
 <div align="center">
-  <img src="assets/readme/asbrowse_dashboard_mockup.png" alt="Session Browser Dashboard Preview" width="90%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <img src="assets/readme/asbrowse_dashboard_mockup.png" alt="asbrowse Session Browser Dashboard" width="90%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
 </div>
+
+<br />
+
+- **Grid-based Information Architecture**: Workflow progress, active Prometheus plans, code diffs, terminal logs, and Playwright visual QA — all visible at a glance.
+- **Premium Dark + Cyan Aesthetic**: HSL dark gray gradients, vibrant cyan (#00d4ff) accents, Geist typography, and micro-animations.
+- **Zero-Config Auto-Boot**: Type `$browse` → the plugin detects port 3000 → boots the Next.js dev server in the background → opens your browser automatically.
 
 ---
 
-## ⚡️ Quick Start & Installation
+## ⚡ Quick Start
 
-단 10초 만에 로컬 환경에 차세대 에이전트 지휘 본부를 구축하세요.
+> **Prerequisite / 전제 조건**: [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity) must be installed. / 설치되어 있어야 합니다.
 
-### 1. 플러그인 클론 (Git Clone)
+### 1. Plugin Clone / 플러그인 클론
 
-#### macOS, Linux, Git Bash
+#### macOS / Linux / Git Bash
 ```bash
 mkdir -p ~/.gemini/config/plugins
 cd ~/.gemini/config/plugins
@@ -74,66 +106,242 @@ cd $env:USERPROFILE\.gemini\config\plugins
 git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 ```
 
-### 2. 세션 브라우저 기동
-설치 또는 업데이트 후 에이전트를 재시작하고, 터미널 세션 내부에서 아래 명령어를 실행하십시오:
+Or install via package managers:
 ```bash
+# Ultimate Edition (OpenCode)
+bunx oh-my-openagent install
+
+# Light Edition (Codex CLI)
+npx lazycodex-ai install
+```
+
+### 2. Launch Session Browser / 세션 브라우저 기동
+
+After installation, restart your Antigravity agent session. Then run **inside the agent session**:
+
+설치 후 Antigravity 에이전트를 재시작하고, **에이전트 세션 내부에서** 실행:
+```
 $browse
 ```
-*(웹 서버 포트 3000이 활성화되어 있지 않으면 백그라운드로 Next.js 개발 서버를 자동 기동한 뒤 대시보드 브라우저 탭이 자동 팝업됩니다.)*
+*(Auto-boots Next.js dev server on port 3000 if inactive, then opens the dashboard in your browser.)*
+
+*(포트 3000이 미기동 시 Next.js 개발 서버를 자동 기동한 뒤 대시보드를 엽니다.)*
 
 ---
 
-## 🎮 Core Commands
+## 🤖 Supported Models
 
-에이전트 터미널에서 즉시 입력하거나 프롬프트에 포함할 수 있는 핵심 제어 명령어 목록입니다.
+lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합니다. Gemini 3.5 Flash에 최적화되어 있지만, 작업의 복잡도에 따라 다른 모델도 자유롭게 사용할 수 있습니다.
 
-| Command | Action | Key Benefit |
+| Model | Recommended Use Case |
+| :--- | :--- |
+| **Gemini 3.5 Flash** (High/Medium) | 빠른 반복 작업, 디버깅, 코드베이스 탐색 — 기본 추천 모델 |
+| **Gemini 3.1 Pro** (High) | Claude 쿼터가 제한적일 때의 고품질 대안 |
+| **Claude Opus 4.6** (Thinking) | 아키텍처 설계, 복잡한 리팩토링, 깊은 분석 |
+| **Claude Sonnet** | 일반적인 구현 작업 |
+
+> 💡 **ULW Model Routing**: `ulw` / `ulw-loop` 실행 시, 각 역할(planner, worker, verifier)에 최적의 모델을 자동으로 추천합니다. 사용자가 현재 선택한 모델이 모든 서브에이전트에 상속됩니다.
+
+## 🎮 Core Commands & Magic Keywords
+
+### Commands
+
+| Command | What it does |
+| :--- | :--- |
+| **`ultrawork`** / **`ulw`** | Autonomous code → test → fix loop. Keeps iterating until 100% verified. |
+| **`ultraresearch`** | Parallel research swarm across web, docs, and codebase with empirical verification. |
+| **`browse`** / **`$browse`** | Opens the asbrowse visual dashboard in your browser. |
+| **`/ulw-loop`** | Evidence-audited multi-goal orchestration loop with checkpoints. |
+| **`/init-deep`** | Auto-generates hierarchical `AGENTS.md` context files across your project. |
+| **`/start-work`** | Prometheus Planner: interactive interview → detailed plan before any code changes. |
+
+### Magic Keywords
+
+Just include these words anywhere in your prompt — the system detects and triggers them automatically:
+
+| Keywords | Triggered Skill | Effect |
 | :--- | :--- | :--- |
-| **`ultrawork`** (또는 `ulw`) | 최강의 에이전트 자율 루프 구동 | 성공 기준이 100% 충족될 때까지 스스로 코딩과 검증을 반복합니다. (Gemini 3.5 Flash의 빠른 피드백 루프 극대화) |
-| **`ultraresearch`** | 지식 탐색 오케스트레이션 스웜 기동 | 코드베이스, 웹 문서, 오픈소스 저장소를 병렬 수집하고 실제 로컬 코드 실행 검증을 거쳐 보고서를 냅니다. |
-| **`browse`** (또는 `$browse`) | 세션 브라우저(asbrowse) 오픈 | Next.js 로컬 대시보드와 실시간 연동하여 작업 진행도, 코드 Diff, task.md 할 일을 GUI로 탐색합니다. |
-| **`/init-deep`** | 계층형 `AGENTS.md` 자동 생성 | 프로젝트 구조에 최적화된 컨텍스트를 자동 설계하여 토큰 효율을 극대화합니다. |
-| **`/start-work`** | Prometheus 계획 수립 | 코드 수정 전 모호함을 해소하기 위한 소크라테스식 인터뷰를 시작합니다. |
+| `ralph`, `don't stop`, `must complete`, `keep going` | `$ralph` | Persistent self-verification loop |
+| `autopilot`, `build me`, `I want a` | `$autopilot` | Idea → working code pipeline |
+| `team`, `swarm`, `coordinated team` | `$team` | Multi-agent collaborative team |
+| `tdd`, `test first` | `$tdd` | Test-driven development workflow |
+| `fix build`, `type errors` | `$build-fix` | Build error resolution |
+| `review code` | `$code-review` | Comprehensive code review |
+| `frontend`, `design`, `UI`, `UX` | `$frontend` + `$visual-qa` | Visual QA + Lighthouse + React profiling |
+| `refactor`, `cleanup`, `restructure` | `$refactor` | Intelligent code refactoring |
+| `research`, `deep research` | `$ultraresearch` | Maximum-saturation research orchestration |
+| `remove slop`, `deslop`, `clean AI code` | `$remove-ai-slops` | Removes 10 categories of AI code smells |
+| `spec interview`, `grill me` | `$spec-interview` | Socratic Q&A → requirements report |
+| `debug this`, `why is X not working` | `$debugging` | Hypothesis-driven debugging loop |
+| `visual QA`, `screenshot diff` | `$visual-qa` | Pixel-diff analysis for UI regressions |
 
 ---
 
-## 🛠️ Technical Architectural Details
+## 🔧 Hook Pipeline: Automatic Quality Gates
 
-### ⚡️ 1. Gemini 3.5 Flash Optimization
-`lazyantigravity`는 **Gemini 3.5 Flash** 모델의 서브 세컨드 수준의 빠른 추론 속도와 초거대 컨텍스트 윈도우 특성을 능동 반영하여 프롬프트의 계층 구조를 최적화했습니다.
-
-<div align="center">
-  <img src="assets/readme/terminal_execution_mockup.png" alt="Terminal Command Execution" width="90%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-</div>
-
-*   **스마트 쿼터 제어**: API 쿼터 상황을 실시간 모니터링하여 Gemini 3.5 Flash 환경의 성능을 비용 효율적으로 보존하고 에이전트의 토큰 소모를 영리하게 통제합니다.
-*   **Compact Mode**: 컴파일 에러나 긴 빌드 로그가 컨텍스트 윈도우를 과포화하지 않도록 핵심 코드 조각만 압축 요약해 전송합니다.
-*   **Safe-Resume Checkpoints**: 오류 발생 시 `.lazycodex/checkpoints/ulw-*.json` 파일에 컨텍스트를 동결합니다. `omo ulw-loop resume`을 통해 중단 시점부터 작업을 안전하게 계속할 수 있습니다.
-
-### 👥 2. Multi-Agent Team Mode
-1명의 에이전트가 처리하기 벅찬 대규모 리팩토링이나 보안 감사를 해결하기 위해 **리드 에이전트 + 최대 8명의 병렬 멤버 에이전트**로 구성된 협업 팀을 구축합니다.
+lazyantigravity runs **13 hooks** across 7 lifecycle events — every action the agent takes is guarded automatically.
 
 <div align="center">
-  <img src="assets/readme/multi_agent_swarm_diagram.png" alt="Multi-Agent Swarm Diagram" width="70%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <img src="assets/readme/hook_lifecycle_diagram.png" alt="Hook Lifecycle Pipeline" width="85%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
 </div>
 
-*   **tmux Integration**: 전체 에이전트들의 실시간 구동 및 테스트 단계를 터미널 그리드를 통해 시각적으로 모니터링합니다.
-*   **기본 내장 팩**:
-    *   `hyperplan`: 5명의 적대적 에이전트가 코딩 시작 전 계획의 단점을 격렬히 비판하여 완벽한 설계 유도.
-    *   `security-research`: 3명의 취약점 분석가 + 2명의 익스플로잇 증명 엔지니어가 병렬로 보안 구멍 탐색.
+<br />
 
-### 🎨 3. Frontend Diagnostics & Visual QA
-*   **프론트엔드 분석**: `react-scan` 및 `react-doctor`를 통합하여 렌더링 병목과 React 안티패턴을 감지합니다.
-*   **픽셀 단위 시각 QA & Lighthouse**: Playwright Chromium을 기동해 픽셀 디프(Pixel Diff) 분석으로 UI 정렬 오류와 글자 잘림을 검사하고, Lighthouse Core Web Vitals 100점 점수를 만족할 때까지 자율 검증을 거칩니다.
+| Hook Event | What runs automatically |
+| :--- | :--- |
+| **SessionStart** | Load project rules, record telemetry, check for auto-updates |
+| **UserPromptSubmit** | Analyze prompt density, amplify prompt constraints, reload rules, check ultrawork/ulw-loop triggers |
+| **PreToolUse** | Git Bash MCP recommendations, ulw-loop goal budget enforcement |
+| **PostToolUse** | Comment preservation checker, LSP diagnostics, project rule matching |
+| **PostCompact** | Reset Git Bash/Rule/LSP caches after context compaction |
+| **Stop** | Start-work continuation checks |
+| **SubagentStop** | Start-work continuation for child agents |
+
+### Comment Checker
+
+AI agents often silently delete user comments during edits. lazyantigravity's PostToolUse hook catches this in real-time:
+
+<div align="center">
+  <img src="assets/readme/comment_checker_hook.png" alt="Comment Checker in Action" width="60%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+---
+
+## 🛠️ Technical Architecture
+
+### ⚡ Gemini 3.5 Flash Optimization
+
+<div align="center">
+  <img src="assets/readme/terminal_execution_mockup.png" alt="Terminal Execution" width="90%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+<br />
+
+- **Smart Quota Control**: Real-time API consumption monitoring preserves Gemini 3.5 Flash's cost-efficiency.
+- **Compact Mode**: Filters redundant build logs, compresses to essential code snippets for token budgets.
+- **Safe-Resume Checkpoints**: State freezes to `.lazycodex/checkpoints/ulw-*.json` — resume exactly where you left off with `omo ulw-loop resume`.
+
+### 🔍 Ultraresearch: Maximum-Saturation Knowledge Gathering
+
+<div align="center">
+  <img src="assets/readme/ultraresearch_swarm.png" alt="Ultraresearch Parallel Swarm" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+<br />
+
+- **Parallel Knowledge Swarms**: Concurrent agents scanning Exa (web), Context7 (docs), local codebase, and OSS repos.
+- **Empirical Verification**: Discovered code is actually *executed* in a sandbox before the final report.
+- **Cited Synthesis**: Every claim in the report includes source URLs and file references.
+
+### 👥 Multi-Agent Team Mode
+
+<div align="center">
+  <img src="assets/readme/multi_agent_swarm_diagram.png" alt="Multi-Agent Team Swarm" width="70%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+<br />
+
+- **Lead + up to 8 parallel member agents** for large-scale refactoring and audits.
+- **tmux Integration**: Visual grid monitoring of all agents' real-time operations.
+- **Built-in Team Packs**: `hyperplan` (5 adversarial planners) and `security-research` (3 vulnerability hunters + 2 exploit engineers).
+
+### 🧬 LSP & AST-Grep Integration
+
+<div align="center">
+  <img src="assets/readme/lsp_diagnostics_live.png" alt="LSP Diagnostics" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+<br />
+
+- **LSP (Language Server Protocol)**: IDE-grade `lsp_diagnostics`, `lsp_find_references`, `lsp_rename`, `lsp_hover` — right inside the agent.
+- **AST-Grep**: Structural code pattern matching and deterministic multi-file codemods beyond regex.
+
+### 🛡️ Hash-Anchored Edits (Hashline)
+- Every line gets a unique content hash (`LINE#ID`) when the agent reads a file.
+- Edits target these hashes — if the file changed concurrently, the edit is **safely rejected**.
+- Near-0% code corruption rate (solves the "Harness Problem").
+
+### 🔌 Skill-Embedded MCPs
+- Standard MCP servers bloat context windows permanently.
+- lazyantigravity embeds MCP servers *within individual skills* — they launch on-demand and terminate when the task completes.
+- Built-in MCPs: `grep_app` (GitHub code search), `context7` (official documentation), `git_bash` (git operations), `lsp` (language server).
+
+### 🎨 Frontend & Visual QA
+- **react-scan** + **react-doctor**: Diagnose rendering bottlenecks and React antipatterns.
+- **Playwright Pixel Diff**: Automated screenshot comparison for micro-alignment and CJK text clipping.
+- **Lighthouse 100**: Iterates until Core Web Vitals (LCP, CLS, INP) all score 100.
+
+---
+
+## 📦 Complete Skill Catalog (26 Skills)
+
+Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
+
+| Category | Skills | Description |
+| :--- | :--- | :--- |
+| **Workflow Engines** | `ultrawork` / `ulw`, `ulw-loop`, `ulw-plan`, `ralph`, `autopilot`, `start-work` | Autonomous coding loops, evidence-audited orchestration, persistence |
+| **Research** | `ultraresearch` | Parallel swarm research with empirical verification |
+| **Team & Orchestration** | `teammode` | Multi-agent collaboration with tmux visualization |
+| **Code Quality** | `programming`, `refactor`, `remove-ai-slops`, `review-work`, `comment-checker` | Strict types, AI slop removal, post-implementation review |
+| **Code Intelligence** | `lsp`, `lsp-setup`, `ast-grep` | Language server diagnostics, structural code search |
+| **Frontend & Design** | `frontend`, `visual-qa` | UI/UX design, Lighthouse audits, pixel-diff QA |
+| **Debugging** | `debugging` | Hypothesis-driven debugging with Oracle spawning |
+| **Web & Browsing** | `browse`, `ultimate-browsing` | Session dashboard, WAF bypass, stealth browsing |
+| **Git** | `git-master` | Atomic commits, bisect, blame, rebase, squash |
+| **Product & Spec** | `spec-interview` | Socratic interview → requirements report |
+| **Config & Setup** | `init-deep`, `rules` | Hierarchical AGENTS.md generation, project rules |
+| **Plugin Health** | `lcx-doctor`, `lcx-report-bug`, `lcx-contribute-bug-fix` | Diagnose, report, and fix lazycodex/plugin issues |
+
+---
+
+## ⚙️ ULW-Loop: Evidence-Audited Orchestration
+
+<div align="center">
+  <img src="assets/readme/lazyantigravity-ulw-command.png" alt="ULW Command Selection" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+<br />
+
+<div align="center">
+  <img src="assets/readme/lazyantigravity-ulw-running.png" alt="ULW Running" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+</div>
+
+<br />
+
+The `ulw-loop` (Ultra Lightweight Loop) is the crown jewel of lazyantigravity:
+1. **Goal Decomposition**: Breaks your request into measurable success criteria.
+2. **Evidence-Bound Steps**: Every step must produce verifiable evidence before advancing.
+3. **Safe-Resume Checkpoints**: If interrupted, resume from the exact checkpoint.
+4. **Model Routing**: Automatically recommends the optimal model for each role (planner, worker, verifier).
 
 ---
 
 ## 📊 Telemetry & Opt-out
 
-하루에 한 번 세션 시작 시 `sha256("omo-codex:" + hostname)` 형태로 해시된 식별자만 전송하며, 소스 코드 및 민감 데이터는 외부로 절대 전송되지 않습니다.
-비활성화하려면 아래 환경변수를 설정하세요:
+Once per day at session start, only a hashed identifier (`sha256("omo-codex:" + hostname)`) is transmitted. **No source code or sensitive data is ever sent externally.**
 
+To disable:
 ```bash
 export OMO_DISABLE_POSTHOG=1
 export OMO_SEND_ANONYMOUS_TELEMETRY=0
 ```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! See the [English Guide](src/README.md) or [한국어 가이드](src/README.ko.md) for technical details.
+
+## 📜 License
+
+[MIT](./LICENSE.md)
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [Yeongyu Kim](https://github.com/code-yeongyu)**
+
+*Standing on the shoulders of [Ouroboros](https://github.com/code-yeongyu/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex)*
+
+</div>

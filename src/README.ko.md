@@ -1,0 +1,421 @@
+# 🌌 lazyantigravity — 한국어 상세 가이드
+
+> *[Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity)에 최적화된 가장 기능이 풍부한 AI 에이전트 오케스트레이션 플러그인. 우로보로스(Ouroboros)와 lazycodex의 검증된 기반 위에 구축되었습니다.*
+
+---
+
+[![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
+[![Gemini 3.5 Flash Optimized](https://img.shields.io/badge/Gemini%203.5%20Flash-Optimized-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://gemini.google.com)
+[![All Antigravity Models](https://img.shields.io/badge/All%20Models-Supported-8B5CF6?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
+[![Built on lazycodex](https://img.shields.io/badge/Built%20on-lazycodex-7C3AED?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/lazycodex)
+[![Built on Ouroboros](https://img.shields.io/badge/Built%20on-Ouroboros-ff6b6b?style=for-the-badge&logo=github&logoColor=white)](https://github.com/code-yeongyu/ouroboros)
+[![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](../LICENSE.md)
+[![GitHub Stars](https://img.shields.io/github/stars/daeryundf2-prog/LAZYANTIGRAVITY?style=for-the-badge&color=ffcb47&labelColor=black)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/stargazers)
+
+**[🌐 English Guide →](./README.md)** &nbsp;|&nbsp; **[🏠 메인 README →](../README.md)**
+
+---
+
+## 목차
+
+- [유산과 철학](#-유산과-철학-ouroboros--lazycodex--lazyantigravity)
+- [빠른 시작 & 설치](#-빠른-시작--설치)
+- [지원 모델](#-지원-모델-supported-models)
+- [핵심 명령어](#-핵심-명령어)
+- [마법 키워드](#-마법-키워드-magic-keywords)
+- [비주얼 대시보드: asbrowse](#-비주얼-대시보드-asbrowse)
+- [훅 파이프라인: 자동 품질 게이트](#-훅-파이프라인-자동-품질-게이트)
+- [전체 스킬 카탈로그 (26개)](#-전체-스킬-카탈로그-26개)
+- [기술 아키텍처](#-기술-아키텍처)
+- [MCP 통합](#-mcp-통합)
+- [텔레메트리 & 비활성화](#-텔레메트리--비활성화)
+
+---
+
+## 🧬 유산과 철학: Ouroboros → lazycodex → lazyantigravity
+
+`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 두 개의 검증된 오픈소스 에이전트 프레임워크 위에 구축된 **프리미엄 확장 레이어**입니다.
+
+### 우로보로스 (Ouroboros) — 기초
+
+[우로보로스](https://github.com/code-yeongyu/ouroboros)가 도입한 것들:
+- **자기참조 영속 루프** (`$ralph`): 목표가 검증될 때까지 절대 멈추지 않는 에이전트
+- **멀티 에이전트 스폰 아키텍처**: 전문화된 에이전트들의 병렬 작업 조율
+- **"멈추지 마라" 철학**: 모든 태스크는 증거와 함께 완료까지 수행
+
+### lazycodex — 엔진
+
+[lazycodex](https://github.com/code-yeongyu/lazycodex) (Codex CLI / oh-my-openagent)가 가져온 것들:
+- **완전한 훅 시스템**: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStop 라이프사이클 훅
+- **스킬 레지스트리**: 키워드로 트리거되는 조합형 스킬 아키텍처
+- **oh-my-codex (OMX) 오케스트레이션**: 에이전트 카탈로그, 모델 라우팅, 팀 파이프라인을 갖춘 멀티 에이전트 위임 프로토콜
+- **Comment Checker**: AI가 사용자 주석을 조용히 삭제하는 것을 방지
+- **LSP 진단**: 실시간 타입 체크 및 코드 인텔리전스
+- **프롬프트 앰플리파이어 & 밀도 분석기**: 모델이 보기 전에 프롬프트 품질 최적화
+- **프로젝트 규칙 엔진**: 프로젝트별 코딩 표준 로드 및 강제
+
+### lazyantigravity (이 프로젝트)
+
+위의 상속받은 기반 위에 lazyantigravity가 추가한 것들:
+- **Gemini 3.5 Flash 전용 프롬프트 튜닝**: 서브 세컨드 추론과 거대 컨텍스트 윈도우에 최적화
+- **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center
+- **Hash-Anchored Edits (Hashline)**: "Harness Problem"을 제거하는 콘텐츠 해시 검증
+- **26개 전문 스킬**: ultraresearch 스웜부터 시각 QA, TDD 워크플로우까지
+- **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션
+- **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버
+
+---
+
+## ⚡ 빠른 시작 & 설치
+
+> **전제 조건**: [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity)가 설치되어 있어야 합니다.
+
+### 1. 플러그인 클론 (Git Clone)
+
+#### macOS, Linux, Git Bash
+```bash
+mkdir -p ~/.gemini/config/plugins
+cd ~/.gemini/config/plugins
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
+```
+
+#### Windows PowerShell
+```powershell
+mkdir $env:USERPROFILE\.gemini\config\plugins -Force
+cd $env:USERPROFILE\.gemini\config\plugins
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
+```
+
+### 방법 2: 패키지 매니저
+
+```bash
+# Ultimate 에디션 (OpenCode)
+bunx oh-my-openagent install
+
+# Light 에디션 (Codex CLI)
+npx lazycodex-ai install
+```
+
+### 2. 세션 브라우저 기동
+
+설치 또는 업데이트 후 Antigravity 에이전트를 재시작하고, **에이전트 세션 내부에서** 아래 명령어를 실행하십시오:
+```
+$browse
+```
+*(웹 서버 포트 3000이 활성화되어 있지 않으면 백그라운드로 Next.js 개발 서버를 자동 기동한 뒤 대시보드 브라우저 탭이 자동 팝업됩니다.)*
+
+---
+
+## 🤖 지원 모델 (Supported Models)
+
+lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합니다. Gemini 3.5 Flash에 최적화되어 있지만, 작업의 복잡도에 따라 다른 모델도 자유롭게 사용할 수 있습니다.
+
+| 모델 | 추천 사용 상황 |
+| :--- | :--- |
+| **Gemini 3.5 Flash** (High/Medium) | 빠른 반복 작업, 디버깅, 코드베이스 탐색 — 기본 추천 모델 |
+| **Gemini 3.1 Pro** (High) | Claude 쿼터가 제한적일 때의 고품질 대안 |
+| **Claude Opus 4.6** (Thinking) | 아키텍처 설계, 복잡한 리팩토링, 깊은 분석 |
+| **Claude Sonnet** | 일반적인 구현 작업 |
+
+> 💡 **ULW Model Routing**: `ulw` / `ulw-loop` 실행 시, 각 역할(planner, worker, verifier)에 최적의 모델을 자동으로 추천합니다. 사용자가 현재 선택한 모델이 모든 서브에이전트에 상속됩니다.
+
+## 🎮 핵심 명령어
+
+에이전트 터미널에서 직접 입력하거나 프롬프트에 포함할 수 있는 명령어입니다:
+
+| 명령어 | 설명 | 핵심 이점 |
+| :--- | :--- | :--- |
+| **`ultrawork`** / **`ulw`** | 최강의 자율 코딩 루프. 코드 작성 → 테스트 실행 → 수정을 반복하며 100% 검증될 때까지 지속. | Gemini 3.5 Flash의 초고속 반복을 최대한 활용 |
+| **`ultraresearch`** / **`research`** | 최대 포화 리서치 오케스트레이터. 코드베이스, 웹 문서, 저장소를 스캔하고 발견된 코드를 샌드박스에서 검증. | 출처가 명시된 증거 기반 리서치 보고서 생성 |
+| **`browse`** / **`$browse`** | asbrowse 세션 브라우저 대시보드 오픈. | 포트 3000의 Next.js 서버를 미기동 시 자동 부팅 |
+| **`/ulw-loop`** | 증거 감사 기반 멀티 골 오케스트레이션 루프. | 대형 피처의 감사 가능한 신뢰성 보장 |
+| **`/init-deep`** | 프로젝트 전역에 계층형 `AGENTS.md` 컨텍스트 파일 자동 생성. | 에이전트 도메인 인식 극대화 및 토큰 효율 향상 |
+| **`/start-work`** | Prometheus 플래너: 인터뷰 → 계획 수립 → 코드 수정 전 모호성 해소. | 요구사항 갭과 리스크를 코딩 전에 원천 차단 |
+
+### ULW 실행 화면
+
+<div align="center">
+  <img src="../assets/readme/lazyantigravity-ulw-command.png" alt="ULW 명령어 선택" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>명령어 팔레트에서 ULW 스킬 선택</em>
+</div>
+
+<br />
+
+<div align="center">
+  <img src="../assets/readme/lazyantigravity-ulw-running.png" alt="ULW 실행 중" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>ULW 루프 실행 중 — 스캔, 계획, 자율 반복 수행</em>
+</div>
+
+---
+
+## 🪄 마법 키워드 (Magic Keywords)
+
+프롬프트에 아래 단어를 포함하기만 하면 시스템이 자동 감지하여 해당 스킬을 트리거합니다. 별도 설정 불필요.
+
+| 키워드 | 트리거 스킬 | 동작 |
+| :--- | :--- | :--- |
+| `ralph`, `don't stop`, `must complete`, `keep going` | `$ralph` | 자기참조 영속 루프 — 모든 태스크가 검증될 때까지 지속 |
+| `autopilot`, `build me`, `I want a` | `$autopilot` | 아이디어 → 작동 코드까지의 완전 자율 파이프라인 |
+| `team`, `swarm`, `coordinated team` | `$team` | 복잡한 병렬 작업을 위한 협업 에이전트 팀 생성 |
+| `tdd`, `test first` | `$tdd` | 테스트 주도 개발 — 구현 전 테스트 코드부터 작성 강제 |
+| `fix build`, `type errors` | `$build-fix` | 빌드 에러 및 TypeScript 타입 실패 타겟 해결 |
+| `review code` | `$code-review` | 종합 정적 분석 및 코드 품질 리뷰 |
+| `frontend`, `design`, `UI`, `UX` | `$frontend` + `$visual-qa` | Playwright 시각 QA, Lighthouse 100점 오딧, React 프로파일링 |
+| `refactor`, `cleanup`, `restructure` | `$refactor` | 안전 검증을 포함한 지능형 코드 리팩토링 |
+| `research`, `deep research` | `$ultraresearch` | 출처 명시 합성을 포함한 최대 포화 병렬 리서치 |
+| `remove slop`, `deslop`, `clean AI code` | `$remove-ai-slops` | AI 생성 코드 악취 10개 카테고리 제거 |
+| `spec interview`, `grill me` | `$spec-interview` | 소크라테스식 Q&A → 요구사항 보고서 |
+| `debug this`, `why is X not working` | `$debugging` | 가설 기반 디버깅 루프 + Oracle 스폰 |
+| `visual QA`, `screenshot diff` | `$visual-qa` | UI 회귀를 위한 픽셀 디프 분석 |
+
+---
+
+## 🖥️ 비주얼 대시보드: asbrowse
+
+asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 웹 인터페이스로 대체합니다.
+
+<div align="center">
+  <img src="../assets/readme/asbrowse_dashboard_mockup.png" alt="asbrowse 대시보드" width="90%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>asbrowse Command Center — 실시간 진행률, 코드 Diff, 로그, 시각 QA를 한 화면에서</em>
+</div>
+
+<br />
+
+### 주요 기능
+
+- **그리드 기반 정보 구조**: 워크플로우 진행률, 활성 단계(Prometheus 계획), 코드 Diff, 터미널 로그, Playwright 시각 QA 뷰포트를 깔끔한 패널로 분리.
+- **프리미엄 다크 + 시안 미학**: `DESIGN.md` 명세를 따라 제작. HSL 다크 그레이 그라데이션, 시안(#00d4ff) 악센트, Geist 타이포그래피, 매끄러운 마이크로 애니메이션.
+- **자동 부팅 & 제로 설정**: `$browse` 호출 시 포트 3000 감지 → Next.js 서버 백그라운드 기동 → 시스템 브라우저 자동 오픈. 수동 설정 불필요.
+- **보안 로컬 전용**: localhost에서만 실행. 어떤 데이터도 외부로 전송되지 않음.
+
+---
+
+## 🔧 훅 파이프라인: 자동 품질 게이트
+
+lazyantigravity는 **7개 라이프사이클 이벤트**에서 **13개 훅**을 실행합니다. 에이전트의 모든 행동이 자동으로 보호됩니다.
+
+<div align="center">
+  <img src="../assets/readme/hook_lifecycle_diagram.png" alt="훅 라이프사이클 파이프라인" width="85%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>전체 훅 라이프사이클 — 세션 시작부터 에이전트 정지까지</em>
+</div>
+
+<br />
+
+### 라이프사이클 이벤트
+
+| 이벤트 | 훅 | 목적 |
+| :--- | :--- | :--- |
+| **SessionStart** | 프로젝트 규칙 로더, 텔레메트리 레코더, 자동 업데이트 체커 | 규칙, 메트릭, 최신 코드로 에이전트 환경 초기화 |
+| **UserPromptSubmit** | 프롬프트 밀도 분석기, 프롬프트 앰플리파이어, 규칙 리로더, Ultrawork 트리거, ULW-Loop 스티어링 | 모델이 처리하기 전에 모든 프롬프트를 최적화 |
+| **PreToolUse** | Git Bash MCP 추천기, ULW-Loop 골 버짓 강제기 | 스마트 추천과 버짓 한도로 도구 실행 보호 |
+| **PostToolUse** | Comment Checker, LSP 진단, 프로젝트 규칙 매처 | 모든 파일 편집에 대해 주석 보존, 타입 정확성, 규칙 준수 검증 |
+| **PostCompact** | Git Bash 캐시 리셋, 규칙 캐시 리셋, LSP 캐시 리셋 | 컨텍스트 윈도우 압축 후 캐시 정리 |
+| **Stop** | Start-Work 연속 체크 | 에이전트 중지 전 남은 계획 작업 확인 |
+| **SubagentStop** | Start-Work 연속 체크 | 자식 에이전트에 대한 동일 체크 |
+
+### Comment Checker (PostToolUse)
+
+lazyantigravity의 가장 특징적인 기능 중 하나입니다. AI 에이전트는 코드 편집 시 사용자의 주석을 경고 없이 삭제하는 경우가 빈번합니다. Comment Checker가 이를 실시간으로 포착합니다:
+
+<div align="center">
+  <img src="../assets/readme/comment_checker_hook.png" alt="Comment Checker" width="60%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>Comment Checker가 삭제된 주석을 감지하고 에이전트에게 경고</em>
+</div>
+
+### 프롬프트 앰플리파이어 (UserPromptSubmit)
+
+모델이 프롬프트를 보기 전에 프롬프트 앰플리파이어가 분석하고 강화합니다:
+- 더 엄격한 준수를 위한 제약 조건 주입
+- 프롬프트가 너무 모호할 때 경고하는 밀도 점수화
+- 프로젝트 규칙에서 자동 컨텍스트 확장
+
+---
+
+## 📦 전체 스킬 카탈로그 (26개)
+
+모든 스킬은 마법 키워드로 자동 트리거되거나 `$name` / `/name`으로 수동 호출됩니다.
+
+### 워크플로우 엔진 (6개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **ultrawork / ulw** | `ultrawork`, `ulw`, `parallel` | 자율 검증 루프를 갖춘 최대 병렬성 |
+| **ulw-loop** | `/ulw-loop` | 체크포인트를 갖춘 증거 감사 멀티 골 루프 |
+| **ulw-plan** | `/ulw-plan` | ulw-loop 세션의 계획 단계 |
+| **start-work** | `start work`, `execute plan`, `resume plan` | 상태 추적을 포함한 Prometheus 작업 계획 실행 |
+| **ralph** | `ralph`, `don't stop`, `keep going` | 자기참조 영속 루프 (우로보로스에서 상속) |
+| **autopilot** | `autopilot`, `build me` | 아이디어 → 작동 코드 자율 파이프라인 |
+
+### 리서치 (1개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **ultraresearch** | `research`, `deep research`, `ultraresearch` | 병렬 스웜: Exa 웹검색 + Context7 문서 + 로컬 코드베이스 + 실증 검증 → 출처 명시 합성 보고서 |
+
+<div align="center">
+  <img src="../assets/readme/ultraresearch_swarm.png" alt="Ultraresearch 스웜" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>Ultraresearch 병렬 스웜 — 4가지 소스에서 동시에 지식을 합성</em>
+</div>
+
+### 팀 & 오케스트레이션 (1개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **teammode** | `team`, `swarm`, `make a team` | 리드 에이전트 + 최대 8명의 병렬 멤버. tmux 그리드 시각화. 내장 팩: `hyperplan`, `security-research` |
+
+<div align="center">
+  <img src="../assets/readme/multi_agent_swarm_diagram.png" alt="멀티 에이전트 팀" width="70%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>멀티 에이전트 팀 스웜 — tmux 모니터링과 병렬 협업</em>
+</div>
+
+### 코드 품질 (5개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **programming** | `.py`, `.ts`, `.tsx`, `.rs`, `.go` 파일 작업 | 엄격한 타입, 모던 스택 (Pydantic v2 / serde / Zod / gin), 250 LOC 상한, TDD |
+| **refactor** | `refactor`, `cleanup`, `restructure` | 안전 검증을 포함한 지능형 다단계 리팩토링 |
+| **remove-ai-slops** | `remove slop`, `deslop`, `clean AI code` | AI 코드 악취 10개 카테고리 제거, 250+ LOC 분할 강제 |
+| **review-work** | `review work`, `check my work` | 5개 병렬 리뷰 에이전트: 목표 검증, 코드 품질, 보안, QA, 컨텍스트 마이닝 |
+| **comment-checker** | 자동 (PostToolUse 훅) | AI가 편집 중 사용자 주석을 조용히 삭제하는 것 방지 |
+
+### 코드 인텔리전스 (3개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **lsp** | 자동 (PostToolUse 훅) | `lsp_diagnostics`, `lsp_find_references`, `lsp_rename`, `lsp_hover` — IDE급 분석 |
+| **lsp-setup** | `lsp setup`, `configure LSP` | 21개 언어에 대한 언어 서버 설정 — 설치 명령어 및 config 스니펫 포함 |
+| **ast-grep** | 구조적 코드 검색 작업 | 25개 언어에서 AST 수준 코드 패턴 매칭 및 결정론적 코드모드 |
+
+<div align="center">
+  <img src="../assets/readme/lsp_diagnostics_live.png" alt="LSP 진단" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>실시간 LSP 진단 — 타입 에러와 경고를 즉시 포착</em>
+</div>
+
+### 프론트엔드 & 디자인 (2개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **frontend** | `frontend`, `UI`, `UX`, `design` | 12개 테이스트 스킬 + 69개 브랜드 디자인 레퍼런스의 안티슬롭 테이스트 라우터. React 개발 도구: react-scan, react-doctor. Playwright Chromium 오딧으로 Lighthouse 100 |
+| **visual-qa** | `visual QA`, `screenshot diff`, `UI looks wrong` | 픽셀 디프 분석 + CJK 텍스트 정밀도 + 디자인 시스템 및 기능 무결성을 위한 2개 병렬 Oracle 패스 |
+
+### 디버깅 (1개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **debugging** | `debug this`, `why is X not working`, `trace this bug` | 가설 기반 루프: 3개 이상의 가설 수립 → 병렬 조사 → 2회 실패 후 직교 각도에서 Oracle 스폰 → 근본 원인 확인 → 실패 테스트로 고정 → 최소 수정 |
+
+### 웹 & 브라우징 (2개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **browse** | `$browse`, `browse` | asbrowse 대시보드 오픈, Next.js 서버 자동 부팅 |
+| **ultimate-browsing** | `blocked site`, `bypass bot detection`, `stealth browser` | 계층형 WAF 우회: curl_cffi TLS 위장 → 플랫폼 리더 (샤오홍슈, 더우인 등) → CloakBrowser 스텔스 Chromium |
+
+### Git (1개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **git-master** | 커밋/히스토리 작업 | 아토믹 커밋, 스테이징, 리베이스, 스쿼시, fixup/autosquash, blame, bisect, reflog, git log -S/-G |
+
+### 제품 & 명세 (1개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **spec-interview** | `spec interview`, `grill me` | 소크라테스식 Q&A → 모호성 점수 → 정제된 요구사항 보고서 (pm.md) + 슬라이드 개요 |
+
+### 설정 & 구성 (2개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **init-deep** | `/init-deep` | 프로젝트 디렉토리 전역에 계층형 `AGENTS.md` 지식 베이스 생성 |
+| **rules** | 규칙 관련 질문 | Codex 규칙 동작, 규칙 파일 위치, 매칭, 환경 설정 설명 |
+
+### 플러그인 건강 관리 (3개)
+
+| 스킬 | 트리거 | 설명 |
+| :--- | :--- | :--- |
+| **lcx-doctor** | `doctor`, 건강 검사 | 최신 소스 대비 lazycodex/플러그인 설치 상태 진단 |
+| **lcx-report-bug** | `report bug`, `file bug` | 소스 기반 근본 원인과 재현 단계를 포함한 고품질 버그 이슈 생성 |
+| **lcx-contribute-bug-fix** | `fix bug`, `contribute bug fix` | lazycodex/Codex 버그에 대한 검증된 수정 이슈 또는 포크 PR 오픈 |
+
+---
+
+## 🛠️ 기술 아키텍처
+
+### Gemini 3.5 Flash 최적화
+
+<div align="center">
+  <img src="../assets/readme/terminal_execution_mockup.png" alt="터미널 실행" width="90%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
+  <br /><em>lazyantigravity 터미널 실행 — Gemini 3.5 Flash 속도에 최적화</em>
+</div>
+
+<br />
+
+lazyantigravity는 **Gemini 3.5 Flash**를 위해 목적 설계되었습니다:
+
+- **서브 세컨드 추론 활용**: Flash의 빠른 응답 사이클에서 처리량을 최대화하도록 프롬프트 계층 구조를 설계.
+- **스마트 쿼터 제어**: 실시간 API 소비 모니터링으로 워크플로우 중단 없이 비용 효율성 보존.
+- **Compact Mode**: 중복 터미널 로그를 필터링하고 핵심 코드 스니펫으로 압축, 토큰 예산을 동적 최적화.
+- **Safe-Resume 체크포인트**: 상태를 `.lazycodex/checkpoints/ulw-*.json`에 동결. `omo ulw-loop resume`으로 중단 지점에서 정확히 재개.
+
+### Hash-Anchored Edits (Hashline)
+
+"Harness Problem" — AI 에이전트가 낡은 라인 번호를 참조하여 코드를 오염시키는 현상 — 을 해결합니다:
+
+1. 에이전트가 파일을 읽을 때 모든 줄에 고유 콘텐츠 해시(`LINE#ID`)가 부여됩니다.
+2. 에이전트는 편집 시 이 해시를 타겟으로 사용합니다.
+3. 파일이 동시에 변경되었거나 (다른 프로세스가 수정, 또는 에이전트가 잘못된 콘텐츠 참조) 편집이 **안전하게 거부**됩니다.
+4. 결과: 코드 오염율 거의 0%.
+
+### ULW-Loop: 증거 감사 오케스트레이션
+
+`ulw-loop`는 lazyantigravity의 가장 정교한 워크플로우입니다:
+
+1. **골 분해**: 요청을 측정 가능한 성공 기준(정상 경로, 엣지 케이스, 리그레션 가드)으로 분해.
+2. **증거 바운드 스텝**: 각 구현 단계는 루프가 진행되기 전에 검증 가능한 증거를 생산해야 함.
+3. **스티어링 & 리비전**: 실행 중 `omo ulw-loop steer`로 성공 기준 수정 가능.
+4. **안전 복원**: 중단 시 정확한 체크포인트가 보존되어 원활한 재개.
+5. **모델 라우팅**: 역할별 최적 모델 추천 — 빠른 반복에는 Gemini 3.5 Flash, 아키텍처 결정에는 Claude Opus.
+
+---
+
+## 🔌 MCP 통합
+
+lazyantigravity는 4개의 MCP (Model Context Protocol) 서버를 번들합니다:
+
+| MCP 서버 | 타입 | 용도 |
+| :--- | :--- | :--- |
+| **grep_app** | 리모트 | 공개 저장소 전체의 GitHub 코드 검색 |
+| **context7** | 리모트 | 공식 문서 조회 및 쿼리 |
+| **git_bash** | 로컬 | MCP 프로토콜을 통한 Git 작업 |
+| **lsp** | 로컬 | MCP를 통한 Language Server Protocol 진단 |
+
+일반 MCP 서버가 컨텍스트 윈도우 공간을 영구적으로 차지하는 것과 달리, lazyantigravity의 **Skill-Embedded MCP** 패턴은 개별 스킬 내에서 서버를 온디맨드로 기동하고 태스크 스코프가 끝나면 종료합니다 — 컨텍스트를 최소한으로 유지.
+
+---
+
+## 📊 텔레메트리 & 비활성화
+
+세션 시작 시 하루에 한 번, 해시된 식별자(`sha256("omo-codex:" + hostname)`)만 전송됩니다. **소스 코드, 파일 내용, 민감 데이터는 절대 외부로 전송되지 않습니다.**
+
+모든 텔레메트리를 비활성화하려면:
+```bash
+export OMO_DISABLE_POSTHOG=1
+export OMO_SEND_ANONYMOUS_TELEMETRY=0
+```
+
+---
+
+## 📜 라이선스
+
+[MIT](../LICENSE.md) — 개인 및 상업적 사용 자유.
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [김영규 (Yeongyu Kim)](https://github.com/code-yeongyu)**
+
+*[우로보로스(Ouroboros)](https://github.com/code-yeongyu/ouroboros)와 [lazycodex](https://github.com/code-yeongyu/lazycodex)의 정수를 계승합니다*
+
+</div>

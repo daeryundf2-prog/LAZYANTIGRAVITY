@@ -5,7 +5,9 @@ node_modules/
 *.tmp
 .lazycodex/
 .omo/
-src/
+src/*
+!src/README.md
+!src/README.ko.md
 scratch/
 plugins/
 shared-skills
