@@ -7,6 +7,8 @@
 <br />
 
 > *Built on the foundations of **[Ouroboros](https://github.com/Q00/ouroboros)** and **[lazycodex](https://github.com/code-yeongyu/lazycodex)** — inheriting their battle-tested multi-agent loops, static analysis engines, and persistent workflow architecture — then turbocharged for the sub-second inference of **Gemini 3.5 Flash**.*
+>
+> *It started with the simple idea: "Wouldn't Gemini be much better to use if we just loaded it up with all these great features?"*
 
 <br />
 

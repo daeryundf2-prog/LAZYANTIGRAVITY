@@ -1,6 +1,8 @@
 # 🌌 lazyantigravity — English Detailed Guide
 
 > *The most feature-rich AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity), built on the battle-tested foundations of Ouroboros and lazycodex.*
+>
+> *It started with the simple idea: "Wouldn't Gemini be much better to use if we just loaded it up with all these great features?"*
 
 ---
 
