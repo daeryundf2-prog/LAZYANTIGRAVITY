@@ -20,14 +20,19 @@
 [![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)](./LICENSE.md)
 [![GitHub Stars](https://img.shields.io/github/stars/daeryundf2-prog/LAZYANTIGRAVITY?style=for-the-badge&color=ffcb47&labelColor=black)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/stargazers)
 
-<br />
-<h3>
-  <a href="src/README.md">🌐 English Detailed Guide</a>
-  •
-  <a href="src/README.ko.md">🇰🇷 한국어 상세 가이드</a>
-</h3>
-
 </div>
+
+<br />
+
+---
+
+## 📖 가이드 문서 바로가기 / Documentation Guides
+원하시는 언어의 상세 기술 가이드 문서로 즉시 이동할 수 있습니다. 메인 README는 핵심 랜딩 페이지이며, 상세 스킬 및 아키텍처 사양은 각 언어별 상세 가이드에 기재되어 있습니다:
+
+| 가이드 문서 / Guide | 대상 독자 & 내용 / Target Audience & Content | 이동 링크 / Link |
+| :--- | :--- | :--- |
+| **🌐 English Detailed Guide** | English Speakers & Global Developers. Explains the 26 skills, 13 hooks, and detailed architecture. | [👉 View English Guide (src/README.md)](./src/README.md) |
+| **🇰🇷 한국어 상세 가이드** | 한국어 개발자용 가이드. 전체 스킬 구성, 자동 품질 게이트 훅 동작 방식, 세션 복구 및 최적화 아키텍처 상세. | [👉 한국어 가이드 보기 (src/README.ko.md)](./src/README.ko.md) |
 
 ---
 
@@ -116,6 +121,20 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 
 ## 🎮 Core Commands & Magic Keywords
 
+> 💡 **핵심 권장 사항 (Just use `ulw`!)**:
+> - **다른 복잡한 스킬들은 몰라도, 그냥 `ulw` (또는 `ultrawork`) 하나만 입력해서 사용하면 됩니다!** 이 스킬이 코드를 알아서 분석/수정하고 테스트를 수행하여 100% 검증될 때까지 자동으로 루프를 수행하는 핵심 코딩 엔진입니다.
+> - **`ulw`와 `ralph`는 어떻게 다른가요?**
+>   - **`ulw` (실행 엔진)**: 실제로 파일을 생성/수정하고 테스트 코드를 돌리며 기능을 구현하는 **주요 동력**입니다.
+>   - **`ralph` (안전 장치 / 복원 루프)**: 오랜 작업 중 API 호출 한도 초과나 세션 끊김으로 에이전트가 멈추었을 때, **기존의 에이전트 상태를 ledger(로그)로부터 복구하여 멈춘 자리에서부터 안전하게 작업을 이어가도록 보장하는 영속성 장치**입니다.
+> 
+> ---
+> 
+> 💡 **Key Recommendation (Just use `ulw`!)**:
+> - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and runs iterative loops until the codebase is 100% verified.
+> - **How does `ulw` differ from `ralph`?**
+>   - **`ulw` (Execution Engine)**: The actual workhorse modifying files, running test suites, and resolving issues.
+>   - **`ralph` (Safety Net / Persistence Loop)**: A self-referential continuation loop. If a long-running execution gets interrupted (due to quota limits, network issues, or timeouts), `ralph` restores state and resumes exactly where it left off.
+
 ### Commands
 
 | Command | What it does |
@@ -168,6 +187,13 @@ A Next.js–powered local dashboard that replaces the chaos of scrolling termina
 ## 📦 Complete Skill Catalog (26 Skills)
 
 Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
+
+> 💡 **How it works / 작동 원리**:
+> - **Workflow Engines (6개)**: 전체 자율 코딩 루프와 에이전트 조율을 주도하는 **뇌(Brain)** 역할을 합니다.
+> - **Specialized Skills (20개)**: 코딩 루프 실행 중 코드를 수정하거나 검증할 때 백그라운드 훅(Lifecycle Hooks)으로 자동 연동되거나 필요에 따라 엔진에 의해 호출(Call)되는 **도구 및 품질 게이트** 역할을 합니다.
+> 
+> - **Workflow Engines (6 skills)**: Act as the **"Brain/Orchestrator"** leading the autonomous loop.
+> - **Specialized Skills (20 skills)**: Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks (like type checking, comment protection, and pixel-diff QA).
 
 | Category | Skills | Description |
 | :--- | :--- | :--- |

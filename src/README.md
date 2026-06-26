@@ -87,6 +87,14 @@ lazyantigravity works with **all models available in Antigravity**. While optimi
 
 ## 🎮 Core Commands
 
+> 💡 **Key Recommendation (Just use `ulw`!)**:
+> - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and runs iterative loops until the codebase is 100% verified.
+> - **How does `ulw` differ from `ralph`?**
+>   - **`ulw` (Execution Engine)**: The actual workhorse modifying files, running test suites, and resolving issues.
+>   - **`ralph` (Safety Net / Persistence Loop)**: A self-referential continuation loop. If a long-running execution gets interrupted (due to quota limits, network issues, or timeouts), `ralph` restores state and resumes exactly where it left off.
+> 
+> ---
+
 These commands can be typed directly in your **Antigravity agent session** or included in your prompts:
 
 | Command | Description | Key Benefit |
@@ -159,6 +167,10 @@ The asbrowse dashboard replaces terminal log overload with a structured, real-ti
 ## 📦 Complete Skill Catalog (26 Skills)
 
 Every skill is either auto-triggered by magic keywords or manually invoked via `$name` / `/name`.
+
+> 💡 **How it works**:
+> - **Workflow Engines (6 skills)**: Act as the **"Brain/Orchestrator"** leading the autonomous loop.
+> - **Specialized Skills (20 skills)**: Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks (like type checking, comment protection, and pixel-diff QA) during execution.
 
 ### Workflow Engines (6 skills)
 
