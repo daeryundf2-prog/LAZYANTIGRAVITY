@@ -29,6 +29,7 @@ const expectedSkills = [
 	"remove-ai-slops",
 	"review-work",
 	"rules",
+	"skill-gen",
 	"spec-interview",
 	"start-work",
 	"sync-rules",

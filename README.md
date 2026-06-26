@@ -33,7 +33,7 @@
 
 | 가이드 문서 / Guide | 대상 독자 & 내용 / Target Audience & Content | 이동 링크 / Link |
 | :--- | :--- | :--- |
-| **🌐 English Detailed Guide** | English Speakers & Global Developers. Explains the 28 skills, 13 hooks, and detailed architecture. | [👉 View English Guide (src/README.md)](./src/README.md) |
+| **🌐 English Detailed Guide** | English Speakers & Global Developers. Explains the 29 skills, 13 hooks, and detailed architecture. | [👉 View English Guide (src/README.md)](./src/README.md) |
 | **🇰🇷 한국어 상세 가이드** | 한국어 개발자용 가이드. 전체 스킬 구성, 자동 품질 게이트 훅 동작 방식, 세션 복구 및 최적화 아키텍처 상세. | [👉 한국어 가이드 보기 (src/README.ko.md)](./src/README.ko.md) |
 
 ---
@@ -50,7 +50,7 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Single agent, single task | **28 specialized skills** auto-triggered by keywords |
+| Single agent, single task | **29 specialized skills** auto-triggered by keywords |
 | No quality gates | **13 hooks** guard every edit (comment preservation, type checking, rule compliance) |
 | Terminal log chaos | **asbrowse visual dashboard** — real-time progress, diffs, and QA in one view |
 | Manual model selection | **ULW Model Routing** — auto-recommends optimal model per role |
@@ -199,7 +199,7 @@ A Next.js–powered local dashboard that replaces the chaos of scrolling termina
 
 ---
 
-## 📦 Complete Skill Catalog (28 Skills)
+## 📦 Complete Skill Catalog (29 Skills)
 
 Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 
@@ -220,7 +220,7 @@ Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 | ![Web & Browsing](https://img.shields.io/badge/Web_%26_Browsing-9333EA?style=flat-square) | `browse`, `ultimate-browsing` | Session dashboard, WAF bypass, stealth browsing |
 | ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square) | `git-master` | Atomic commits, bisect, blame, rebase, squash |
 | ![Product & Spec](https://img.shields.io/badge/Product_%26_Spec-EC4899?style=flat-square) | `spec-interview` | Socratic interview → requirements report |
-| ![Config & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) | `init-deep`, `rules`, `sync-rules` | Hierarchical AGENTS.md generation, conditional platform rules sync |
+| ![Config & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) | `init-deep`, `rules`, `sync-rules`, `skill-gen` | Hierarchical AGENTS.md generation, conditional platform rules sync, dynamic skill generator |
 | ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) | `lcx-doctor`, `lcx-report-bug`, `lcx-contribute-bug-fix` | Diagnose, report, and fix lazycodex/plugin issues |
 
 ---
@@ -377,7 +377,7 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 - **All-Model Support**: Antigravity가 제공하는 모든 모델(Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet)과 호환. ULW Model Routing으로 역할별 최적 모델을 자동 추천합니다.
 - **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center.
 - **Hash-Anchored Edits (Hashline)**: AI 에이전트가 낡은 라인 번호를 참조하여 코드를 오염시키는 "Harness Problem"을 콘텐츠 해시 검증으로 제거.
-- **28개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 웹사이트 클로너, 조건부 규칙 동기화 등.
+- **29개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 웹사이트 클로너, 조건부 규칙 동기화, 동적 스킬 생성기 등.
 - **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
 - **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
 

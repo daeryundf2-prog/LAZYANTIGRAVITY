@@ -25,7 +25,7 @@
 - [Core Commands](#-core-commands)
 - [Magic Keywords](#-magic-keywords)
 - [Visual Dashboard: asbrowse](#-visual-dashboard-asbrowse)
-- [Complete Skill Catalog (28 Skills)](#-complete-skill-catalog-28-skills)
+- [Complete Skill Catalog (29 Skills)](#-complete-skill-catalog-29-skills)
 - [Hook Pipeline: Automatic Quality Gates](#-hook-pipeline-automatic-quality-gates)
 - [Technical Architecture](#-technical-architecture)
 - [Heritage & Philosophy](#-heritage--philosophy)
@@ -165,7 +165,7 @@ The asbrowse dashboard replaces terminal log overload with a structured, real-ti
 
 ---
 
-## 📦 Complete Skill Catalog (28 Skills)
+## 📦 Complete Skill Catalog (29 Skills)
 
 Every skill is either auto-triggered by magic keywords or manually invoked via `$name` / `/name`.
 
@@ -262,13 +262,14 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 | :--- | :--- | :--- |
 | **spec-interview** | `spec interview`, `grill me` | Socratic Q&A → ambiguity scoring → polished requirements report (pm.md) + slide outline |
 
-### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) Configuration & Setup (3 skills)
+### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) Configuration & Setup (4 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **init-deep** | `/init-deep` | Generates hierarchical `AGENTS.md` knowledge base across project directories |
 | **rules** | Rules-related questions | Explains Codex Rules behavior, rule file locations, matching, environment config |
 | **sync-rules** | `sync-rules`, `sync rules` | Compiles and synchronizes master AGENTS.md rules to platform-specific configuration files conditionally, supporting watch mode (--watch) |
+| **skill-gen** | `skill-gen` | Dynamically generate and register a custom project-scoped skill (.agents/skills/custom-skill/) based on recurring workflow patterns or user instructions |
 
 ### ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) Plugin Health (3 skills)
 

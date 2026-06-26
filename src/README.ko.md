@@ -25,7 +25,7 @@
 - [핵심 명령어](#-핵심-명령어)
 - [마법 키워드](#-마법-키워드-magic-keywords)
 - [비주얼 대시보드: asbrowse](#-비주얼-대시보드-asbrowse)
-- [전체 스킬 카탈로그 (28개)](#-전체-스킬-카탈로그-28개)
+- [전체 스킬 카탈로그 (29개)](#-전체-스킬-카탈로그-29개)
 - [훅 파이프라인: 자동 품질 게이트](#-훅-파이프라인-자동-품질-게이트)
 - [기술 아키텍처](#-기술-아키텍처)
 - [유산과 철학](#-유산과-철학-ouroboros--lazycodex--lazyantigravity)
@@ -165,7 +165,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 
 ---
 
-## 📦 전체 스킬 카탈로그 (28개)
+## 📦 전체 스킬 카탈로그 (29개)
 
 모든 스킬은 마법 키워드로 자동 트리거되거나 `$name` / `/name`으로 수동 호출됩니다.
 
@@ -262,13 +262,14 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 | :--- | :--- | :--- |
 | **spec-interview** | `spec interview`, `grill me` | 소크라테스식 Q&A → 모호성 점수 → 정제된 요구사항 보고서 (pm.md) + 슬라이드 개요 |
 
-### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) 설정 & 구성 (3개)
+### ![Configuration & Setup](https://img.shields.io/badge/Config_%26_Setup-6B7280?style=flat-square) 설정 & 구성 (4개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **init-deep** | `/init-deep` | 프로젝트 디렉토리 전역에 계층형 `AGENTS.md` 지식 베이스 생성 |
 | **rules** | 규칙 관련 질문 | Codex 규칙 동작, 규칙 파일 위치, 매칭, 환경 설정 설명 |
 | **sync-rules** | `sync-rules`, `sync rules` | 마스터 AGENTS.md 규칙 파일을 각 플랫폼별(Cursor, Claude Code, Gemini CLI 등) 설정 파일에 조건부 빌드 및 자동 동기화 (--watch 지원) |
+| **skill-gen** | `skill-gen` | 반복되는 작업 패턴이나 사용자 명세를 기반으로 프로젝트 내 커스텀 스킬(.agents/skills/)을 동적 설계 및 자동 등록 |
 
 ### ![Plugin Health](https://img.shields.io/badge/Plugin_Health-10B981?style=flat-square) 플러그인 건강 관리 (3개)
 
