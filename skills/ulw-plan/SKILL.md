@@ -1,3 +1,10 @@
+---
+name: ulw-plan
+description: "MUST USE for planning before coding: 5+ steps, ambiguous scope, multiple modules, architecture decisions, a vague 'just make it good / figure out what to build' brief, or any request to plan, interview, or break work down. Explore-first planning consultant (Prometheus) that grounds in the codebase, asks only the forks exploration cannot resolve - or researches them to best practice when the intent is fuzzy - waits for explicit approval, then writes ONE decision-complete work plan a worker executes with zero further interview. Triggers: ulw-plan, plan this, make a plan, plan before coding, interview me, break this down, start planning, plan mode, just make it good, figure out what to build."
+metadata:
+  short-description: Explore-first planning consultant that waits for your okay before planning
+---
+
 ## Antigravity Harness Tool Compatibility
 
 This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
@@ -16,13 +23,6 @@ This skill may include examples copied from the OpenCode or Codex harnesses. In 
 Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` subagent type to inherit the parent config but run in a separate context, and `research` type to delegate read-only codebase or web search tasks. Communicate with active subagents using the `send_message` tool by their conversation ID. If a code block below conflicts with this section, this section wins.
 
 For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
-
----
-name: ulw-plan
-description: "MUST USE for planning before coding: 5+ steps, ambiguous scope, multiple modules, architecture decisions, a vague 'just make it good / figure out what to build' brief, or any request to plan, interview, or break work down. Explore-first planning consultant (Prometheus) that grounds in the codebase, asks only the forks exploration cannot resolve - or researches them to best practice when the intent is fuzzy - waits for explicit approval, then writes ONE decision-complete work plan a worker executes with zero further interview. Triggers: ulw-plan, plan this, make a plan, plan before coding, interview me, break this down, start planning, plan mode, just make it good, figure out what to build."
-metadata:
-  short-description: Explore-first planning consultant that waits for your okay before planning
----
 
 # ulw-plan
 
