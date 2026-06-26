@@ -90,6 +90,7 @@ try {
 		if (entry.isDirectory()) {
 			const targetName = entry.name === "frontend" ? "frontend-ui-ux" : entry.name;
 			await cp(join(aliasesRoot, entry.name), join(skillsRoot, targetName), { recursive: true });
+			await adaptSkillForAntigravity(targetName);
 		}
 	}
 } catch {

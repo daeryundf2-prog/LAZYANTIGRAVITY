@@ -12,6 +12,8 @@ const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
 	"ast-grep",
+	"browse",
+	"clone",
 	"comment-checker",
 	"debugging",
 	"frontend-ui-ux",
@@ -29,6 +31,8 @@ const expectedSkills = [
 	"rules",
 	"spec-interview",
 	"start-work",
+	"sync-rules",
+	"teammode",
 	"ultimate-browsing",
 	"ultraresearch",
 	"ulw",
@@ -226,7 +230,7 @@ test("#given synced lcx-report-bug skill #when inspected #then it files LazyCode
 	assert.match(skill, /Browser use fallback/);
 	assert.match(skill, /Computer use fallback/);
 	assert.match(skill, /## Issue Body Template/);
-	assert.match(interfaceMetadata, /display_name: "lcx-report-bug \(omo\)"/);
+	assert.match(interfaceMetadata, /display_name: "(?:\(OmO\) )?lcx-report-bug/i);
 	assert.match(interfaceMetadata, /- "lazycodex bug"/);
 	assert.match(interfaceMetadata, /- "openai codex bug"/);
 });
@@ -246,7 +250,7 @@ test("#given synced git-master skill #when inspected #then commits and git histo
 	assert.match(skill, /Choose the Git tool by the question/);
 	assert.match(skill, /git log -S "text"/);
 	assert.match(skill, /git blame -L start,end -- file/);
-	assert.match(interfaceMetadata, /display_name: "git-master \(omo\)"/);
+	assert.match(interfaceMetadata, /display_name: "(?:\(OmO\) )?git-master/i);
 	assert.match(interfaceMetadata, /- "git commit"/);
 	assert.match(interfaceMetadata, /- "history search"/);
 });

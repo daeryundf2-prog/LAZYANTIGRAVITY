@@ -1,5 +1,5 @@
 interface:
-  display_name: "(OmO) git-master"
+  display_name: "git-master (omo)"
   short_description: "Atomic Git commits, history surgery, and source archaeology"
   search_terms:
     - "git-master"

@@ -2,6 +2,25 @@
 name: review-work
 description: "Post-implementation review orchestrator. Launches 5 parallel background sub-agents: Oracle (goal/constraint verification), Oracle (code quality), Oracle (security), unspecified-high (hands-on QA execution), unspecified-high (context mining from GitHub/git/Slack/Notion). All must pass for review to pass. MUST USE after completing any significant implementation work. Triggers: 'review work', 'review my work', 'review changes', 'QA my work', 'verify implementation', 'check my work', 'validate changes', 'post-implementation review'."
 ---
+## Antigravity Harness Tool Compatibility
+
+This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
+
+| OpenCode/Codex example | Antigravity tool to use |
+| --- | --- |
+| `call_omo_agent(subagent_type="explore", ...)` or `spawn_agent(agent_type="explorer", ...)` | `invoke_subagent(Subagents: [{TypeName: "research", Role: "Codebase Researcher", Prompt: "..."}])` |
+| `call_omo_agent(subagent_type="librarian", ...)` or `spawn_agent(agent_type="librarian", ...)` | `invoke_subagent(Subagents: [{TypeName: "research", Role: "Codebase Researcher", Prompt: "..."}])` |
+| `task(subagent_type="plan", ...)` or `spawn_agent(agent_type="plan", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Prometheus Planner", Prompt: "..."}])` |
+| `task(subagent_type="oracle", ...)` or `spawn_agent(agent_type="codex-ultrawork-reviewer", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Oracle Reviewer", Prompt: "..."}])` |
+| `task(category="...", ...)` or `spawn_agent(agent_type="worker", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Hephaestus Worker", Prompt: "..."}])` |
+| `background_output(task_id="...")` or `wait_agent(...)` | Antigravity is reactive: you will automatically be resumed when a subagent sends a message. Simply stop calling tools/go idle while waiting. |
+| `team_*(...)` | Use `invoke_subagent` to start concurrent subagents, then communicate with `send_message(Recipient, Message)`. |
+| `close_agent(...)` or `kill` | `manage_subagents(Action="kill", ConversationIds=[...])` |
+
+Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` subagent type to inherit the parent config but run in a separate context, and `research` type to delegate read-only codebase or web search tasks. Communicate with active subagents using the `send_message` tool by their conversation ID. If a code block below conflicts with this section, this section wins.
+
+For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
+
 ## Codex Harness Tool Compatibility
 
 This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
@@ -16,7 +35,7 @@ This skill may include examples copied from the OpenCode harness. In Codex, do n
 | `background_output(task_id="...")` | `multi_agent_v1.wait_agent(...)` for mailbox signals |
 | `team_*(...)` | Use Codex native subagents via `multi_agent_v1.spawn_agent`, `multi_agent_v1.send_input`, `multi_agent_v1.wait_agent`, and `multi_agent_v1.close_agent` |
 
-Role-specific behavior must be described in a self-contained `message`. Use `fork_context: false` to start the child with only the initial prompt (no parent history); use `fork_context: true` only when full parent history is truly required. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. OMO installs these selectable agent roles into `~/.codex/agents/`: `explorer`, `librarian`, `plan`, `momus`, `metis`, `lazycodex-code-reviewer`, `lazycodex-qa-executor`, and `lazycodex-gate-reviewer` - pass the matching name as `agent_type` so the child gets that role's model and instructions. If the spawn tool exposes no `agent_type` parameter, omit it and describe the role inside `message`. If a code block below conflicts with this section, this section wins.
+Role-specific behavior must be described in a self-contained `message`. Use `fork_context: false` to start the child with only the initial prompt (no parent history); use `fork_context: true` only when full parent history is truly required. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. OMO installs these selectable agent roles into `~/.codex/agents/`: `explorer`, `librarian`, `plan`, `momus`, `metis`, `lazycodex-code-reviewer`, `lazycodex-qa-executor`, and `lazycodex-gate-reviewer` — pass the matching name as `agent_type` so the child gets that role's model and instructions. On `multi_agent_v2` sessions the same `agent_type` applies (the OMO installer exposes it) with `fork_turns` instead of `fork_context`. If the spawn tool exposes no `agent_type` parameter, omit it and describe the role inside `message`. If a code block below conflicts with this section, this section wins.
 
 For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `multi_agent_v1.wait_agent` timeout only means no new mailbox update arrived. Treat a running child as alive. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.
 
@@ -53,19 +72,6 @@ aggregate result.
 
 Launch 5 specialized sub-agents in parallel to review completed implementation work from every angle. All 5 must pass for the review to pass. If even ONE fails, the review fails.
 
-When `review-work` is used as a final implementation, PR, or `$start-work`
-gate, it is blocking. A timeout, missing deliverable, ack-only response,
-explicit `BLOCKED:`, or inconclusive lane is not a pass. Treat that lane as
-failed, investigate the underlying uncertainty with the `debugging` skill when
-runtime behavior may be wrong, fix with evidence, and rerun the affected lane
-before claiming completion or handing off a PR.
-
-Review evidence must be safe to share. Redact or mask secrets and sensitive
-user data before including evidence in logs, PR bodies, or handoffs. Never
-include raw tokens, credentials, auth headers, cookies, API keys, env dumps,
-private logs, or PII; summarize with lengths, hashes, and short non-sensitive
-prefixes when identity is needed.
-
 The 5 agents cover complementary concerns - together they form a comprehensive review that no single reviewer could match:
 
 | # | Agent | Type | Role | Focus Level |
@@ -95,7 +101,7 @@ Before launching agents, collect these inputs. Extract from conversation history
 </required_inputs>
 
 
-**NEVER CHECKOUT A PR BRANCH IN THE MAIN WORKTREE. ALWAYS CREATE A NEW GIT WORKTREE (`git worktree add`) AND WORK THERE. THIS PREVENTS CONTAMINATING THE USER'S WORKING DIRECTORY WITH UNRELATED BRANCH STATE.**
+Review PRs and branches from a dedicated review worktree only: create or attach one with `git worktree add <path> <branch>` before collecting changed files, diff, file contents, or running checks. The main worktree is read-only context; never checkout, test, or edit the review branch there.
 
 **Auto-collection sequence:**
 

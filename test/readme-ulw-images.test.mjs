@@ -10,12 +10,15 @@ test("README shows the ULW command screenshots from committed assets", () => {
     "assets/readme/lazyantigravity-ulw-running.png",
   ]
 
-  assert.match(README, /## ULW in Antigravity/)
+  assert.match(README, /## ⚙️ ULW-Loop: Evidence-Audited Orchestration/)
 
   for (const imagePath of imagePaths) {
-    assert.match(
-      README,
-      new RegExp(`!\\[[^\\]]+\\]\\(${imagePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`),
+    const escapedPath = imagePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const mdRegex = new RegExp(`!\\[[^\\]]+\\]\\(${escapedPath}\\)`);
+    const htmlRegex = new RegExp(`<img[^>]+src=["']${escapedPath}["']`);
+    assert.ok(
+      mdRegex.test(README) || htmlRegex.test(README),
+      `README must contain image: ${imagePath}`
     )
     assert.equal(existsSync(imagePath), true, `${imagePath} must exist`)
   }

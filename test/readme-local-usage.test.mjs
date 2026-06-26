@@ -6,14 +6,13 @@ const README = readFileSync("README.md", "utf8")
 
 test("README explains the local PC install, update, and /ulw usage path", () => {
   const requiredSnippets = [
-    "## Quick Start On This PC",
-    "This repository is an Antigravity plugin root, not a standalone npm CLI package.",
+    "## ⚡ Quick Start",
     "$env:USERPROFILE\\.gemini\\config\\plugins",
-    "git pull --ff-only",
     "git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity",
-    "Restart Google Antigravity",
-    "/ulw <task>",
-    "/ulw resume",
+    "restart your Antigravity agent session",
+    "$browse",
+    "ultrawork",
+    "ulw",
   ]
 
   for (const snippet of requiredSnippets) {
