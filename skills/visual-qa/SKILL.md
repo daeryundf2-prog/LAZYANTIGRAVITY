@@ -106,11 +106,14 @@ SHARED SCRIPT EVIDENCE (reference, not verdict):
 
 CHECK EACH:
 1. Real design system vs ad-hoc/mock-only: are styles driven by coherent design tokens and reused primitives, or one-off hardcoded values scattered per element? Treat mock-only screens, static compositions, or one-page hardcoded styling with no reusable system as BLOCKING unless the user explicitly requested a throwaway mock.
-2. Faked-with-an-image anti-pattern: is the UI a real DOM/component tree, or a pasted raster/screenshot or background-image standing in for live elements? For TUI: a real layout that reflows, or hardcoded pre-rendered text at fixed widths?
-3. Alpha and transparency: handled correctly, with no unexpected opaque or black fills and correct PNG/CSS alpha? Cross-check alphaChannelIntact.
-4. Code style and implementation quality.
-5. Responsive and resize behavior across viewport sizes (web) or terminal resize (TUI).
-6. Do the user-intended FEATURES actually work: interactions, states, navigation (web); input handling, resize, scroll (TUI)? Trace the code paths.
+2. Fluid Typography Compliance: Verify that font sizes use responsive scaling or `clamp()` formulas for headlines and display text, avoiding static pixel sizes that break at different breakpoints.
+3. Spacing & 8px Grid: Ensure all layout gaps, padding, and margins strictly conform to 8px or 4px multiples. No arbitrary spacing values.
+4. z-index Elevation Registry: Verify that overlapping or absolute-positioned elements have a defined z-index layering scale to prevent clipping or stacking order bugs.
+5. Faked-with-an-image anti-pattern: is the UI a real DOM/component tree, or a pasted raster/screenshot or background-image standing in for live elements? For TUI: a real layout that reflows, or hardcoded pre-rendered text at fixed widths?
+6. Alpha and transparency: handled correctly, with no unexpected opaque or black fills and correct PNG/CSS alpha? Cross-check alphaChannelIntact.
+7. Code style and implementation quality.
+8. Responsive and resize behavior across viewport sizes (web) or terminal resize (TUI).
+9. Do the user-intended FEATURES actually work: interactions, states, navigation (web); input handling, resize, scroll (TUI)? Trace the code paths.
 
 OUTPUT:
 VERDICT: PASS | REVISE | FAIL
@@ -154,7 +157,10 @@ USE THE EVIDENCE:
 
 CHECK:
 1. Does the rendered output match what the user requested: layout, spacing, color, type, alignment?
-2. CJK precision:
+2. Off-Grid Layout Clipping: Verify that asymmetrical or off-grid elements do not clip container boundaries, cut off text, or overlap other interactive layers incorrectly.
+3. Micro-interactions & Transitions: Review source code to confirm interactive elements (buttons, links, hoverable cards) have smooth CSS transitions (e.g. `transition-all duration-200`) and GPU-composited animation paths (`transform`, `opacity`), rather than harsh style snaps.
+4. Cumulative Layout Shift (CLS): Verify that layout elements have defined sizes (width, height, aspect-ratio) to prevent layout shifts during asset load.
+5. CJK precision:
    - Web: natural CJK line breaking for display and body text. Flag oversized headings that create orphaned one-character or final-syllable lines, split Korean/Japanese/Chinese semantic phrases unnaturally, detach labels such as `[Image #1]` from their content, clip baselines/descenders, drop glyphs (tofu), or show font metric mismatch. Treat the screenshot pattern `에이전트 오케스트 / 레이션 현황 및 미 / 래` as REVISE/FAIL, not acceptable wrapping.
    - TUI: wide-character column drift (CJK cells counted as 1 instead of 2), box-drawing border misalignment, content overflowing past the terminal width.
 
