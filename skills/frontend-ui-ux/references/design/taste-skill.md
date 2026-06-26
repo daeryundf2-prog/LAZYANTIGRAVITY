@@ -165,6 +165,9 @@ LLMs default to clichés. Override these defaults proactively. Each rule has a c
 ### 4.1 Typography
 * **Display / Headlines:** Default `text-4xl md:text-6xl tracking-tighter leading-none`.
 * **Body / Paragraphs:** Default `text-base text-gray-600 leading-relaxed max-w-[65ch]`.
+* **Fluid Type Scale (clamp)**: Use CSS `clamp()` for dynamic, responsive font sizes (e.g., `font-size: clamp(2rem, 5vw + 1rem, 4.5rem)`) to scale headings smoothly without viewport-level jumps.
+* **Subpixel Rendering & Smoothing**: Enforce `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;` on the global body selector.
+* **Optical Letter Spacing**: Large display headings must have tighter kerning (`letter-spacing: -0.02em` to `-0.05em`) to feel premium, while body text remains normal.
 * **Sans font choice:**
   * **Discouraged as default:** `Inter`. Pick `Geist`, `Outfit`, `Cabinet Grotesk`, `Satoshi`, or a brand-appropriate serif first.
   * **Override:** Inter is acceptable when the user explicitly asks for a neutral / standard / Linear-style feel, or when the brief is a public-sector / accessibility-first site.
@@ -611,6 +614,9 @@ Avoid these signatures unless the brief explicitly asks for them.
 ### 9.C Layout & Spacing
 * **Mathematically perfect** padding and margins. No floating elements with awkward gaps.
 * **NO 3-column equal feature cards.** The generic "three identical cards horizontally" feature row is banned. Use 2-column zig-zag, asymmetric grid, scroll-pinned, or horizontal-scroll alternative.
+* **Named CSS Grid Area Overlaps (Off-grid Layout)**: When implementing overlapping card layouts or asymmetrical grids, use named CSS Grid lines (e.g. `grid-column: main-start / overlap-end`) instead of brittle negative margins.
+* **CSS Subgrid alignment**: Utilize `grid-template-rows: subgrid` or `grid-template-columns: subgrid` for nested elements within grids to keep layout sections perfectly aligned across asymmetrical cards.
+* **z-index Elevation Registry**: Enforce a strict z-index scale (e.g. `--z-base`, `--z-overlay`, `--z-modal`, `--z-glow`) in `DESIGN.md` to prevent rendering overlap conflicts in asymmetrical grids.
 
 ### 9.D Content & Data ("Jane Doe" Effect)
 * **NO generic names.** "John Doe", "Sarah Chan", "Jack Su" → use creative, realistic, locale-appropriate names.
