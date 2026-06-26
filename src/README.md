@@ -34,7 +34,7 @@
 
 ## 🧬 Heritage & Philosophy
 
-`lazyantigravity` is not a standalone project — it is built on two proven open-source frameworks:
+`lazyantigravity` is not a standalone project — it was built to bring ideas and code from **multiple proven open-source projects** into the **Google Gemini model ecosystem**.
 
 ### [Ouroboros](https://github.com/Q00/ouroboros) — Agent OS
 
@@ -422,7 +422,23 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 **Made with ❤️ by shin**
 
-*Special thanks to [Yeongyu Kim](https://github.com/code-yeongyu) for creating [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex) — the foundations that made this project possible*
-
 </div>
+
+### 🙏 Acknowledgments
+
+This project incorporates ideas and code from the following open-source projects. Thank you.
+
+| Project | Maintainer | Contribution |
+| :--- | :--- | :--- |
+| [Ouroboros](https://github.com/Q00/ouroboros) | [@code-yeongyu](https://github.com/code-yeongyu) | Agent OS, Socratic Spec-Interview, Ralph Persistence Loop |
+| [lazycodex](https://github.com/code-yeongyu/lazycodex) | [@code-yeongyu](https://github.com/code-yeongyu) | Hook system, Skill registry, Comment Checker, LSP diagnostics |
+| [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) | [@code-yeongyu](https://github.com/code-yeongyu) | OMX orchestration, multi-agent delegation, model routing |
+| [asbrowse](../skills/browse/) | — | Session browser visual dashboard |
+| [insane-research](https://github.com/fivetaku/insane-research) | [@fivetaku](https://github.com/fivetaku) | ultraresearch verification gate idea (MIT) |
+| [open-design](../src/packages/shared-skills/upstreams/open-design/) | — | Design system skill upstream |
+| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | — | UI/UX taste router |
+| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | — | Design power references |
+| [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST structural search & codemods |
+| [Context7](https://context7.com/) | Context7 team | Official docs MCP server |
+| [Grep.app](https://grep.app/) | Grep.app team | GitHub code search MCP server |
 

@@ -34,7 +34,7 @@
 
 ## 🧬 유산과 철학: Ouroboros → lazycodex → lazyantigravity
 
-`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 두 개의 검증된 오픈소스 프레임워크 위에 구축되었습니다.
+`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 여러 검증된 오픈소스 프로젝트의 아이디어와 코드를 **Google Gemini 모델에서 사용하기 위해** 구축되었습니다.
 
 ### [우로보로스 (Ouroboros)](https://github.com/Q00/ouroboros) — Agent OS
 
@@ -424,7 +424,23 @@ export OMO_SEND_ANONYMOUS_TELEMETRY=0
 
 **Made with ❤️ by shin**
 
-*[Ouroboros](https://github.com/Q00/ouroboros)와 [lazycodex](https://github.com/code-yeongyu/lazycodex)를 만들어주신 [김영규 (Yeongyu Kim)](https://github.com/code-yeongyu)님께 깊이 감사드립니다*
-
 </div>
+
+### 🙏 Acknowledgments
+
+이 프로젝트에는 다음 오픈소스 프로젝트들의 아이디어와 코드가 반영되어 있습니다. 감사합니다.
+
+| Project | Maintainer | Contribution |
+| :--- | :--- | :--- |
+| [Ouroboros](https://github.com/Q00/ouroboros) | [@code-yeongyu](https://github.com/code-yeongyu) | Agent OS, Spec-Interview, Ralph Persistence Loop |
+| [lazycodex](https://github.com/code-yeongyu/lazycodex) | [@code-yeongyu](https://github.com/code-yeongyu) | Hook 시스템, 스킬 레지스트리, Comment Checker, LSP 진단 |
+| [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) | [@code-yeongyu](https://github.com/code-yeongyu) | OMX 오케스트레이션, 멀티 에이전트 위임, 모델 라우팅 |
+| [asbrowse](../skills/browse/) | — | 세션 브라우저 비주얼 대시보드 |
+| [insane-research](https://github.com/fivetaku/insane-research) | [@fivetaku](https://github.com/fivetaku) | ultraresearch 검증 게이트 아이디어 (MIT) |
+| [open-design](../src/packages/shared-skills/upstreams/open-design/) | — | 디자인 시스템 스킬 업스트림 |
+| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | — | UI/UX 테이스트 라우터 |
+| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | — | 디자인 파워 레퍼런스 |
+| [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST 구조 검색 & 코드모드 |
+| [Context7](https://context7.com/) | Context7 team | 공식 문서 MCP 서버 |
+| [Grep.app](https://grep.app/) | Grep.app team | GitHub 코드 검색 MCP 서버 |
 
