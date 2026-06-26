@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import { executeLspDiagnostics } from "@code-yeongyu/lsp-tools-mcp/dist/tools.js";
-import { isUnavailableLspDiagnostics, markLspSessionCompacted, recordLspDiagnosticsObservations, sessionIdFrom, shouldSkipUnavailableLspDiagnostics, } from "./lsp-session-state.js";
+import { callDiagnosticsViaDaemon, currentRequestContext } from "@code-yeongyu/lsp-daemon";
+import { isLspDaemonUnreachableDiagnostics, isUnavailableLspDiagnostics, markLspSessionCompacted, recordLspDiagnosticsObservations, sessionIdFrom, shouldSkipUnavailableLspDiagnostics, } from "./lsp-session-state.js";
 import { extractMutatedFilePaths } from "./mutated-file-paths.js";
 export { extractMutatedFilePaths } from "./mutated-file-paths.js";
 const CLEAN_DIAGNOSTICS_TEXT = "No diagnostics found";
@@ -20,7 +20,7 @@ const CONTEXT_PRESSURE_MARKERS = [
     "long threads and multiple compactions",
 ];
 export async function runLspDiagnosticsText(filePath) {
-    const result = await executeLspDiagnostics({ filePath, severity: "error" });
+    const result = await callDiagnosticsViaDaemon(filePath, { context: currentRequestContext() });
     return result.content.map((block) => block.text).join("\n");
 }
 export async function runLspPostToolUseHook(input, runDiagnostics = runLspDiagnosticsText) {
@@ -31,6 +31,10 @@ export async function runLspPostToolUseHook(input, runDiagnostics = runLspDiagno
     const blocks = [];
     const observations = [];
     for (const { filePath, diagnostics } of await collectDiagnostics(filePaths, runDiagnostics)) {
+        // A daemon outage is transient (connect-or-spawn retries on the next request);
+        // recording it would silence this extension for the rest of the session.
+        if (isLspDaemonUnreachableDiagnostics(diagnostics))
+            continue;
         const unavailable = isUnavailableLspDiagnostics(diagnostics);
         observations.push({ filePath, unavailable });
         if (isCleanDiagnostics(diagnostics))

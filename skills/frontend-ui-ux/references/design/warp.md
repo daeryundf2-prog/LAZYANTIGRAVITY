@@ -1,5 +1,8 @@
 # Design System Inspired by Warp
 
+> Category: Developer Tools
+> Modern terminal. Dark IDE-like interface, block-based command UI.
+
 ## 1. Visual Theme & Atmosphere
 
 Warp's website feels like sitting at a campfire in a deep forest — warm, dark, and alive with quiet confidence. Unlike the cold, blue-tinted blacks favored by most developer tools, Warp wraps everything in a warm near-black that feels like charred wood or dark earth. The text isn't pure white either — it's Warm Parchment (`#faf9f6`), a barely-perceptible cream that softens every headline and makes the dark canvas feel inviting rather than austere.

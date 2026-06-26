@@ -1,5 +1,8 @@
 # Design System Inspired by Intercom
 
+> Category: Productivity & SaaS
+> Customer messaging. Friendly blue palette, conversational UI patterns.
+
 ## 1. Visual Theme & Atmosphere
 
 Intercom's website is a warm, confident customer service platform that communicates "AI-first helpdesk" through a clean, editorial design language. The page operates on a warm off-white canvas (`#faf9f6`) with off-black (`#111111`) text, creating an intimate, magazine-like reading experience. The signature Fin Orange (`#ff5600`) — named after Intercom's AI agent — serves as the singular vibrant accent against the warm neutral palette.

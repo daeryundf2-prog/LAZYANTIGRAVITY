@@ -1,5 +1,8 @@
 # Design System Inspired by Superhuman
 
+> Category: Developer Tools
+> Fast email client. Premium dark UI, keyboard-first, purple glow.
+
 ## 1. Visual Theme & Atmosphere
 
 Superhuman's website feels like opening a luxury envelope — predominantly white, immaculately clean, with a single dramatic gesture of color that commands attention. The hero section is a cinematic purple gradient, a deep twilight wash of `#1b1938` that evokes the moment just before dawn, overlaid with confident white typography. Below this dramatic entrance, the rest of the site is almost entirely white canvas with dark charcoal text, creating a stark but refined reading experience.

@@ -1,5 +1,8 @@
 # Design System Inspired by Uber
 
+> Category: Media & Consumer
+> Mobility platform. Bold black and white, tight type, urban energy.
+
 ## 1. Visual Theme & Atmosphere
 
 Uber's design language is a masterclass in confident minimalism -- a black-and-white universe where every pixel serves a purpose and nothing decorates without earning its place. The entire experience is built on a stark duality: jet black (`#000000`) and pure white (`#ffffff`), with virtually no mid-tone grays diluting the message. This isn't the sterile minimalism of a startup that hasn't finished designing -- it's the deliberate restraint of a brand so established it can afford to whisper.

@@ -1,5 +1,8 @@
 # Design System Inspired by Shopify
 
+> Category: E-Commerce & Retail
+> E-commerce platform. Dark-first cinematic, neon green accent, ultra-light type.
+
 ## 1. Visual Theme & Atmosphere
 
 Shopify.com is a dark-first digital theatre — a website that stages its commerce platform like a cinematic premiere. The entire experience unfolds against an abyss of near-black surfaces that carry the faintest whisper of deep forest green (`#02090A`, `#061A1C`, `#102620`), creating a nocturnal atmosphere that feels less like a SaaS marketing page and more like an exclusive product reveal at a tech keynote. This darkness isn't cold or corporate — it's the warm, enveloping dark of a luxury experience, like sitting in the front row of a darkened auditorium.

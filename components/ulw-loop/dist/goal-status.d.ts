@@ -9,4 +9,7 @@ export declare function aggregateCodexObjective(plan: UlwLoopPlan): string;
 export declare function expectedCodexObjective(plan: UlwLoopPlan, goal: UlwLoopItem): string;
 export declare function compatibleCodexObjectives(plan: UlwLoopPlan): readonly string[];
 export declare function hasAllCriteriaPass(goal: UlwLoopItem): boolean;
+export declare function isEssentialCriterion(criterion: UlwLoopSuccessCriterion): boolean;
+export declare function essentialCriteriaOf(goal: UlwLoopItem): readonly UlwLoopSuccessCriterion[];
+export declare function hasEssentialCriteriaPass(goal: UlwLoopItem): boolean;
 export declare function firstUnresolvedCriterion(goal: UlwLoopItem): UlwLoopSuccessCriterion | undefined;

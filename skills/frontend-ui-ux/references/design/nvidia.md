@@ -1,5 +1,8 @@
 # Design System Inspired by NVIDIA
 
+> Category: Media & Consumer
+> GPU computing. Green-black energy, technical power aesthetic.
+
 ## 1. Visual Theme & Atmosphere
 
 NVIDIA's website is a high-contrast, technology-forward experience that communicates raw computational power through design restraint. The page is built on a stark black (`#000000`) and white (`#ffffff`) foundation, punctuated by NVIDIA's signature green (`#76b900`) -- a color so specific it functions as a brand fingerprint. This is not the lush green of nature; it's the electric, lime-shifted green of GPU-rendered light, a color that sits between chartreuse and kelly green and immediately signals "NVIDIA" to anyone in technology.

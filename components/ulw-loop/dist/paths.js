@@ -1,12 +1,6 @@
 import { join } from "node:path";
 import { ULW_LOOP_BRIEF, ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER } from "./types.js";
-const SESSION_ENV_KEYS = [
-    "OMO_ULW_LOOP_SESSION_ID",
-    "ANTIGRAVITY_SESSION_ID",
-    "GEMINI_SESSION_ID",
-    "CODEX_SESSION_ID",
-    "CODEX_THREAD_ID",
-];
+const SESSION_ENV_KEYS = ["OMO_ULW_LOOP_SESSION_ID", "CODEX_SESSION_ID", "CODEX_THREAD_ID"];
 export function normalizeUlwLoopSessionId(sessionId) {
     const trimmed = sessionId?.trim();
     if (!trimmed)
@@ -34,7 +28,7 @@ export function ulwLoopRelativeDir(scope) {
     return sessionId === null ? ULW_LOOP_DIR : `${ULW_LOOP_DIR}/${sessionId}`;
 }
 export function ulwLoopDir(repoRoot, scope) {
-    return join(repoRoot, ulwLoopRelativeDir(scope)).split("\\").join("/");
+    return join(repoRoot, ulwLoopRelativeDir(scope));
 }
 export function ulwLoopBriefRelativePath(scope) {
     return `${ulwLoopRelativeDir(scope)}/${ULW_LOOP_BRIEF}`;
@@ -46,13 +40,13 @@ export function ulwLoopLedgerRelativePath(scope) {
     return `${ulwLoopRelativeDir(scope)}/${ULW_LOOP_LEDGER}`;
 }
 export function ulwLoopBriefPath(repoRoot, scope) {
-    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_BRIEF).split("\\").join("/");
+    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_BRIEF);
 }
 export function ulwLoopGoalsPath(repoRoot, scope) {
-    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_GOALS).split("\\").join("/");
+    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_GOALS);
 }
 export function ulwLoopLedgerPath(repoRoot, scope) {
-    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_LEDGER).split("\\").join("/");
+    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_LEDGER);
 }
 export function repoRelative(absolutePath, repoRoot) {
     const slashPrefix = `${repoRoot}/`;

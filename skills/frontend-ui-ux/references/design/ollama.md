@@ -1,5 +1,8 @@
 # Design System Inspired by Ollama
 
+> Category: AI & LLM
+> Run LLMs locally. Terminal-first, monochrome simplicity.
+
 ## 1. Visual Theme & Atmosphere
 
 Ollama's interface is radical minimalism taken to its logical conclusion — a pure-white void where content floats without decoration, shadow, or color. The design philosophy mirrors the product itself: strip away everything unnecessary until only the essential tool remains. This is the digital equivalent of a Dieter Rams object — every pixel earns its place, and the absence of design IS the design.

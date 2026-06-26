@@ -1,5 +1,8 @@
 # Design System Inspired by Wise
 
+> Category: Fintech & Crypto
+> Money transfer. Bright green accent, friendly and clear.
+
 ## 1. Visual Theme & Atmosphere
 
 Wise's website is a bold, confident fintech platform that communicates "money without borders" through massive typography and a distinctive lime-green accent. The design operates on a warm off-white canvas with near-black text (`#0e0f0c`) and a signature Wise Green (`#9fe870`) — a fresh, lime-bright color that feels alive and optimistic, unlike the corporate blues of traditional banking.

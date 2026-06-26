@@ -1,5 +1,8 @@
 # Design System Inspired by Meta (Store)
 
+> Category: E-Commerce & Retail
+> Tech retail store. Photography-first, binary light/dark surfaces, Meta Blue CTAs.
+
 ## 1. Visual Theme & Atmosphere
 
 The Meta Store is a product-forward retail experience built to sell hardware — Quest VR headsets, Ray-Ban Meta smart glasses, and accessories. The design walks a tightrope between consumer electronics showroom and lifestyle editorial, deploying cinematic product photography against expansive white canvas to create a gallery-like sense of aspiration. Every design decision serves the merchandise: generous negative space frames hero product shots like museum pieces, while alternating light and dark surface sections create a visual rhythm that mimics the experience of walking through a physical retail space.

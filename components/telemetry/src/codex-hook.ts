@@ -1,14 +1,14 @@
 import {
 	type TelemetryDiagnosticErrorKind,
 	type TelemetryDiagnosticEvent,
-	writeTelemetryDiagnostic,
-} from "./diagnostics.js";
+} from "@oh-my-opencode/telemetry-core";
 import {
 	createPluginPostHog,
 	getPostHogDistinctId,
 	type PostHogActivityReason,
 	type PostHogClient,
 } from "./posthog.js";
+import { writeComponentTelemetryDiagnostic } from "./product-identity.js";
 
 export type CodexSessionStartInput = {
 	session_id: string;
@@ -32,7 +32,7 @@ function writeHookDiagnostic(
 	error: unknown,
 	errorKind: TelemetryDiagnosticErrorKind,
 ): void {
-	writeTelemetryDiagnostic({
+	writeComponentTelemetryDiagnostic({
 		event,
 		source: "plugin",
 		error,
@@ -47,7 +47,14 @@ export async function runSessionStartHook(
 	const createClient = options.createClient ?? createPluginPostHog;
 	const getDistinctId = options.getDistinctId ?? getPostHogDistinctId;
 
-	const client = await createClient();
+	let client: PostHogClient;
+	try {
+		client = await createClient();
+	} catch (error) {
+		writeHookDiagnostic("telemetry_posthog_init_failed", error, error instanceof Error ? "error" : "non_error");
+		return "";
+	}
+
 	try {
 		client.trackActive(getDistinctId(), SESSION_START_REASON);
 	} catch (error) {

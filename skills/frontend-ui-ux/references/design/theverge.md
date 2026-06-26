@@ -1,5 +1,8 @@
 # Design System Inspired by The Verge
 
+> Category: Media & Consumer
+> Tech editorial media. Acid-mint and ultraviolet accents, Manuka display, rave-flyer story tiles.
+
 ## 1. Visual Theme & Atmosphere
 
 The Verge's 2024 redesign feels like somebody wired a Condé Nast magazine to a chiptune soundboard. The canvas is almost-black (`#131313`), the headlines are built from a brutally heavy display face (Manuka) that runs up to 107px, and the whole page is peppered with acid-mint `#3cffd0` and ultraviolet `#5200ff` that behave less like brand colors and more like hazard tape. Story tiles are not quiet gray cards — they're saturated, full-bleed color blocks (yellow, pink, orange, blue, purple) that feel like pasted-up rave flyers arranged into a timeline. The mood is "developer console meets club night meets tech tabloid": serious enough to cover a congressional hearing, loud enough to review a synthesizer.

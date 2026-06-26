@@ -1,5 +1,6 @@
 import { type UlwLoopScope } from "./paths.js";
-import type { UlwLoopCodexGoalMode, UlwLoopItem, UlwLoopPlan, UlwLoopSuccessCriterion } from "./types.js";
+import type { UlwLoopCodexGoalMode, UlwLoopItem, UlwLoopPlan } from "./types.js";
+export { deriveGoalCandidates, seedDefaultSuccessCriteria } from "./plan-goal-factory.js";
 export type UlwLoopPlanSummary = {
     readonly total: number;
     readonly pending: number;
@@ -18,11 +19,6 @@ export type UlwLoopPlanSummary = {
         readonly blocked: number;
     };
 };
-export declare function seedDefaultSuccessCriteria(goalIndex: number, objective: string): UlwLoopSuccessCriterion[];
-export declare function deriveGoalCandidates(brief: string): Array<{
-    title: string;
-    objective: string;
-}>;
 export declare function createUlwLoopPlan(repoRoot: string, args: {
     brief: string;
     codexGoalMode?: UlwLoopCodexGoalMode;

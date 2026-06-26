@@ -1,6 +1,13 @@
-import type { UlwLoopItem, UlwLoopPlan, UlwLoopQualityGate } from "./types.js";
-export declare function validateQualityGate(input: unknown): UlwLoopQualityGate;
-export declare function normalizeBlockerEvidence(evidence: string): string;
-export declare function classifyExternalAuthorizationBlocker(evidence: string): string | null;
-export declare function sameBlockerOccurrences(plan: UlwLoopPlan, signature: string): number;
-export declare function clearGoalBlockerFields(goal: UlwLoopItem): void;
+import type { UlwLoopQualityGate } from "./types.js";
+export { classifyExternalAuthorizationBlocker, clearGoalBlockerFields, normalizeBlockerEvidence, sameBlockerOccurrences, } from "./quality-gate-blockers.js";
+export interface QualityGateFs {
+    readonly existsSync: (path: string) => boolean;
+    readonly statSync: (path: string) => {
+        readonly size: number;
+    };
+}
+export interface ValidateQualityGateOptions {
+    readonly repoRoot: string;
+    readonly fs: QualityGateFs;
+}
+export declare function validateQualityGate(input: unknown, opts?: ValidateQualityGateOptions): UlwLoopQualityGate;

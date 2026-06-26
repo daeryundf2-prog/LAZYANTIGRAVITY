@@ -1,5 +1,8 @@
 # Design System Inspired by WIRED
 
+> Category: Media & Consumer
+> Tech magazine. Paper-white broadsheet density, custom serif display, mono kickers, ink-blue links.
+
 ## 1. Visual Theme & Atmosphere
 
 WIRED's homepage feels like a printed broadsheet that someone has plugged into a wall socket. The grid is dense, the rules are thin, the type is loud, and almost every surface is paper-white or pure black with no rounded corners and no decoration that doesn't earn its place. Image rectangles butt directly against headlines, hairline dividers separate stories the way pica rules separate columns in a real magazine, and the only colors that aren't grayscale come from the photography itself. There is no "card with shadow" anywhere — the entire layout is held together by typographic weight and the discipline of rules and whitespace, the same way a Condé Nast print page would be assembled in a paste-up room.

@@ -1,5 +1,8 @@
 # Design System Inspired by Lamborghini
 
+> Category: Automotive
+> Supercar brand. True black surfaces, gold accents, dramatic uppercase typography.
+
 ## 1. Visual Theme & Atmosphere
 
 Lamborghini's website is a cathedral of darkness — a digital stage where jet-black surfaces stretch infinitely and every element emerges from the void like a machine under a spotlight. The page is almost entirely black. Not dark gray, not near-black — true, uncompromising black (`#000000`) that saturates the viewport and refuses to yield. Into this abyss, white type and Lamborghini Gold (`#FFC000`) are deployed with surgical precision, creating a visual language that feels like walking through a nighttime motorsport event where every surface absorbs light except the things that matter.

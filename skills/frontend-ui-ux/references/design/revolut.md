@@ -1,5 +1,8 @@
 # Design System Inspired by Revolut
 
+> Category: Fintech & Crypto
+> Digital banking. Sleek dark interface, gradient cards, fintech precision.
+
 ## 1. Visual Theme & Atmosphere
 
 Revolut's website is fintech confidence distilled into pixels — a design system that communicates "your money is in capable hands" through massive typography, generous whitespace, and a disciplined neutral palette. The visual language is built on Aeonik Pro, a geometric grotesque that creates billboard-scale headlines at 136px with weight 500 and aggressive negative tracking (-2.72px). This isn't subtle branding; it's fintech at stadium scale.

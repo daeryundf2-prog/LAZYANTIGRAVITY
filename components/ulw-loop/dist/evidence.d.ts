@@ -27,5 +27,8 @@ export declare function criteriaSummary(plan: UlwLoopPlan): {
     goalsWithUnresolvedCriteria: string[];
 };
 export declare function unresolvedCriteriaOf(goal: UlwLoopItem): UlwLoopSuccessCriterion[];
+export declare function unresolvedEssentialCriteriaOf(goal: UlwLoopItem): readonly UlwLoopSuccessCriterion[];
 export declare function requireAllCriteriaPass(goal: UlwLoopItem): void;
+export declare function requireAllPlanCriteriaPass(plan: UlwLoopPlan): void;
+export declare function requireEssentialCriteriaPass(goal: UlwLoopItem): void;
 export {};

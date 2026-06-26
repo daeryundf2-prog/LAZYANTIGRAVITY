@@ -1,5 +1,8 @@
 # Design System Inspired by Webflow
 
+> Category: Design & Creative
+> Visual web builder. Blue-accented, polished marketing site aesthetic.
+
 ## 1. Visual Theme & Atmosphere
 
 Webflow's website is a visually rich, tool-forward platform that communicates "design without code" through clean white surfaces, the signature Webflow Blue (`#146ef5`), and a rich secondary color palette (purple, pink, green, orange, yellow, red). The custom WF Visual Sans Variable font creates a confident, precise typographic system with weight 600 for display and 500 for body.

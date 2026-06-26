@@ -9,3 +9,4 @@ export declare function shouldSkipUnavailableLspDiagnostics(filePath: string, se
 export declare function recordLspDiagnosticsObservations(sessionId: string | undefined, observations: readonly DiagnosticsObservation[]): void;
 export declare function markLspSessionCompacted(sessionId: string | undefined): void;
 export declare function isUnavailableLspDiagnostics(diagnostics: string): boolean;
+export declare function isLspDaemonUnreachableDiagnostics(diagnostics: string): boolean;

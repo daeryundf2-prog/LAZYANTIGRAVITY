@@ -1,5 +1,8 @@
 # Design System Inspired by Mintlify
 
+> Category: Productivity & SaaS
+> Documentation platform. Clean, green-accented, reading-optimized.
+
 ## 1. Visual Theme & Atmosphere
 
 Mintlify's website is a study in documentation-as-product design — a white, airy, information-rich surface that treats clarity as its highest aesthetic value. The page opens with a luminous white (`#ffffff`) background, near-black (`#0d0d0d`) text, and a signature green brand accent (`#18E299`) that signals freshness and intelligence without dominating the palette. The overall mood is calm, confident, and engineered for legibility — a design system that whispers "we care about your developer experience" in every pixel.

@@ -1,5 +1,8 @@
 # Design System Inspired by Coinbase
 
+> Category: Fintech & Crypto
+> Crypto exchange. Clean blue identity, trust-focused, institutional feel.
+
 ## 1. Visual Theme & Atmosphere
 
 Coinbase's website is a clean, trustworthy crypto platform that communicates financial reliability through a blue-and-white binary palette. The design uses Coinbase Blue (`#0052ff`) — a deep, saturated blue — as the singular brand accent against white and near-black surfaces. The proprietary font family includes CoinbaseDisplay for hero headlines, CoinbaseSans for UI text, CoinbaseText for body reading, and CoinbaseIcons for iconography — a comprehensive four-font system.

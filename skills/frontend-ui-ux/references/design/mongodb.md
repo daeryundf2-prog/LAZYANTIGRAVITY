@@ -1,5 +1,8 @@
 # Design System Inspired by MongoDB
 
+> Category: Backend & Data
+> Document database. Green leaf branding, developer documentation focus.
+
 ## 1. Visual Theme & Atmosphere
 
 MongoDB's website is a deep-forest-meets-terminal experience — a design system rooted in the darkest teal-black (`#001e2b`) that evokes both the density of a database and the depth of a forest canopy. Against this near-black canvas, a striking neon green (`#00ed64`) pulses as the brand accent — bright enough to feel electric, organic enough to feel alive. This isn't the cold neon of cyberpunk; it's the bioluminescent green of something growing in the dark.

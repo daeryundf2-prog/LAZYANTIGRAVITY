@@ -48,10 +48,8 @@ test("#given aggregate PostCompact hooks #when hooks are inspected #then LSP dia
 	);
 
 	// then
-	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
-	const productName = isStandalone ? "LazyAntigravity" : "LazyCodex";
 	assert.equal(lspPostCompactHooks.length, 1);
-	assert.equal(lspPostCompactHooks[0]?.handler.statusMessage, `${productName}(${aggregateVersion}): Resetting LSP Diagnostics Cache`);
+	assert.equal(lspPostCompactHooks[0]?.handler.statusMessage, "(OmO) Resetting LSP Diagnostics Cache");
 });
 
 test("#given aggregate hook commands #when inspected #then every command exposes a Codex status message", async () => {
@@ -110,9 +108,9 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 
 	// then
 	assert.match(text, /components\/git-bash\/dist\/cli\.js/);
-	assert.match(text, /Recommending Git Bash Mcp/);
+	assert.match(text, /Recommending Git Bash MCP/);
 	assert.match(text, /hook post-compact/);
-	assert.match(text, /Resetting Git Bash Mcp Reminder/);
+	assert.match(text, /Resetting Git Bash MCP Reminder/);
 	assert.match(text, /components\/ulw-loop\/dist\/cli\.js/);
 	assert.match(text, /hook pre-tool-use/);
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), ["^Bash$", "^create_goal$"]);

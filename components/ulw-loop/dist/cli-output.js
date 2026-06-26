@@ -9,13 +9,28 @@ export const ULW_LOOP_HELP = `Usage:
   omo ulw-loop steer --kind <kind> ... --evidence "..." --rationale "..." [--json]
   omo ulw-loop add-goal --title "..." --objective "..." [--json]
   omo ulw-loop record-review-blockers --goal-id <id> --title "..." --objective "..." --evidence "..." --codex-goal-json <...> [--json]
-  omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>] [--json]
-  omo ulw-loop resume [--json]
-  omo ulw-loop dry-run [--scenario <scenario>] [--json]
 
 All subcommands accept [--session-id <id>] to isolate state under .omo/ulw-loop/<id>/; without it, Codex session env is used when present.`;
 export function printJson(value) {
     process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
+}
+export function printJsonError(error) {
+    if (error instanceof UlwLoopError) {
+        printJson({
+            ok: false,
+            error: {
+                code: error.code,
+                message: error.message,
+                ...(error.details === undefined ? {} : { details: error.details }),
+            },
+        });
+        return;
+    }
+    if (error instanceof Error) {
+        printJson({ ok: false, error: { code: "ULW_LOOP_UNEXPECTED", message: error.message } });
+        return;
+    }
+    printJson({ ok: false, error: { code: "ULW_LOOP_UNKNOWN", message: "unknown error" } });
 }
 function criteriaCounts(goal) {
     let pass = 0;

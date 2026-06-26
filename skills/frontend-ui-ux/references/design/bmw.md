@@ -1,5 +1,8 @@
 # Design System Inspired by BMW
 
+> Category: Automotive
+> Luxury automotive. Dark premium surfaces, precise German engineering aesthetic.
+
 ## 1. Visual Theme & Atmosphere
 
 BMW's website is automotive engineering made visual — a design system that communicates precision, performance, and German industrial confidence. The page alternates between deep dark hero sections (featuring full-bleed automotive photography) and clean white content areas, creating a cinematic rhythm reminiscent of a luxury car showroom where vehicles are lit against darkness. The BMW CI2020 design language (their corporate identity refresh) defines every element.

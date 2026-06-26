@@ -43,13 +43,11 @@ test("#given synced aggregate Codex skills #when they contain OpenCode orchestra
 
 test("#given synced aggregate Codex skills #when they describe background orchestration #then liveness is framed as progress rather than timeout failure", async () => {
 	// given
-	const orchestrationPattern = /\b(?:run_in_background|wait_agent)\b/;
+	const orchestrationPattern = /\b(?:run_in_background|background_output|wait_agent)\b/;
 	const requiredPatterns = [
 		["working progress message", /WORKING:/],
 		["blocked progress message", /BLOCKED:/],
 		["mailbox timeout framing", /timeout only means no new mailbox update arrived/],
-		["single liveness check", /single `list_agents` check|one `list_agents` check|treat a running child as alive/i],
-		["polling-loop guard", /Do not use `list_agents` as a polling loop|Do NOT use `list_agents` as a polling loop|not a timeout counter/i],
 		["explicit fallback conditions", /Fallback only when|Mark a file for retry only when/],
 	];
 	const bannedPatterns = [

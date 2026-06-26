@@ -93,35 +93,11 @@ git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 
 ---
 
-## 🚀 주요 기능 및 스킬 상세 설명 (Core Features & Skills)
-
-본 플러그인은 개발 효율성과 품질을 극대화하기 위해 자율 실행 워크플로우와 고도화된 특수 스킬들을 Antigravity 환경에 주입합니다:
-
-### 1. 자율적 오케스트레이션 워크플로우 (`/ulw` & `ulw-loop`)
-* **역할별 에이전트 자율 분업**: 하나의 목표가 입력되면 에이전트가 스스로 **기획(Planner) ➡️ 조사(Researcher) ➡️ 개발(Worker) ➡️ 검증(Verifier)**으로 세부 에이전트를 역할을 나누어 순차 및 병렬로 실행합니다.
-* **증거 중심의 반복 루프 (Evidence Loop)**: 단순 코딩 완료 선언에 그치지 않고, 정의한 성공 조건에 대한 검증 증거 자료(`.omo/evidence/`)를 확보할 때까지 지속적인 피드백 루프를 수행합니다.
-* **중단 후 안전 재개 (Safe-Resume)**: API 호출 한도(Quota Limit) 초과 등으로 세션이 중단되더라도 기존 실행 상태를 체크포인트 파일(`.lazycodex/checkpoints/`)에 안전하게 저장하여, 모델 전환 후 `/ulw resume`으로 중단 시점부터 즉시 이어받아 검증할 수 있습니다.
-
-### 2. 요구사항 소크라테스 인터뷰 및 기획서 생성 (`spec-interview` / `/grill-me`)
-* **소크라테스식 인터뷰**: 모호한 사용자 아이디어나 프로젝트 제안이 입력되면, 에이전트가 3~5회에 걸쳐 점진적으로 의도를 구체화하는 질문을 던져 모호성 점수(Ambiguity Score)를 낮춰 갑니다.
-* **산출물 자동 생성**: 질문이 완료되면 프로젝트 명세 및 상세 요구사항 기획서(`.ouroboros/pm.md`)와 Marp 형식으로 바로 발표가 가능한 발표용 슬라이드 덱(`.ouroboros/slides.md`)을 로컬 파일시스템에 자동 저장합니다.
-
-### 3. WAF 우회 및 스텔스 웹 브라우징 (`ultimate-browsing`)
-* **지능형 우회 추출 (Tier 1 insane-search)**: Cloudflare나 WAF 보안에 의해 접속이 차단되는 웹사이트에 대해 curl_cffi TLS impersonation 및 Playwright 기반의 헤드리스 우회 기법을 동원하여 순수 텍스트 데이터를 정밀 추출합니다.
-* **소셜 및 미디어 리더 (Tier 1.5 agent-reach)**: 유튜브 자막 수집, 트위터 피드, 네이버 및 주요 소셜 플랫폼의 데이터를 전용 API 또는 모바일 페이지 변환 기법으로 광고 없이 고속 로드합니다.
-* **스텔스 자동화 브라우징 (Tier 2 Chrome stealth)**: 실제 브라우저처럼 마우스 클릭, 폼 입력, 스크롤링 및 화면 캡처가 필요할 때 지문 우회 패치가 적용된 CloakBrowser(Stealth Chromium) 및 CDP 연동을 활성화하여 완벽한 휴먼 동작을 모사합니다.
-
-### 4. 구조적 구문 분석 및 코드 치환 (`ast-grep` / `sg`)
-* **구문 형태(AST) 매칭**: 단순 텍스트 패턴(Regex)이 아닌 언어의 구문 해석기(Parser)를 통해 매칭합니다. (예: 특정 인자를 받는 함수, 특정 타입 캐스팅(`as any`), 빈 catch 문 등을 정밀 분석)
-* **안전한 일괄 마이그레이션 (Codemods)**: 여러 파일에 걸쳐 API 스펙을 대대적으로 리팩토링하거나 마이그레이션할 때 오동작이나 불완전 치환을 방지하기 위해 드라이런(Dry-run) 검증을 거쳐 일괄 교체합니다.
-
----
-
 ## 🛠️ Antigravity & Codex Integration
 
-루트 플러그인 명세([`plugin.json`](file:///C:/Users/HP/.gemini/config/plugins/lazyantigravity/plugin.json))는 이 모든 컴포넌트들의 후크, 스킬 및 MCP 도구를 취합하여 내보냅니다:
-- **Skills**: 플러그인의 `skills/` 디렉터리에 배포되어 `/ulw` 및 `/ulw-loop` 핵심 워크플로우를 포함한 에이전트 자율 스킬들을 공급합니다.
-- **Hooks**: [`hooks.json`](file:///C:/Users/HP/.gemini/config/plugins/lazyantigravity/hooks.json) 설정을 통해 `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStop` 라이프사이클 이벤트를 컴포넌트별 CLI 바인딩으로 연결합니다.
+루트 플러그인 명세([`plugin.json`](file:///C:/Users/Daeryun/Desktop/LAZYANTIGRAVITY/plugins/omo/plugin.json))는 이 모든 컴포넌트들의 후크, 스킬 및 MCP 도구를 취합하여 내보냅니다:
+- **Skills**: 플러그인의 `skills/` 디렉터리에 배포되어 `/ulw` 및 `/ulw-loop` 스킬을 에이전트에 공급합니다.
+- **Hooks**: [`hooks.json`](file:///C:/Users/Daeryun/Desktop/LAZYANTIGRAVITY/plugins/omo/hooks/hooks.json) 설정을 통해 `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse` 라이프사이클 이벤트를 컴포넌트별 CLI 바인딩으로 연결합니다.
 - **MCP Config**: `.mcp.json`에 정의된 LSP 및 Git 관련 자율 도구들이 `mcp_config.json`을 통해 플러그인 로드 시점에 마운트됩니다.
 
 ---

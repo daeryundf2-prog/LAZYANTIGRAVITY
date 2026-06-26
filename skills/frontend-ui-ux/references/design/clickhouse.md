@@ -1,5 +1,8 @@
 # Design System Inspired by ClickHouse
 
+> Category: Backend & Data
+> Fast analytics database. Yellow-accented, technical documentation style.
+
 ## 1. Visual Theme & Atmosphere
 
 ClickHouse's interface is a high-performance cockpit rendered in acid yellow-green on obsidian black — a design that screams "speed" before you read a single word. The entire experience lives in darkness: pure black backgrounds (`#000000`) with dark charcoal cards (`#414141` borders) creating a terminal-grade aesthetic where the only chromatic interruption is the signature neon yellow-green (`#faff69`) that slashes across CTAs, borders, and highlighted moments like a highlighter pen on a dark console.

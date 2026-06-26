@@ -49,6 +49,9 @@ export function isUnavailableLspDiagnostics(diagnostics) {
         normalized.includes("NOT INSTALLED") ||
         normalized.includes("Command not found:"));
 }
+export function isLspDaemonUnreachableDiagnostics(diagnostics) {
+    return diagnostics.includes("LSP daemon unreachable");
+}
 function sessionStatePath(sessionId) {
     const root = process.env["PLUGIN_DATA"] ?? join(homedir(), ".codex", "codex-lsp");
     return join(root, "sessions", `${safePathSegment(sessionId)}.json`);

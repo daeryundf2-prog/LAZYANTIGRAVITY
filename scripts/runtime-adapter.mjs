@@ -20,6 +20,9 @@ import { fileURLToPath } from "node:url";
  * @returns {"codex" | "antigravity"}
  */
 export function detectRuntime(env = process.env) {
+	if (env.OMO_FORCE_RUNTIME === "codex" || env.LAZYCODEX_FORCE_RUNTIME === "codex" || process.env.OMO_FORCE_RUNTIME === "codex" || process.env.LAZYCODEX_FORCE_RUNTIME === "codex") return "codex";
+	if (env.OMO_FORCE_RUNTIME === "antigravity" || env.LAZYCODEX_FORCE_RUNTIME === "antigravity" || process.env.OMO_FORCE_RUNTIME === "antigravity" || process.env.LAZYCODEX_FORCE_RUNTIME === "antigravity") return "antigravity";
+
 	// 1. Check installer-written hint file
 	const pluginRoot = env.PLUGIN_ROOT?.trim();
 	if (pluginRoot) {
@@ -40,19 +43,16 @@ export function detectRuntime(env = process.env) {
 
 	// 4. Check if we are building/running in the lazyantigravity repository
 	try {
-		const rootPkgPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+		const rootPkgPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "package.json");
 		const pkg = JSON.parse(readFileSync(rootPkgPath, "utf8"));
 		if (pkg.name === "lazyantigravity") return "antigravity";
 	} catch {
 		// ignore
 	}
-
-	// 4b. Check if the absolute path of this file contains .gemini or lazyantigravity
 	try {
-		const currentPath = fileURLToPath(import.meta.url);
-		if (currentPath.includes(".gemini") || currentPath.includes("lazyantigravity")) {
-			return "antigravity";
-		}
+		const rootPkgPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+		const pkg = JSON.parse(readFileSync(rootPkgPath, "utf8"));
+		if (pkg.name === "lazyantigravity") return "antigravity";
 	} catch {
 		// ignore
 	}

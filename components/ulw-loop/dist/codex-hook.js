@@ -1,4 +1,5 @@
 import { parseUlwLoopSteeringDirective, steerUlwLoop } from "./steering.js";
+import { buildUltraworkDirectiveOutput } from "./ultrawork-directive.js";
 const CREATE_GOAL_TOOL_NAME = "create_goal";
 const CREATE_GOAL_PAYLOAD_WARNING = "Use create_goal with objective only. Omit token_budget so the goal stays unlimited, and put lifecycle status changes on update_goal.";
 export function parseUserPromptSubmitPayload(raw) {
@@ -27,13 +28,13 @@ export function parsePreToolUsePayload(raw) {
         return null;
     }
 }
-export async function applyUserPromptUlwLoopSteering(payload) {
+export async function applyUserPromptUlwLoopSteering(payload, options = {}) {
     try {
         if (payload.hook_event_name !== "UserPromptSubmit")
             return "";
         const proposal = parseUlwLoopSteeringDirective(payload.prompt);
         if (proposal === null)
-            return "";
+            return options.includeUltraworkDirective ? buildUltraworkDirectiveOutput(payload) : "";
         const result = await steerUlwLoop(payload.cwd, proposal, payloadScope(payload));
         if (!result.accepted)
             return "";
@@ -70,12 +71,12 @@ export function applyPreToolUseGoalBudgetGuard(payload) {
     };
     return `${JSON.stringify(output)}\n`;
 }
-export async function runUlwLoopHookCli(stdin, stdout) {
+export async function runUlwLoopHookCli(stdin, stdout, options = {}) {
     try {
         const payload = parseUserPromptSubmitPayload(await readAll(stdin));
         if (payload === null)
             return;
-        const output = await applyUserPromptUlwLoopSteering(payload);
+        const output = await applyUserPromptUlwLoopSteering(payload, options);
         if (output.length > 0)
             stdout.write(output);
     }
@@ -107,7 +108,10 @@ function isUserPromptSubmitPayload(value) {
         typeof value["cwd"] === "string" &&
         typeof value["prompt"] === "string" &&
         typeof value["session_id"] === "string" &&
-        ["model", "permission_mode", "transcript_path", "turn_id"].every((key) => optionalString(value[key])));
+        ["model", "permission_mode", "turn_id"].every((key) => optionalString(value[key])) &&
+        (value["transcript_path"] === undefined ||
+            value["transcript_path"] === null ||
+            typeof value["transcript_path"] === "string"));
 }
 function isPreToolUsePayload(value) {
     if (!isRecord(value))

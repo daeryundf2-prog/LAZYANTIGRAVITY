@@ -1,5 +1,8 @@
 # Design System Inspired by Cal.com
 
+> Category: Productivity & SaaS
+> Open-source scheduling. Clean neutral UI, developer-oriented simplicity.
+
 ## 1. Visual Theme & Atmosphere
 
 Cal.com's website is a masterclass in monochromatic restraint — a grayscale world where boldness comes not from color but from the sheer confidence of black text on white space. Inspired by Uber's minimal aesthetic, the palette is deliberately stripped of hue: near-black headings (`#242424`), mid-gray secondary text (`#898989`), and pure white surfaces. Color is treated as a foreign substance — when it appears (a rare blue link, a green trust badge), it feels like a controlled accent in an otherwise black-and-white photograph.

@@ -1,5 +1,8 @@
 # Design System Inspired by Sentry
 
+> Category: Backend & Data
+> Error monitoring. Dark dashboard, data-dense, pink-purple accent.
+
 ## 1. Visual Theme & Atmosphere
 
 Sentry's website is a dark-mode-first developer tool interface that speaks the language of code editors and terminal windows. The entire aesthetic is rooted in deep purple-black backgrounds (`#1f1633`, `#150f23`) that evoke the late-night debugging sessions Sentry was built for. Against this inky canvas, a carefully curated set of purples, pinks, and a distinctive lime-green accent (`#c2ef4e`) create a visual system that feels simultaneously technical and vibrant.

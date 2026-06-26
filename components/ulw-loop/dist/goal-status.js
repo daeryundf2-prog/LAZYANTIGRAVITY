@@ -64,6 +64,20 @@ export function compatibleCodexObjectives(plan) {
 export function hasAllCriteriaPass(goal) {
     return goal.successCriteria.length > 0 && goal.successCriteria.every((criterion) => criterion.status === "pass");
 }
+export function isEssentialCriterion(criterion) {
+    return criterion.essential ?? true;
+}
+export function essentialCriteriaOf(goal) {
+    const explicit = goal.successCriteria.filter(isEssentialCriterion);
+    if (explicit.length > 0)
+        return explicit;
+    const happy = goal.successCriteria.find((criterion) => criterion.userModel === "happy");
+    return happy === undefined ? [] : [happy];
+}
+export function hasEssentialCriteriaPass(goal) {
+    const criteria = essentialCriteriaOf(goal);
+    return criteria.length > 0 && criteria.every((criterion) => criterion.status === "pass");
+}
 export function firstUnresolvedCriterion(goal) {
     return goal.successCriteria.find((criterion) => criterion.status !== "pass");
 }

@@ -1,17 +1,8 @@
 #!/usr/bin/env node
-import { access, cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sharedSkillsRootPath } from "@oh-my-opencode/shared-skills";
-
-async function exists(path) {
-	try {
-		await access(path);
-		return true;
-	} catch {
-		return false;
-	}
-}
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const sharedSkillsRoot = sharedSkillsRootPath();
@@ -68,15 +59,15 @@ async function adaptSkillForAntigravity(skillName) {
 	}
 }
 
-const existsSkillsRoot = await exists(skillsRoot);
-if (!existsSkillsRoot) {
-	await mkdir(skillsRoot, { recursive: true });
-}
+await rm(skillsRoot, { recursive: true, force: true });
+await mkdir(skillsRoot, { recursive: true });
 
 for (const [name, source] of skillSources) {
 	await cp(join(root, source), join(skillsRoot, name), { recursive: true });
 	await adaptSkillForAntigravity(name);
 }
+
+const componentSkillNames = new Set(skillSources.map(([name]) => name));
 
 const sharedSkillEntries = await readdir(sharedSkillsRoot, { withFileTypes: true });
 const sharedSkillNames = sharedSkillEntries
@@ -85,8 +76,10 @@ const sharedSkillNames = sharedSkillEntries
 	.sort();
 
 for (const skillName of sharedSkillNames) {
-	await cp(join(sharedSkillsRoot, skillName), join(skillsRoot, skillName), { recursive: true });
-	await adaptSkillForAntigravity(skillName);
+	const targetName = skillName === "frontend" ? "frontend-ui-ux" : skillName;
+	if (componentSkillNames.has(targetName)) continue;
+	await cp(join(sharedSkillsRoot, skillName), join(skillsRoot, targetName), { recursive: true });
+	await adaptSkillForAntigravity(targetName);
 }
 
 // Copy standalone alias skills from skill-aliases/ (separate from skills/ which is rebuilt)

@@ -1,5 +1,8 @@
 # Design System Inspired by Together AI
 
+> Category: AI & LLM
+> Open-source AI infrastructure. Technical, blueprint-style design.
+
 ## 1. Visual Theme & Atmosphere
 
 Together AI's interface is a pastel-gradient dreamscape built for enterprise AI infrastructure — a design that somehow makes GPU clusters and model inference feel light, airy, and optimistic. The hero section blooms with soft pink-blue-lavender gradients and abstract, painterly illustrations that evoke clouds and flight, establishing a visual metaphor for the "AI-Native Cloud" proposition. Against this softness, the typography cuts through with precision: "The Future" display font at 64px with aggressive negative tracking (-1.92px) creates dense, authoritative headline blocks.

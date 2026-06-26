@@ -1,5 +1,8 @@
 # Design System Inspired by Mistral AI
 
+> Category: AI & LLM
+> Open-weight LLM provider. French-engineered minimalism, purple-toned.
+
 ## 1. Visual Theme & Atmosphere
 
 Mistral AI's interface is a sun-drenched landscape rendered in code — a warm, bold, unapologetically European design that trades the typical blue-screen AI aesthetic for golden amber, burnt orange, and the feeling of late-afternoon light in southern France. Every surface glows with warmth: backgrounds fade from pale cream to deep amber, shadows carry golden undertones (`rgba(127, 99, 21, ...)`), and the brand's signature orange (`#fa520f`) burns through the page like a signal fire.

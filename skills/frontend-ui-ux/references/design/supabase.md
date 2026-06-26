@@ -1,5 +1,8 @@
 # Design System Inspired by Supabase
 
+> Category: Backend & Data
+> Open-source Firebase alternative. Dark emerald theme, code-first.
+
 ## 1. Visual Theme & Atmosphere
 
 Supabase's website is a dark-mode-native developer platform that channels the aesthetic of a premium code editor — deep black backgrounds (`#0f0f0f`, `#171717`) with emerald green accents (`#3ecf8e`, `#00c573`) that reference the brand's open-source, PostgreSQL-green identity. The design system feels like it was born in a terminal window and evolved into a sophisticated marketing surface without losing its developer soul.

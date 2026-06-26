@@ -1,5 +1,8 @@
 # Design System Inspired by Apple
 
+> Category: Media & Consumer
+> Consumer electronics. Premium white space, SF Pro, cinematic imagery.
+
 ## 1. Visual Theme & Atmosphere
 
 Apple's web language is a precision editorial system that alternates between gallery-like calm and retail-density information blocks. The visual tone stays restrained: broad neutral canvases, quiet chrome, and product imagery given almost all of the expressive weight. The interface is engineered to disappear so hardware, materials, and finish options become the narrative foreground.

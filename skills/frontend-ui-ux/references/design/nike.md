@@ -1,5 +1,8 @@
 # Design System Inspired by Nike
 
+> Category: E-Commerce & Retail
+> Athletic retail. Monochrome UI, massive uppercase type, full-bleed photography.
+
 ## 1. Visual Theme & Atmosphere
 
 Nike.com is a kinetic retail cathedral — a site that channels the explosive energy of sport into a digital shopping experience. The design operates on a principle of radical simplicity: strip everything back to black, white, and grey so that athletic photography and product color can dominate without competition. The result feels less like a website and more like a sports editorial laid out with the precision of a luxury magazine. Every pixel of real estate is either selling product or driving toward product.

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
-test("#given aggregate MCP config #when inspected #then registers research and structural-search MCPs", async () => {
+test("#given aggregate MCP config #when inspected #then registers research MCPs", async () => {
 	// given
 	const mcp = JSON.parse(await readFile(join(root, ".mcp.json"), "utf8"));
 
@@ -14,12 +14,12 @@ test("#given aggregate MCP config #when inspected #then registers research and s
 	const serverNames = Object.keys(mcp.mcpServers).sort();
 
 	// then
-	assert.deepEqual(serverNames, ["ast_grep", "context7", "git_bash", "grep_app", "lsp"]);
+	assert.deepEqual(serverNames, ["context7", "git_bash", "grep_app", "lsp"]);
 	assert.equal(mcp.mcpServers.grep_app.url, "https://mcp.grep.app");
 	assert.equal(mcp.mcpServers.context7.url, "https://mcp.context7.com/mcp");
 	assert.ok(
-		mcp.mcpServers.ast_grep.args[0] === "../../ast-grep-mcp/dist/cli.js" ||
-		mcp.mcpServers.ast_grep.args[0] === "./components/ast-grep-mcp/dist/cli.js"
+		mcp.mcpServers.lsp.args[0] === "../../lsp-daemon/dist/cli.js" ||
+		mcp.mcpServers.lsp.args[0] === "./components/lsp-daemon/dist/cli.js"
 	);
-	assert.equal(mcp.mcpServers.ast_grep.args[1], "mcp");
+	assert.equal(mcp.mcpServers.lsp.args[1], "mcp");
 });

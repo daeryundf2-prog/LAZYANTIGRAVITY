@@ -127,11 +127,7 @@ function hasReminderMarker(path: string): boolean {
 }
 
 function reminderMarkerPath(sessionId: string, pluginDataRoot?: string): string {
-	const root = pluginDataRoot
-		?? process.env["PLUGIN_DATA"]
-		?? (process.env["GEMINI_HOME"] || process.env["ANTIGRAVITY_HOME"]
-			? join(process.env["GEMINI_HOME"] || process.env["ANTIGRAVITY_HOME"] || "", "data", "omo-git-bash")
-			: join(homedir(), ".codex", "omo-git-bash"));
+	const root = pluginDataRoot ?? process.env["PLUGIN_DATA"] ?? join(homedir(), ".codex", "omo-git-bash");
 	return join(root, "git-bash-reminder", `${safePathSegment(sessionId)}.seen`);
 }
 

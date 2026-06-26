@@ -28,10 +28,12 @@ const expectedSkills = [
 	"review-work",
 	"rules",
 	"start-work",
+	"ultimate-browsing",
 	"ultraresearch",
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
+	"ulw-research",
 	"visual-qa",
 ];
 
@@ -105,13 +107,17 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 
 	// then
 	if (pluginPackageJson.name === "lazyantigravity") {
-		assert.equal(sharedPackageJson.exports?.["."], "./index.mjs");
+		const exp = sharedPackageJson.exports?.["."];
+		const expVal = typeof exp === "string" ? exp : exp?.import;
+		assert.equal(expVal, "./index.mjs");
 		assert.equal(sharedPackageJson.files?.includes("skills"), true);
 		assert.equal(sharedSkillDependency, "file:./shared-skills");
 		return;
 	}
 
-	assert.equal(sharedPackageJson.exports?.["."], "./index.mjs");
+	const exp = sharedPackageJson.exports?.["."];
+	const expVal = typeof exp === "string" ? exp : exp?.import;
+	assert.equal(expVal, "./index.mjs");
 	assert.equal(sharedPackageJson.files?.includes("skills"), true);
 	assert.equal(rootPackageFiles.includes("packages/shared-skills/package.json"), true);
 	assert.equal(rootPackageFiles.includes("packages/shared-skills/index.mjs"), true);
@@ -131,9 +137,12 @@ test("#given shared skill package source #when aggregate Codex shared skills are
 		.sort();
 
 	// when / then
+	const componentSkillNames = new Set(componentSkillSources.map(([name]) => name));
 	for (const skillName of sharedSkillNames) {
+		const targetName = skillName === "frontend" ? "frontend-ui-ux" : skillName;
+		if (componentSkillNames.has(targetName)) continue;
 		const sharedContent = await readFile(join(sharedSkillsRoot, skillName, "SKILL.md"), "utf8");
-		const aggregateContent = await readFile(join(aggregateSkillsRoot, skillName, "SKILL.md"), "utf8");
+		const aggregateContent = await readFile(join(aggregateSkillsRoot, targetName, "SKILL.md"), "utf8");
 		assert.equal(
 			removeCodexCompatibilityGuidance(aggregateContent),
 			removeCodexCompatibilityGuidance(sharedContent),
@@ -176,7 +185,7 @@ test("#given synced ulw-loop skill #when Codex hint metadata is inspected #then 
 	// then
 	assert.match(skill, /^---\r?\nname: ulw-loop\r?\n/m);
 	assert.match(skill, /Goal-like loop that uses ultrawork mode to decompose work into systematic, evidence-bound steps\./);
-	assert.match(interfaceMetadata, /display_name: "ulw-loop \(omo\)"/);
+	assert.match(interfaceMetadata, /display_name: "\(?OmO\)? ulw-loop/i);
 	assert.doesNotMatch(interfaceMetadata, /ulw-loop \/ ulw-loop/);
 	assert.match(interfaceMetadata, /short_description: "Goal-like ultrawork loop for systematic decomposition"/);
 	assert.match(interfaceMetadata, /default_prompt: "Use \$ulw-loop/);
@@ -250,15 +259,12 @@ test("#given synced ulw-loop skill #when worker guidance is inspected #then cont
 	const syncedSkill = await readFile(join(root, "skills", "ulw-loop", "SKILL.md"), "utf8");
 	const syncedWorkflow = await readFile(join(root, "skills", "ulw-loop", "references", "full-workflow.md"), "utf8");
 	const requiredPatterns = [
-		["list_agents polling guard", /list_agents/],
-		["status polling warning", /polling loop/],
-		["large payload replay risk", /replay large payloads/],
+		["multi_agent_v1.wait_agent ref", /multi_agent_v1\.wait_agent/],
 		["local spawned-name tracking", /Track spawned agent names locally/],
 		["wait_agent mailbox path", /wait_agent.*mailbox signals/],
 		["progress status contract", /WORKING:/],
-		["single list_agents reassurance", /single `list_agents`/],
 		["long-running plan/reviewer background guidance", /Plan and reviewer agents may run for a long time/],
-		["bounded plan/reviewer polling", /short wait_agent cycles/],
+		["bounded plan/reviewer polling", /multi_agent_v1\.wait_agent.*cycles/],
 		["single long wait guard", /single long blocking wait/],
 		["git-master checkpointing", /git-master/],
 		["touched-path commit-style probe", /touched-path commit history/],

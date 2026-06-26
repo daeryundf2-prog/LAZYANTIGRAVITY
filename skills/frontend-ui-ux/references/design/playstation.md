@@ -1,5 +1,8 @@
 # Design System Inspired by PlayStation
 
+> Category: Media & Consumer
+> Gaming console retail. Three-surface channel layout, quiet-authority display type, cyan hover-scale.
+
 ## 1. Visual Theme & Atmosphere
 
 PlayStation.com carries itself like the marketing wing of a premium consumer-electronics brand that happens to sell entertainment. The page is organized as a **vertical channel of alternating surfaces**: a near-black masthead and hero, a sequence of paper-white editorial panels in the middle, and a deep cobalt-blue footer that anchors the entire experience. Between those surface modes the site leans hard on photography and 3D product renders — the PS5 console, game cover art, DualSense controllers — letting the hardware do the emotional work while the chrome stays restrained.

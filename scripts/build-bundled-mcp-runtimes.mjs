@@ -14,9 +14,10 @@ const runtimes = [
 		requiredOutputs: ["dist/cli.js", "dist/tools.js"],
 	},
 	{
-		label: "ast-grep-mcp",
-		packageRoot: join(repoPackagesRoot, "ast-grep-mcp"),
-		requiredOutputs: ["dist/cli.js"],
+		label: "lsp-daemon",
+		packageRoot: join(repoPackagesRoot, "lsp-daemon"),
+		requiredOutputs: ["dist/cli.js", "dist/index.js", "dist/index.d.ts"],
+		install: true,
 	},
 	{
 		label: "git-bash-mcp",
@@ -39,6 +40,16 @@ function buildRuntime(runtime) {
 		assertBundledDist(runtime);
 		console.log(`Using bundled ${runtime.label} dist`);
 		return;
+	}
+
+	if (runtime.install === true && !existsSync(join(runtime.packageRoot, "node_modules"))) {
+		const install = spawnSync("npm", ["ci"], {
+			cwd: runtime.packageRoot,
+			shell: process.platform === "win32",
+			stdio: "inherit",
+		});
+		if (install.error !== undefined) throw install.error;
+		if (install.status !== 0) process.exit(install.status ?? 1);
 	}
 
 	const result = spawnSync("npm", ["run", "build"], {

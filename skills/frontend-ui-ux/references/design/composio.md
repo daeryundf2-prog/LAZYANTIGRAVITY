@@ -1,5 +1,8 @@
 # Design System Inspired by Composio
 
+> Category: Backend & Data
+> Tool integration platform. Modern dark with colorful integration icons.
+
 ## 1. Visual Theme & Atmosphere
 
 Composio's interface is a nocturnal command center — a dense, developer-focused darkness punctuated by electric cyan and deep cobalt signals. The entire experience is built on an almost-pure-black canvas (`#0f0f0f`) where content floats within barely-visible containment borders, creating the feeling of a high-tech control panel rather than a traditional marketing page. It's a site that whispers authority to developers who live in dark terminals.

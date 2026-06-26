@@ -8,12 +8,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const force = process.argv.includes("--force");
 
-// Probed candidate directories:
-// (1) 5-up repo sibling — monorepo checkout layout
-// (2) 3-up plugin root — standalone checkout layout
+// Ordered candidate list:
+// (1) 5-up repo sibling — has package.json, can be built (repo checkout layout)
+// (2) 2-up components sibling — bundled dist-only inside the installed plugin cache
 const candidates = [
 	join(__dirname, "..", "..", "..", "..", "..", "lsp-tools-mcp"),
-	join(__dirname, "..", "..", "..", "lsp-tools-mcp"),
+	join(__dirname, "..", "..", "lsp-tools-mcp"),
 ];
 
 function requiredOutputs(dir) {
@@ -24,7 +24,8 @@ function requiredOutputs(dir) {
 	];
 }
 
-// Find the first buildable candidate (package.json present).
+// Phase 1: find the first buildable candidate (package.json present).
+// --force skips the freshness check but does NOT prevent using a buildable candidate.
 for (const dir of candidates) {
 	const packageJson = join(dir, "package.json");
 	if (existsSync(packageJson)) {
@@ -41,7 +42,8 @@ for (const dir of candidates) {
 	}
 }
 
-// Fallback to pre-built bundled dist outputs
+// Phase 2: find the first candidate with all required outputs already present.
+// Bundled dist is accepted even under --force — a dist-only layout cannot be rebuilt.
 for (const dir of candidates) {
 	const outputs = requiredOutputs(dir);
 	if (outputs.every((p) => existsSync(p))) {
@@ -50,6 +52,8 @@ for (const dir of candidates) {
 	}
 }
 
+// Phase 3: no usable candidate found — enumerate every probed path.
+// Keep the primary-candidate error on the first line so the issue's grep stays valid.
 const probedPaths = candidates.map((dir) => join(dir, "package.json")).join(", ");
 console.error(
 	`lsp-tools-mcp package metadata is missing at ${join(candidates[0], "package.json")}; build packages/lsp-tools-mcp before codex-lsp`,

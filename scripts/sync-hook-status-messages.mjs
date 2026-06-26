@@ -86,20 +86,15 @@ function readReleaseVersion(options) {
 
 export async function syncHookStatusMessages(root = defaultRoot, options = {}) {
 	const releaseVersion = readReleaseVersion(options);
-	const pluginJsonPath = (await exists(join(root, ".codex-plugin", "plugin.json")))
-		? join(root, ".codex-plugin", "plugin.json")
-		: join(root, "plugin.json");
+	const pluginJsonPath = (await exists(join(root, "plugin.json")))
+		? join(root, "plugin.json")
+		: join(root, ".codex-plugin", "plugin.json");
 	const aggregateVersion = releaseVersion ?? (await readPackageVersion(pluginJsonPath));
 	const componentNames = await readComponentNames(root);
 	const aggregateHooksPath = join(root, "hooks", "hooks.json");
 	const aggregateHooks = await readJson(aggregateHooksPath);
 	syncHooksJson(aggregateHooks, () => aggregateVersion);
 	await writeJson(aggregateHooksPath, aggregateHooks);
-
-	const rootHooksPath = join(root, "hooks.json");
-	if (await exists(rootHooksPath)) {
-		await writeJson(rootHooksPath, aggregateHooks);
-	}
 
 	for (const componentName of componentNames) {
 		const componentVersion =

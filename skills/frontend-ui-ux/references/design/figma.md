@@ -1,5 +1,8 @@
 # Design System Inspired by Figma
 
+> Category: Design & Creative
+> Collaborative design tool. Vibrant multi-color, playful yet professional.
+
 ## 1. Visual Theme & Atmosphere
 
 Figma's interface is the design tool that designed itself — a masterclass in typographic sophistication where a custom variable font (figmaSans) modulates between razor-thin (weight 320) and bold (weight 700) with stops at unusual intermediates (330, 340, 450, 480, 540) that most type systems never explore. This granular weight control gives every text element a precisely calibrated visual weight, creating hierarchy through micro-differences rather than the blunt instrument of "regular vs bold."

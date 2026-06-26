@@ -69,7 +69,7 @@ test("#given component directories #when scanned #then only intentional resource
 		"ulw-loop",
 	]);
 	for (const name of componentNames) {
-		const expectedManifest = isStandalone ? undefined : expectedComponentManifests.get(name);
+		const expectedManifest = expectedComponentManifests.get(name);
 		if (expectedManifest !== undefined) {
 			assert.deepEqual(await readJson(join("components", name, ".codex-plugin", "plugin.json")), expectedManifest);
 			continue;

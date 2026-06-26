@@ -1,5 +1,8 @@
 # Design System Inspired by Replicate
 
+> Category: AI & LLM
+> Run ML models via API. Clean white canvas, code-forward.
+
 ## 1. Visual Theme & Atmosphere
 
 Replicate's interface is a developer playground crackling with creative energy — a bold, high-contrast design that feels more like a music festival poster than a typical API platform. The hero section explodes with a vibrant orange-red-magenta gradient that immediately signals "this is where AI models come alive," while the body of the page grounds itself in a clean white canvas where code snippets and model galleries take center stage.

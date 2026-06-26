@@ -1,5 +1,8 @@
 # Design System Inspired by PostHog
 
+> Category: Backend & Data
+> Product analytics. Playful hedgehog branding, developer-friendly dark UI.
+
 ## 1. Visual Theme & Atmosphere
 
 PostHog's website feels like a startup's internal wiki that escaped into the wild — warm, irreverent, and deliberately anti-corporate. The background isn't the expected crisp white or dark void of developer tools; it's a warm, sage-tinted cream (`#fdfdf8`) that gives every surface a handmade, paper-like quality. Colors lean into earthy olive greens and muted sage rather than the conventional blues and purples of the SaaS world. It's as if someone designed a developer analytics platform inside a cozy garden shed.

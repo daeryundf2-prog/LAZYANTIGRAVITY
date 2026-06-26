@@ -1,4 +1,4 @@
-import type { LoadedRule } from "./rules/types.js";
+import type { LoadedRule } from "@oh-my-opencode/rules-engine/engine";
 import type { TranscriptSearchOptions } from "./transcript-search.js";
 import { readTranscriptSearchText } from "./transcript-search.js";
 
@@ -13,7 +13,15 @@ export function filterRulesAlreadyInTranscript(
 	}
 
 	const transcriptText = readTranscriptSearchText(transcriptPath, options);
-	if (transcriptText === null) {
+	return filterRulesNotInTranscriptText(rules, transcriptText, markInjected);
+}
+
+export function filterRulesNotInTranscriptText(
+	rules: ReadonlyArray<LoadedRule>,
+	transcriptText: string | null,
+	markInjected: (rule: LoadedRule) => void,
+): LoadedRule[] {
+	if (rules.length === 0 || transcriptText === null) {
 		return [...rules];
 	}
 

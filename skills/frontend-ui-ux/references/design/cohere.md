@@ -1,5 +1,8 @@
 # Design System Inspired by Cohere
 
+> Category: AI & LLM
+> Enterprise AI platform. Vibrant gradients, data-rich dashboard aesthetic.
+
 ## 1. Visual Theme & Atmosphere
 
 Cohere's interface is a polished enterprise command deck — confident, clean, and designed to make AI feel like serious infrastructure rather than a consumer toy. The experience lives on a bright white canvas where content is organized into generously rounded cards (22px radius) that create an organic, cloud-like containment language. This is a site that speaks to CTOs and enterprise architects: professional without being cold, sophisticated without being intimidating.

@@ -1,5 +1,8 @@
 # Design System Inspired by Airbnb
 
+> Category: E-Commerce & Retail
+> Travel marketplace. Warm coral accent, photography-driven, rounded UI.
+
 ## 1. Visual Theme & Atmosphere
 
 Airbnb's 2026 design feels like a travel magazine that happens to be an app — pristine white canvases give way to full-bleed photography, and the interface itself disappears so the listings can breathe. The signature Rausch coral-pink (`#ff385c`) is used sparingly but unmistakably: search CTA, active tab indicator, primary action button, the occasional price or wishlist heart. Everything else is a disciplined grayscale, with `#222222` carrying almost every line of text.

@@ -1,5 +1,8 @@
 # Design System Inspired by MiniMax
 
+> Category: AI & LLM
+> AI model provider. Bold dark interface with neon accents.
+
 ## 1. Visual Theme & Atmosphere
 
 MiniMax's website is a clean, product-showcase platform for a Chinese AI technology company that bridges consumer-friendly appeal with technical credibility. The design language is predominantly white-space-driven with a light, airy feel — pure white backgrounds (`#ffffff`) dominate, letting colorful product cards and AI model illustrations serve as the visual anchors. The overall aesthetic sits at the intersection of Apple's product marketing clarity and a playful, rounded design language that makes AI technology feel approachable.

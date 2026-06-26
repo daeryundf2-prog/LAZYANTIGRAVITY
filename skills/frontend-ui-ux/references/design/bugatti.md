@@ -1,5 +1,8 @@
 # Design System Inspired by Bugatti
 
+> Category: Automotive
+> Hypercar brand. Cinema-black canvas, monochrome austerity, monumental display type.
+
 ## 1. Visual Theme & Atmosphere
 
 Bugatti.com does not behave like a website — it behaves like a feature-length car film that a visitor happens to be standing inside. The canvas is pure `#000000`, the only color that appears at rest is white, and the entire page is carried by full-bleed hero video and photography with a single typographic moment laid over the top. There are no cards, no grids, no promotional modules, no newsletter signups, no three-column editorial layouts. It is one continuous cinema-black channel, interrupted only by the cars themselves and a few pill-shaped calls to action that quietly say things like "EXPLORE OUR OPPORTUNITIES" in ALL CAPS monospace.

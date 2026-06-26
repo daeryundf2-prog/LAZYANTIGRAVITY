@@ -1,5 +1,8 @@
 # Design System Inspired by Miro
 
+> Category: Design & Creative
+> Visual collaboration. Bright yellow accent, infinite canvas aesthetic.
+
 ## 1. Visual Theme & Atmosphere
 
 Miro's website is a clean, collaborative-tool-forward platform that communicates "visual thinking" through generous whitespace, pastel accent colors, and a confident geometric font. The design uses a predominantly white canvas with near-black text (`#1c1c1e`) and a distinctive pastel color palette — coral, rose, teal, orange, yellow, moss — each representing different collaboration contexts.

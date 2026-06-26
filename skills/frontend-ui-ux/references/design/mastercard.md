@@ -1,5 +1,8 @@
 # Design System Inspired by Mastercard
 
+> Category: Fintech & Crypto
+> Global payments network. Warm cream canvas, orbital pill shapes, editorial warmth.
+
 ## 1. Visual Theme & Atmosphere
 
 Mastercard's experience reads like a warm, editorial magazine built from soft stone and signal orange. The canvas is a muted putty-cream (`#F3F0EE`) — not white, not gray, but a color that feels like the paper of a premium annual report. On top of that canvas, everything that matters is shaped like a stadium, a pill, or a perfect circle. The dominant visual gesture is the **oversized radius**: heroes carry 40-point corners, cards go fully pill-shaped, service images are cropped into circular orbits, and buttons either complete the pill or fit snugly at 20 points. There are almost no sharp corners anywhere on the page.

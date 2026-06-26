@@ -10,11 +10,9 @@ import {
 	normalizeLazyCodexHookStatusLabel,
 	parseLazyCodexHookStatusMessage,
 } from "../scripts/hook-status-message.mjs";
-import { getRuntimeConfig } from "../scripts/runtime-adapter.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = existsSync(join(root, "..", "..", "..", "package.json")) ? join(root, "..", "..", "..") : root;
-const PRODUCT_NAME = getRuntimeConfig().productName;
 
 const AGGREGATE_EXPECTED_LABELS = new Map([
 	["hooks/hooks.json:SessionStart:0:0", "Loading Project Rules"],
@@ -110,7 +108,7 @@ function collectCommandHooks(hooks, source, version) {
 	return commandHooks;
 }
 
-test("#given hook status label #when formatting #then prefixes LazyCodex with current version", async () => {
+test("#given hook status label #when formatting #then prefixes OmO display namespace", async () => {
 	// given
 	const version = (await readRepoJson("package.json")).version;
 	const label = "Checking Comments";
@@ -119,10 +117,10 @@ test("#given hook status label #when formatting #then prefixes LazyCodex with cu
 	const message = formatLazyCodexHookStatusMessage(version, label);
 
 	// then
-	assert.equal(message, `${PRODUCT_NAME}(${version}): Checking Comments`);
+	assert.equal(message, "(OmO) Checking Comments");
 });
 
-test("#given hook status label with blank version #when formatting #then prefixes LazyCodex with local version", () => {
+test("#given hook status label with blank version #when formatting #then still prefixes OmO display namespace", () => {
 	// given
 	const version = "  ";
 	const label = "Checking Comments";
@@ -131,7 +129,7 @@ test("#given hook status label with blank version #when formatting #then prefixe
 	const message = formatLazyCodexHookStatusMessage(version, label);
 
 	// then
-	assert.equal(message, `${PRODUCT_NAME}(local): Checking Comments`);
+	assert.equal(message, "(OmO) Checking Comments");
 });
 
 test("#given loose legacy status label #when normalizing #then removes OMO wording and title-cases label", async () => {
@@ -145,10 +143,37 @@ test("#given loose legacy status label #when normalizing #then removes OMO wordi
 
 	// then
 	assert.equal(normalized, "Checking Comments");
-	assert.equal(message, `${PRODUCT_NAME}(${version}): Checking Comments`);
+	assert.equal(message, "(OmO) Checking Comments");
 });
 
-test("#given aggregate comment-checker hook #when status is inspected #then it uses LazyCodex comments label", async () => {
+test("#given LazyCodex appears inside hook label #when normalizing #then product casing is preserved", async () => {
+	// given
+	const version = (await readRepoJson("package.json")).version;
+	const label = "verifying lazycodex executor evidence";
+
+	// when
+	const normalized = normalizeLazyCodexHookStatusLabel(label);
+	const message = formatLazyCodexHookStatusMessage(version, label);
+
+	// then
+	assert.equal(normalized, "Verifying LazyCodex Executor Evidence");
+	assert.equal(message, "(OmO) Verifying LazyCodex Executor Evidence");
+});
+
+test("#given MCP appears inside hook label #when normalizing #then protocol casing is preserved", () => {
+	// given
+	const label = "recommending git bash mcp";
+
+	// when
+	const normalized = normalizeLazyCodexHookStatusLabel(label);
+	const message = formatLazyCodexHookStatusMessage("4.10.0", label);
+
+	// then
+	assert.equal(normalized, "Recommending Git Bash MCP");
+	assert.equal(message, "(OmO) Recommending Git Bash MCP");
+});
+
+test("#given aggregate comment-checker hook #when status is inspected #then it uses OmO comments label", async () => {
 	// given
 	const aggregateVersion = await readPluginVersion();
 	const aggregateHooks = await readJson("hooks/hooks.json");
@@ -162,7 +187,7 @@ test("#given aggregate comment-checker hook #when status is inspected #then it u
 	assert.doesNotMatch(JSON.stringify(aggregateHooks), /checking\s+OMO\s+comments/i);
 });
 
-test("#given aggregate and component hooks #when status messages are inspected #then all use the LazyCodex formatter", async () => {
+test("#given aggregate and component hooks #when status messages are inspected #then all use the OmO formatter", async () => {
 	// given
 	const aggregateVersion = await readPluginVersion();
 	const aggregateHooks = await readJson("hooks/hooks.json");
@@ -189,6 +214,6 @@ test("#given aggregate and component hooks #when status messages are inspected #
 	const actualLabels = new Set(commandHooks.map((hook) => parseLazyCodexHookStatusMessage(hook.statusMessage)?.label));
 	assert.deepEqual([...expectedLabels.values()].filter((label) => !actualLabels.has(label)), []);
 	for (const hook of commandHooks) {
-		assert.doesNotMatch(hook.statusMessage, /\bOMO\b/i);
+		assert.match(hook.statusMessage, /^\(OmO\) /);
 	}
 });

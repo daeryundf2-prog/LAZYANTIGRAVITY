@@ -1,5 +1,8 @@
 # Design System Inspired by Renault
 
+> Category: Automotive
+> French automotive. Vibrant aurora gradients, NouvelR typography, bold energy.
+
 ## 1. Visual Theme & Atmosphere
 
 Renault's website is a vibrant digital showroom that balances French automotive elegance with bold, forward-leaning energy — a departure from the monochromatic austerity of German or Italian luxury brands. The page opens with a full-screen hero that washes the viewport in a sweeping aurora gradient — ribbons of magenta, violet, and teal bleeding across the frame behind a dramatically lit vehicle. This chromatic expressiveness is the site's signature: while the interface structure is disciplined (NouvelR typography, black-and-white CTA framework, zero-radius buttons), the content is alive with color — gradient washes on hero slides, saturated vehicle photography, and splashes of Renault Yellow (`#EFDF00`) on accent CTAs. The effect is a showroom that feels energized rather than hushed.

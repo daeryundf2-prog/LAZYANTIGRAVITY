@@ -1,5 +1,8 @@
 # Design System Inspired by xAI
 
+> Category: AI & LLM
+> Elon Musk's AI lab. Stark monochrome, futuristic minimalism.
+
 ## 1. Visual Theme & Atmosphere
 
 xAI's website is a masterclass in dark-first, monospace-driven brutalist minimalism -- a design system that feels like it was built by engineers who understand that restraint is the ultimate form of sophistication. The entire experience is anchored to an almost-black background (`#1f2228`) with pure white text (`#ffffff`), creating a high-contrast, terminal-inspired aesthetic that signals deep technical credibility. There are no gradients, no decorative illustrations, no color accents competing for attention. This is a site that communicates through absence.

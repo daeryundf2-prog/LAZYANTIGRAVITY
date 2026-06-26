@@ -3,10 +3,23 @@ import { parseGoalArg, readJsonInput, readValue } from "./cli-arg-parser.js";
 import { printJson, printStatus } from "./cli-output.js";
 import { ULW_LOOP_STEERING_MUTATION_KINDS, ULW_LOOP_SUCCESS_CRITERION_USER_MODELS, UlwLoopError } from "./types.js";
 const SOURCES = ["user_prompt_submit", "finding", "cli"];
+const STEERING_KIND_HELP = [
+    `Allowed --kind values: ${ULW_LOOP_STEERING_MUTATION_KINDS.join(", ")}`,
+    "Kind-specific required flags:",
+    "  add_subgoal: --title, --objective, --evidence, --rationale",
+    "  split_subgoal: --goal-id, --children, --evidence, --rationale",
+    "  reorder_pending: --order, --evidence, --rationale",
+    "  revise_pending_wording: --goal-id, --title or --objective, --evidence, --rationale",
+    "  revise_criterion: --goal-id, --criterion-id, one of --scenario/--expected-evidence/--user-model, --evidence, --rationale",
+    "  annotate_ledger: --evidence, --rationale",
+    "  mark_blocked_superseded: --goal-id, optional --replacements, --evidence, --rationale",
+    "Example: omo ulw-loop steer --kind annotate_ledger --evidence \"observed behavior\" --rationale \"why this changes the plan\" --json",
+].join("\n");
 function isKind(value) { return value !== undefined && ULW_LOOP_STEERING_MUTATION_KINDS.some((kind) => kind === value); }
 function isSource(value) { return value !== undefined && SOURCES.some((source) => source === value); }
 function isModel(value) { return ULW_LOOP_SUCCESS_CRITERION_USER_MODELS.some((model) => model === value); }
 function fail(message, code, details) { throw new UlwLoopError(message, code, { details }); }
+function kindMessage(prefix) { return `${prefix}\n\n${STEERING_KIND_HELP}`; }
 function text(value, field) { if (value === undefined)
     return undefined; const trimmed = value.trim(); if (trimmed.length > 0)
     return trimmed; return fail(`Empty ${field}.`, "ULW_LOOP_STEERING_FIELD_EMPTY", { field }); }
@@ -19,7 +32,7 @@ export function parseSteeringKind(argv) {
     const value = readValue(argv, "--kind");
     if (isKind(value))
         return value;
-    return value === undefined ? fail("Missing --kind.", "ULW_LOOP_STEERING_KIND_REQUIRED", { flag: "--kind" }) : fail(`Invalid --kind: ${value}.`, "ULW_LOOP_STEERING_KIND_INVALID", { value, expected: ULW_LOOP_STEERING_MUTATION_KINDS });
+    return value === undefined ? fail(kindMessage("Missing --kind."), "ULW_LOOP_STEERING_KIND_REQUIRED", { flag: "--kind", expected: ULW_LOOP_STEERING_MUTATION_KINDS, usage: STEERING_KIND_HELP }) : fail(kindMessage(`Invalid --kind: ${value}.`), "ULW_LOOP_STEERING_KIND_INVALID", { value, expected: ULW_LOOP_STEERING_MUTATION_KINDS, usage: STEERING_KIND_HELP });
 }
 export function parseSteeringSource(argv) {
     const value = readValue(argv, "--source");

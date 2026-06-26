@@ -1,5 +1,8 @@
 # Design System Inspired by Runway
 
+> Category: AI & LLM
+> AI video generation. Cinematic dark UI, media-rich layout.
+
 ## 1. Visual Theme & Atmosphere
 
 Runway's interface is a cinematic reel brought to life as a website — a dark, editorial, film-production-grade design where full-bleed photography and video ARE the primary UI elements. This is not a typical tech product page; it's a visual manifesto for AI-powered creativity. Every section feels like a frame from a film: dramatic lighting, sweeping landscapes, and intimate human moments captured in high-quality imagery that dominates the viewport.

@@ -1,5 +1,8 @@
 # Design System Inspired by Binance.US
 
+> Category: Fintech & Crypto
+> Crypto exchange. Bold yellow accent on monochrome, trading-floor urgency.
+
 ## 1. Visual Theme & Atmosphere
 
 Binance.US radiates the polished urgency of a digital trading floor — a space where money moves and decisions happen in seconds. The design is a two-tone composition that alternates between stark white trading surfaces and deep near-black panels (`#222126`), creating a visual rhythm that mirrors the bull-and-bear duality of crypto markets. Binance Yellow (`#F0B90B`) cuts through this monochrome foundation like a gold ingot on a steel desk — unmistakable, confident, and engineered to guide every eye toward the next action.

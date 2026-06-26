@@ -1,5 +1,8 @@
 # Design System Inspired by Airtable
 
+> Category: Design & Creative
+> Spreadsheet-database hybrid. Colorful, friendly, structured data aesthetic.
+
 ## 1. Visual Theme & Atmosphere
 
 Airtable's website is a clean, enterprise-friendly platform that communicates "sophisticated simplicity" through a white canvas with deep navy text (`#181d26`) and Airtable Blue (`#1b61c9`) as the primary interactive accent. The Haas font family (display + text variants) creates a Swiss-precision typography system with positive letter-spacing throughout.

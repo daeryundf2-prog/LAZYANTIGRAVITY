@@ -1,5 +1,8 @@
 # Design System Inspired by Tesla
 
+> Category: Automotive
+> Electric automotive. Radical subtraction, full-viewport photography, near-zero UI.
+
 ## 1. Visual Theme & Atmosphere
 
 Tesla's website is an exercise in radical subtraction — a digital showroom where the product is everything and the interface is almost nothing. The page opens with a full-viewport hero that fills the entire screen with cinematic car photography: three vehicles arranged on polished concrete against a hazy cityscape sky, with a single model name floating above in translucent white type. There are no decorative borders, no gradients, no patterns, no shadows. The UI exists only to provide just enough navigational structure to get out of the way. Every pixel that isn't product imagery is white space, and that restraint is the design system's most powerful statement.

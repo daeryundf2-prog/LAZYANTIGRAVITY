@@ -1,5 +1,8 @@
 # Design System Inspired by Expo
 
+> Category: Developer Tools
+> React Native platform. Dark theme, tight letter-spacing, code-centric.
+
 ## 1. Visual Theme & Atmosphere
 
 Expo's interface is a luminous, confidence-radiating developer platform built on the premise that tools for building apps should feel as polished as the apps themselves. The entire experience lives on a bright, airy canvas — a cool-tinted off-white (`#f0f0f3`) that gives the page a subtle technological coolness without the starkness of pure white. This is a site that breathes: enormous vertical spacing between sections creates a gallery-like pace where each feature gets its own "room."

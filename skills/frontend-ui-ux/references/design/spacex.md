@@ -1,5 +1,8 @@
 # Design System Inspired by SpaceX
 
+> Category: Media & Consumer
+> Space technology. Stark black and white, full-bleed imagery, futuristic.
+
 ## 1. Visual Theme & Atmosphere
 
 SpaceX's website is a full-screen cinematic experience that treats aerospace engineering like a film — every section is a scene, every photograph is a frame, and the interface disappears entirely behind the imagery. The design is pure black (`#000000`) with photography of rockets, space, and planets occupying 100% of the viewport. Text overlays sit directly on these photographs with no background panels, cards, or containers — just type on image, bold and unapologetic.
