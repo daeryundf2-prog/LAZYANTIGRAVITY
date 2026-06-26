@@ -9,25 +9,32 @@ const repoPackagesRoot = pluginRoot;
 
 const packageJson = JSON.parse(readFileSync(join(pluginRoot, "package.json"), "utf8"));
 const isStandalone = packageJson.name === "lazyantigravity";
+const bundledRuntimeRoot = isStandalone ? join(pluginRoot, "components") : repoPackagesRoot;
 
 const runtimes = [
-	{
-		label: "lsp-tools-mcp",
-		packageRoot: join(repoPackagesRoot, "lsp-tools-mcp"),
-		requiredOutputs: ["dist/cli.js", "dist/tools.js"],
-	},
+	...(
+		isStandalone
+			? []
+			: [
+					{
+						label: "lsp-tools-mcp",
+						packageRoot: join(repoPackagesRoot, "lsp-tools-mcp"),
+						requiredOutputs: ["dist/cli.js", "dist/tools.js"],
+					},
+				]
+	),
 	{
 		label: "lsp-daemon",
-		packageRoot: join(repoPackagesRoot, "lsp-daemon"),
+		packageRoot: join(bundledRuntimeRoot, "lsp-daemon"),
 		requiredOutputs: ["dist/cli.js", "dist/index.js", "dist/index.d.ts"],
-		install: true,
+		install: !isStandalone,
 	},
 	{
 		label: "git-bash-mcp",
-		packageRoot: join(repoPackagesRoot, "git-bash-mcp"),
+		packageRoot: join(bundledRuntimeRoot, "git-bash-mcp"),
 		requiredOutputs: ["dist/cli.js"],
 	},
-].filter((runtime) => !(runtime.label === "lsp-daemon" && isStandalone));
+];
 
 for (const runtime of runtimes) {
 	buildRuntime(runtime);

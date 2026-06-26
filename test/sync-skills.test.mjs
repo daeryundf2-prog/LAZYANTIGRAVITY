@@ -29,12 +29,12 @@ const expectedSkills = [
 	"rules",
 	"spec-interview",
 	"start-work",
+	"teammode",
 	"ultimate-browsing",
 	"ultraresearch",
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
-	"ulw-research",
 	"visual-qa",
 ];
 
@@ -226,7 +226,7 @@ test("#given synced lcx-report-bug skill #when inspected #then it files LazyCode
 	assert.match(skill, /Browser use fallback/);
 	assert.match(skill, /Computer use fallback/);
 	assert.match(skill, /## Issue Body Template/);
-	assert.match(interfaceMetadata, /display_name: "lcx-report-bug \(omo\)"/);
+	assert.match(interfaceMetadata, /display_name: "\(OmO\) lcx-report-bug"/);
 	assert.match(interfaceMetadata, /- "lazycodex bug"/);
 	assert.match(interfaceMetadata, /- "openai codex bug"/);
 });
@@ -246,41 +246,9 @@ test("#given synced git-master skill #when inspected #then commits and git histo
 	assert.match(skill, /Choose the Git tool by the question/);
 	assert.match(skill, /git log -S "text"/);
 	assert.match(skill, /git blame -L start,end -- file/);
-	assert.match(interfaceMetadata, /display_name: "git-master \(omo\)"/);
+	assert.match(interfaceMetadata, /display_name: "\(OmO\) git-master"/);
 	assert.match(interfaceMetadata, /- "git commit"/);
 	assert.match(interfaceMetadata, /- "history search"/);
-});
-
-test("#given synced ulw-loop skill #when worker guidance is inspected #then context-hygiene guidance matches the source", async () => {
-	// given
-	const sourceSkill = await readFile(
-		join(root, "components", "ulw-loop", "skills", "ulw-loop", "references", "full-workflow.md"),
-		"utf8",
-	);
-	const syncedSkill = await readFile(join(root, "skills", "ulw-loop", "SKILL.md"), "utf8");
-	const syncedWorkflow = await readFile(join(root, "skills", "ulw-loop", "references", "full-workflow.md"), "utf8");
-	const requiredPatterns = [
-		["multi_agent_v1.wait_agent ref", /multi_agent_v1\.wait_agent/],
-		["local spawned-name tracking", /Track spawned agent names locally/],
-		["wait_agent mailbox path", /wait_agent.*mailbox signals/],
-		["progress status contract", /WORKING:/],
-		["long-running plan/reviewer background guidance", /Plan and reviewer agents may run for a long time/],
-		["bounded plan/reviewer polling", /multi_agent_v1\.wait_agent.*cycles/],
-		["single long wait guard", /single long blocking wait/],
-		["git-master checkpointing", /git-master/],
-		["touched-path commit-style probe", /touched-path commit history/],
-		["verified work-unit commit", /verified work unit/],
-		["observed commit style", /commit in the observed style/],
-	];
-
-	// when / then
-	for (const [label, pattern] of requiredPatterns) {
-		assert.match(sourceSkill, pattern, `source skill missing ${label}`);
-		assert.match(syncedWorkflow, pattern, `synced workflow missing ${label}`);
-	}
-	assert.match(syncedSkill, /references\/full-workflow\.md/);
-	assert.match(syncedSkill, /wait_agent/);
-	assert.match(syncedSkill, /close_agent/);
 });
 
 test("#given packaged start-work skill #when inspected #then no-plan bootstrap and adversarial verification contracts are shipped", async () => {

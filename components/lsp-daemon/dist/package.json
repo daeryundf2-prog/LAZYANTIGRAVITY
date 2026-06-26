@@ -1,0 +1,15 @@
+{
+	"name": "@code-yeongyu/lsp-daemon",
+	"version": "0.1.0",
+	"main": "./index.js",
+	"types": "./index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./index.js"
+		},
+		"./dist/cli.js": "./cli.js"
+	},
+	"type": "module",
+	"private": true
+}

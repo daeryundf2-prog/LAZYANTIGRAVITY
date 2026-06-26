@@ -9,7 +9,6 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const SKILLS = [
 	"review-work",
 	"start-work",
-	"ulw-loop",
 ];
 
 const AGENT_FILES = [
@@ -17,7 +16,7 @@ const AGENT_FILES = [
 	"components/ultrawork/agents/plan.toml",
 ];
 
-test("#given orchestration skills #when inspected #then Codex subagent delegation is hardened", async () => {
+test("#given orchestration skills #when inspected #then subagent delegation is hardened", async () => {
 	// given
 	const skillPaths = SKILLS.map((skillName) => join("skills", skillName, "SKILL.md"));
 
@@ -27,16 +26,44 @@ test("#given orchestration skills #when inspected #then Codex subagent delegatio
 		const text = await readFile(join(root, skillPath), "utf8");
 		if (
 			!/TASK:/.test(text) ||
-			!(/fork_turns:\s*"none"/.test(text) || /fork_context:\s*false/.test(text)) ||
-			!(/wait_agent/s.test(text)) ||
 			!/Fallback only when/i.test(text) ||
 			!/respawn/i.test(text) ||
 			!/Plan and reviewer agents/i.test(text) ||
 			!/blocking wait/i.test(text) ||
-			!/A timeout only means/i.test(text) ||
 			!/WORKING:/.test(text)
 		) {
 			missing.push(skillPath);
+		}
+	}
+
+	// then
+	assert.deepEqual(missing, []);
+});
+
+test("#given ulw-loop skill #when inspected #then Antigravity delegation is native", async () => {
+	// given
+	const literal = (...parts) => parts.join("_");
+	const blockedToolPattern = new RegExp(literal("multi", "agent", "v1"));
+	const workflowPaths = [
+		"components/ulw-loop/skills/ulw-loop/SKILL.md",
+		"components/ulw-loop/skills/ulw-loop/references/full-workflow.md",
+		"skills/ulw-loop/SKILL.md",
+		"skills/ulw-loop/references/full-workflow.md",
+	];
+
+	// when
+	const missing = [];
+	for (const workflowPath of workflowPaths) {
+		const text = await readFile(join(root, workflowPath), "utf8");
+		if (
+			!/invoke_subagent/.test(text) ||
+			!/send_message/.test(text) ||
+			!/manage_subagents/.test(text) ||
+			!/reactive resume/i.test(text) ||
+			!/not proof of completion/i.test(text) ||
+			blockedToolPattern.test(text)
+		) {
+			missing.push(workflowPath);
 		}
 	}
 

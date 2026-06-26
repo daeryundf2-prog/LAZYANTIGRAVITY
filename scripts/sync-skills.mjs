@@ -38,9 +38,25 @@ For work likely to exceed one cycle, instruct the subagent to report progress re
 
 `;
 
+const codexCompatibilityEndMarkers = [
+	"For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `wait_agent` timeout only means no new mailbox update arrived. Treat a running child or latest `WORKING:` message as alive. Do not use `list_agents` as a polling loop. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.\n\n",
+	"For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `multi_agent_v1.wait_agent` timeout only means no new mailbox update arrived. Treat a running child as alive. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.\n\n",
+	"Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns=\"none\"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
+	"When translating `load_skills=[...]`, include the requested skill names in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
+	"When translating `load_skills=[...]`, name the skills inside the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
+];
+
 function insertAntigravityCompatibilityGuidance(content) {
 	if (!opencodeOnlyOrchestrationPattern.test(content)) return content;
 	if (content.includes("## Antigravity Harness Tool Compatibility")) return content;
+	const staleStart = content.indexOf("## Codex Harness Tool Compatibility\n\n");
+	if (staleStart !== -1) {
+		const endMarker = codexCompatibilityEndMarkers.find((marker) => content.indexOf(marker, staleStart) !== -1);
+		if (endMarker !== undefined) {
+			const staleEnd = content.indexOf(endMarker, staleStart) + endMarker.length;
+			return `${content.slice(0, staleStart)}${antigravityHarnessToolCompatibility}${content.slice(staleEnd)}`;
+		}
+	}
 
 	const frontmatterMatch = content.match(/^---\n[\s\S]*?\n---\n+/);
 	if (!frontmatterMatch) {
@@ -90,6 +106,7 @@ try {
 		if (entry.isDirectory()) {
 			const targetName = entry.name === "frontend" ? "frontend-ui-ux" : entry.name;
 			await cp(join(aliasesRoot, entry.name), join(skillsRoot, targetName), { recursive: true });
+			await adaptSkillForAntigravity(targetName);
 		}
 	}
 } catch {

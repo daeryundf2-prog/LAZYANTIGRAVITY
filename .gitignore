@@ -10,8 +10,6 @@ src/*
 !src/README.ko.md
 scratch/
 plugins/
-shared-skills
-ast-grep-mcp
-git-bash-mcp
-lsp-tools-mcp
-package-lock.json
+/ast-grep-mcp
+/git-bash-mcp
+/lsp-tools-mcp

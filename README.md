@@ -2,7 +2,7 @@
 
 # 🌌 LAZYANTIGRAVITY
 
-**The most feature-rich AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).**
+**An AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).**
 
 <br />
 
@@ -54,8 +54,8 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 | No quality gates | **13 hooks** guard every edit (comment preservation, type checking, rule compliance) |
 | Terminal log chaos | **asbrowse visual dashboard** — real-time progress, diffs, and QA in one view |
 | Manual model selection | **ULW Model Routing** — auto-recommends optimal model per role |
-| No persistence across interruptions | **Safe-Resume Checkpoints** — resume exactly where you left off |
-| Basic code editing | **Hash-Anchored Edits** — near-0% code corruption (Hashline) |
+| No persistence across interruptions | **Safe-Resume Checkpoints** — resume from recorded checkpoints |
+| Basic code editing | **Hash-Anchored Edits** — reduces stale-line edit drift (Hashline) |
 | No built-in research | **Ultraresearch swarms** — parallel agents scan web, docs, and codebase simultaneously |
 | Solo work only | **Team Mode** — up to 8 parallel agents with tmux visualization |
 
@@ -65,21 +65,23 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 
 ## 🛡️ Reliability: Hallucination Mitigation (제미나이 환각 제어)
 
-Gemini 3.5 Flash의 초고속 성능은 살리고, 코딩 에이전트의 최대 약점인 **환각(Hallucination) 현상은 아키텍처적으로 원천 봉쇄**합니다.
+Gemini 3.5 Flash의 초고속 성능은 살리면서, 코딩 에이전트의 최대 약점인 **환각(Hallucination) 현상**을 줄이기 위해 증거 기반 루프와 정적 분석을 결합합니다.
 
-1. **증거 기반 실행 루프 (Evidence-Bound Loop)**: `ulw`는 테스트 성공, 정상 빌드 컴파일, 실제 HTTP 응답 코드 등 **실행 결과 증거**가 수집되지 않으면 완료를 선언하지 않습니다. 환각 코드가 유입되면 자동 감지되어 자가 수정(Self-Correction)을 유도합니다.
-2. **정적 타입 검사 훅 (LSP Quality Gates)**: 코드가 변경되는 즉시 백그라운드에서 언어 서버 정적 분석(TypeScript `tsc --noEmit` 등)을 실행하여 **타입 수준의 환각(존재하지 않는 API 호출 등)을 즉각 실시간으로 검출**합니다.
-3. **주석 감시자 (Comment Checker)**: 에이전트가 코드 수정 과정에서 중요한 설명 주석이나 docstring을 지워버리는 교묘한 편집 환각 현상을 모니터링하고 차단합니다.
-4. **해시 앵커링 (Hashline)**: 기존에 오염되기 쉽던 라인 번호 참조 방식 대신 콘텐츠의 **실시간 해시 값**을 기반으로 수정 지점을 타겟팅하여 라인 밀림으로 인한 파일 깨짐 환각을 없앱니다.
-5. **실시간 공식 문서 MCP (context7)**: 에이전트가 컷오프(Cut-off) 이전의 지식으로 코드를 조작하지 않도록 **공식 패키지 문서를 실시간으로 검색**하여 정확한 사실에 입각해 코딩합니다.
+1. **증거 기반 실행 루프 (Evidence-Bound Loop)**: `ulw`는 테스트 성공, 정상 빌드 컴파일, 실제 HTTP 응답 코드 등 **실행 결과 증거**를 완료 판단에 사용합니다. 실패가 드러나면 수정 루프로 되돌아갑니다.
+2. **정적 타입 검사 훅 (LSP Quality Gates)**: 코드가 변경되는 즉시 백그라운드에서 언어 서버 정적 분석(TypeScript `tsc --noEmit` 등)을 실행하여 존재하지 않는 API 호출 같은 문제를 빠르게 드러냅니다.
+3. **주석 감시자 (Comment Checker)**: 에이전트가 코드 수정 과정에서 중요한 설명 주석이나 docstring을 지워버리는 편집 실수를 모니터링하고 경고합니다.
+4. **해시 앵커링 (Hashline)**: 기존에 오염되기 쉽던 라인 번호 참조 방식 대신 콘텐츠의 **실시간 해시 값**을 기반으로 수정 지점을 타겟팅하여 라인 밀림으로 인한 파일 깨짐 위험을 줄입니다.
+5. **실시간 공식 문서 MCP (context7)**: 에이전트가 컷오프(Cut-off) 이전의 지식에만 기대지 않도록 **공식 패키지 문서**를 검색해 코딩 판단에 반영합니다.
 
 ---
 
-## ⚡ Quick Start
+## Quick Start On This PC
 
 > **Prerequisite / 전제 조건**: [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity) must be installed. / 설치되어 있어야 합니다.
 
-### 1. Plugin Clone / 플러그인 클론
+This repository is an Antigravity plugin root, not a standalone npm CLI package. Install it by cloning the repository into Antigravity's local plugin directory, then restart the app.
+
+### 1. Local Plugin Install / 로컬 플러그인 설치
 
 #### macOS / Linux / Git Bash
 ```bash
@@ -95,16 +97,25 @@ cd $env:USERPROFILE\.gemini\config\plugins
 git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 ```
 
-Or install via package managers:
-```bash
-# Ultimate Edition (OpenCode)
-bunx oh-my-openagent install
+### 2. Update / 업데이트
 
-# Light Edition (Codex CLI)
-npx lazycodex-ai install
+Run updates from the cloned plugin directory:
+
+```bash
+cd ~/.gemini/config/plugins/lazyantigravity
+git pull --ff-only
 ```
 
-### 2. Launch Session Browser / 세션 브라우저 기동
+```powershell
+cd $env:USERPROFILE\.gemini\config\plugins\lazyantigravity
+git pull --ff-only
+```
+
+### 3. Restart / 재시작
+
+Restart Google Antigravity so it reloads the plugin manifest, hooks, skills, and local commands.
+
+### 4. Launch Session Browser / 세션 브라우저 기동
 
 After installation, restart your Antigravity agent session. Then run **inside the agent session**:
 
@@ -137,24 +148,24 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 
 > [!IMPORTANT]
 > **핵심 권장 사항 (Just use `ulw`!)**
-> - **다른 복잡한 스킬들은 몰라도, 그냥 `ulw` (또는 `ultrawork`) 하나만 입력해서 사용하면 됩니다!** 이 스킬이 코드를 알아서 분석/수정하고 테스트를 수행하여 100% 검증될 때까지 자동으로 루프를 수행하는 핵심 코딩 엔진입니다.
+> - **다른 복잡한 스킬들은 몰라도, 그냥 `ulw` (또는 `ultrawork`) 하나만 입력해서 사용하면 됩니다!** 이 스킬이 코드를 분석/수정하고 테스트를 수행하며 증거가 부족한 경우 반복하는 핵심 코딩 엔진입니다.
 > - **`ulw`와 `ralph`는 어떻게 다른가요?**
 >   - **`ulw` (실행 엔진)**: 실제로 파일을 생성/수정하고 테스트 코드를 돌리며 기능을 구현하는 **주요 동력**입니다.
->   - **`ralph` (안전 장치 / 복원 루프)**: 오랜 작업 중 API 호출 한도 초과나 세션 끊김으로 에이전트가 멈추었을 때, **기존의 에이전트 상태를 ledger(로그)로부터 복구하여 멈춘 자리에서부터 안전하게 작업을 이어가도록 보장하는 영속성 장치**입니다.
+>   - **`ralph` (안전 장치 / 복원 루프)**: 오랜 작업 중 API 호출 한도 초과나 세션 끊김으로 에이전트가 멈추었을 때, **기존의 에이전트 상태를 ledger(로그)로부터 복구하여 이어갈 수 있게 돕는 영속성 장치**입니다.
 > 
 > ---
 > 
 > **Key Recommendation (Just use `ulw`!)**
-> - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and runs iterative loops until the codebase is 100% verified.
+> - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and keeps iterating when the collected evidence shows more work is needed.
 > - **How does `ulw` differ from `ralph`?**
 >   - **`ulw` (Execution Engine)**: The actual workhorse modifying files, running test suites, and resolving issues.
->   - **`ralph` (Safety Net / Persistence Loop)**: A self-referential continuation loop. If a long-running execution gets interrupted (due to quota limits, network issues, or timeouts), `ralph` restores state and resumes exactly where it left off.
+>   - **`ralph` (Safety Net / Persistence Loop)**: A self-referential continuation loop. If a long-running execution gets interrupted (due to quota limits, network issues, or timeouts), `ralph` uses recorded state to help resume the work.
 
 ### Commands
 
 | Command | What it does |
 | :--- | :--- |
-| **`ultrawork`** / **`ulw`** | Autonomous code → test → fix loop. Keeps iterating until 100% verified. |
+| **`ultrawork`** / **`ulw`** | Autonomous code → test → fix loop. Keeps iterating while evidence shows unresolved work. |
 | **`ultraresearch`** | Parallel research swarm across web, docs, and codebase with empirical verification. |
 | **`browse`** / **`$browse`** | Opens the **asbrowse** visual dashboard in your browser (Note: `asbrowse` is the dashboard name; type `browse` or `$browse` to open it). |
 | **`/ulw-loop`** | Evidence-audited multi-goal orchestration loop with checkpoints. |
@@ -225,21 +236,24 @@ Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 
 ---
 
-## ⚙️ ULW-Loop: Evidence-Audited Orchestration
+## ULW in Antigravity
 
-<div align="center">
-  <img src="assets/readme/lazyantigravity-ulw-command.png" alt="ULW Command Selection" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-</div>
+Use ULW inside a running Google Antigravity session:
+
+```text
+/ulw <task>
+/ulw resume
+```
+
+![ULW command selection in Antigravity](assets/readme/lazyantigravity-ulw-command.png)
 
 <br />
 
-<div align="center">
-  <img src="assets/readme/lazyantigravity-ulw-running.png" alt="ULW Running" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
-</div>
+![ULW running in Antigravity](assets/readme/lazyantigravity-ulw-running.png)
 
 <br />
 
-The `ulw-loop` (Ultra Lightweight Loop) is the crown jewel of lazyantigravity:
+The `ulw-loop` (Ultra Lightweight Loop) is the main evidence-audited orchestration path in lazyantigravity:
 1. **Goal Decomposition**: Breaks your request into measurable success criteria.
 2. **Evidence-Bound Steps**: Every step must produce verifiable evidence before advancing.
 3. **Safe-Resume Checkpoints**: If interrupted, resume from the exact checkpoint.
@@ -267,6 +281,13 @@ lazyantigravity runs **13 hooks** across 7 lifecycle events — every action the
 | **Stop** | Start-work continuation checks |
 | **SubagentStop** | Start-work continuation for child agents |
 
+### Telemetry and Updates
+
+At `SessionStart`, lazyantigravity may run two background checks:
+
+- **Telemetry**: records anonymous session metadata through the telemetry component. It is intended for usage diagnostics, not source-code collection; see the opt-out variables below if you do not want this enabled.
+- **Auto-update check**: checks whether a lazycodex installer update is available and may run the configured installer command when the runtime supports auto-updates. Set `LAZYCODEX_AUTO_UPDATE_DISABLED=1` or `OMO_CODEX_AUTO_UPDATE_DISABLED=1` before starting Antigravity to disable this check.
+
 ### Comment Checker
 
 AI agents often silently delete user comments during edits. lazyantigravity's PostToolUse hook catches this in real-time:
@@ -289,7 +310,7 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 
 - **Smart Quota Control**: Real-time API consumption monitoring preserves Gemini 3.5 Flash's cost-efficiency.
 - **Compact Mode**: Filters redundant build logs, compresses to essential code snippets for token budgets.
-- **Safe-Resume Checkpoints**: State freezes to `.lazycodex/checkpoints/ulw-*.json` — resume exactly where you left off with `omo ulw-loop resume`.
+- **Safe-Resume Checkpoints**: State is written to `.lazycodex/checkpoints/ulw-*.json` so interrupted work can resume from the last recorded checkpoint with `omo ulw-loop resume`.
 
 ### 🔍 Ultraresearch: Maximum-Saturation Knowledge Gathering
 
@@ -329,7 +350,7 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 ### 🛡️ Hash-Anchored Edits (Hashline)
 - Every line gets a unique content hash (`LINE#ID`) when the agent reads a file.
 - Edits target these hashes — if the file changed concurrently, the edit is **safely rejected**.
-- Near-0% code corruption rate (solves the "Harness Problem").
+- Hash-anchored edit targeting to reduce stale-line corruption risk.
 
 ### 🔌 Skill-Embedded MCPs
 - Standard MCP servers bloat context windows permanently.
@@ -339,7 +360,7 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 ### 🎨 Frontend & Visual QA
 - **react-scan** + **react-doctor**: Diagnose rendering bottlenecks and React antipatterns.
 - **Playwright Pixel Diff**: Automated screenshot comparison for micro-alignment and CJK text clipping.
-- **Lighthouse 100**: Iterates until Core Web Vitals (LCP, CLS, INP) all score 100.
+- **Lighthouse Feedback**: Uses Core Web Vitals (LCP, CLS, INP) results to guide visual QA iterations.
 
 ---
 
@@ -352,7 +373,7 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 **"Stop prompting. Start specifying."** 을 표방하는 Agent OS입니다.
 
 - **Spec-First 개발 철학**: AI 코딩 실패의 대부분은 AI 능력 부족이 아니라 인간의 모호한 지시에서 비롯된다는 관점에서, **소크라테스식 Spec-Interview**를 통해 모호성을 수치화(Ambiguity Score ≤ 0.2)하고 요구사항을 결정화(Crystallize)한 뒤에만 실행을 허용합니다.
-- **Seed-Bound Execution**: 모든 에이전트 행동이 렛저(Ledger)에 기록되고 시드에 바인딩되어, 감사 가능(Auditable)하고 리플레이 가능(Replayable)한 실행 계약을 보장합니다.
+- **Seed-Bound Execution**: 모든 에이전트 행동이 렛저(Ledger)에 기록되고 시드에 바인딩되어, 감사 가능(Auditable)하고 리플레이 가능(Replayable)한 실행 계약을 지원합니다.
 - **Interview → Crystallize → Execute → Evaluate → Evolve**: 평가 결과가 다음 세대의 명세에 피드백되는 자기진화 루프 — 뱀이 자기 꼬리를 삼키는 우로보로스 상징 그 자체입니다.
 - **Ralph Persistence Loop**: 세션 경계를 넘어 에이전트가 지속 실행되도록 하는 자기참조 루프. 이벤트 스토어를 통해 상태를 재구성하므로 머신이 재시작되어도 정확히 중단 지점에서 재개됩니다.
 - **Multi-Runtime 지원**: Claude Code, Codex CLI, OpenCode, Gemini 등 다양한 AI CLI 도구와 통합됩니다.
@@ -381,18 +402,22 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 - **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
 - **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
 
-Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
+lazyantigravity는 Ouroboros와 lazycodex의 핵심 아이디어와 구성 요소를 Antigravity 환경에 맞게 확장합니다.
 
 ---
 
 ## 📊 Telemetry & Opt-out
 
-Once per day at session start, only a hashed identifier (`sha256("omo-codex:" + hostname)`) is transmitted. **No source code or sensitive data is ever sent externally.**
+At session start, the telemetry hook may send anonymous usage metadata such as a hashed identifier (`sha256("omo-codex:" + hostname)`) and runtime diagnostics. The telemetry path is designed for aggregate diagnostics rather than source-code capture; review your environment and disable it if your workspace policy requires no outbound analytics.
 
 To disable:
 ```bash
+export OMO_CODEX_DISABLE_POSTHOG=1
+export OMO_CODEX_SEND_ANONYMOUS_TELEMETRY=0
 export OMO_DISABLE_POSTHOG=1
 export OMO_SEND_ANONYMOUS_TELEMETRY=0
+export LAZYCODEX_AUTO_UPDATE_DISABLED=1
+export OMO_CODEX_AUTO_UPDATE_DISABLED=1
 ```
 
 ---

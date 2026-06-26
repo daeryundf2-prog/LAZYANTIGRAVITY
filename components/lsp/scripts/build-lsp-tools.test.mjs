@@ -31,6 +31,19 @@ async function makeFixture() {
 	return { root, npmLog, script: join(root, "packages", "omo-codex", "plugin", "components", "lsp", "scripts", "build-lsp-tools.mjs"), fakeBin };
 }
 
+async function writeLspPackageJson(fixture, dependencies) {
+	await writeFile(
+		join(fixture.root, "packages", "omo-codex", "plugin", "components", "lsp", "package.json"),
+		`${JSON.stringify({ dependencies })}\n`,
+	);
+}
+
+async function writeBundledDaemonDist(fixture) {
+	const dist = join(fixture.root, "packages", "omo-codex", "plugin", "components", "lsp-daemon", "dist");
+	await mkdir(dist, { recursive: true });
+	await writeFile(join(dist, "cli.js"), "cli\n");
+}
+
 function runScript(script, fakeBin, args = []) {
 	return spawnSync(process.execPath, [script, ...args], {
 		encoding: "utf8",
@@ -105,5 +118,22 @@ test("#given packaged dist without package metadata #when bootstrapping #then it
 	// then
 	assert.equal(result.status, 0, result.stderr);
 	assert.match(result.stdout, /Using bundled lsp-tools-mcp dist/);
+	assert.equal(await readFile(fixture.npmLog, "utf8"), "");
+});
+
+test("#given codex-lsp depends on bundled lsp-daemon #when bootstrapping legacy tools #then it skips lsp-tools-mcp", async () => {
+	// given
+	const fixture = await makeFixture();
+	await writeLspPackageJson(fixture, { "@code-yeongyu/lsp-daemon": "file:../lsp-daemon/dist" });
+	await writeBundledDaemonDist(fixture);
+	await rm(join(fixture.root, "packages", "lsp-tools-mcp"), { recursive: true, force: true });
+	await writeFile(fixture.npmLog, "");
+
+	// when
+	const result = runScript(fixture.script, fixture.fakeBin);
+
+	// then
+	assert.equal(result.status, 0, result.stderr);
+	assert.match(result.stdout, /Skipping legacy lsp-tools-mcp bootstrap/);
 	assert.equal(await readFile(fixture.npmLog, "utf8"), "");
 });

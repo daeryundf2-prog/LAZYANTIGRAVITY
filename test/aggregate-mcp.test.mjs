@@ -11,6 +11,8 @@ const mcpPackageManifestExists = await Promise.all(mcpPackageManifestPaths.map(e
 test("#given aggregate MCP config #when inspected #then code MCPs reference package runtimes without package names", async () => {
 	// given
 	const packageJson = await readJson("package.json");
+	const lspPackageJson = await readJson("components/lsp/package.json");
+	const lspDaemonDistPackageJson = await readJson("components/lsp-daemon/dist/package.json");
 	const mcp = await readJson(".mcp.json");
 	const lspSources = await readdir(join(root, "components", "lsp", "src"));
 	const bundledMcpBuildScript = await readFile(join(root, "scripts", "build-bundled-mcp-runtimes.mjs"), "utf8");
@@ -29,12 +31,23 @@ test("#given aggregate MCP config #when inspected #then code MCPs reference pack
 	assert.equal(packageJson.workspaces.includes("components/lsp/packages/lsp-tools-mcp"), false);
 	assert.equal(packageJson.workspaces.includes("components/lsp/packages/lsp-daemon"), false);
 	if (isStandalone) {
-		assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:./shared-skills" });
+		assert.deepEqual(packageJson.dependencies, {
+			"@code-yeongyu/lsp-daemon": "file:./components/lsp-daemon/dist",
+			"@oh-my-opencode/shared-skills": "file:./shared-skills",
+		});
 	} else {
-		assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:../../shared-skills" });
+		assert.deepEqual(packageJson.dependencies, {
+			"@code-yeongyu/lsp-daemon": "file:../../lsp-daemon/dist",
+			"@oh-my-opencode/shared-skills": "file:../../shared-skills",
+		});
 	}
 	assert.match(bundledMcpBuildScript, /lsp-daemon/);
 	assert.match(bundledMcpBuildScript, /git-bash-mcp/);
+	assert.equal(lspPackageJson.dependencies?.["@code-yeongyu/lsp-daemon"], "file:../lsp-daemon/dist");
+	assert.equal(lspDaemonDistPackageJson.main, "./index.js");
+	assert.equal(lspDaemonDistPackageJson.types, "./index.d.ts");
+	assert.deepEqual(lspDaemonDistPackageJson.exports?.["."], { types: "./index.d.ts", import: "./index.js" });
+	assert.equal(lspDaemonDistPackageJson.exports?.["./dist/cli.js"], "./cli.js");
 	assert.doesNotMatch(packageJson.scripts.build, /--workspaces/);
 	assert.equal(lspServer.command, "node");
 	if (isStandalone) {

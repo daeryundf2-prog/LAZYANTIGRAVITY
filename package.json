@@ -16,6 +16,7 @@
 		"components/ultrawork"
 	],
 	"dependencies": {
+		"@code-yeongyu/lsp-daemon": "file:./components/lsp-daemon/dist",
 		"@oh-my-opencode/shared-skills": "file:./shared-skills"
 	},
 	"scripts": {

@@ -13,7 +13,7 @@ const VALID_GATE = {
 		by: "lazycodex-code-reviewer",
 		recommendation: "APPROVE",
 		codeQualityStatus: "CLEAR",
-		reportPath: "packages/omo-codex/plugin/components/ulw-loop/test/fixtures/artifacts/code-review.md",
+		reportPath: "components/ulw-loop/test/fixtures/artifacts/code-review.md",
 		evidence: "Reviewed diff and focused tests; no blocking code-quality issues remain.",
 		blockers: [],
 	},
@@ -46,27 +46,27 @@ const VALID_GATE = {
 				id: "artifact-cli-pass",
 				kind: "cli-transcript",
 				description: "CLI transcript for valid quality gate acceptance.",
-				path: "packages/omo-codex/plugin/components/ulw-loop/test/fixtures/artifacts/cli-pass.txt",
+				path: "components/ulw-loop/test/fixtures/artifacts/cli-pass.txt",
 			},
 			{
 				id: "artifact-cli-reject",
 				kind: "log",
 				description: "Log proving malformed quality gate rejection.",
-				path: "packages/omo-codex/plugin/components/ulw-loop/test/fixtures/artifacts/rejection.txt",
+				path: "components/ulw-loop/test/fixtures/artifacts/rejection.txt",
 			},
 		],
 	},
 	gateReview: {
 		by: "lazycodex-gate-reviewer",
 		recommendation: "APPROVE",
-		reportPath: "packages/omo-codex/plugin/components/ulw-loop/test/fixtures/artifacts/gate-review.md",
+		reportPath: "components/ulw-loop/test/fixtures/artifacts/gate-review.md",
 		evidence: "Rechecked reviewer reports and manual QA artifacts; gate is approved.",
 		blockers: [],
 	},
 	iteration: {
 		fullRerun: true,
 		status: "passed",
-		rerunCommands: ["bunx vitest run packages/omo-codex/plugin/components/ulw-loop/test/quality-gate.test.ts"],
+		rerunCommands: ["npm --prefix components/ulw-loop test -- test/quality-gate.test.ts"],
 		evidence: "Full focused rerun passed after validator update.",
 	},
 	criteriaCoverage: {
@@ -78,14 +78,7 @@ const VALID_GATE = {
 		adversarialClassesCovered: ["malformed_input", "stale_state"],
 	},
 } as const;
-let repoRoot = fileURLToPath(new URL("../../../../../..", import.meta.url));
-if (!existsSync(resolve(repoRoot, "packages"))) {
-	const altPath = fileURLToPath(new URL("../../..", import.meta.url));
-	if (existsSync(resolve(altPath, "src/packages"))) {
-		repoRoot = resolve(altPath, "src");
-	}
-}
-const REPO_ROOT = repoRoot;
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const FS_OPTS = { repoRoot: REPO_ROOT, fs: { existsSync, statSync } } as const;
 
 function makeGate(overrides: Record<string, unknown> = {}): Record<string, unknown> {

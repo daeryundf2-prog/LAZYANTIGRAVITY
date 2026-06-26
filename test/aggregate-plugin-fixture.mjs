@@ -14,6 +14,8 @@ export const codexCompatibilityEndMarkers = [
 
 export function removeCodexCompatibilityGuidance(content) {
 	let clean = content.replace(/\r\n/g, "\n");
+	const normalizeFrontmatterSpacing = (value) =>
+		value.replace(/^(---\n[\s\S]*?\n---)\n*(?=# )/, "$1\n\n");
 	const agStart = clean.indexOf("## Antigravity Harness Tool Compatibility\n\n");
 	if (agStart !== -1) {
 		const agEndMarker = "For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.\n\n";
@@ -24,12 +26,12 @@ export function removeCodexCompatibilityGuidance(content) {
 	}
 
 	const start = clean.indexOf("## Codex Harness Tool Compatibility\n\n");
-	if (start === -1) return clean;
+	if (start === -1) return normalizeFrontmatterSpacing(clean);
 	const endMarker = codexCompatibilityEndMarkers.find((marker) => clean.indexOf(marker, start) !== -1);
 	assert.notEqual(endMarker, undefined, "Codex compatibility guidance block is missing its terminator");
 	const end = clean.indexOf(endMarker, start);
 	assert.notEqual(end, -1, "Codex compatibility guidance block is missing its terminator");
-	return `${clean.slice(0, start)}${clean.slice(end + endMarker.length)}`;
+	return normalizeFrontmatterSpacing(`${clean.slice(0, start)}${clean.slice(end + endMarker.length)}`);
 }
 
 export const root = dirname(dirname(fileURLToPath(import.meta.url)));

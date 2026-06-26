@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Build the repository-level lsp-tools-mcp package used by codex-lsp.
 import { execSync } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +15,10 @@ const candidates = [
 	join(__dirname, "..", "..", "..", "..", "..", "lsp-tools-mcp"),
 	join(__dirname, "..", "..", "lsp-tools-mcp"),
 ];
+const daemonCandidates = [
+	join(__dirname, "..", "..", "..", "..", "..", "lsp-daemon"),
+	join(__dirname, "..", "..", "lsp-daemon"),
+];
 
 function requiredOutputs(dir) {
 	return [
@@ -22,6 +26,15 @@ function requiredOutputs(dir) {
 		join(dir, "dist", "tools.js"),
 		join(dir, "dist", "lsp", "manager.js"),
 	];
+}
+
+function requiredDaemonOutputs(dir) {
+	return [join(dir, "dist", "cli.js")];
+}
+
+if (usesBundledDaemonInsteadOfLegacyTools()) {
+	console.log("Skipping legacy lsp-tools-mcp bootstrap; codex-lsp depends on bundled lsp-daemon.");
+	process.exit(0);
 }
 
 // Phase 1: find the first buildable candidate (package.json present).
@@ -66,4 +79,14 @@ function isBuildFresh(inputPath, outputPaths) {
 	if (outputPaths.some((path) => !existsSync(path))) return false;
 	const inputMtime = statSync(inputPath).mtimeMs;
 	return outputPaths.every((path) => statSync(path).mtimeMs >= inputMtime);
+}
+
+function usesBundledDaemonInsteadOfLegacyTools() {
+	const packageJsonPath = join(__dirname, "..", "package.json");
+	if (!existsSync(packageJsonPath)) return false;
+	const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+	const dependencies = packageJson.dependencies ?? {};
+	if (Object.hasOwn(dependencies, "@code-yeongyu/lsp-tools-mcp")) return false;
+	if (!Object.hasOwn(dependencies, "@code-yeongyu/lsp-daemon")) return false;
+	return daemonCandidates.some((dir) => requiredDaemonOutputs(dir).every((path) => existsSync(path)));
 }

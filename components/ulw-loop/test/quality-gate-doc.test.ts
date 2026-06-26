@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
@@ -8,14 +8,7 @@ import { describe, expect, it } from "vitest";
 import { validateQualityGate } from "../src/quality-gate.js";
 
 const FULL_WORKFLOW_URL = new URL("../skills/ulw-loop/references/full-workflow.md", import.meta.url);
-let repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
-if (!existsSync(resolve(repoRoot, "packages"))) {
-	const altPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-	if (existsSync(resolve(altPath, "src/packages"))) {
-		repoRoot = resolve(altPath, "src");
-	}
-}
-const REPO_ROOT = repoRoot;
+const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));
 const FS_OPTS = { repoRoot: REPO_ROOT, fs: { existsSync, statSync } } as const;
 
 function extractQualityGateSample(workflow: string): unknown {

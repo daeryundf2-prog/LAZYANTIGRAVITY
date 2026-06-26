@@ -6,10 +6,10 @@ Codex plugin that ports the standalone LSP runtime from [`pi-lsp-client`](https:
 
 ## Architecture
 
-The LSP runtime moved to [`lsp-tools-mcp`](https://github.com/code-yeongyu/lsp-tools-mcp) and is consumed from this repository's root `packages/lsp-tools-mcp/` package.
+The LSP runtime is consumed through the bundled `@code-yeongyu/lsp-daemon` package in `components/lsp-daemon/dist`.
 
 - `codex-lsp` keeps Codex-specific integration (`hook post-tool-use`, plugin metadata, package wiring).
-- `lsp-tools-mcp` owns MCP runtime, LSP manager, and tool implementations.
+- `lsp-daemon` owns the MCP runtime, LSP manager, daemon process, and tool implementations.
 - `src/cli.ts` routes `mcp` to upstream runtime and keeps `hook post-tool-use` local.
 
 ## Behavior
@@ -75,7 +75,7 @@ The plugin ships:
 - `hooks/hooks.json` for the `PostToolUse` diagnostics hook.
 - `skills/lsp/SKILL.md` with MCP usage guidance.
 
-The runtime depends on `@code-yeongyu/lsp-tools-mcp` via `file:../../../../lsp-tools-mcp`, so marketplace builds reuse the root package instead of carrying a second copy under this component.
+The runtime depends on `@code-yeongyu/lsp-daemon` via `file:../lsp-daemon/dist`, so standalone plugin builds use the checked-in bundled daemon package instead of relying on an external sibling checkout.
 
 The hook command is:
 
@@ -86,13 +86,13 @@ node "${PLUGIN_ROOT}/dist/cli.js" hook post-tool-use
 The MCP command is:
 
 ```bash
-node ../../../../lsp-tools-mcp/dist/cli.js mcp
+node "${PLUGIN_ROOT}/dist/cli.js" mcp
 ```
 
 ## Local Development
 
 ```bash
-npm run bootstrap     # installs + builds the root packages/lsp-tools-mcp package
+npm run bootstrap     # validates bundled daemon/runtime availability
 npm install
 npm test
 npm run typecheck
@@ -100,8 +100,8 @@ npm run check
 npm pack --dry-run
 ```
 
-The `bootstrap` script installs and builds the root `lsp-tools-mcp` package so
-`@code-yeongyu/lsp-tools-mcp/dist/*.js` is available for the codex-lsp build.
+The `bootstrap` script validates the bundled daemon package and keeps a legacy
+`lsp-tools-mcp` fallback only for older source checkouts that still depend on it.
 
 Smoke-test the hook:
 

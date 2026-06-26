@@ -61,7 +61,7 @@ const CONTEXT_PRESSURE_MARKERS = [
 
 export async function runLspDiagnosticsText(filePath: string): Promise<string> {
 	const result = await callDiagnosticsViaDaemon(filePath, { context: currentRequestContext() });
-	return result.content.map((block) => block.text).join("\n");
+	return result.content.map((block: { text: string }) => block.text).join("\n");
 }
 
 export async function runLspPostToolUseHook(

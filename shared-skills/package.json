@@ -1,0 +1,19 @@
+{
+	"name": "@oh-my-opencode/shared-skills",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Shared SKILL.md payloads bundled with LazyAntigravity.",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./index.mjs"
+		}
+	},
+	"types": "./index.d.ts",
+	"files": [
+		"index.d.ts",
+		"index.mjs",
+		"skills"
+	]
+}

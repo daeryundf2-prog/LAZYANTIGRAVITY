@@ -30,7 +30,7 @@ describe("plugin package metadata", () => {
 		expect(packageJson.type).toBe("module");
 		expect(packageJson.packageManager).toBe("npm@11.12.1");
 		expect(packageJson.dependencies).toEqual({
-			"@code-yeongyu/lsp-daemon": "file:../../../../lsp-daemon",
+			"@code-yeongyu/lsp-daemon": "file:../lsp-daemon/dist",
 		});
 		expect(packageJson.bin["omo-lsp"]).toBe("./dist/cli.js");
 		expect(packageJson.bin["codex-lsp"]).toBeUndefined();
