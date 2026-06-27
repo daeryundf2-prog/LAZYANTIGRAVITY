@@ -28,13 +28,13 @@
 
 ---
 
-## 📖 가이드 문서 바로가기 / Documentation Guides
-원하시는 언어의 상세 기술 가이드 문서로 즉시 이동할 수 있습니다. 메인 README는 핵심 랜딩 페이지이며, 상세 스킬 및 아키텍처 사양은 각 언어별 상세 가이드에 기재되어 있습니다:
+## 📖 Documentation Guides
+You can immediately navigate to the detailed technical documentation guide in your preferred language. The main README serves as the core landing page, while detailed skills and architectural specifications can be found in the language-specific guides:
 
-| 가이드 문서 / Guide | 대상 독자 & 내용 / Target Audience & Content | 이동 링크 / Link |
+| Guide | Target Audience & Content | Link |
 | :--- | :--- | :--- |
-| **🌐 English Detailed Guide** | English Speakers & Global Developers. Explains the 29 skills, 13 hooks, and detailed architecture. | [👉 View English Guide (src/README.md)](./src/README.md) |
-| **🇰🇷 한국어 상세 가이드** | 한국어 개발자용 가이드. 전체 스킬 구성, 자동 품질 게이트 훅 동작 방식, 세션 복구 및 최적화 아키텍처 상세. | [👉 한국어 가이드 보기 (src/README.ko.md)](./src/README.ko.md) |
+| **🌐 English Detailed Guide** | English speakers and global developers. Explains the 29 skills, 13 hooks, and detailed architecture. | [👉 View English Guide (src/README.md)](./src/README.md) |
+| **🇰🇷 한국어 상세 가이드** | Guide for Korean developers. Details the full skill registry, hook pipelines, safe checkpoints, and optimization specs. | [👉 View Korean Guide (src/README.ko.md)](./src/README.ko.md) |
 
 ---
 
@@ -59,61 +59,61 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 | No built-in research | **Ultraresearch swarms** — parallel agents scan web, docs, and codebase simultaneously |
 | Solo work only | **Team Mode** — up to 8 parallel agents with tmux visualization |
 
-> **한 줄 요약**: Antigravity의 모든 모델을 활용하면서, 자율 코딩 루프 · 시각 대시보드 · 자동 품질 게이트 · 멀티 에이전트 협업을 추가하는 프리미엄 플러그인입니다.
+> **Summary**: A premium plugin that enhances the Antigravity agent with autonomous loops, a visual dashboard, automatic quality gates, and multi-agent collaboration.
 
 ---
 
-## 🛡️ Reliability: Hallucination Mitigation (제미나이 환각 제어)
+## 🛡️ Reliability: Hallucination Mitigation
 
-Gemini 3.5 Flash의 초고속 성능은 살리고, 코딩 에이전트의 최대 약점인 **환각(Hallucination) 현상은 아키텍처적으로 원천 봉쇄**합니다.
+While utilizing the ultra-fast speeds of Gemini 3.5 Flash, the plugin architecturally eliminates **hallucinations**—the primary weakness of coding agents.
 
-1. **증거 기반 실행 루프 (Evidence-Bound Loop)**: `ulw`는 테스트 성공, 정상 빌드 컴파일, 실제 HTTP 응답 코드 등 **실행 결과 증거**가 수집되지 않으면 완료를 선언하지 않습니다. 환각 코드가 유입되면 자동 감지되어 자가 수정(Self-Correction)을 유도합니다.
-2. **정적 타입 검사 훅 (LSP Quality Gates)**: 코드가 변경되는 즉시 백그라운드에서 언어 서버 정적 분석(TypeScript `tsc --noEmit` 등)을 실행하여 **타입 수준의 환각(존재하지 않는 API 호출 등)을 즉각 실시간으로 검출**합니다.
-3. **주석 감시자 (Comment Checker)**: 에이전트가 코드 수정 과정에서 중요한 설명 주석이나 docstring을 지워버리는 교묘한 편집 환각 현상을 모니터링하고 차단합니다.
-4. **해시 앵커링 (Hashline)**: 기존에 오염되기 쉽던 라인 번호 참조 방식 대신 콘텐츠의 **실시간 해시 값**을 기반으로 수정 지점을 타겟팅하여 라인 밀림으로 인한 파일 깨짐 환각을 없앱니다.
-5. **실시간 공식 문서 MCP (context7)**: 에이전트가 컷오프(Cut-off) 이전의 지식으로 코드를 조작하지 않도록 **공식 패키지 문서를 실시간으로 검색**하여 정확한 사실에 입각해 코딩합니다.
+1. **Evidence-Bound Loop (`ulw`)**: The agent does not declare completion unless verifiable execution evidence (e.g., successful test runs, green compile states, expected HTTP status codes) is collected. Hallucinated code is automatically caught, triggering a self-correction loop.
+2. **Static Type Checker Hooks (LSP Quality Gates)**: Immediately after file modification, background static analyses (such as TypeScript's `tsc --noEmit`) run to catch type-level hallucinations (e.g., calling non-existent APIs) in real-time.
+3. **Comment Watcher (Comment Checker)**: Actively monitors and prevents the agent from silently stripping out crucial explanatory comments or docstrings.
+4. **Hash-Anchored Edits (Hashline)**: Instead of volatile line-number offsets, content-based hashes are used to anchor edits. This prevents file corruption caused by concurrent line shifting.
+5. **Real-time Documentation MCP (context7)**: Queries official and up-to-date documentation libraries in real-time, preventing the agent from relying on outdated post-cutoff training data.
 
 ---
 
-## 🧠 Gemini 3.5 & 3.1 Pro Optimization: /ulw & Architecture (제미나이 아키텍처 최적화)
+## 🧠 Gemini 3.5 & 3.1 Pro Architectural Optimizations
 
-Gemini 3.5 Flash 및 3.1 Pro의 네이티브 아키텍처적 특성을 100% 활용하여 응답 정확도를 극대화하고 사용 속도를 개선하기 위한 전용 최적화가 주입되었습니다:
+Dedicated architectural optimizations are integrated into the plugin to leverage Gemini 3.5 Flash and 3.1 Pro's native strengths, maximizing reasoning accuracy and eliminating latency bottlenecks:
 
-1. **System Instruction Envelope (시스템 지침 봉투화)**
-   - **특성**: 일반 대화 본문에 지침을 섞어 보낼 경우, 대형 컨텍스트 창 속에서 지침이 점차 무시되는 경향(지침 표류)이 강합니다. 제미나이는 API 수준의 `systemInstruction` 매개변수로 명시된 규칙을 가장 강력히 신뢰합니다.
-   - **개선점**: [prompt-amplifier.mjs](file:///scripts/prompt-amplifier.mjs)를 통해 주입되는 `AGENTS.md` 규칙, 메모장(`.omx/notepad.md`), 프로젝트 메모리 등을 `<system-directives-and-context>` 구조적 XML 태그로 감싸 제미나이가 이를 유실 없이 최우선 순위로 파악하도록 보장합니다.
+1. **System Instruction Envelope**
+   - **Gemini Trait**: Standard system instructions mixed inside user prompt context tend to drift and get ignored as context sizes expand. Gemini relies heavily on rules passed inside the API's native `systemInstruction` parameters.
+   - **Improvement**: Context injected by [prompt-amplifier.mjs](file:///scripts/prompt-amplifier.mjs) (rules, notepad, memory) is wrapped inside a structured `<system-directives-and-context>` XML envelope, allowing Gemini to index and enforce these constraints with near-100% reliability.
 
-2. **Role-based Persona Enveloping (역할 기반 지침 최적화)**
-   - **특성**: 제미나이는 명확한 페르소나와 구조화된 작업 경계 지시를 받았을 때 추론 신뢰도가 크게 상승합니다.
-   - **개선점**: 프롬프트의 키워드를 실시간 감지하여 Planner(계획), Researcher(조사), Worker(구현), Verifier(검증)의 역할별 전용 XML 태그 가이드(`<role-instructions type="...">`)를 동적으로 바인딩하여 환각 코딩을 차단합니다.
+2. **Role-based Persona Enveloping**
+   - **Gemini Trait**: Reasoning efficiency increases when directed with a precise role envelope and structured workflow boundaries.
+   - **Improvement**: Dynamically detects the active role (Planner, Researcher, Worker, Verifier) from prompt keywords and injects specialized role XML instruction templates (`<role-instructions type="...">`) to keep the agent strictly focused.
 
-3. **CJK Localization & TUI Alignment check in visual-qa (시각 검증 룰 강화)**
-   - **특성**: 제미나이의 비전(Vision) 분석 기능은 한글 단어가 레이아웃에서 아랫부분이 잘리거나(baseline drop), 단어 중간이 이상한 자모 단위로 개행되거나(keep-all wrap 부재), 터미널 borders 격자가 뒤틀리는 등의 현상을 놓치기 쉽습니다.
-   - **개선점**: [visual-qa/SKILL.md](file:///skills/visual-qa/SKILL.md)의 Pass A/B 검증 가이드를 확장하여, 한글 줄바꿈 스타일(`keep-all`, `break-all`), CJK 자모 깨짐(tofu 현상), TUI 박스 드로잉 정렬 상태를 수동/자동 오라클 단계에서 감시하도록 보충했습니다.
+3. **CJK Localization & TUI Alignment Auditing**
+   - **Gemini Trait**: Visual encoders are prone to missing subtle Korean/Japanese/Chinese text clips (baseline drop), semantic CJK word wraps, or terminal border misalignments.
+   - **Improvement**: Extended the Pass A/B check guidelines in [visual-qa/SKILL.md](file:///skills/visual-qa/SKILL.md) to explicitly require auditing for CJK wrap styles (`keep-all`, `break-all`), glyph drop (tofu), and TUI box-drawing grids.
 
-4. **LSP Diagnostics Parallelization (LSP 진단 병렬 실행 최적화)**
-   - **특성**: 제미나이가 타입 안전성을 지키며 고속 코딩을 하기 위해 정적 분석 피드백이 실시간으로 피드백되어야 합니다.
-   - **개선점**: 기존 수정된 여러 파일에 대해 순차적으로 돌던 LSP 진단 검사를 `Promise.all` 기반 병렬 실행으로 변경하여, 대기 지연 시간을 최대 4.5초에서 1.5초 이하로 줄여 프롬프트 전송 반응 속도를 극대화했습니다.
+4. **Parallelized LSP Diagnostics**
+   - **Gemini Trait**: Fast, type-safe generation requires immediate feedback on compile errors.
+   - **Improvement**: Parallelized the LSP diagnostics retrieval loop inside [prompt-amplifier.mjs](file:///prompt-amplifier.mjs) using `Promise.all`, reducing the maximum submit hook latency from 4.5 seconds down to a max of 1.5 seconds.
 
-5. **Secure Context Masking (민감 정보 유출 방지 보안 필터)**
-   - **특성**: 세션 메모리 및 임시 메모장(`.omx/notepad.md`, `project-memory.json`) 등에 API 키나 민감한 토큰이 실수로 기재되는 경우, 검증 없이 그대로 외부 LLM API로 전송되는 보안적 위험이 있습니다.
-   - **개선점**: `sanitizeSecrets` 헬퍼 함수를 주입하여 매칭되는 API Key, JWT, Bearer 토큰, 패스워드 패턴 등을 `[REDACTED_SECRET]` 문자열로 안전하게 실시간 마스킹 치환한 뒤 LLM으로 전달하도록 완벽히 보완했습니다.
+5. **Secure Context Masking (Credential leak prevention)**
+   - **Gemini Trait**: API keys, credentials, or private keys written inside `.omx/notepad.md` or `project-memory.json` might accidentally get exposed to external LLM API endpoints.
+   - **Improvement**: Injected the `sanitizeSecrets` helper to identify JWTs, AWS credentials, Bearer tokens, and password formats, automatically replacing them with `[REDACTED_SECRET]` in real-time before sending to the model.
 
-6. **0ms Latency Background Hook Delegation (비동기 백그라운드 훅 분리)**
-   - **특성**: 에이전트 시작 시 텔레메트리 전송 및 자동 업데이트 확인 등의 무거운 시스템 훅이 동기적으로 순차 대기하여 기동 시 최대 5~10초의 초기 입력 대기 렉이 존재했습니다.
-   - **개선점**: `hook-runner.mjs`에 `BACKGROUND` 정책을 추가하여 이들 훅을 완전 비동기 `detached` 프로세스로 분리 스폰하고, 부모 프로세스는 지연 대기 없이 단 60ms 이내에 즉시 기동하도록 해결했습니다.
+6. **0ms Latency Background Hook Delegation**
+   - **Gemini Trait**: Large initial session setup operations (like telemetry logs and auto-update checks) block user prompts when run synchronously.
+   - **Improvement**: Added a `BACKGROUND` execution policy to `hook-runner.mjs` to spawn these processes in a completely detached background mode, cutting initial session prompt latency down to less than 60ms.
 
-7. **Dynamic Target LSP Extensions & Sorting (LSP 대상 파일 동적 파싱 및 우선순위화)**
-   - **특성**: 무작정 스캔 확장자 범위를 넓히면 LSP가 세팅되지 않은 임의의 파일이 수정될 때마다 800ms의 무의미한 IPC 타임아웃 렉이 누적되는 지연 병목이 발생하며, 삭제된 무효 파일이나 특수문자 파일명이 진단 슬롯을 독차지하는 결함이 있었습니다.
-   - **개선점**: 기본 검사 풀을 실제 데몬이 구동되는 핵심 확장자(`ts, tsx, go, py, rs`)로만 원복하는 동시에, `.codex/lsp-client.json` 설정 파일이 존재할 경우에만 설정된 언어의 확장자를 안전하게 동적 추가하도록 차단 설계했습니다. 또한 `git status` 변경 중요도(Modified = 3, Added = 2 등)를 점수화하고, `fs.existsSync` 필터를 거쳐 실제로 물리적으로 존재하는 유효 파일들만 선별 정렬해 스캔 슬롯을 할당하도록 개선했습니다.
+7. **Dynamic LSP Target Extensions & Priority Sorting**
+   - **Gemini Trait**: Blindly expanding scanned extensions risks triggering useless IPC timeouts (800ms per file) for languages without local LSP server installations. In addition, deleted files or invalid paths can hog active diagnosis slots.
+   - **Improvement**: Reverted default target extensions to the core 5 languages (`ts, tsx, go, py, rs`) and designed it to dynamically append other extensions only when explicit LSP configurations are detected in `.codex/lsp-client.json`. Added git status priority weights (Modified = 3, Added = 2) and integrated physical file existence filters (`fs.existsSync`) to prune deleted or malformed files from the scan queue.
 
 ---
 
 ## ⚡ Quick Start
 
-> **Prerequisite / 전제 조건**: [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity) must be installed. / 설치되어 있어야 합니다.
+> **Prerequisite**: [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity) must be installed.
 
-### 1. Plugin Clone / 플러그인 클론
+### 1. Plugin Clone
 
 #### macOS / Linux / Git Bash
 ```bash
@@ -138,46 +138,34 @@ bunx oh-my-openagent install
 npx lazycodex-ai install
 ```
 
-### 2. Launch Session Browser / 세션 브라우저 기동
+### 2. Launch Session Browser
 
 After installation, restart your Antigravity agent session. Then run **inside the agent session**:
-
-설치 후 Antigravity 에이전트를 재시작하고, **에이전트 세션 내부에서** 실행:
 ```
 $browse
 ```
 *(Auto-boots Next.js dev server on port 3000 if inactive, then opens the dashboard in your browser.)*
 
-*(포트 3000이 미기동 시 Next.js 개발 서버를 자동 기동한 뒤 대시보드를 엽니다.)*
-
 ---
 
 ## 🤖 Supported Models
 
-lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합니다. Gemini 3.5 Flash에 최적화되어 있지만, 작업의 복잡도에 따라 다른 모델도 자유롭게 사용할 수 있습니다.
+lazyantigravity works on **all models supported by Antigravity**. While optimized for Gemini 3.5 Flash, you can use any model depending on the task complexity.
 
 | Model | Recommended Use Case |
 | :--- | :--- |
-| **Gemini 3.5 Flash** (High/Medium) | 빠른 반복 작업, 디버깅, 코드베이스 탐색 — 기본 추천 모델 |
-| **Gemini 3.1 Pro** (High) | Claude 쿼터가 제한적일 때의 고품질 대안 |
-| **Claude Opus 4.6** (Thinking) | 아키텍처 설계, 복잡한 리팩토링, 깊은 분석 |
-| **Claude Sonnet** | 일반적인 구현 작업 |
+| **Gemini 3.5 Flash** (High/Medium) | Rapid iterative work, debugging, codebase exploration — Default recommended model |
+| **Gemini 3.1 Pro** (High) | High-quality alternative when Claude quota is limited |
+| **Claude Opus 4.6** (Thinking) | System design, complex refactoring, deep analysis |
+| **Claude Sonnet** | General implementation tasks |
 
-> 💡 **ULW Model Routing**: `ulw` / `ulw-loop` 실행 시, 각 역할(planner, worker, verifier)에 최적의 모델을 자동으로 추천합니다. 사용자가 현재 선택한 모델이 모든 서브에이전트에 상속됩니다.
+> 💡 **ULW Model Routing**: During `ulw` / `ulw-loop` execution, subagents automatically inherit the model selected in the Antigravity UI dropdown.
 
 ---
 
 ## 🎮 Core Commands & Magic Keywords
 
 > [!IMPORTANT]
-> **핵심 권장 사항 (Just use `ulw`!)**
-> - **다른 복잡한 스킬들은 몰라도, 그냥 `ulw` (또는 `ultrawork`) 하나만 입력해서 사용하면 됩니다!** 이 스킬이 코드를 알아서 분석/수정하고 테스트를 수행하여 100% 검증될 때까지 자동으로 루프를 수행하는 핵심 코딩 엔진입니다.
-> - **`ulw`와 `ralph`는 어떻게 다른가요?**
->   - **`ulw` (실행 엔진)**: 실제로 파일을 생성/수정하고 테스트 코드를 돌리며 기능을 구현하는 **주요 동력**입니다.
->   - **`ralph` (안전 장치 / 복원 루프)**: 오랜 작업 중 API 호출 한도 초과나 세션 끊김으로 에이전트가 멈추었을 때, **기존의 에이전트 상태를 ledger(로그)로부터 복구하여 멈춘 자리에서부터 안전하게 작업을 이어가도록 보장하는 영속성 장치**입니다.
-> 
-> ---
-> 
 > **Key Recommendation (Just use `ulw`!)**
 > - **If you remember only one command, make it `ulw` (or `ultrawork`)!** It is the primary engine that implements features, writes tests, and runs iterative loops until the codebase is 100% verified.
 > - **How does `ulw` differ from `ralph`?**
@@ -238,9 +226,9 @@ A Next.js–powered local dashboard that replaces the chaos of scrolling termina
 Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 
 > [!NOTE]
-> **How it works / 작동 원리**
-> - **Workflow Engines (6개 / 6 skills)**: 전체 자율 코딩 루프와 에이전트 조율을 주도하는 **뇌(Brain)** 역할을 합니다. / Act as the **"Brain/Orchestrator"** leading the autonomous loop.
-> - **Specialized Skills (20개 / 20 skills)**: 코딩 루프 실행 중 코드를 수정하거나 검증할 때 백그라운드 훅(Lifecycle Hooks)으로 자동 연동되거나 필요에 따라 엔진에 의해 호출(Call)되는 **도구 및 품질 게이트** 역할을 합니다. / Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks.
+> **How it works**
+> - **Workflow Engines (6 skills)**: Act as the **"Brain/Orchestrator"** leading the autonomous loop.
+> - **Specialized Skills (20 skills)**: Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks.
 
 | Category | Skills | Description |
 | :--- | :--- | :--- |
@@ -379,43 +367,43 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 
 ## 🧬 Heritage: Ouroboros → lazycodex → lazyantigravity
 
-`lazyantigravity`는 처음부터 새로 만든 프로젝트가 아닙니다. 여러 검증된 오픈소스 프로젝트의 아이디어와 코드를 **Google Gemini 모델에서 사용하기 위해** 구축되었습니다.
+`lazyantigravity` is not built from scratch. It is constructed to leverage the ideas and codebases of several proven open-source projects **specifically optimized for Google Gemini models**.
 
 ### [Ouroboros](https://github.com/Q00/ouroboros) — Agent OS
 
-**"Stop prompting. Start specifying."** 을 표방하는 Agent OS입니다.
+An Agent OS that advocates **"Stop prompting. Start specifying."**
 
-- **Spec-First 개발 철학**: AI 코딩 실패의 대부분은 AI 능력 부족이 아니라 인간의 모호한 지시에서 비롯된다는 관점에서, **소크라테스식 Spec-Interview**를 통해 모호성을 수치화(Ambiguity Score ≤ 0.2)하고 요구사항을 결정화(Crystallize)한 뒤에만 실행을 허용합니다.
-- **Seed-Bound Execution**: 모든 에이전트 행동이 렛저(Ledger)에 기록되고 시드에 바인딩되어, 감사 가능(Auditable)하고 리플레이 가능(Replayable)한 실행 계약을 보장합니다.
-- **Interview → Crystallize → Execute → Evaluate → Evolve**: 평가 결과가 다음 세대의 명세에 피드백되는 자기진화 루프 — 뱀이 자기 꼬리를 삼키는 우로보로스 상징 그 자체입니다.
-- **Ralph Persistence Loop**: 세션 경계를 넘어 에이전트가 지속 실행되도록 하는 자기참조 루프. 이벤트 스토어를 통해 상태를 재구성하므로 머신이 재시작되어도 정확히 중단 지점에서 재개됩니다.
-- **Multi-Runtime 지원**: Claude Code, Codex CLI, OpenCode, Gemini 등 다양한 AI CLI 도구와 통합됩니다.
+- **Spec-First Philosophy**: Grounded in the perspective that most AI coding failures stem from ambiguous human instructions rather than lack of AI capability. It crystallizes requirements via a **Socratic Spec-Interview** (targeting Ambiguity Score ≤ 0.2) before permitting execution.
+- **Seed-Bound Execution**: All agent actions are recorded in a ledger and bound to a unique seed, ensuring an auditable and replayable execution contract.
+- **Interview → Crystallize → Execute → Evaluate → Evolve**: A self-evolving loop where evaluation results are fed back into the next iteration's specification—the very symbol of Ouroboros swallowing its own tail.
+- **Ralph Persistence Loop**: A self-referential loop that allows the agent to execute persistently across session boundaries. It reconstructs state via an event store, enabling it to resume exactly where it was interrupted even after system restarts.
+- **Multi-Runtime Support**: Integrates with various AI CLI tools including Claude Code, Codex CLI, OpenCode, and Gemini.
 
 ### [lazycodex](https://github.com/code-yeongyu/lazycodex) — Agent Harness
 
-복잡한 코드베이스를 위한 **에이전트 하네스(Agent Harness)** 입니다. [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO)를 통해 설치되며, 단순한 프롬프트 대화를 넘어 AI 코딩 에이전트에 구조와 규율을 부여합니다.
+An **Agent Harness** designed for complex codebases. Installed via [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) (OmO), it gives structure and discipline to AI coding agents beyond mere chat prompts.
 
-- **라이프사이클 훅 시스템**: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop` — 7개 이벤트에 훅을 걸어 에이전트의 모든 행동을 감시하고 보강합니다.
-- **스킬 레지스트리**: 키워드로 자동 트리거되는 조합형 스킬 아키텍처. `$name` 또는 매직 키워드로 호출됩니다.
-- **oh-my-codex (OMX) 오케스트레이션**: 20개 이상의 전문 에이전트 카탈로그(architect, executor, debugger 등), 복잡도 기반 모델 라우팅, 팀 파이프라인(`team-plan → team-prd → team-exec → team-verify → team-fix`)을 갖춘 멀티 에이전트 위임 프로토콜.
-- **Comment Checker**: PostToolUse 훅으로 동작. AI가 코드 편집 시 사용자 주석을 조용히 삭제하는 것을 실시간 감지하고 경고합니다.
-- **LSP 진단**: PostToolUse 훅으로 파일 편집 직후 실시간 타입 체크 및 코드 인텔리전스를 제공합니다.
-- **프롬프트 앰플리파이어 & 밀도 분석기**: UserPromptSubmit 훅으로 모델이 프롬프트를 처리하기 전에 밀도를 점수화하고, 제약 조건을 주입하며, 프로젝트 규칙에서 자동 컨텍스트를 확장합니다.
-- **프로젝트 규칙 엔진**: 프로젝트별 코딩 표준(AGENTS.md, .rules 등)을 자동 로드하고 강제합니다.
-- **두 에디션**: Ultimate 에디션(OpenCode용, Sisyphus 오케스트레이션 + 54개 이상 훅)과 Light 에디션(Codex CLI 플러그인용, 핵심 기능 포커스).
+- **Lifecycle Hook System**: Intercepts 7 lifecycle events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostCompact`, `Stop`, `SubagentStop`) to monitor and enhance all agent activities.
+- **Skill Registry**: A composable skill architecture automatically triggered by keywords or explicitly invoked via `$name` or `/name`.
+- **oh-my-codex (OMX) Orchestration**: A multi-agent delegation protocol featuring a catalog of over 20 specialized agent roles (architect, executor, debugger, etc.), complexity-aware model routing, and a structured team pipeline (`team-plan → team-prd → team-exec → team-verify → team-fix`).
+- **Comment Checker**: Runs as a PostToolUse hook to detect and prevent the agent from silently deleting explanatory comments or docstrings during edits.
+- **LSP Diagnostics**: Runs as a PostToolUse hook to provide real-time type checking and code intelligence immediately after editing files.
+- **Prompt Amplifier & Density Analyzer**: Runs as a UserPromptSubmit hook to score prompt density, inject prompt constraints, and dynamically load rules prior to model execution.
+- **Project Rule Engine**: Automatically loads and enforces workspace-specific coding standards (e.g., AGENTS.md, .rules files).
+- **Dual Editions**: Ultimate Edition (for OpenCode with Sisyphus Orchestration and 54+ hooks) and Light Edition (focused plugin for Codex CLI).
 
-### lazyantigravity — 이 프로젝트
+### lazyantigravity — This Project
 
-위의 모든 것을 상속받은 위에, **Google Antigravity(Gemini CLI)** 환경에 특화된 확장 레이어를 추가했습니다:
+Inheriting all of the capabilities above, it adds an extension layer tailored for the **Google Antigravity (Gemini CLI)** environment:
 
-- **All-Model Support**: Antigravity가 제공하는 모든 모델(Gemini 3.5 Flash, Gemini 3.1 Pro, Claude Opus, Claude Sonnet)과 호환. ULW Model Routing으로 역할별 최적 모델을 자동 추천합니다.
-- **asbrowse 비주얼 대시보드**: 터미널 로그 혼란을 대체하는 Next.js 기반 Command Center.
-- **Hash-Anchored Edits (Hashline)**: AI 에이전트가 낡은 라인 번호를 참조하여 코드를 오염시키는 "Harness Problem"을 콘텐츠 해시 검증으로 제거.
-- **29개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 웹사이트 클로너, 조건부 규칙 동기화, 동적 스킬 생성기 등.
-- **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
-- **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
+- **All-Model Support**: Fully compatible with all models supported by Antigravity. Automatically recommends the optimal model per role via ULW Model Routing.
+- **asbrowse Visual Dashboard**: A Next.js-powered command center that replaces chaotic terminal logs with a structured visual interface.
+- **Hash-Anchored Edits (Hashline)**: Eliminates the "Harness Problem" (where AI corrupts code by referencing outdated line numbers) using content hash validation.
+- **29 Specialized Skills**: Includes ultraresearch swarms, visual QA, TDD workflows, web cloner, conditional rule synchronization, dynamic skill generators, and more.
+- **ulw-loop**: An evidence-audited, multi-goal orchestration engine with safe-resume checkpoints.
+- **Skill-Embedded MCPs**: On-demand MCP servers that launch inside specific skills and close when done, avoiding context window bloat.
 
-Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
+All core features of Ouroboros and lazycodex are **fully inherited and functional**—lazyantigravity extends them rather than replacing them.
 
 ---
 
@@ -447,13 +435,13 @@ Contributions are welcome! See the [English Guide](src/README.md) or [한국어 
 
 <br />
 
-이 프로젝트는 **our (Ouroboros)**, **lazycodex**, **omo (oh-my-openagent)**, **abworser (asbrowse)** 등 다양한 프로젝트의 혁신적인 아이디어와 코드베이스를 계승하고 확장하여 구축되었습니다. 뛰어난 설계와 영감을 나눠주신 개발자분들께 깊은 감사를 드립니다.
+This project inherits and extends the innovative ideas and codebases of various projects, including **our (Ouroboros)**, **lazycodex**, **omo (oh-my-openagent)**, and **abworser (asbrowse)**. Deep gratitude is extended to the developers who shared their outstanding designs and inspirations.
 
 </div>
 
 ### 🙏 Acknowledgments
 
-이 프로젝트에는 다음 오픈소스 프로젝트들의 아이디어와 코드가 반영되어 있습니다. 감사합니다.
+This project incorporates ideas and code from the following open-source projects. Thank you.
 
 | Project | Maintainer | Contribution |
 | :--- | :--- | :--- |
