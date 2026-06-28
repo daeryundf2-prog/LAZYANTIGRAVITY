@@ -186,6 +186,7 @@ async function main() {
 2. Review code diffs line-by-line; check for type safety, missing error handling, or performance slops.
 3. For UI or terminal output, enforce CJK text clipping, responsive wrap limits, and alignment checks.
 4. Do not trust worker reports; verify by re-running tests and inspection commands.
+5. Absolute Hallucination Ban: Never accept simulated or hand-written test run logs. The evidence MUST reside in a physical output file you can query or execute.
 </role-instructions>
 `.trim();
 	} else if (lowerPrompt.includes("worker") || lowerPrompt.includes("implementation") || lowerPrompt.includes("debugging")) {
@@ -194,6 +195,7 @@ async function main() {
 1. Apply the smallest, cleanest, type-safe change that satisfies the success criteria.
 2. Adhere to zero-slop coding guidelines: keep functions under 250 lines, avoid "any" types, and check imports.
 3. Ensure any new file edits are locked by unit/integration tests before claiming completion.
+4. Absolute Hallucination Ban: Never claim a feature is verified based on simulated output. You must write a physical test and run it, or output the real CLI output to a verified evidence file.
 </role-instructions>
 `.trim();
 	}
@@ -233,6 +235,24 @@ async function main() {
 			const parsed = JSON.parse(rawMem);
 			if (parsed && typeof parsed === "object") {
 				additionalContextParts.push(`<project-memory>\n${sanitizeSecrets(safeJsonSlice(parsed, 2000))}\n</project-memory>`);
+			}
+		} catch {}
+	}
+
+	// 3.5. Gather Active ULW-Loop Specifications
+	const ulwBriefPath = join(cwd, ".omo", "ulw-loop", "brief.md");
+	const ulwGoalsPath = join(cwd, ".omo", "ulw-loop", "goals.json");
+	if (existsSync(ulwBriefPath) && existsSync(ulwGoalsPath)) {
+		try {
+			const brief = readFileSync(ulwBriefPath, "utf8").trim();
+			const goals = readFileSync(ulwGoalsPath, "utf8").trim();
+			if (brief && goals) {
+				additionalContextParts.push(
+					`<active-ulw-loop-goals>\n` +
+					`[BRIEF]\n${safeMarkdownSlice(brief, 1500)}\n\n` +
+					`[GOALS]\n${safeJsonSlice(JSON.parse(goals), 1500)}\n` +
+					`</active-ulw-loop-goals>`
+				);
 			}
 		} catch {}
 	}

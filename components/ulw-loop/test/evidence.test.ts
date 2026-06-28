@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
+import { writeFileSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -259,5 +260,68 @@ describe("unresolvedCriteriaOf (pure)", () => {
 		const unresolved = unresolvedCriteriaOf(goal);
 
 		expect(unresolved.map((c) => c.id)).toEqual(["C002", "C003"]);
+	});
+});
+
+describe("recordEvidence physical matching verification", () => {
+	it("throws when physical evidence file path is specified but does not exist", async () => {
+		const repo = await bootstrapRepo(makePlan());
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: "file:///nonexistent-evidence-file.txt",
+			}),
+		).rejects.toThrow("Physical evidence file not found");
+	});
+
+	it("throws when physical evidence file is outdated (> 30s)", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "outdated-evidence.txt");
+		writeFileSync(file, "success criteria passed");
+		const time = (Date.now() - 60000) / 1000;
+		utimesSync(file, time, time);
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow("Physical evidence file is outdated");
+	});
+
+	it("throws when physical evidence file contains failure/error keyword", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "error-evidence.txt");
+		writeFileSync(file, "TypeError: invalid arguments passed to auth");
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow("Physical evidence file contains error/failure keyword");
+	});
+
+	it("succeeds when physical evidence file is valid and recent", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "valid-evidence.txt");
+		writeFileSync(file, "JUnit Tests passed! failed: 0, errors: 0");
+
+		const result = await recordEvidence(repo, {
+			goalId: "G001",
+			criterionId: "C001",
+			status: "pass",
+			evidence: `file://${file}`,
+		});
+
+		expect(result.criterion.status).toBe("pass");
+		expect(result.criterion.capturedEvidence).toContain(file);
 	});
 });

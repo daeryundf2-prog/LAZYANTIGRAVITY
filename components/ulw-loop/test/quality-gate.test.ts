@@ -1,6 +1,5 @@
 import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
@@ -78,14 +77,7 @@ const VALID_GATE = {
 		adversarialClassesCovered: ["malformed_input", "stale_state"],
 	},
 } as const;
-let repoRoot = fileURLToPath(new URL("../../../../../..", import.meta.url));
-if (!existsSync(resolve(repoRoot, "packages"))) {
-	const altPath = fileURLToPath(new URL("../../..", import.meta.url));
-	if (existsSync(resolve(altPath, "src/packages"))) {
-		repoRoot = resolve(altPath, "src");
-	}
-}
-const REPO_ROOT = repoRoot;
+const REPO_ROOT = fileURLToPath(new URL("../../../../../..", import.meta.url));
 const FS_OPTS = { repoRoot: REPO_ROOT, fs: { existsSync, statSync } } as const;
 
 function makeGate(overrides: Record<string, unknown> = {}): Record<string, unknown> {

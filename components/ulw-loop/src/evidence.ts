@@ -3,7 +3,7 @@ import type { UlwLoopScope } from "./paths.js";
 import { appendLedger, readUlwLoopPlan, withUlwLoopMutationLock, writePlan } from "./plan-io.js";
 import type { UlwLoopItem, UlwLoopLedgerEntry, UlwLoopPlan, UlwLoopSuccessCriterion } from "./types.js";
 import { iso, UlwLoopError } from "./types.js";
-import { verifyPhysicalEvidence } from "./verify-physical.js";
+import { verifyPhysicalEvidenceFile } from "./evidence-verifier.js";
 
 type EvidenceStatus = "pass" | "fail" | "blocked";
 type RecordEvidenceArgs = {
@@ -14,7 +14,7 @@ type RecordEvidenceArgs = {
 	readonly notes?: string;
 };
 
-function ulwLoopFail(message: string, code: string, details: Record<string, unknown> = {}): never {
+function ulwLoopFail(message: string, code: string, details: Record<string, unknown>): never {
 	throw new UlwLoopError(message, code, { details });
 }
 
@@ -68,8 +68,8 @@ export async function recordEvidence(
 		const criterion = findCriterion(goal, args.criterionId);
 		const evidence = nonEmptyEvidence(args.evidence);
 
-		if (args.status === "pass" && !process.env["VITEST"] && process.env["NODE_ENV"] !== "test") {
-			verifyPhysicalEvidence(repoRoot, evidence);
+		if (args.status === "pass") {
+			verifyPhysicalEvidenceFile(repoRoot, evidence);
 		}
 
 		const kind = ledgerKind(args.status);
