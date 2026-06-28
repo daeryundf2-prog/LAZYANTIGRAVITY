@@ -1,4 +1,4 @@
-import { utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,6 +10,7 @@ import {
 	recordEvidence,
 	unresolvedCriteriaOf,
 } from "../src/evidence.js";
+import { physicalEvidenceFreshness } from "../src/evidence-verifier.js";
 import { ulwLoopDir } from "../src/paths.js";
 import { readUlwLoopPlan, writePlan } from "../src/plan-io.js";
 import type { UlwLoopItem, UlwLoopLedgerEntry, UlwLoopPlan, UlwLoopSuccessCriterion } from "../src/types.js";
@@ -22,6 +23,18 @@ async function bootstrapRepo(plan: UlwLoopPlan): Promise<string> {
 	await mkdir(ulwLoopDir(repo), { recursive: true });
 	await writePlan(repo, plan);
 	return repo;
+}
+
+function evidenceFilePath(repo: string, name: string): string {
+	const dir = join(repo, ".omo", "ulw-loop", "evidence");
+	mkdirSync(dir, { recursive: true });
+	return join(dir, name);
+}
+
+function evidenceFileUrl(repo: string, name: string, content = "tests passed"): string {
+	const file = evidenceFilePath(repo, name);
+	writeFileSync(file, content);
+	return `file://${file}`;
 }
 
 async function readLastLedgerEntry(repo: string): Promise<UlwLoopLedgerEntry> {
@@ -86,23 +99,28 @@ function makePlan(overrides: Partial<UlwLoopPlan> = {}): UlwLoopPlan {
 describe("recordEvidence (status=pass)", () => {
 	it("sets criterion.status=pass + capturedEvidence + capturedAt", async () => {
 		const repo = await bootstrapRepo(makePlan());
+		const file = evidenceFilePath(repo, "pass-captured.txt");
+		writeFileSync(file, "curl /login returns 200 + token verified");
+		const evidence = `file://${file}`;
 
 		const result = await recordEvidence(repo, {
 			goalId: "G001",
 			criterionId: "C001",
 			status: "pass",
-			evidence: "curl /login returns 200 + token verified",
+			evidence,
 		});
 
 		expect(result.criterion.status).toBe("pass");
-		expect(result.criterion.capturedEvidence).toContain("curl /login returns 200");
+		expect(result.criterion.capturedEvidence).toContain(file);
+		await expect(readFile(file, "utf8")).resolves.toContain("curl /login returns 200");
 		expect(result.criterion.capturedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 	});
 
 	it("appends evidence_captured ledger event", async () => {
 		const repo = await bootstrapRepo(makePlan());
+		const evidence = evidenceFileUrl(repo, "ledger-pass.txt");
 
-		await recordEvidence(repo, { goalId: "G001", criterionId: "C001", status: "pass", evidence: "observable proof" });
+		await recordEvidence(repo, { goalId: "G001", criterionId: "C001", status: "pass", evidence });
 
 		const last = await readLastLedgerEntry(repo);
 		expect(last.kind).toBe("evidence_captured");
@@ -112,8 +130,9 @@ describe("recordEvidence (status=pass)", () => {
 
 	it("persists the change so a fresh read sees status=pass", async () => {
 		const repo = await bootstrapRepo(makePlan());
+		const evidence = evidenceFileUrl(repo, "persisted-pass.txt");
 
-		await recordEvidence(repo, { goalId: "G001", criterionId: "C001", status: "pass", evidence: "observable proof" });
+		await recordEvidence(repo, { goalId: "G001", criterionId: "C001", status: "pass", evidence });
 
 		const criterion = firstGoal(await readUlwLoopPlan(repo)).successCriteria.find((c) => c.id === "C001");
 		expect(criterion?.status).toBe("pass");
@@ -175,6 +194,19 @@ describe("recordEvidence error cases", () => {
 		await expect(
 			recordEvidence(repo, { goalId: "G001", criterionId: "C001", status: "pass", evidence: "   " }),
 		).rejects.toBeInstanceOf(UlwLoopError);
+	});
+
+	it("throws when passing evidence does not include a physical file artifact", async () => {
+		const repo = await bootstrapRepo(makePlan());
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: "observable proof without file artifact",
+			}),
+		).rejects.toThrow("Passing evidence must include a physical file:// artifact");
 	});
 });
 
@@ -279,7 +311,7 @@ describe("recordEvidence physical matching verification", () => {
 
 	it("throws when physical evidence file is outdated (> 30s)", async () => {
 		const repo = await bootstrapRepo(makePlan());
-		const file = join(repo, "outdated-evidence.txt");
+		const file = evidenceFilePath(repo, "outdated-evidence.txt");
 		writeFileSync(file, "success criteria passed");
 		const time = (Date.now() - 60000) / 1000;
 		utimesSync(file, time, time);
@@ -296,7 +328,7 @@ describe("recordEvidence physical matching verification", () => {
 
 	it("throws when physical evidence file contains failure/error keyword", async () => {
 		const repo = await bootstrapRepo(makePlan());
-		const file = join(repo, "error-evidence.txt");
+		const file = evidenceFilePath(repo, "error-evidence.txt");
 		writeFileSync(file, "TypeError: invalid arguments passed to auth");
 
 		await expect(
@@ -311,7 +343,7 @@ describe("recordEvidence physical matching verification", () => {
 
 	it("succeeds when physical evidence file is valid and recent", async () => {
 		const repo = await bootstrapRepo(makePlan());
-		const file = join(repo, "valid-evidence.txt");
+		const file = evidenceFilePath(repo, "valid-evidence.txt");
 		writeFileSync(file, "JUnit Tests passed! failed: 0, errors: 0");
 
 		const result = await recordEvidence(repo, {
@@ -325,9 +357,25 @@ describe("recordEvidence physical matching verification", () => {
 		expect(result.criterion.capturedEvidence).toContain(file);
 	});
 
+	it("accepts a physical evidence file URL whose path contains spaces", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = evidenceFilePath(repo, "valid evidence with spaces.txt");
+		writeFileSync(file, "tests passed");
+
+		const result = await recordEvidence(repo, {
+			goalId: "G001",
+			criterionId: "C001",
+			status: "pass",
+			evidence: `file://${file} | cleanup: none`,
+		});
+
+		expect(result.criterion.status).toBe("pass");
+		expect(result.criterion.capturedEvidence).toContain(file);
+	});
+
 	it("uses filesystem time instead of Date.now for physical evidence freshness", async () => {
 		const repo = await bootstrapRepo(makePlan());
-		const file = join(repo, "clock-drift-evidence.txt");
+		const file = evidenceFilePath(repo, "clock-drift-evidence.txt");
 		writeFileSync(file, "tests passed");
 		const now = Date.now();
 		const clockSpy = vi.spyOn(Date, "now").mockReturnValue(now + 60000);
@@ -348,7 +396,7 @@ describe("recordEvidence physical matching verification", () => {
 
 	it("accepts common zero-failure test log phrases", async () => {
 		const repo = await bootstrapRepo(makePlan());
-		const file = join(repo, "zero-failure-evidence.txt");
+		const file = evidenceFilePath(repo, "zero-failure-evidence.txt");
 		writeFileSync(file, "No failures found\n0 tests failed\nfailure count: 0\nerror count: 0\n");
 
 		const result = await recordEvidence(repo, {
@@ -363,7 +411,7 @@ describe("recordEvidence physical matching verification", () => {
 
 	it("still rejects nonzero failure counts in physical evidence", async () => {
 		const repo = await bootstrapRepo(makePlan());
-		const file = join(repo, "nonzero-failure-evidence.txt");
+		const file = evidenceFilePath(repo, "nonzero-failure-evidence.txt");
 		writeFileSync(file, "1 test failed\n");
 
 		await expect(
@@ -374,5 +422,111 @@ describe("recordEvidence physical matching verification", () => {
 				evidence: `file://${file}`,
 			}),
 		).rejects.toThrow('Physical evidence file contains error/failure keyword: "fail"');
+	});
+
+	it("rejects physical evidence outside the ulw-loop evidence directory", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "outside-evidence.txt");
+		writeFileSync(file, "tests passed");
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow("Physical evidence file must be inside .omo/ulw-loop/evidence");
+	});
+
+	it("rejects obfuscated failure keywords in physical evidence", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = evidenceFilePath(repo, "obfuscated-failure-evidence.txt");
+		writeFileSync(file, "F-a-i-l: assertion did not match\n");
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow('Physical evidence file contains error/failure keyword: "fail"');
+	});
+
+	it("rejects unicode-normalized obfuscated failure keywords in physical evidence", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = evidenceFilePath(repo, "unicode-obfuscated-failure-evidence.txt");
+		writeFileSync(file, "Ｆ-Ａ-Ｉ-Ｌ: assertion did not match\n");
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow('Physical evidence file contains error/failure keyword: "fail"');
+	});
+
+	it("rejects symlinked physical evidence that escapes the evidence directory", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const outside = join(repo, "outside-target.log");
+		const link = evidenceFilePath(repo, "escaping-symlink.log");
+		writeFileSync(outside, "tests passed");
+		symlinkSync(outside, link);
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${link}`,
+			}),
+		).rejects.toThrow("Physical evidence file must be inside .omo/ulw-loop/evidence");
+	});
+
+	it("rejects physical evidence when the evidence directory itself is a symlink escape", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const outsideDir = join(repo, "outside-evidence-dir");
+		const evidenceDir = join(repo, ".omo", "ulw-loop", "evidence");
+		mkdirSync(outsideDir);
+		symlinkSync(outsideDir, evidenceDir, "dir");
+		const file = join(evidenceDir, "pass.log");
+		writeFileSync(file, "tests passed");
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow("Physical evidence file must be inside .omo/ulw-loop/evidence");
+	});
+
+	it("reports unavailable creation time as not fresh enough to trust", () => {
+		const reference = 1000;
+
+		const freshness = physicalEvidenceFreshness({ birthtimeMs: 0, mtimeMs: reference }, reference);
+
+		expect(freshness.createdAgeInMs).toBeNull();
+		expect(freshness.modifiedAgeInMs).toBe(0);
+	});
+
+	it("does not leave clock anchor artifacts after physical evidence verification", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = evidenceFilePath(repo, "anchor-cleanup-evidence.txt");
+		writeFileSync(file, "tests passed");
+
+		await recordEvidence(repo, {
+			goalId: "G001",
+			criterionId: "C001",
+			status: "pass",
+			evidence: `file://${file}`,
+		});
+
+		const ulwFiles = readdirSync(join(repo, ".omo", "ulw-loop"));
+		expect(ulwFiles.filter((name) => name.startsWith(".evidence-clock-anchor"))).toEqual([]);
 	});
 });

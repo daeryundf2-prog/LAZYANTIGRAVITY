@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const componentRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const builtCli = join(componentRoot, "dist", "cli.js");
@@ -20,10 +20,6 @@ function sanitizedEnv(): NodeJS.ProcessEnv {
 	delete env["CODEX_THREAD_ID"];
 	delete env["OMO_ULW_LOOP_SESSION_ID"];
 	return env;
-}
-
-async function runProcess(command: string, args: readonly string[], cwd: string): Promise<CliResult> {
-	return runProcessWithInput(command, args, cwd, "");
 }
 
 async function runProcessWithInput(
@@ -55,11 +51,6 @@ let workspace: string;
 async function runCli(args: readonly string[], input = ""): Promise<CliResult> {
 	return runProcessWithInput(process.execPath, [builtCli, ...args], workspace, input);
 }
-
-beforeAll(async () => {
-	const build = await runProcess("npm", ["run", "build"], componentRoot);
-	expect(build.code, `npm run build failed:\n${build.stderr}`).toBe(0);
-}, 120_000);
 
 beforeEach(async () => {
 	workspace = await mkdtemp(join(tmpdir(), "ulw-loop-entrypoint-"));

@@ -1,6 +1,7 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ulwLoopCommand } from "../src/cli-commands.ts";
@@ -11,6 +12,7 @@ let err: string[];
 let originalCodexSessionId: string | undefined;
 let originalCodexThreadId: string | undefined;
 let originalOmoSessionId: string | undefined;
+let evidenceCounter = 0;
 
 beforeEach(async () => {
 	testDir = await mkdtemp(join(tmpdir(), "ug-cli-"));
@@ -60,6 +62,14 @@ async function createPlan(brief = "- Goal A\n- Goal B"): Promise<Record<string, 
 	return parsed;
 }
 
+async function passingEvidenceUrl(label: string): Promise<string> {
+	const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
+	await mkdir(evidenceDir, { recursive: true });
+	const evidencePath = join(evidenceDir, `${label}-${++evidenceCounter}.log`);
+	await writeFile(evidencePath, `${label} passed\n`, "utf8");
+	return pathToFileURL(evidencePath).href;
+}
+
 describe("ulwLoopCommand help", () => {
 	it("prints usage when no subcommand", async () => {
 		expect(await ulwLoopCommand([])).toBe(0);
@@ -79,6 +89,7 @@ describe("ulwLoopCommand status", () => {
 describe("ulwLoopCommand record-evidence", () => {
 	it("records evidence + returns updated criterion", async () => {
 		await createPlan();
+		const evidenceUrl = await passingEvidenceUrl("curl-passed");
 
 		expect(
 			await ulwLoopCommand([
@@ -90,13 +101,13 @@ describe("ulwLoopCommand record-evidence", () => {
 				"--status",
 				"pass",
 				"--evidence",
-				"curl passed",
+				evidenceUrl,
 				"--json",
 			]),
 		).toBe(0);
 		expect(stdoutJson()).toMatchObject({
 			ok: true,
-			criterion: { id: "C001", status: "pass", capturedEvidence: "curl passed" },
+			criterion: { id: "C001", status: "pass", capturedEvidence: evidenceUrl },
 		});
 	});
 

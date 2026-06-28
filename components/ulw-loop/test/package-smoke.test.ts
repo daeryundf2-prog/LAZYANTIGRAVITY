@@ -1,6 +1,6 @@
 // biome-ignore-all format: smoke test pulls verbatim JSON for structural assertion.
 import { spawn } from "node:child_process";
-import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,6 +52,33 @@ async function runShell(script: string, env: NodeJS.ProcessEnv): Promise<ShellRe
 	});
 }
 
+async function runProcess(command: string, args: readonly string[], cwd: string): Promise<ShellResult> {
+	return new Promise((resolvePromise, reject) => {
+		const child = spawn(command, [...args], { cwd, env: process.env });
+		const stdout: Buffer[] = [];
+		const stderr: Buffer[] = [];
+		child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+		child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+		child.on("error", reject);
+		child.on("close", (code) => {
+			resolvePromise({
+				code,
+				stdout: Buffer.concat(stdout).toString("utf8"),
+				stderr: Buffer.concat(stderr).toString("utf8"),
+			});
+		});
+	});
+}
+
+async function copyTrackedComponentFiles(targetRoot: string): Promise<void> {
+	const listed = await runProcess("git", ["ls-files", "-z", "--", "."], repoRoot);
+	expect(listed.code, listed.stderr).toBe(0);
+	for (const relativePath of listed.stdout.split("\0").filter(Boolean)) {
+		await mkdir(dirname(join(targetRoot, relativePath)), { recursive: true });
+		await cp(join(repoRoot, relativePath), join(targetRoot, relativePath));
+	}
+}
+
 describe("package.json", () => {
 	it("declares ESM + npm + Node >=20", async () => {
 		const pkg = await readJson("package.json") as Record<string, unknown>;
@@ -74,6 +101,22 @@ describe("package.json", () => {
 		expect(files).toContain("hooks");
 		expect(files).toContain("skills");
 		expect(files).not.toContain(".codex-plugin");
+	});
+});
+
+describe("tracked package artifact", () => {
+	it("#given only git-tracked component files #when the bin starts #then ignored build outputs are not required", async () => {
+		const cleanRoot = await mkdtemp(join(tmpdir(), "ulw-loop-tracked-artifact-"));
+		try {
+			await copyTrackedComponentFiles(cleanRoot);
+
+			const result = await runProcess(process.execPath, ["dist/cli.js", "help"], cleanRoot);
+
+			expect(result.code, result.stderr).toBe(0);
+			expect(result.stdout).toContain("omo ulw-loop <subcommand>");
+		} finally {
+			await rm(cleanRoot, { recursive: true, force: true });
+		}
 	});
 });
 

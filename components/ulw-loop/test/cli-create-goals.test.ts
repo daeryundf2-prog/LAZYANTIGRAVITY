@@ -1,6 +1,7 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ulwLoopCommand } from "../src/cli-commands.ts";
@@ -13,6 +14,7 @@ let err: string[];
 let originalCodexSessionId: string | undefined;
 let originalCodexThreadId: string | undefined;
 let originalOmoSessionId: string | undefined;
+let evidenceCounter = 0;
 
 beforeEach(async () => {
 	testDir = await mkdtemp(join(tmpdir(), "ug-cli-create-goals-"));
@@ -71,6 +73,14 @@ async function createPlan(brief = "- Goal A\n- Goal B"): Promise<Record<string, 
 	return parsed;
 }
 
+async function passingEvidenceUrl(label: string): Promise<string> {
+	const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
+	await mkdir(evidenceDir, { recursive: true });
+	const evidencePath = join(evidenceDir, `${label}-${++evidenceCounter}.log`);
+	await writeFile(evidencePath, `${label} observable proof\n`, "utf8");
+	return pathToFileURL(evidencePath).href;
+}
+
 async function passCriterion(goalId: string, criterionId: string): Promise<void> {
 	expect(
 		await ulwLoopCommand([
@@ -82,7 +92,7 @@ async function passCriterion(goalId: string, criterionId: string): Promise<void>
 			"--status",
 			"pass",
 			"--evidence",
-			`${criterionId} observable proof`,
+			await passingEvidenceUrl(criterionId),
 		]),
 	).toBe(0);
 	resetOutput();

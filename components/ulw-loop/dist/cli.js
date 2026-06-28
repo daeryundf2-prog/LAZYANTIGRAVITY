@@ -212,7 +212,7 @@ import { readFile as readFile6 } from "node:fs/promises";
 // components/ulw-loop/src/checkpoint.ts
 import { existsSync as existsSync4, statSync as statSync2 } from "node:fs";
 import { readFile as readFile5 } from "node:fs/promises";
-import { resolve as resolve3 } from "node:path";
+import { resolve as resolve4 } from "node:path";
 
 // components/ulw-loop/src/checkpoint-reconciliation.ts
 import { existsSync } from "node:fs";
@@ -521,28 +521,68 @@ function formatCodexGoalReconciliation(reconciliation) {
 }
 
 // components/ulw-loop/src/evidence-verifier.ts
-import { existsSync as existsSync3, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { isAbsolute, join as join2 } from "node:path";
+import { randomUUID } from "node:crypto";
+import { existsSync as existsSync3, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { isAbsolute, join as join2, relative, resolve as resolve2 } from "node:path";
+import { fileURLToPath } from "node:url";
 var PHYSICAL_EVIDENCE_MAX_AGE_MS = 30000;
+var FAILURE_KEYWORDS = ["fail", "error", "exception", "failed", "unhandledrejection", "rejected"];
 function physicalEvidenceReferenceTimeMs(repoRoot) {
   const anchorDir = join2(repoRoot, ".omo", "ulw-loop");
   mkdirSync(anchorDir, { recursive: true });
-  const anchorPath = join2(anchorDir, ".evidence-clock-anchor");
-  writeFileSync(anchorPath, `${Date.now()}
+  const anchorPath = join2(anchorDir, `.evidence-clock-anchor-${process.pid}-${randomUUID()}`);
+  try {
+    writeFileSync(anchorPath, `${Date.now()}
 `);
-  return statSync(anchorPath).mtimeMs;
+    return statSync(anchorPath).mtimeMs;
+  } finally {
+    rmSync(anchorPath, { force: true });
+  }
 }
 function removeZeroFailurePhrases(content) {
   return content.replace(/\bno[ \t]+(?:tests?[ \t]+)?(?:failures?|errors?)[ \t]+found\b/g, "").replace(/\b0[ \t]+(?:tests?[ \t]+)?(?:fail(?:ed|s|ures?)?|errors?)\b/g, "").replace(/\b(?:fail(?:ed|s|count|ure|ures)?|error|errors)[ \t]*[:=]?[ \t]*0\b/g, "").replace(/\b(?:failure|error)[ \t]+count[ \t]*[:=]?[ \t]*0\b/g, "");
 }
-function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
-  const fileMatch = evidenceStr.match(/file:\/\/(?:localhost)?(\/[a-zA-Z0-9_\-./]+|[a-zA-Z]:\\[a-zA-Z0-9_\-.\\ ]+)/i);
-  if (!fileMatch) {
-    return;
+function compactForObfuscationScan(content) {
+  return content.normalize("NFKC").replace(/\x1b\[[0-9;]*m/g, "").replace(/[^a-z0-9]/g, "");
+}
+function detectedFailureKeyword(content) {
+  const cleanedContent = removeZeroFailurePhrases(content);
+  const compactedContent = compactForObfuscationScan(cleanedContent);
+  for (const keyword of FAILURE_KEYWORDS) {
+    if (cleanedContent.includes(keyword) || compactedContent.includes(keyword)) {
+      return keyword;
+    }
   }
-  const rawPath = fileMatch[1];
-  if (!rawPath) {
-    return;
+  return null;
+}
+function evidenceDir(repoRoot) {
+  return resolve2(repoRoot, ".omo", "ulw-loop", "evidence");
+}
+function isInsideDir(parentDir, filePath) {
+  const rel = relative(parentDir, filePath);
+  return rel.length > 0 && !rel.startsWith("..") && !isAbsolute(rel);
+}
+function extractPhysicalEvidencePath(evidenceStr) {
+  const fileUrlIndex = evidenceStr.search(/\bfile:\/\//i);
+  if (fileUrlIndex < 0) {
+    return null;
+  }
+  const fileUrlAndTail = evidenceStr.slice(fileUrlIndex);
+  const cleanupSeparator = fileUrlAndTail.match(/\s+\|\s+/);
+  const fileUrl = cleanupSeparator?.index === undefined ? fileUrlAndTail.trim() : fileUrlAndTail.slice(0, cleanupSeparator.index).trim();
+  return fileURLToPath(fileUrl);
+}
+function physicalEvidenceFreshness(stats, referenceTimeMs) {
+  const createdAgeInMs = Number.isFinite(stats.birthtimeMs) && stats.birthtimeMs > 0 ? referenceTimeMs - stats.birthtimeMs : null;
+  return {
+    createdAgeInMs,
+    modifiedAgeInMs: referenceTimeMs - stats.mtimeMs
+  };
+}
+function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
+  const rawPath = extractPhysicalEvidencePath(evidenceStr);
+  if (rawPath === null) {
+    throw new UlwLoopError("Passing evidence must include a physical file:// artifact under .omo/ulw-loop/evidence.", "ULW_LOOP_EVIDENCE_FILE_REQUIRED");
   }
   let cleanPath = rawPath;
   if (cleanPath.startsWith("///")) {
@@ -552,24 +592,34 @@ function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
   if (!isAbsolute(absolutePath)) {
     absolutePath = join2(repoRoot, absolutePath);
   }
+  absolutePath = resolve2(absolutePath);
   if (!existsSync3(absolutePath)) {
     throw new UlwLoopError(`Physical evidence file not found: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FOUND", {
       details: { path: absolutePath }
     });
   }
+  absolutePath = realpathSync(absolutePath);
+  const allowedDirPath = evidenceDir(realpathSync(repoRoot));
+  mkdirSync(allowedDirPath, { recursive: true });
+  if (!isInsideDir(allowedDirPath, absolutePath)) {
+    throw new UlwLoopError(`Physical evidence file must be inside .omo/ulw-loop/evidence: ${rawPath}.`, "ULW_LOOP_EVIDENCE_PATH_OUTSIDE_ROOT", { details: { path: absolutePath, evidenceDir: allowedDirPath } });
+  }
   const stats = statSync(absolutePath);
-  const ageInMs = physicalEvidenceReferenceTimeMs(repoRoot) - stats.mtimeMs;
-  if (ageInMs > PHYSICAL_EVIDENCE_MAX_AGE_MS) {
-    throw new UlwLoopError(`Physical evidence file is outdated (modified ${Math.round(ageInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_OUTDATED", { details: { path: absolutePath, ageInMs } });
+  const freshness = physicalEvidenceFreshness(stats, physicalEvidenceReferenceTimeMs(repoRoot));
+  if (freshness.modifiedAgeInMs > PHYSICAL_EVIDENCE_MAX_AGE_MS) {
+    throw new UlwLoopError(`Physical evidence file is outdated (modified ${Math.round(freshness.modifiedAgeInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_OUTDATED", { details: { path: absolutePath, ageInMs: freshness.modifiedAgeInMs } });
+  }
+  if (freshness.createdAgeInMs !== null && freshness.createdAgeInMs > PHYSICAL_EVIDENCE_MAX_AGE_MS) {
+    throw new UlwLoopError(`Physical evidence file was not freshly created (created ${Math.round(freshness.createdAgeInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FRESHLY_CREATED", { details: { path: absolutePath, ageInMs: freshness.createdAgeInMs } });
+  }
+  if (freshness.createdAgeInMs === null) {
+    throw new UlwLoopError(`Physical evidence file creation time is unavailable; rerun the evidence command into a new artifact: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_CREATION_TIME_UNAVAILABLE", { details: { path: absolutePath } });
   }
   try {
     const content = readFileSync(absolutePath, "utf8").toLowerCase();
-    const failureKeywords = ["fail", "error", "exception", "failed", "unhandledrejection", "rejected"];
-    const cleanedContent = removeZeroFailurePhrases(content);
-    for (const keyword of failureKeywords) {
-      if (cleanedContent.includes(keyword)) {
-        throw new UlwLoopError(`Physical evidence file contains error/failure keyword: "${keyword}".`, "ULW_LOOP_EVIDENCE_FILE_CONTAINS_ERRORS", { details: { path: absolutePath, keyword } });
-      }
+    const keyword = detectedFailureKeyword(content);
+    if (keyword !== null) {
+      throw new UlwLoopError(`Physical evidence file contains error/failure keyword: "${keyword}".`, "ULW_LOOP_EVIDENCE_FILE_CONTAINS_ERRORS", { details: { path: absolutePath, keyword } });
     }
   } catch (err) {
     if (err instanceof UlwLoopError)
@@ -777,7 +827,7 @@ function requireEssentialCriteriaPass(goal) {
 }
 
 // components/ulw-loop/src/quality-gate.ts
-import { resolve as resolve2 } from "node:path";
+import { resolve as resolve3 } from "node:path";
 
 // components/ulw-loop/src/quality-gate-fields.ts
 var PLACEHOLDER_PATTERN = /^(?:placeholder|todo|tbd|n\/a|stub)$/i;
@@ -905,7 +955,7 @@ function artifactCompatible(surface, kind) {
 function checkFile(path, field, opts) {
   if (opts === undefined)
     return;
-  const absolute = resolve2(opts.repoRoot, path);
+  const absolute = resolve3(opts.repoRoot, path);
   if (!opts.fs.existsSync(absolute))
     invalid(`${field} must point to an existing artifact.`, field);
   const stat = opts.fs.statSync(absolute);
@@ -1068,7 +1118,7 @@ async function readJsonInput2(raw, repoRoot) {
     if (!(error instanceof SyntaxError))
       throw error;
   }
-  const path = resolve3(repoRoot, trimmed);
+  const path = resolve4(repoRoot, trimmed);
   if (!existsSync4(path))
     return ulwLoopFail2("Quality gate JSON is neither valid JSON nor a readable path.", "ulw_loop_json_input_invalid");
   try {
@@ -2559,14 +2609,14 @@ function optionalString(value) {
   return value === undefined || typeof value === "string";
 }
 function readAll(stdin) {
-  return new Promise((resolve4, reject) => {
+  return new Promise((resolve5, reject) => {
     let data = "";
     stdin.setEncoding("utf8");
     stdin.on("data", (chunk) => {
       data += chunk instanceof Buffer ? chunk.toString() : String(chunk);
     });
     stdin.once("error", reject);
-    stdin.once("end", () => resolve4(data));
+    stdin.once("end", () => resolve5(data));
   });
 }
 
