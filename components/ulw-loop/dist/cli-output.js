@@ -4,6 +4,7 @@ export const ULW_LOOP_HELP = `Usage:
   omo ulw-loop status [--json]
   omo ulw-loop complete-goals [--retry-failed] [--json]
   omo ulw-loop criteria --goal-id <id> [--json]
+  omo ulw-loop capture-evidence [--output <path>] [--json] -- <command...>
   omo ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status pass|fail|blocked --evidence "..." [--notes "..."] [--json]
   omo ulw-loop checkpoint --goal-id <id> --status complete|failed|blocked --evidence "..." --codex-goal-json <...> [--quality-gate-json <...>] [--json]
   omo ulw-loop steer --kind <kind> ... --evidence "..." --rationale "..." [--json]

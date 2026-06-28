@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// components/ulw-loop/src/cli-arg-parser.ts
+// src/cli-arg-parser.ts
 import { readFile } from "node:fs/promises";
-// components/ulw-loop/src/constants.ts
+// src/constants.ts
 var ULW_LOOP_DIR = ".omo/ulw-loop";
 var ULW_LOOP_BRIEF = "brief.md";
 var ULW_LOOP_GOALS = "goals.json";
@@ -22,7 +22,7 @@ var ULW_LOOP_SUCCESS_CRITERION_USER_MODELS = [
   "regression",
   "adversarial"
 ];
-// components/ulw-loop/src/runtime.ts
+// src/runtime.ts
 class UlwLoopError extends Error {
   code;
   details;
@@ -38,9 +38,9 @@ class UlwLoopError extends Error {
 function iso() {
   return new Date().toISOString();
 }
-// components/ulw-loop/src/cli-arg-parser.ts
-var VALUE_FLAGS = new Set("--brief --brief-file --session-id --codex-goal-mode --goal --goal-id --criterion-id --status --evidence --notes --codex-goal-json --quality-gate-json --kind --rationale --title --objective --target-goal-id --source --after-json --directive-json --directive-file --idempotency-key".split(" "));
-var SUBCOMMANDS = new Set("create-goals status complete-goals criteria record-evidence checkpoint steer add-goal record-review-blockers".split(" "));
+// src/cli-arg-parser.ts
+var VALUE_FLAGS = new Set("--brief --brief-file --session-id --codex-goal-mode --goal --goal-id --criterion-id --status --evidence --notes --codex-goal-json --quality-gate-json --kind --rationale --title --objective --target-goal-id --source --after-json --directive-json --directive-file --idempotency-key --output".split(" "));
+var SUBCOMMANDS = new Set("create-goals status complete-goals criteria record-evidence capture-evidence checkpoint steer add-goal record-review-blockers".split(" "));
 function hasFlag(argv, flag) {
   return argv.includes(flag);
 }
@@ -127,13 +127,24 @@ function parseRecordEvidenceArgs(argv) {
   const notes = readValue(argv, "--notes")?.trim();
   return notes ? { ...result, notes } : result;
 }
+function parseCaptureEvidenceArgs(argv) {
+  const separator = argv.indexOf("--");
+  if (separator < 0 || separator === argv.length - 1) {
+    throw new UlwLoopError("Missing capture command after --.", "ULW_LOOP_CAPTURE_COMMAND_REQUIRED");
+  }
+  const optionArgs = argv.slice(0, separator);
+  const command = argv.slice(separator + 1);
+  const output = readValue(optionArgs, "--output")?.trim();
+  return output ? { output, command } : { command };
+}
 
-// components/ulw-loop/src/cli-output.ts
+// src/cli-output.ts
 var ULW_LOOP_HELP = `Usage:
   omo ulw-loop create-goals --brief "..." [--brief-file <path>] [--from-stdin] [--codex-goal-mode aggregate|per_story] [--force] [--json]
   omo ulw-loop status [--json]
   omo ulw-loop complete-goals [--retry-failed] [--json]
   omo ulw-loop criteria --goal-id <id> [--json]
+  omo ulw-loop capture-evidence [--output <path>] [--json] -- <command...>
   omo ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status pass|fail|blocked --evidence "..." [--notes "..."] [--json]
   omo ulw-loop checkpoint --goal-id <id> --status complete|failed|blocked --evidence "..." --codex-goal-json <...> [--quality-gate-json <...>] [--json]
   omo ulw-loop steer --kind <kind> ... --evidence "..." --rationale "..." [--json]
@@ -206,19 +217,19 @@ function normalizeCodexGoalMode(value) {
   throw new UlwLoopError("Invalid --codex-goal-mode; expected aggregate or per_story.", "ULW_LOOP_CODEX_GOAL_MODE_INVALID", { details: { value } });
 }
 
-// components/ulw-loop/src/cli-subcommands.ts
+// src/cli-subcommands.ts
 import { readFile as readFile6 } from "node:fs/promises";
 
-// components/ulw-loop/src/checkpoint.ts
+// src/checkpoint.ts
 import { existsSync as existsSync4, statSync as statSync2 } from "node:fs";
 import { readFile as readFile5 } from "node:fs/promises";
 import { resolve as resolve4 } from "node:path";
 
-// components/ulw-loop/src/checkpoint-reconciliation.ts
+// src/checkpoint-reconciliation.ts
 import { existsSync } from "node:fs";
 import { readFile as readFile2 } from "node:fs/promises";
 
-// components/ulw-loop/src/paths.ts
+// src/paths.ts
 import { join } from "node:path";
 var SESSION_ENV_KEYS = ["OMO_ULW_LOOP_SESSION_ID", "CODEX_SESSION_ID", "CODEX_THREAD_ID"];
 function normalizeUlwLoopSessionId(sessionId) {
@@ -272,7 +283,7 @@ function repoRelative(absolutePath, repoRoot) {
   return absolutePath.split("\\").join("/");
 }
 
-// components/ulw-loop/src/goal-status.ts
+// src/goal-status.ts
 var ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE = aggregateCodexObjectiveForScope();
 function aggregateCodexObjectiveForScope(scope) {
   return `Complete the durable ulw-loop plan in ${ulwLoopGoalsRelativePath(scope)}, including later accepted/appended stories, under the original brief constraints; use ${ulwLoopLedgerRelativePath(scope)} as the audit trail.`;
@@ -352,7 +363,7 @@ function hasEssentialCriteriaPass(goal) {
   return criteria.length > 0 && criteria.every((criterion) => criterion.status === "pass");
 }
 
-// components/ulw-loop/src/checkpoint-reconciliation.ts
+// src/checkpoint-reconciliation.ts
 function normalizeObjective(value) {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -423,7 +434,7 @@ function buildTaskScopedAggregateReconciliationHint(goal, final) {
   return ` Completed task-scoped aggregate reconciliation requires the checkpoint goal to be the active in-progress OMO goal, evidence that names that active OMO goal id, names .omo/ulw-loop/goals.json or ledger.jsonl, includes completed implementation plus validation/review evidence, and a get_goal objective that maps to the ulw-loop brief/artifact. ${buildCompletedLegacyGoalRemediation(goal)}`;
 }
 
-// components/ulw-loop/src/codex-goal-snapshot.ts
+// src/codex-goal-snapshot.ts
 import { existsSync as existsSync2 } from "node:fs";
 import { readFile as readFile3 } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -520,11 +531,99 @@ function formatCodexGoalReconciliation(reconciliation) {
   return parts.join(" ");
 }
 
-// components/ulw-loop/src/evidence-verifier.ts
+// src/evidence-verifier.ts
 import { randomUUID } from "node:crypto";
-import { existsSync as existsSync3, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync as existsSync3, mkdirSync, readFileSync as readFileSync2, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join as join2, relative, resolve as resolve2 } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// src/evidence-manifest.ts
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+var TRUSTED_EVIDENCE_MANIFEST_KIND = "ulw-loop.evidence-capture.v1";
+var TRUSTED_EVIDENCE_MANIFEST_VERSION = 1;
+function fileSha256Hex(path) {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+function invalidManifest(message) {
+  throw new UlwLoopError(message, "ULW_LOOP_EVIDENCE_MANIFEST_INVALID");
+}
+function recordOf(value) {
+  if (typeof value === "object" && value !== null && !Array.isArray(value))
+    return value;
+  return invalidManifest("Trusted evidence manifest must be a JSON object.");
+}
+function stringField(record, key) {
+  const value = record[key];
+  if (typeof value === "string" && value.trim().length > 0)
+    return value;
+  return invalidManifest(`Trusted evidence manifest field ${key} must be a non-empty string.`);
+}
+function nullableStringField(record, key) {
+  const value = record[key];
+  if (value === null)
+    return null;
+  if (typeof value === "string" && value.trim().length > 0)
+    return value;
+  return invalidManifest(`Trusted evidence manifest field ${key} must be a non-empty string or null.`);
+}
+function numberField(record, key) {
+  const value = record[key];
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0)
+    return value;
+  return invalidManifest(`Trusted evidence manifest field ${key} must be a non-negative number.`);
+}
+function commandField(record) {
+  const value = record["command"];
+  if (!Array.isArray(value) || value.length === 0) {
+    return invalidManifest("Trusted evidence manifest field command must be a non-empty string array.");
+  }
+  for (const part of value) {
+    if (typeof part !== "string" || part.trim().length === 0) {
+      return invalidManifest("Trusted evidence manifest field command must contain only non-empty strings.");
+    }
+  }
+  return value;
+}
+function parseTrustedEvidenceManifest(raw) {
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new UlwLoopError(`Trusted evidence manifest is invalid JSON: ${message}`, "ULW_LOOP_EVIDENCE_MANIFEST_INVALID", {
+      cause: error
+    });
+  }
+  const record = recordOf(parsed);
+  if (record["version"] !== TRUSTED_EVIDENCE_MANIFEST_VERSION) {
+    return invalidManifest("Trusted evidence manifest version must be 1.");
+  }
+  if (record["kind"] !== TRUSTED_EVIDENCE_MANIFEST_KIND) {
+    return invalidManifest(`Trusted evidence manifest kind must be ${TRUSTED_EVIDENCE_MANIFEST_KIND}.`);
+  }
+  const captureTool = stringField(record, "captureTool");
+  if (captureTool !== "omo-ulw-loop capture-evidence") {
+    return invalidManifest("Trusted evidence manifest captureTool must be omo-ulw-loop capture-evidence.");
+  }
+  return {
+    version: TRUSTED_EVIDENCE_MANIFEST_VERSION,
+    kind: TRUSTED_EVIDENCE_MANIFEST_KIND,
+    command: commandField(record),
+    cwd: stringField(record, "cwd"),
+    exitCode: numberField(record, "exitCode"),
+    exitSignal: nullableStringField(record, "exitSignal"),
+    startedAt: stringField(record, "startedAt"),
+    endedAt: stringField(record, "endedAt"),
+    durationMs: numberField(record, "durationMs"),
+    artifactPath: stringField(record, "artifactPath"),
+    artifactSha256: stringField(record, "artifactSha256"),
+    nonce: stringField(record, "nonce"),
+    captureTool: "omo-ulw-loop capture-evidence"
+  };
+}
+
+// src/evidence-verifier.ts
 var PHYSICAL_EVIDENCE_MAX_AGE_MS = 30000;
 var FAILURE_KEYWORDS = ["fail", "error", "exception", "failed", "unhandledrejection", "rejected"];
 function physicalEvidenceReferenceTimeMs(repoRoot) {
@@ -572,18 +671,7 @@ function extractPhysicalEvidencePath(evidenceStr) {
   const fileUrl = cleanupSeparator?.index === undefined ? fileUrlAndTail.trim() : fileUrlAndTail.slice(0, cleanupSeparator.index).trim();
   return fileURLToPath(fileUrl);
 }
-function physicalEvidenceFreshness(stats, referenceTimeMs) {
-  const createdAgeInMs = Number.isFinite(stats.birthtimeMs) && stats.birthtimeMs > 0 ? referenceTimeMs - stats.birthtimeMs : null;
-  return {
-    createdAgeInMs,
-    modifiedAgeInMs: referenceTimeMs - stats.mtimeMs
-  };
-}
-function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
-  const rawPath = extractPhysicalEvidencePath(evidenceStr);
-  if (rawPath === null) {
-    throw new UlwLoopError("Passing evidence must include a physical file:// artifact under .omo/ulw-loop/evidence.", "ULW_LOOP_EVIDENCE_FILE_REQUIRED");
-  }
+function trustedEvidencePath(repoRoot, rawPath, label) {
   let cleanPath = rawPath;
   if (cleanPath.startsWith("///")) {
     cleanPath = cleanPath.slice(2);
@@ -594,41 +682,79 @@ function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
   }
   absolutePath = resolve2(absolutePath);
   if (!existsSync3(absolutePath)) {
-    throw new UlwLoopError(`Physical evidence file not found: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FOUND", {
+    throw new UlwLoopError(`${label} not found: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FOUND", {
       details: { path: absolutePath }
     });
   }
-  absolutePath = realpathSync(absolutePath);
+  const realPath = realpathSync(absolutePath);
   const allowedDirPath = evidenceDir(realpathSync(repoRoot));
   mkdirSync(allowedDirPath, { recursive: true });
-  if (!isInsideDir(allowedDirPath, absolutePath)) {
-    throw new UlwLoopError(`Physical evidence file must be inside .omo/ulw-loop/evidence: ${rawPath}.`, "ULW_LOOP_EVIDENCE_PATH_OUTSIDE_ROOT", { details: { path: absolutePath, evidenceDir: allowedDirPath } });
+  if (!isInsideDir(allowedDirPath, realPath)) {
+    throw new UlwLoopError(`${label} must be inside .omo/ulw-loop/evidence: ${rawPath}.`, "ULW_LOOP_EVIDENCE_PATH_OUTSIDE_ROOT", {
+      details: { path: realPath, evidenceDir: allowedDirPath }
+    });
   }
-  const stats = statSync(absolutePath);
-  const freshness = physicalEvidenceFreshness(stats, physicalEvidenceReferenceTimeMs(repoRoot));
+  return realPath;
+}
+function assertFreshEvidenceFile(path, rawPath, referenceTimeMs, label) {
+  const stats = statSync(path);
+  const freshness = physicalEvidenceFreshness(stats, referenceTimeMs);
   if (freshness.modifiedAgeInMs > PHYSICAL_EVIDENCE_MAX_AGE_MS) {
-    throw new UlwLoopError(`Physical evidence file is outdated (modified ${Math.round(freshness.modifiedAgeInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_OUTDATED", { details: { path: absolutePath, ageInMs: freshness.modifiedAgeInMs } });
+    throw new UlwLoopError(`${label} is outdated (modified ${Math.round(freshness.modifiedAgeInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_OUTDATED", { details: { path, ageInMs: freshness.modifiedAgeInMs } });
   }
   if (freshness.createdAgeInMs !== null && freshness.createdAgeInMs > PHYSICAL_EVIDENCE_MAX_AGE_MS) {
-    throw new UlwLoopError(`Physical evidence file was not freshly created (created ${Math.round(freshness.createdAgeInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FRESHLY_CREATED", { details: { path: absolutePath, ageInMs: freshness.createdAgeInMs } });
+    throw new UlwLoopError(`${label} was not freshly created (created ${Math.round(freshness.createdAgeInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FRESHLY_CREATED", { details: { path, ageInMs: freshness.createdAgeInMs } });
   }
   if (freshness.createdAgeInMs === null) {
-    throw new UlwLoopError(`Physical evidence file creation time is unavailable; rerun the evidence command into a new artifact: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_CREATION_TIME_UNAVAILABLE", { details: { path: absolutePath } });
+    throw new UlwLoopError(`${label} creation time is unavailable; rerun the evidence command into a new artifact: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_CREATION_TIME_UNAVAILABLE", { details: { path } });
   }
+}
+function physicalEvidenceFreshness(stats, referenceTimeMs) {
+  const createdAgeInMs = Number.isFinite(stats.birthtimeMs) && stats.birthtimeMs > 0 ? referenceTimeMs - stats.birthtimeMs : null;
+  return {
+    createdAgeInMs,
+    modifiedAgeInMs: referenceTimeMs - stats.mtimeMs
+  };
+}
+function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
+  const rawPath = extractPhysicalEvidencePath(evidenceStr);
+  if (rawPath === null) {
+    throw new UlwLoopError("Passing evidence must include a trusted capture manifest file:// artifact under .omo/ulw-loop/evidence.", "ULW_LOOP_EVIDENCE_FILE_REQUIRED");
+  }
+  const referenceTimeMs = physicalEvidenceReferenceTimeMs(repoRoot);
+  const manifestPath = trustedEvidencePath(repoRoot, rawPath, "Trusted evidence manifest");
+  assertFreshEvidenceFile(manifestPath, rawPath, referenceTimeMs, "Trusted evidence manifest");
   try {
-    const content = readFileSync(absolutePath, "utf8").toLowerCase();
+    const manifest = parseTrustedEvidenceManifest(readFileSync2(manifestPath, "utf8"));
+    if (manifest.exitCode !== 0) {
+      throw new UlwLoopError(`Trusted evidence command exited with code ${manifest.exitCode}.`, "ULW_LOOP_EVIDENCE_COMMAND_FAILED", { details: { path: manifestPath, exitCode: manifest.exitCode, command: manifest.command } });
+    }
+    if (realpathSync(manifest.cwd) !== realpathSync(repoRoot)) {
+      throw new UlwLoopError("Trusted evidence manifest cwd does not match this repository.", "ULW_LOOP_EVIDENCE_MANIFEST_CWD_MISMATCH", {
+        details: { path: manifestPath, cwd: manifest.cwd, repoRoot: realpathSync(repoRoot) }
+      });
+    }
+    const artifactPath = trustedEvidencePath(repoRoot, manifest.artifactPath, "Captured evidence artifact");
+    assertFreshEvidenceFile(artifactPath, manifest.artifactPath, referenceTimeMs, "Captured evidence artifact");
+    const actualHash = fileSha256Hex(artifactPath);
+    if (actualHash !== manifest.artifactSha256) {
+      throw new UlwLoopError("Captured evidence artifact hash does not match its trusted manifest.", "ULW_LOOP_EVIDENCE_ARTIFACT_HASH_MISMATCH", {
+        details: { path: artifactPath, expected: manifest.artifactSha256, actual: actualHash }
+      });
+    }
+    const content = readFileSync2(artifactPath, "utf8").toLowerCase();
     const keyword = detectedFailureKeyword(content);
     if (keyword !== null) {
-      throw new UlwLoopError(`Physical evidence file contains error/failure keyword: "${keyword}".`, "ULW_LOOP_EVIDENCE_FILE_CONTAINS_ERRORS", { details: { path: absolutePath, keyword } });
+      throw new UlwLoopError(`Captured evidence artifact contains error/failure keyword: "${keyword}".`, "ULW_LOOP_EVIDENCE_FILE_CONTAINS_ERRORS", { details: { path: artifactPath, keyword } });
     }
   } catch (err) {
     if (err instanceof UlwLoopError)
       throw err;
-    throw new UlwLoopError(`Failed to read physical evidence file: ${err instanceof Error ? err.message : String(err)}`, "ULW_LOOP_EVIDENCE_FILE_READ_FAILED", { details: { path: absolutePath } });
+    throw new UlwLoopError(`Failed to read trusted evidence manifest: ${err instanceof Error ? err.message : String(err)}`, "ULW_LOOP_EVIDENCE_FILE_READ_FAILED", { details: { path: manifestPath } });
   }
 }
 
-// components/ulw-loop/src/plan-io.ts
+// src/plan-io.ts
 import { appendFile, mkdir, readFile as readFile4, rename, writeFile } from "node:fs/promises";
 var LEGACY_OBJECTIVE_PREFIX = `Complete all ulw-loop stories in ${ULW_LOOP_DIR}/${ULW_LOOP_GOALS}: `;
 var LEGACY_OBJECTIVE = `Complete all ulw-loop stories listed in ${ULW_LOOP_DIR}/${ULW_LOOP_GOALS}. Use ${ULW_LOOP_DIR}/${ULW_LOOP_LEDGER} as the durable audit trail.`;
@@ -717,7 +843,7 @@ async function readSteeringLedgerEntries(repoRoot, scope) {
   return entries;
 }
 
-// components/ulw-loop/src/evidence.ts
+// src/evidence.ts
 function ulwLoopFail(message, code, details) {
   throw new UlwLoopError(message, code, { details });
 }
@@ -826,10 +952,10 @@ function requireEssentialCriteriaPass(goal) {
   });
 }
 
-// components/ulw-loop/src/quality-gate.ts
+// src/quality-gate.ts
 import { resolve as resolve3 } from "node:path";
 
-// components/ulw-loop/src/quality-gate-fields.ts
+// src/quality-gate-fields.ts
 var PLACEHOLDER_PATTERN = /^(?:placeholder|todo|tbd|n\/a|stub)$/i;
 function invalid(message, field) {
   throw new UlwLoopError(message, "ULW_LOOP_QUALITY_GATE_INVALID", { details: { field } });
@@ -848,7 +974,7 @@ function textField(value, field) {
     invalid(`Final quality gate rejects placeholder ${field}.`, field);
   return trimmed;
 }
-function numberField(value, field) {
+function numberField2(value, field) {
   return typeof value === "number" && Number.isFinite(value) ? value : invalid(`Final quality gate requires numeric ${field}.`, field);
 }
 function stringArray(value, field) {
@@ -867,7 +993,7 @@ function literal(value, expected, field) {
   invalid(`${field} must be ${String(expected)}.`, field);
 }
 
-// components/ulw-loop/src/quality-gate-blockers.ts
+// src/quality-gate-blockers.ts
 var BLOCKER_FIELD_KEYS = "blocker blockerSignature blockerEvidence blockerOccurrences blockedAt".split(" ");
 var URL_PATTERN = /https?:\/\/\S+/g;
 var PUNCTUATION_PATTERN = /[`"'()[\]{}:,;]/g;
@@ -909,7 +1035,7 @@ function clearGoalBlockerFields(goal) {
     Reflect.deleteProperty(goal, key);
 }
 
-// components/ulw-loop/src/quality-gate.ts
+// src/quality-gate.ts
 var REVIEWER_ROLES = {
   codeReview: "lazycodex-code-reviewer",
   manualQa: "lazycodex-qa-executor",
@@ -1001,8 +1127,8 @@ function validateQualityGate(input, opts) {
   const gateReview = section(gate["gateReview"], "gateReview");
   const iteration = section(gate["iteration"], "iteration");
   const coverage = section(gate["criteriaCoverage"], "criteriaCoverage");
-  const totalCriteria = numberField(coverage["totalCriteria"], "criteriaCoverage.totalCriteria");
-  const passCount = numberField(coverage["passCount"], "criteriaCoverage.passCount");
+  const totalCriteria = numberField2(coverage["totalCriteria"], "criteriaCoverage.totalCriteria");
+  const passCount = numberField2(coverage["passCount"], "criteriaCoverage.passCount");
   if (passCount < totalCriteria)
     invalid("criteriaCoverage.passCount must cover totalCriteria.", "criteriaCoverage.passCount");
   const artifactRefs = parseArtifactRefs(manualQa["artifactRefs"], opts);
@@ -1092,7 +1218,7 @@ function parseAdversarialCases(value, byId) {
   });
 }
 
-// components/ulw-loop/src/checkpoint.ts
+// src/checkpoint.ts
 var QUALITY_GATE_FS = { existsSync: existsSync4, statSync: statSync2 };
 function ulwLoopFail2(message, code) {
   throw new UlwLoopError(message, code);
@@ -1246,7 +1372,7 @@ async function checkpointUlwLoop(repoRoot, args, scope) {
   });
 }
 
-// components/ulw-loop/src/cli-steering.ts
+// src/cli-steering.ts
 var SOURCES = ["user_prompt_submit", "finding", "cli"];
 var STEERING_KIND_HELP = [
   `Allowed --kind values: ${ULW_LOOP_STEERING_MUTATION_KINDS.join(", ")}`,
@@ -1452,7 +1578,7 @@ function printSteerResult(result, json) {
   printStatus(result.plan);
 }
 
-// components/ulw-loop/src/codex-goal-instruction.ts
+// src/codex-goal-instruction.ts
 function buildCodexGoalInstruction(args) {
   const mode = codexGoalMode(args.plan);
   const createGoal = buildCreateGoalPayload(args.plan, args.goal);
@@ -1554,11 +1680,182 @@ function joinLines(lines) {
 `);
 }
 
-// components/ulw-loop/src/plan-crud.ts
-import { existsSync as existsSync5 } from "node:fs";
-import { mkdir as mkdir2, writeFile as writeFile2 } from "node:fs/promises";
+// src/evidence-capture.ts
+import { spawn } from "node:child_process";
+import { randomUUID as randomUUID2 } from "node:crypto";
+import { constants as constants2, createWriteStream } from "node:fs";
+import { access, copyFile, mkdir as mkdir2, realpath, rm, writeFile as writeFile2 } from "node:fs/promises";
+import { basename, dirname, isAbsolute as isAbsolute2, join as join3, relative as relative2, resolve as resolve5 } from "node:path";
+import { pathToFileURL } from "node:url";
+function captureError(message, code, details) {
+  throw new UlwLoopError(message, code, { details });
+}
+function evidenceDir2(repoRoot) {
+  return resolve5(repoRoot, ".omo", "ulw-loop", "evidence");
+}
+function isInsideOrSame(parentDir, filePath) {
+  const rel = relative2(parentDir, filePath);
+  return rel.length === 0 || !rel.startsWith("..") && !isAbsolute2(rel);
+}
+function safeName(value) {
+  return basename(value).replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "command";
+}
+function resolveArtifactPath(repoRoot, args) {
+  if (args.output !== undefined)
+    return resolve5(isAbsolute2(args.output) ? args.output : join3(repoRoot, args.output));
+  const label = safeName(args.command[0] ?? "command");
+  return join3(evidenceDir2(repoRoot), `${label}-${Date.now()}-${randomUUID2()}.log`);
+}
+function isNodeErrorCode(error, code) {
+  return error instanceof Error && "code" in error && error.code === code;
+}
+async function realExistingAncestor(path) {
+  let current = path;
+  const missingSegments = [];
+  for (;; ) {
+    try {
+      return join3(await realpath(current), ...missingSegments.reverse());
+    } catch (error) {
+      if (!isNodeErrorCode(error, "ENOENT"))
+        throw error;
+      const parent = dirname(current);
+      if (parent === current)
+        throw error;
+      missingSegments.push(basename(current));
+      current = parent;
+    }
+  }
+}
+async function trustedEvidenceDir(repoRoot) {
+  const requestedDir = evidenceDir2(repoRoot);
+  const canonicalDir = await realExistingAncestor(requestedDir);
+  if (canonicalDir !== requestedDir || !isInsideOrSame(repoRoot, canonicalDir)) {
+    return captureError("Capture evidence directory must stay inside this repository.", "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT", {
+      path: requestedDir,
+      repoRoot
+    });
+  }
+  await mkdir2(requestedDir, { recursive: true });
+  const realDir = await realpath(requestedDir);
+  if (realDir !== requestedDir || !isInsideOrSame(repoRoot, realDir)) {
+    return captureError("Capture evidence directory must stay inside this repository.", "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT", {
+      path: requestedDir,
+      repoRoot
+    });
+  }
+  return realDir;
+}
+async function trustedWritablePath(repoRoot, rawPath) {
+  const realRepoRoot = await realpath(repoRoot);
+  const allowedDir = await trustedEvidenceDir(realRepoRoot);
+  const requestedPath = resolve5(rawPath);
+  const requestedParent = dirname(requestedPath);
+  const canonicalParent = await realExistingAncestor(requestedParent);
+  if (!isInsideOrSame(allowedDir, canonicalParent)) {
+    return captureError("Capture output must be inside .omo/ulw-loop/evidence.", "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT", {
+      path: rawPath,
+      evidenceDir: allowedDir
+    });
+  }
+  await mkdir2(canonicalParent, { recursive: true });
+  const realParent = await realpath(canonicalParent);
+  if (!isInsideOrSame(allowedDir, realParent)) {
+    return captureError("Capture output must be inside .omo/ulw-loop/evidence.", "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT", {
+      path: rawPath,
+      evidenceDir: allowedDir
+    });
+  }
+  return join3(realParent, basename(requestedPath));
+}
+async function rejectExistingPath(path, label) {
+  try {
+    await access(path);
+  } catch (error) {
+    if (isNodeErrorCode(error, "ENOENT"))
+      return;
+    throw error;
+  }
+  return captureError(`${label} already exists; choose a new capture output path.`, "ULW_LOOP_CAPTURE_OUTPUT_EXISTS", {
+    path
+  });
+}
+async function writeTranscript(args) {
+  return new Promise((resolvePromise, reject) => {
+    const stream = createWriteStream(args.artifactPath, { flags: "wx" });
+    let spawnError = null;
+    stream.once("error", reject);
+    stream.once("open", () => {
+      stream.write(`$ ${args.command.join(" ")}
+`);
+      const child2 = spawn(args.command[0] ?? "", args.command.slice(1), { cwd: args.cwd, env: process.env });
+      child2.stdout.on("data", (chunk) => stream.write(chunk));
+      child2.stderr.on("data", (chunk) => stream.write(chunk));
+      child2.on("error", (error) => {
+        spawnError = error;
+        stream.write(`
+[ulw-loop capture spawn error] ${error.message}
+`);
+      });
+      child2.on("close", (code, signal) => {
+        const exitCode = spawnError === null ? code ?? 1 : 127;
+        stream.write(`
+[ulw-loop capture exitCode=${exitCode}${signal === null ? "" : ` signal=${signal}`}]
+`);
+        stream.end(() => resolvePromise({ exitCode, exitSignal: signal }));
+      });
+    });
+  });
+}
+async function captureCommandEvidence(repoRoot, args) {
+  if (args.command.length === 0) {
+    return captureError("Missing capture command after --.", "ULW_LOOP_CAPTURE_COMMAND_REQUIRED", {});
+  }
+  const cwd = await realpath(repoRoot);
+  const artifactPath = await trustedWritablePath(cwd, resolveArtifactPath(cwd, args));
+  const manifestPath = await trustedWritablePath(cwd, `${artifactPath}.manifest.json`);
+  await rejectExistingPath(artifactPath, "Capture output");
+  await rejectExistingPath(manifestPath, "Capture manifest");
+  const tempArtifactPath = await trustedWritablePath(cwd, join3(dirname(artifactPath), `.${basename(artifactPath)}.${randomUUID2()}.tmp`));
+  const startedAtMs = Date.now();
+  const startedAt = new Date(startedAtMs).toISOString();
+  try {
+    const child2 = await writeTranscript({ artifactPath: tempArtifactPath, command: args.command, cwd });
+    await copyFile(tempArtifactPath, artifactPath, constants2.COPYFILE_EXCL);
+    const endedAtMs = Date.now();
+    const manifest = {
+      version: TRUSTED_EVIDENCE_MANIFEST_VERSION,
+      kind: TRUSTED_EVIDENCE_MANIFEST_KIND,
+      command: [...args.command],
+      cwd,
+      exitCode: child2.exitCode,
+      exitSignal: child2.exitSignal,
+      startedAt,
+      endedAt: new Date(endedAtMs).toISOString(),
+      durationMs: endedAtMs - startedAtMs,
+      artifactPath,
+      artifactSha256: fileSha256Hex(artifactPath),
+      nonce: randomUUID2(),
+      captureTool: "omo-ulw-loop capture-evidence"
+    };
+    await writeFile2(manifestPath, `${JSON.stringify(manifest, null, 2)}
+`, { flag: "wx" });
+    return {
+      evidence: pathToFileURL(manifestPath).href,
+      artifactPath,
+      manifestPath,
+      exitCode: child2.exitCode,
+      manifest
+    };
+  } finally {
+    await rm(tempArtifactPath, { force: true });
+  }
+}
 
-// components/ulw-loop/src/plan-goal-factory.ts
+// src/plan-crud.ts
+import { existsSync as existsSync5 } from "node:fs";
+import { mkdir as mkdir3, writeFile as writeFile3 } from "node:fs/promises";
+
+// src/plan-goal-factory.ts
 function cleanLine(line) {
   return line.replace(/^\s*(?:[-*+]\s+|\d+[.)]\s+)/, "").trim();
 }
@@ -1647,7 +1944,7 @@ function appendGoalToPlan(plan, title, objective, now) {
   return goal;
 }
 
-// components/ulw-loop/src/plan-crud.ts
+// src/plan-crud.ts
 function isScheduleEligible(goal) {
   return goal.steeringStatus !== "superseded" && goal.steeringStatus !== "blocked";
 }
@@ -1685,12 +1982,12 @@ async function createUlwLoopPlan(repoRoot, args, scope) {
     };
     if (plan.codexGoalMode === "aggregate")
       plan.codexObjective = aggregateCodexObjectiveForScope(scope);
-    await mkdir2(ulwLoopDir(repoRoot, scope), { recursive: true });
-    await writeFile2(ulwLoopBriefPath(repoRoot, scope), args.brief.endsWith(`
+    await mkdir3(ulwLoopDir(repoRoot, scope), { recursive: true });
+    await writeFile3(ulwLoopBriefPath(repoRoot, scope), args.brief.endsWith(`
 `) ? args.brief : `${args.brief}
 `, "utf8");
     await writePlan(repoRoot, plan, scope);
-    await writeFile2(ulwLoopLedgerPath(repoRoot, scope), "", "utf8");
+    await writeFile3(ulwLoopLedgerPath(repoRoot, scope), "", "utf8");
     await appendLedger(repoRoot, { at: now, kind: "plan_created", message: `${goals.length} goal(s) created` }, scope);
     return plan;
   });
@@ -1770,7 +2067,7 @@ function summarizeUlwLoopPlan(plan) {
   };
 }
 
-// components/ulw-loop/src/review-blockers.ts
+// src/review-blockers.ts
 var BLOCKER_FIELDS = "blockedReason blockerSignature blockerOccurrenceCount requiredExternalDecision nonRetriable failedAt failureReason completedAt blocker blockerEvidence blockerOccurrences blockedAt".split(" ");
 function ulwLoopError(message, code) {
   throw new UlwLoopError(message, code);
@@ -1836,7 +2133,7 @@ async function recordFinalReviewBlockers(repoRoot, args, scope) {
   });
 }
 
-// components/ulw-loop/src/steering.ts
+// src/steering.ts
 var SOURCES2 = ["user_prompt_submit", "finding", "cli"];
 var PROTECTED = new Set(["aggregateCompletion", "codexObjective", "codexObjectiveAliases", "originalConstraints", "qualityGate", "status", "completedAt", "completionStatus"]);
 var isObject = (value) => typeof value === "object" && value !== null;
@@ -2124,7 +2421,7 @@ function ledgerEntry(proposal, audit, at) {
   return entry;
 }
 
-// components/ulw-loop/src/cli-subcommands.ts
+// src/cli-subcommands.ts
 async function createGoals(repoRoot, argv, json, scope) {
   const briefFile = readValue(argv, "--brief-file");
   const brief = readValue(argv, "--brief") ?? (briefFile === undefined ? undefined : await readFile6(briefFile, "utf8")) ?? (hasFlag(argv, "--from-stdin") ? await readStdin() : undefined) ?? positionalText(argv);
@@ -2245,6 +2542,18 @@ async function captureEvidence(repoRoot, argv, json, scope) {
   }
   return 0;
 }
+async function captureCommand(repoRoot, argv, json) {
+  const result = await captureCommandEvidence(repoRoot, parseCaptureEvidenceArgs(argv));
+  if (json)
+    printJson({ ok: result.exitCode === 0, ...result });
+  else {
+    process.stdout.write(`ulw-loop captured evidence: ${result.evidence}
+artifact: ${result.artifactPath}
+exitCode: ${result.exitCode}
+`);
+  }
+  return result.exitCode;
+}
 async function reviewBlockers(repoRoot, argv, json, scope) {
   const codexGoalJson = await parseCodexGoalJson(required3(argv, "--codex-goal-json"));
   if (codexGoalJson === undefined) {
@@ -2294,7 +2603,7 @@ function findGoal3(plan, goalId) {
   throw new UlwLoopError(`Unknown ulw-loop id: ${goalId}.`, "ULW_LOOP_GOAL_NOT_FOUND", { details: { goalId } });
 }
 
-// components/ulw-loop/src/cli-commands.ts
+// src/cli-commands.ts
 var ULW_LOOP_SUBCOMMANDS = [
   "help",
   "create-goals",
@@ -2304,6 +2613,7 @@ var ULW_LOOP_SUBCOMMANDS = [
   "steer",
   "add-goal",
   "criteria",
+  "capture-evidence",
   "record-evidence",
   "record-review-blockers"
 ];
@@ -2314,9 +2624,10 @@ async function ulwLoopCommand(argv) {
   const head = argv[0] ?? "help";
   const command = head === "--help" || head === "-h" ? "help" : head;
   const rest = argv.slice(1);
+  const outerArgs = beforeCommandSeparator(rest);
   const repoRoot = process.cwd();
-  const json = hasFlag(rest, "--json");
-  const scope = commandScope(rest);
+  const json = hasFlag(outerArgs, "--json");
+  const scope = commandScope(outerArgs);
   try {
     if (!isUlwLoopSubcommand(command)) {
       if (json) {
@@ -2348,6 +2659,8 @@ async function ulwLoopCommand(argv) {
         return await addGoal(repoRoot, rest, json, scope);
       case "criteria":
         return await criteria(repoRoot, rest, json, scope);
+      case "capture-evidence":
+        return await captureCommand(repoRoot, rest, json);
       case "record-evidence":
         return await captureEvidence(repoRoot, rest, json, scope);
       case "record-review-blockers":
@@ -2375,14 +2688,18 @@ async function ulwLoopCommand(argv) {
 function unhandledSubcommand(command) {
   throw new UlwLoopError(`Unhandled ulw-loop subcommand: ${String(command)}.`, "ULW_LOOP_SUBCOMMAND_UNHANDLED");
 }
+function beforeCommandSeparator(argv) {
+  const separator = argv.indexOf("--");
+  return separator < 0 ? argv : argv.slice(0, separator);
+}
 function commandScope(argv) {
   const sessionId = readValue(argv, "--session-id") ?? resolveUlwLoopSessionIdFromEnv();
   return sessionId === null ? undefined : { sessionId };
 }
 
-// components/ulw-loop/src/ultrawork-directive.ts
-import { readFileSync as readFileSync2 } from "node:fs";
-var ULTRAWORK_DIRECTIVE = readFileSync2(new URL("../directive.md", import.meta.url), "utf8");
+// src/ultrawork-directive.ts
+import { readFileSync as readFileSync3 } from "node:fs";
+var ULTRAWORK_DIRECTIVE = readFileSync3(new URL("../directive.md", import.meta.url), "utf8");
 var ULTRAWORK_CURRENT_PROMPT_PATTERN = /(?:ultrawork|ulw)/i;
 var ULTRAWORK_DIRECTIVE_MARKER = "<ultrawork-mode>";
 var TRANSCRIPT_SEARCH_BYTES = 512000;
@@ -2430,7 +2747,7 @@ function hasUltraworkDirectiveAlreadyInTranscript(transcriptPath) {
   return false;
 }
 function readTranscriptTail(transcriptPath) {
-  const rawTranscript = readFileSync2(transcriptPath);
+  const rawTranscript = readFileSync3(transcriptPath);
   return rawTranscript.subarray(Math.max(0, rawTranscript.byteLength - TRANSCRIPT_SEARCH_BYTES)).toString("utf8");
 }
 function isUltraworkPrompt(prompt) {
@@ -2444,7 +2761,7 @@ function isContextPressureTranscript(transcriptPath) {
   if (transcriptPath === undefined || transcriptPath === null)
     return false;
   try {
-    return isContextPressureRecoveryPrompt(readFileSync2(transcriptPath, "utf8"));
+    return isContextPressureRecoveryPrompt(readFileSync3(transcriptPath, "utf8"));
   } catch (error) {
     if (error instanceof Error)
       return false;
@@ -2485,7 +2802,7 @@ function isRecord3(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-// components/ulw-loop/src/codex-hook.ts
+// src/codex-hook.ts
 var CREATE_GOAL_TOOL_NAME = "create_goal";
 var CREATE_GOAL_PAYLOAD_WARNING = "Use create_goal with objective only. Omit token_budget so the goal stays unlimited, and put lifecycle status changes on update_goal.";
 function parseUserPromptSubmitPayload(raw) {
@@ -2609,18 +2926,18 @@ function optionalString(value) {
   return value === undefined || typeof value === "string";
 }
 function readAll(stdin) {
-  return new Promise((resolve5, reject) => {
+  return new Promise((resolve6, reject) => {
     let data = "";
     stdin.setEncoding("utf8");
     stdin.on("data", (chunk) => {
       data += chunk instanceof Buffer ? chunk.toString() : String(chunk);
     });
     stdin.once("error", reject);
-    stdin.once("end", () => resolve5(data));
+    stdin.once("end", () => resolve6(data));
   });
 }
 
-// components/ulw-loop/src/cli.ts
+// src/cli.ts
 var TOP_LEVEL_HELP = `Usage:
   omo ulw-loop <subcommand> [args]
   omo hook user-prompt-submit [--with-ultrawork]  (Codex UserPromptSubmit hook)

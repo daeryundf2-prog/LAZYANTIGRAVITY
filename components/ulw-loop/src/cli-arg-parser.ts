@@ -4,9 +4,10 @@ import { readFile } from "node:fs/promises";
 import { UlwLoopError } from "./types.js";
 
 type RecordEvidenceCliArgs = { readonly goalId: string; readonly criterionId: string; readonly status: "pass" | "fail" | "blocked"; readonly evidence: string; readonly notes?: string };
+type CaptureEvidenceCliArgs = { readonly output?: string; readonly command: readonly string[] };
 
-const VALUE_FLAGS = new Set("--brief --brief-file --session-id --codex-goal-mode --goal --goal-id --criterion-id --status --evidence --notes --codex-goal-json --quality-gate-json --kind --rationale --title --objective --target-goal-id --source --after-json --directive-json --directive-file --idempotency-key".split(" "));
-const SUBCOMMANDS = new Set("create-goals status complete-goals criteria record-evidence checkpoint steer add-goal record-review-blockers".split(" "));
+const VALUE_FLAGS = new Set("--brief --brief-file --session-id --codex-goal-mode --goal --goal-id --criterion-id --status --evidence --notes --codex-goal-json --quality-gate-json --kind --rationale --title --objective --target-goal-id --source --after-json --directive-json --directive-file --idempotency-key --output".split(" "));
+const SUBCOMMANDS = new Set("create-goals status complete-goals criteria record-evidence capture-evidence checkpoint steer add-goal record-review-blockers".split(" "));
 
 export function hasFlag(argv: readonly string[], flag: string): boolean { return argv.includes(flag); }
 
@@ -92,4 +93,15 @@ export function parseRecordEvidenceArgs(argv: readonly string[]): RecordEvidence
 	const result = { goalId: required(argv, "--goal-id", "ULW_LOOP_GOAL_ID_REQUIRED"), criterionId: required(argv, "--criterion-id", "ULW_LOOP_CRITERION_ID_REQUIRED"), status: evidenceStatus(required(argv, "--status", "ULW_LOOP_EVIDENCE_STATUS_REQUIRED")), evidence: required(argv, "--evidence", "ULW_LOOP_EVIDENCE_REQUIRED") };
 	const notes = readValue(argv, "--notes")?.trim();
 	return notes ? { ...result, notes } : result;
+}
+
+export function parseCaptureEvidenceArgs(argv: readonly string[]): CaptureEvidenceCliArgs {
+	const separator = argv.indexOf("--");
+	if (separator < 0 || separator === argv.length - 1) {
+		throw new UlwLoopError("Missing capture command after --.", "ULW_LOOP_CAPTURE_COMMAND_REQUIRED");
+	}
+	const optionArgs = argv.slice(0, separator);
+	const command = argv.slice(separator + 1);
+	const output = readValue(optionArgs, "--output")?.trim();
+	return output ? { output, command } : { command };
 }

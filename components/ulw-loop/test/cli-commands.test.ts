@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { access, mkdir, mkdtemp, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -13,6 +14,7 @@ let originalCodexSessionId: string | undefined;
 let originalCodexThreadId: string | undefined;
 let originalOmoSessionId: string | undefined;
 let evidenceCounter = 0;
+const TRUSTED_MANIFEST_KIND = "ulw-loop.evidence-capture.v1";
 
 beforeEach(async () => {
 	testDir = await mkdtemp(join(tmpdir(), "ug-cli-"));
@@ -66,8 +68,34 @@ async function passingEvidenceUrl(label: string): Promise<string> {
 	const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
 	await mkdir(evidenceDir, { recursive: true });
 	const evidencePath = join(evidenceDir, `${label}-${++evidenceCounter}.log`);
+	const manifestPath = `${evidencePath}.manifest.json`;
+	const content = `${label} passed\n`;
+	const hash = createHash("sha256").update(content).digest("hex");
 	await writeFile(evidencePath, `${label} passed\n`, "utf8");
-	return pathToFileURL(evidencePath).href;
+	await writeFile(
+		manifestPath,
+		`${JSON.stringify(
+			{
+				version: 1,
+				kind: TRUSTED_MANIFEST_KIND,
+				command: ["node", "--test"],
+				cwd: testDir,
+				exitCode: 0,
+				exitSignal: null,
+				startedAt: new Date().toISOString(),
+				endedAt: new Date().toISOString(),
+				durationMs: 1,
+				artifactPath: evidencePath,
+				artifactSha256: hash,
+				nonce: `${label}-${evidenceCounter}`,
+				captureTool: "omo-ulw-loop capture-evidence",
+			},
+			null,
+			2,
+		)}\n`,
+		"utf8",
+	);
+	return pathToFileURL(manifestPath).href;
 }
 
 describe("ulwLoopCommand help", () => {
@@ -135,6 +163,157 @@ describe("ulwLoopCommand record-evidence", () => {
 			await ulwLoopCommand(["record-evidence", "--criterion-id", "C001", "--status", "pass", "--evidence", "x"]),
 		).toBe(1);
 		expect(err.join("")).toContain("Missing --goal-id");
+	});
+});
+
+describe("ulwLoopCommand capture-evidence", () => {
+	it("runs a command and writes a trusted manifest for record-evidence", async () => {
+		await createPlan();
+		const scriptPath = join(testDir, "proof.mjs");
+		const outputPath = join(testDir, ".omo/ulw-loop/evidence/capture-proof.log");
+		await writeFile(scriptPath, "console.log('capture proof passed')\n", "utf8");
+
+		expect(
+			await ulwLoopCommand([
+				"capture-evidence",
+				"--output",
+				outputPath,
+				"--json",
+				"--",
+				process.execPath,
+				scriptPath,
+			]),
+		).toBe(0);
+		const captured = stdoutJson();
+		expect(captured).toMatchObject({ ok: true, exitCode: 0, artifactPath: await realpath(outputPath) });
+		const evidenceFiles = await readdir(join(testDir, ".omo/ulw-loop/evidence"));
+		expect(evidenceFiles.some((name) => name.endsWith(".tmp"))).toBe(false);
+		const evidenceUrl = captured["evidence"];
+		expect(typeof evidenceUrl).toBe("string");
+		resetOutput();
+
+		expect(
+			await ulwLoopCommand([
+				"record-evidence",
+				"--goal-id",
+				"G001-goal-a",
+				"--criterion-id",
+				"C001",
+				"--status",
+				"pass",
+				"--evidence",
+				String(evidenceUrl),
+				"--json",
+			]),
+		).toBe(0);
+		expect(stdoutJson()).toMatchObject({ ok: true, criterion: { id: "C001", status: "pass" } });
+	});
+
+	it("returns the command exit code while still writing failure evidence", async () => {
+		const scriptPath = join(testDir, "fail-proof.mjs");
+		const outputPath = join(testDir, ".omo/ulw-loop/evidence/fail-proof.log");
+		await writeFile(scriptPath, "console.log('will fail'); process.exit(7)\n", "utf8");
+
+		expect(
+			await ulwLoopCommand([
+				"capture-evidence",
+				"--output",
+				outputPath,
+				"--json",
+				"--",
+				process.execPath,
+				scriptPath,
+			]),
+		).toBe(7);
+		expect(stdoutJson()).toMatchObject({ ok: false, exitCode: 7, artifactPath: await realpath(outputPath) });
+	});
+
+	it("rejects existing capture outputs instead of overwriting evidence", async () => {
+		const scriptPath = join(testDir, "existing-proof.mjs");
+		const outputPath = join(testDir, ".omo/ulw-loop/evidence/existing-proof.log");
+		await mkdir(join(testDir, ".omo/ulw-loop/evidence"), { recursive: true });
+		await writeFile(scriptPath, "console.log('new proof')\n", "utf8");
+		await writeFile(outputPath, "old proof\n", "utf8");
+
+		expect(
+			await ulwLoopCommand([
+				"capture-evidence",
+				"--output",
+				outputPath,
+				"--json",
+				"--",
+				process.execPath,
+				scriptPath,
+			]),
+		).toBe(1);
+		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_EXISTS" } });
+	});
+
+	it("rejects output outside the evidence directory without creating parent directories", async () => {
+		const scriptPath = join(testDir, "outside-proof.mjs");
+		const outsideParent = join(testDir, "outside", "nested");
+		await writeFile(scriptPath, "console.log('outside proof')\n", "utf8");
+
+		expect(
+			await ulwLoopCommand([
+				"capture-evidence",
+				"--output",
+				join(outsideParent, "proof.log"),
+				"--json",
+				"--",
+				process.execPath,
+				scriptPath,
+			]),
+		).toBe(1);
+		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT" } });
+		await expect(access(outsideParent)).rejects.toMatchObject({ code: "ENOENT" });
+	});
+
+	it("rejects output through an evidence-directory symlink escape without creating nested directories", async () => {
+		const scriptPath = join(testDir, "symlink-proof.mjs");
+		const outsideDir = join(testDir, "outside-target");
+		const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
+		const linkPath = join(evidenceDir, "link-out");
+		await mkdir(outsideDir, { recursive: true });
+		await mkdir(evidenceDir, { recursive: true });
+		await symlink(outsideDir, linkPath, "dir");
+		await writeFile(scriptPath, "console.log('symlink proof')\n", "utf8");
+
+		expect(
+			await ulwLoopCommand([
+				"capture-evidence",
+				"--output",
+				join(linkPath, "nested", "proof.log"),
+				"--json",
+				"--",
+				process.execPath,
+				scriptPath,
+			]),
+		).toBe(1);
+		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT" } });
+		await expect(access(join(outsideDir, "nested"))).rejects.toMatchObject({ code: "ENOENT" });
+	});
+
+	it("rejects capture when the .omo directory is a symlink escape without creating evidence roots", async () => {
+		const scriptPath = join(testDir, "omo-symlink-proof.mjs");
+		const outsideDir = join(testDir, "outside-omo");
+		await mkdir(outsideDir, { recursive: true });
+		await symlink(outsideDir, join(testDir, ".omo"), "dir");
+		await writeFile(scriptPath, "console.log('omo symlink proof')\n", "utf8");
+
+		expect(
+			await ulwLoopCommand([
+				"capture-evidence",
+				"--output",
+				join(testDir, ".omo/ulw-loop/evidence/proof.log"),
+				"--json",
+				"--",
+				process.execPath,
+				scriptPath,
+			]),
+		).toBe(1);
+		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT" } });
+		await expect(access(join(outsideDir, "ulw-loop"))).rejects.toMatchObject({ code: "ENOENT" });
 	});
 });
 

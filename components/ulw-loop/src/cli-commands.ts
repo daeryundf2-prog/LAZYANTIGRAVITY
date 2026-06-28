@@ -2,6 +2,7 @@ import { hasFlag, readValue } from "./cli-arg-parser.js";
 import { printJsonError, ULW_LOOP_HELP } from "./cli-output.js";
 import {
 	addGoal,
+	captureCommand,
 	captureEvidence,
 	checkpoint,
 	completeGoals,
@@ -23,6 +24,7 @@ export const ULW_LOOP_SUBCOMMANDS = [
 	"steer",
 	"add-goal",
 	"criteria",
+	"capture-evidence",
 	"record-evidence",
 	"record-review-blockers",
 ] as const;
@@ -37,9 +39,10 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 	const head = argv[0] ?? "help";
 	const command = head === "--help" || head === "-h" ? "help" : head;
 	const rest = argv.slice(1);
+	const outerArgs = beforeCommandSeparator(rest);
 	const repoRoot = process.cwd();
-	const json = hasFlag(rest, "--json");
-	const scope = commandScope(rest);
+	const json = hasFlag(outerArgs, "--json");
+	const scope = commandScope(outerArgs);
 	try {
 		if (!isUlwLoopSubcommand(command)) {
 			if (json) {
@@ -71,6 +74,8 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 				return await addGoal(repoRoot, rest, json, scope);
 			case "criteria":
 				return await criteria(repoRoot, rest, json, scope);
+			case "capture-evidence":
+				return await captureCommand(repoRoot, rest, json);
 			case "record-evidence":
 				return await captureEvidence(repoRoot, rest, json, scope);
 			case "record-review-blockers":
@@ -92,6 +97,11 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 
 function unhandledSubcommand(command: never): never {
 	throw new UlwLoopError(`Unhandled ulw-loop subcommand: ${String(command)}.`, "ULW_LOOP_SUBCOMMAND_UNHANDLED");
+}
+
+function beforeCommandSeparator(argv: readonly string[]): readonly string[] {
+	const separator = argv.indexOf("--");
+	return separator < 0 ? argv : argv.slice(0, separator);
 }
 
 function commandScope(argv: readonly string[]): UlwLoopScope | undefined {

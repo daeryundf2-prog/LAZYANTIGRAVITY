@@ -1,8 +1,8 @@
 // biome-ignore-all format: keep this module under the mandated pure LOC budget.
 import { readFile } from "node:fs/promises";
 import { UlwLoopError } from "./types.js";
-const VALUE_FLAGS = new Set("--brief --brief-file --session-id --codex-goal-mode --goal --goal-id --criterion-id --status --evidence --notes --codex-goal-json --quality-gate-json --kind --rationale --title --objective --target-goal-id --source --after-json --directive-json --directive-file --idempotency-key".split(" "));
-const SUBCOMMANDS = new Set("create-goals status complete-goals criteria record-evidence checkpoint steer add-goal record-review-blockers".split(" "));
+const VALUE_FLAGS = new Set("--brief --brief-file --session-id --codex-goal-mode --goal --goal-id --criterion-id --status --evidence --notes --codex-goal-json --quality-gate-json --kind --rationale --title --objective --target-goal-id --source --after-json --directive-json --directive-file --idempotency-key --output".split(" "));
+const SUBCOMMANDS = new Set("create-goals status complete-goals criteria record-evidence capture-evidence checkpoint steer add-goal record-review-blockers".split(" "));
 export function hasFlag(argv, flag) { return argv.includes(flag); }
 export function readValue(argv, flag) {
     const index = argv.indexOf(flag);
@@ -94,4 +94,14 @@ export function parseRecordEvidenceArgs(argv) {
     const result = { goalId: required(argv, "--goal-id", "ULW_LOOP_GOAL_ID_REQUIRED"), criterionId: required(argv, "--criterion-id", "ULW_LOOP_CRITERION_ID_REQUIRED"), status: evidenceStatus(required(argv, "--status", "ULW_LOOP_EVIDENCE_STATUS_REQUIRED")), evidence: required(argv, "--evidence", "ULW_LOOP_EVIDENCE_REQUIRED") };
     const notes = readValue(argv, "--notes")?.trim();
     return notes ? { ...result, notes } : result;
+}
+export function parseCaptureEvidenceArgs(argv) {
+    const separator = argv.indexOf("--");
+    if (separator < 0 || separator === argv.length - 1) {
+        throw new UlwLoopError("Missing capture command after --.", "ULW_LOOP_CAPTURE_COMMAND_REQUIRED");
+    }
+    const optionArgs = argv.slice(0, separator);
+    const command = argv.slice(separator + 1);
+    const output = readValue(optionArgs, "--output")?.trim();
+    return output ? { output, command } : { command };
 }

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { type CheckpointUlwLoopArgs, checkpointUlwLoop } from "./checkpoint.js";
 import {
 	hasFlag,
+	parseCaptureEvidenceArgs,
 	parseCodexGoalJson,
 	parseRecordEvidenceArgs,
 	positionalText,
@@ -13,6 +14,7 @@ import { blockedDecisionHandoff, normalizeCodexGoalMode, printJson, printStatus 
 import { parseSteeringProposal, printSteerResult } from "./cli-steering.js";
 import { buildCodexGoalInstruction } from "./codex-goal-instruction.js";
 import { recordEvidence } from "./evidence.js";
+import { captureCommandEvidence } from "./evidence-capture.js";
 import { isEssentialCriterion } from "./goal-status.js";
 import type { UlwLoopScope } from "./paths.js";
 import { addUlwLoopGoal, createUlwLoopPlan, startNextUlwLoop, summarizeUlwLoopPlan } from "./plan-crud.js";
@@ -183,6 +185,17 @@ export async function captureEvidence(
 		);
 	}
 	return 0;
+}
+
+export async function captureCommand(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
+	const result = await captureCommandEvidence(repoRoot, parseCaptureEvidenceArgs(argv));
+	if (json) printJson({ ok: result.exitCode === 0, ...result });
+	else {
+		process.stdout.write(
+			`ulw-loop captured evidence: ${result.evidence}\nartifact: ${result.artifactPath}\nexitCode: ${result.exitCode}\n`,
+		);
+	}
+	return result.exitCode;
 }
 
 export async function reviewBlockers(

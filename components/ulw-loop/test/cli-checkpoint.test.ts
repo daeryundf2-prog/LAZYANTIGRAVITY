@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,6 +16,7 @@ let originalCodexSessionId: string | undefined;
 let originalCodexThreadId: string | undefined;
 let originalOmoSessionId: string | undefined;
 let evidenceCounter = 0;
+const TRUSTED_MANIFEST_KIND = "ulw-loop.evidence-capture.v1";
 
 beforeEach(async () => {
 	testDir = await mkdtemp(join(tmpdir(), "ug-cli-checkpoint-"));
@@ -73,8 +75,33 @@ async function passingEvidenceUrl(label: string): Promise<string> {
 	const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
 	await mkdir(evidenceDir, { recursive: true });
 	const evidencePath = join(evidenceDir, `${label}-${++evidenceCounter}.log`);
-	await writeFile(evidencePath, `${label} observable proof\n`, "utf8");
-	return pathToFileURL(evidencePath).href;
+	const manifestPath = `${evidencePath}.manifest.json`;
+	const content = `${label} observable proof\n`;
+	await writeFile(evidencePath, content, "utf8");
+	await writeFile(
+		manifestPath,
+		`${JSON.stringify(
+			{
+				version: 1,
+				kind: TRUSTED_MANIFEST_KIND,
+				command: ["node", "--test"],
+				cwd: testDir,
+				exitCode: 0,
+				exitSignal: null,
+				startedAt: new Date().toISOString(),
+				endedAt: new Date().toISOString(),
+				durationMs: 1,
+				artifactPath: evidencePath,
+				artifactSha256: createHash("sha256").update(content).digest("hex"),
+				nonce: `${label}-${evidenceCounter}`,
+				captureTool: "omo-ulw-loop capture-evidence",
+			},
+			null,
+			2,
+		)}\n`,
+		"utf8",
+	);
+	return pathToFileURL(manifestPath).href;
 }
 
 async function passCriterion(goalId: string, criterionId: string): Promise<void> {

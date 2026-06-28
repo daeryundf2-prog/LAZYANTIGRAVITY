@@ -118,6 +118,19 @@ describe("tracked package artifact", () => {
 			await rm(cleanRoot, { recursive: true, force: true });
 		}
 	});
+
+	it("#given only git-tracked component files #when dist modules are imported #then published imports resolve", async () => {
+		const cleanRoot = await mkdtemp(join(tmpdir(), "ulw-loop-tracked-modules-"));
+		try {
+			await copyTrackedComponentFiles(cleanRoot);
+
+			const result = await runProcess(process.execPath, ["-e", "import('./dist/cli-commands.js')"], cleanRoot);
+
+			expect(result.code, result.stderr).toBe(0);
+		} finally {
+			await rm(cleanRoot, { recursive: true, force: true });
+		}
+	});
 });
 
 describe("component plugin identity", () => {
@@ -233,6 +246,7 @@ describe("source LOC budget", () => {
 		const files = [
 			"src/types.ts", "src/paths.ts", "src/plan-io.ts", "src/plan-crud.ts", "src/goal-status.ts",
 			"src/evidence.ts", "src/quality-gate.ts", "src/checkpoint.ts", "src/review-blockers.ts",
+			"src/evidence-capture.ts", "src/evidence-manifest.ts", "src/evidence-verifier.ts",
 			"src/steering.ts", "src/codex-goal-instruction.ts", "src/codex-goal-snapshot.ts", "src/codex-hook.ts",
 			"src/cli.ts", "src/cli-arg-parser.ts", "src/cli-output.ts", "src/cli-steering.ts", "src/cli-commands.ts",
 		];

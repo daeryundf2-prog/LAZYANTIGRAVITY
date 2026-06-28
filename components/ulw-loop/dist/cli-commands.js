@@ -1,6 +1,6 @@
 import { hasFlag, readValue } from "./cli-arg-parser.js";
 import { printJsonError, ULW_LOOP_HELP } from "./cli-output.js";
-import { addGoal, captureEvidence, checkpoint, completeGoals, createGoals, criteria, reviewBlockers, status, steer, } from "./cli-subcommands.js";
+import { addGoal, captureCommand, captureEvidence, checkpoint, completeGoals, createGoals, criteria, reviewBlockers, status, steer, } from "./cli-subcommands.js";
 import { resolveUlwLoopSessionIdFromEnv } from "./paths.js";
 import { UlwLoopError } from "./types.js";
 export const ULW_LOOP_SUBCOMMANDS = [
@@ -12,6 +12,7 @@ export const ULW_LOOP_SUBCOMMANDS = [
     "steer",
     "add-goal",
     "criteria",
+    "capture-evidence",
     "record-evidence",
     "record-review-blockers",
 ];
@@ -22,9 +23,10 @@ export async function ulwLoopCommand(argv) {
     const head = argv[0] ?? "help";
     const command = head === "--help" || head === "-h" ? "help" : head;
     const rest = argv.slice(1);
+    const outerArgs = beforeCommandSeparator(rest);
     const repoRoot = process.cwd();
-    const json = hasFlag(rest, "--json");
-    const scope = commandScope(rest);
+    const json = hasFlag(outerArgs, "--json");
+    const scope = commandScope(outerArgs);
     try {
         if (!isUlwLoopSubcommand(command)) {
             if (json) {
@@ -54,6 +56,8 @@ export async function ulwLoopCommand(argv) {
                 return await addGoal(repoRoot, rest, json, scope);
             case "criteria":
                 return await criteria(repoRoot, rest, json, scope);
+            case "capture-evidence":
+                return await captureCommand(repoRoot, rest, json);
             case "record-evidence":
                 return await captureEvidence(repoRoot, rest, json, scope);
             case "record-review-blockers":
@@ -78,6 +82,10 @@ export async function ulwLoopCommand(argv) {
 }
 function unhandledSubcommand(command) {
     throw new UlwLoopError(`Unhandled ulw-loop subcommand: ${String(command)}.`, "ULW_LOOP_SUBCOMMAND_UNHANDLED");
+}
+function beforeCommandSeparator(argv) {
+    const separator = argv.indexOf("--");
+    return separator < 0 ? argv : argv.slice(0, separator);
 }
 function commandScope(argv) {
     const sessionId = readValue(argv, "--session-id") ?? resolveUlwLoopSessionIdFromEnv();

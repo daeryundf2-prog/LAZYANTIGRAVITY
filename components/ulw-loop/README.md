@@ -18,8 +18,19 @@ Every subcommand below is implemented. Pass `--json` where supported for machine
 | `omo ulw-loop steer` | Apply a steering mutation proposal to the plan. |
 | `omo ulw-loop add-goal` | Append a goal to the active plan. |
 | `omo ulw-loop criteria` | Inspect one goal's success criteria. |
+| `omo ulw-loop capture-evidence` | Run a command and write a capture transcript manifest for pass evidence. |
 | `omo ulw-loop record-evidence` | Record observable evidence for one criterion. |
 | `omo ulw-loop record-review-blockers` | Mark a goal as review-blocked and add follow-up work from final-review findings. |
+
+For `record-evidence --status pass`, the `--evidence` value must include the `file://` URL of a trusted capture manifest under `.omo/ulw-loop/evidence/`. Create it with:
+
+```bash
+omo ulw-loop capture-evidence --output .omo/ulw-loop/evidence/<name>.log --json -- <verification command>
+```
+
+The manifest records command, cwd, exit code, artifact path, and SHA-256 hash. Raw logs written directly with shell redirection, stale `touch`ed artifacts, failed commands, path escapes, cwd mismatches, and tampered artifacts are rejected for passing criteria.
+
+This is a local freshness and integrity gate, not cryptographic attestation. A process with the same filesystem write permissions could still forge a fresh matching manifest and artifact; closing that malicious same-user case requires a separate trust boundary such as an external capture service, privileged verifier, or signed attestation layer. The workflow policy still forbids hand-authored, `touch`ed, or fabricated evidence.
 
 The final quality gate parsed by `checkpoint` validates `codeReview`, `manualQa`, `gateReview`, `iteration`, and `criteriaCoverage`. `criteriaCoverage` records the original intent, desired outcome, user-facing outcome review, pass counts, and covered adversarial classes.
 
