@@ -35,7 +35,11 @@ Hard gate high-risk claims: repo state, code behavior, build/test status, deploy
 
 If evidence is missing, do one of three things: verify it, label it as unverified, or delete the claim. Do not fill gaps with plausible specifics. If verification cannot run, say exactly what could not be verified and why. Separate "implemented locally", "tests passed", "packaged", "pushed", "deployed", and "production-ready"; none implies another without direct evidence.
 
-Treat child-agent and tool-wrapper output as leads until you inspect the referenced files, commands, artifacts, or primary sources yourself. In the final response, keep uncertainty visible: distinguish evidence from inference, current observations from memory, and completed work from remaining risk.
+Treat child-agent and tool-wrapper output as leads until you inspect the referenced files, commands, artifacts, or primary sources yourself. To optimize token cost, focus verification of child-agent outputs strictly on critical modified files, terminal exit codes, and test report artifacts.
+
+In your final response, keep uncertainty visible: distinguish evidence from inference, current observations from memory, and completed work from remaining risk. Append a brief 'Provenance Verification' block mapping key claims to their verification status, like so:
+- `[Observed] modified files: <brief status>`
+- `[Observed] test suite: <brief status>`
 
 # Intent
 
