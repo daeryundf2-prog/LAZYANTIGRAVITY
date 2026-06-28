@@ -1,9 +1,9 @@
+import { verifyPhysicalEvidenceFile } from "./evidence-verifier.js";
 import { essentialCriteriaOf, hasAllCriteriaPass, hasEssentialCriteriaPass } from "./goal-status.js";
 import type { UlwLoopScope } from "./paths.js";
 import { appendLedger, readUlwLoopPlan, withUlwLoopMutationLock, writePlan } from "./plan-io.js";
 import type { UlwLoopItem, UlwLoopLedgerEntry, UlwLoopPlan, UlwLoopSuccessCriterion } from "./types.js";
 import { iso, UlwLoopError } from "./types.js";
-import { verifyPhysicalEvidenceFile } from "./evidence-verifier.js";
 
 type EvidenceStatus = "pass" | "fail" | "blocked";
 type RecordEvidenceArgs = {

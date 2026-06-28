@@ -1,3 +1,4 @@
+import { verifyPhysicalEvidenceFile } from "./evidence-verifier.js";
 import { essentialCriteriaOf, hasAllCriteriaPass, hasEssentialCriteriaPass } from "./goal-status.js";
 import { appendLedger, readUlwLoopPlan, withUlwLoopMutationLock, writePlan } from "./plan-io.js";
 import { iso, UlwLoopError } from "./types.js";
@@ -38,6 +39,9 @@ export async function recordEvidence(repoRoot, args, scope) {
         const goal = findGoal(plan, args.goalId);
         const criterion = findCriterion(goal, args.criterionId);
         const evidence = nonEmptyEvidence(args.evidence);
+        if (args.status === "pass") {
+            verifyPhysicalEvidenceFile(repoRoot, evidence);
+        }
         const kind = ledgerKind(args.status);
         const prevStatus = criterion.status;
         const capturedAt = iso();

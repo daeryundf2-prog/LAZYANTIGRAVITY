@@ -22,6 +22,7 @@ test("#given bundled Hephaestus rules #when inspected #then factual claims requi
 	assert.match(text, /Memory[\s\S]*subagent summaries[\s\S]*model recall[\s\S]*do not prove/i);
 	assert.match(text, /Keep verification proportional[\s\S]*core source files[\s\S]*integration test reports/i);
 	assert.match(text, /Do not re-run broad duplicate searches[\s\S]*minimal source, command, or artifact/i);
+	assert.match(text, /Never fabricate verification artifacts[\s\S]*real command[\s\S]*writeFileSync/i);
 	assert.match(text, /verify it[\s\S]*label it as unverified[\s\S]*delete the claim/i);
 	assert.match(text, /child-agent[\s\S]*tool-wrapper output[\s\S]*leads/i);
 	assert.match(text, /Provenance Checklist[\s\S]*Code Changes:[\s\S]*Test Result:[\s\S]*Remaining Risk:/i);

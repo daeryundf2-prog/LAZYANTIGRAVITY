@@ -1,8 +1,8 @@
+import { utimesSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, readFile } from "node:fs/promises";
-import { writeFileSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
 	criteriaSummary,
@@ -323,5 +323,56 @@ describe("recordEvidence physical matching verification", () => {
 
 		expect(result.criterion.status).toBe("pass");
 		expect(result.criterion.capturedEvidence).toContain(file);
+	});
+
+	it("uses filesystem time instead of Date.now for physical evidence freshness", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "clock-drift-evidence.txt");
+		writeFileSync(file, "tests passed");
+		const now = Date.now();
+		const clockSpy = vi.spyOn(Date, "now").mockReturnValue(now + 60000);
+
+		try {
+			const result = await recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			});
+
+			expect(result.criterion.status).toBe("pass");
+		} finally {
+			clockSpy.mockRestore();
+		}
+	});
+
+	it("accepts common zero-failure test log phrases", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "zero-failure-evidence.txt");
+		writeFileSync(file, "No failures found\n0 tests failed\nfailure count: 0\nerror count: 0\n");
+
+		const result = await recordEvidence(repo, {
+			goalId: "G001",
+			criterionId: "C001",
+			status: "pass",
+			evidence: `file://${file}`,
+		});
+
+		expect(result.criterion.status).toBe("pass");
+	});
+
+	it("still rejects nonzero failure counts in physical evidence", async () => {
+		const repo = await bootstrapRepo(makePlan());
+		const file = join(repo, "nonzero-failure-evidence.txt");
+		writeFileSync(file, "1 test failed\n");
+
+		await expect(
+			recordEvidence(repo, {
+				goalId: "G001",
+				criterionId: "C001",
+				status: "pass",
+				evidence: `file://${file}`,
+			}),
+		).rejects.toThrow('Physical evidence file contains error/failure keyword: "fail"');
 	});
 });

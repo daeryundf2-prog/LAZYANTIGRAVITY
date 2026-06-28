@@ -210,7 +210,7 @@ function normalizeCodexGoalMode(value) {
 import { readFile as readFile6 } from "node:fs/promises";
 
 // components/ulw-loop/src/checkpoint.ts
-import { existsSync as existsSync3, statSync } from "node:fs";
+import { existsSync as existsSync4, statSync as statSync2 } from "node:fs";
 import { readFile as readFile5 } from "node:fs/promises";
 import { resolve as resolve3 } from "node:path";
 
@@ -520,6 +520,64 @@ function formatCodexGoalReconciliation(reconciliation) {
   return parts.join(" ");
 }
 
+// components/ulw-loop/src/evidence-verifier.ts
+import { existsSync as existsSync3, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { isAbsolute, join as join2 } from "node:path";
+var PHYSICAL_EVIDENCE_MAX_AGE_MS = 30000;
+function physicalEvidenceReferenceTimeMs(repoRoot) {
+  const anchorDir = join2(repoRoot, ".omo", "ulw-loop");
+  mkdirSync(anchorDir, { recursive: true });
+  const anchorPath = join2(anchorDir, ".evidence-clock-anchor");
+  writeFileSync(anchorPath, `${Date.now()}
+`);
+  return statSync(anchorPath).mtimeMs;
+}
+function removeZeroFailurePhrases(content) {
+  return content.replace(/\bno[ \t]+(?:tests?[ \t]+)?(?:failures?|errors?)[ \t]+found\b/g, "").replace(/\b0[ \t]+(?:tests?[ \t]+)?(?:fail(?:ed|s|ures?)?|errors?)\b/g, "").replace(/\b(?:fail(?:ed|s|count|ure|ures)?|error|errors)[ \t]*[:=]?[ \t]*0\b/g, "").replace(/\b(?:failure|error)[ \t]+count[ \t]*[:=]?[ \t]*0\b/g, "");
+}
+function verifyPhysicalEvidenceFile(repoRoot, evidenceStr) {
+  const fileMatch = evidenceStr.match(/file:\/\/(?:localhost)?(\/[a-zA-Z0-9_\-./]+|[a-zA-Z]:\\[a-zA-Z0-9_\-.\\ ]+)/i);
+  if (!fileMatch) {
+    return;
+  }
+  const rawPath = fileMatch[1];
+  if (!rawPath) {
+    return;
+  }
+  let cleanPath = rawPath;
+  if (cleanPath.startsWith("///")) {
+    cleanPath = cleanPath.slice(2);
+  }
+  let absolutePath = cleanPath;
+  if (!isAbsolute(absolutePath)) {
+    absolutePath = join2(repoRoot, absolutePath);
+  }
+  if (!existsSync3(absolutePath)) {
+    throw new UlwLoopError(`Physical evidence file not found: ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_NOT_FOUND", {
+      details: { path: absolutePath }
+    });
+  }
+  const stats = statSync(absolutePath);
+  const ageInMs = physicalEvidenceReferenceTimeMs(repoRoot) - stats.mtimeMs;
+  if (ageInMs > PHYSICAL_EVIDENCE_MAX_AGE_MS) {
+    throw new UlwLoopError(`Physical evidence file is outdated (modified ${Math.round(ageInMs / 1000)}s ago, must be < 30s): ${rawPath}.`, "ULW_LOOP_EVIDENCE_FILE_OUTDATED", { details: { path: absolutePath, ageInMs } });
+  }
+  try {
+    const content = readFileSync(absolutePath, "utf8").toLowerCase();
+    const failureKeywords = ["fail", "error", "exception", "failed", "unhandledrejection", "rejected"];
+    const cleanedContent = removeZeroFailurePhrases(content);
+    for (const keyword of failureKeywords) {
+      if (cleanedContent.includes(keyword)) {
+        throw new UlwLoopError(`Physical evidence file contains error/failure keyword: "${keyword}".`, "ULW_LOOP_EVIDENCE_FILE_CONTAINS_ERRORS", { details: { path: absolutePath, keyword } });
+      }
+    }
+  } catch (err) {
+    if (err instanceof UlwLoopError)
+      throw err;
+    throw new UlwLoopError(`Failed to read physical evidence file: ${err instanceof Error ? err.message : String(err)}`, "ULW_LOOP_EVIDENCE_FILE_READ_FAILED", { details: { path: absolutePath } });
+  }
+}
+
 // components/ulw-loop/src/plan-io.ts
 import { appendFile, mkdir, readFile as readFile4, rename, writeFile } from "node:fs/promises";
 var LEGACY_OBJECTIVE_PREFIX = `Complete all ulw-loop stories in ${ULW_LOOP_DIR}/${ULW_LOOP_GOALS}: `;
@@ -646,6 +704,9 @@ async function recordEvidence(repoRoot, args, scope) {
     const goal = findGoal(plan, args.goalId);
     const criterion = findCriterion(goal, args.criterionId);
     const evidence = nonEmptyEvidence(args.evidence);
+    if (args.status === "pass") {
+      verifyPhysicalEvidenceFile(repoRoot, evidence);
+    }
     const kind = ledgerKind(args.status);
     const prevStatus = criterion.status;
     const capturedAt = iso();
@@ -982,7 +1043,7 @@ function parseAdversarialCases(value, byId) {
 }
 
 // components/ulw-loop/src/checkpoint.ts
-var QUALITY_GATE_FS = { existsSync: existsSync3, statSync };
+var QUALITY_GATE_FS = { existsSync: existsSync4, statSync: statSync2 };
 function ulwLoopFail2(message, code) {
   throw new UlwLoopError(message, code);
 }
@@ -1008,7 +1069,7 @@ async function readJsonInput2(raw, repoRoot) {
       throw error;
   }
   const path = resolve3(repoRoot, trimmed);
-  if (!existsSync3(path))
+  if (!existsSync4(path))
     return ulwLoopFail2("Quality gate JSON is neither valid JSON nor a readable path.", "ulw_loop_json_input_invalid");
   try {
     return JSON.parse(await readFile5(path, "utf8"));
@@ -1444,7 +1505,7 @@ function joinLines(lines) {
 }
 
 // components/ulw-loop/src/plan-crud.ts
-import { existsSync as existsSync4 } from "node:fs";
+import { existsSync as existsSync5 } from "node:fs";
 import { mkdir as mkdir2, writeFile as writeFile2 } from "node:fs/promises";
 
 // components/ulw-loop/src/plan-goal-factory.ts
@@ -1554,7 +1615,7 @@ function clearGoalBlockerFields2(goal) {
 }
 async function createUlwLoopPlan(repoRoot, args, scope) {
   return withUlwLoopMutationLock(repoRoot, scope, async () => {
-    if (!args.force && existsSync4(ulwLoopGoalsPath(repoRoot, scope))) {
+    if (!args.force && existsSync5(ulwLoopGoalsPath(repoRoot, scope))) {
       const existing = await readUlwLoopPlan(repoRoot, scope);
       if (isUlwLoopDone(existing))
         throw completedPlanExistsError(scope);
@@ -2270,8 +2331,8 @@ function commandScope(argv) {
 }
 
 // components/ulw-loop/src/ultrawork-directive.ts
-import { readFileSync } from "node:fs";
-var ULTRAWORK_DIRECTIVE = readFileSync(new URL("../directive.md", import.meta.url), "utf8");
+import { readFileSync as readFileSync2 } from "node:fs";
+var ULTRAWORK_DIRECTIVE = readFileSync2(new URL("../directive.md", import.meta.url), "utf8");
 var ULTRAWORK_CURRENT_PROMPT_PATTERN = /(?:ultrawork|ulw)/i;
 var ULTRAWORK_DIRECTIVE_MARKER = "<ultrawork-mode>";
 var TRANSCRIPT_SEARCH_BYTES = 512000;
@@ -2319,7 +2380,7 @@ function hasUltraworkDirectiveAlreadyInTranscript(transcriptPath) {
   return false;
 }
 function readTranscriptTail(transcriptPath) {
-  const rawTranscript = readFileSync(transcriptPath);
+  const rawTranscript = readFileSync2(transcriptPath);
   return rawTranscript.subarray(Math.max(0, rawTranscript.byteLength - TRANSCRIPT_SEARCH_BYTES)).toString("utf8");
 }
 function isUltraworkPrompt(prompt) {
@@ -2333,7 +2394,7 @@ function isContextPressureTranscript(transcriptPath) {
   if (transcriptPath === undefined || transcriptPath === null)
     return false;
   try {
-    return isContextPressureRecoveryPrompt(readFileSync(transcriptPath, "utf8"));
+    return isContextPressureRecoveryPrompt(readFileSync2(transcriptPath, "utf8"));
   } catch (error) {
     if (error instanceof Error)
       return false;
@@ -2406,8 +2467,11 @@ async function applyUserPromptUlwLoopSteering(payload, options = {}) {
     if (payload.hook_event_name !== "UserPromptSubmit")
       return "";
     const proposal = parseUlwLoopSteeringDirective(payload.prompt);
-    if (proposal === null)
+    if (proposal === null) {
+      if (hasSteeringDirectiveMarker(payload.prompt))
+        return "";
       return options.includeUltraworkDirective ? buildUltraworkDirectiveOutput(payload) : "";
+    }
     const result = await steerUlwLoop(payload.cwd, proposal, payloadScope(payload));
     if (!result.accepted)
       return "";
@@ -2422,6 +2486,9 @@ async function applyUserPromptUlwLoopSteering(payload, options = {}) {
       return "";
     return "";
   }
+}
+function hasSteeringDirectiveMarker(prompt) {
+  return /(?:^|\s)(?:OMO_ULW_LOOP_STEER|omo\.ulw-loop\.steer|omo ulw-loop steer):/u.test(prompt);
 }
 function payloadScope(payload) {
   return { sessionId: payload.session_id };
