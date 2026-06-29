@@ -1,5 +1,5 @@
 interface:
-  display_name: "lcx-doctor (omo)"
+  display_name: "(OmO) lcx-doctor"
   short_description: "Diagnose LazyCodex/Codex install health against latest sources"
   search_terms:
     - "lcx-doctor"

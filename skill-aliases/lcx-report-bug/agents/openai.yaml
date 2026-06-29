@@ -1,5 +1,5 @@
 interface:
-  display_name: "lcx-report-bug (omo)"
+  display_name: "(OmO) lcx-report-bug"
   short_description: "Route LazyCodex or Codex bugs with source evidence"
   search_terms:
     - "lcx-report-bug"
