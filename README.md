@@ -450,9 +450,9 @@ This project incorporates ideas and code from the following open-source projects
 | [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) | [@code-yeongyu](https://github.com/code-yeongyu) | OMX 오케스트레이션, 멀티 에이전트 위임, 모델 라우팅 |
 | [asbrowse](skills/browse/) | abworser | 세션 브라우저 비주얼 대시보드 |
 | [insane-research](https://github.com/fivetaku/insane-research) | [@fivetaku](https://github.com/fivetaku) | ultraresearch 검증 게이트 아이디어 (MIT) |
-| [open-design](src/packages/shared-skills/upstreams/open-design/) | [@nexu-io](https://github.com/nexu-io) | 디자인 시스템 스킬 업스트림 |
-| [taste-skill](src/packages/shared-skills/upstreams/taste-skill/) | [@Leonxlnx](https://github.com/Leonxlnx) | UI/UX 테이스트 라우터 |
-| [designpowers](src/packages/shared-skills/upstreams/designpowers/) | [@Owl-Listener](https://github.com/Owl-Listener) | 디자인 파워 레퍼런스 |
+| [open-design](https://github.com/nexu-io/open-design) | [@nexu-io](https://github.com/nexu-io) | 디자인 시스템 스킬 업스트림 |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) | [@Leonxlnx](https://github.com/Leonxlnx) | UI/UX 테이스트 라우터 |
+| [designpowers](https://github.com/Owl-Listener/designpowers) | [@Owl-Listener](https://github.com/Owl-Listener) | 디자인 파워 레퍼런스 |
 | [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST 구조 검색 & 코드모드 |
 | [Context7](https://context7.com/) | Context7 team | 공식 문서 MCP 서버 |
 | [Grep.app](https://grep.app/) | Grep.app team | GitHub 코드 검색 MCP 서버 |

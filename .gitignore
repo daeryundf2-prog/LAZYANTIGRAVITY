@@ -3,6 +3,8 @@ node_modules/
 .DS_Store
 *.log
 *.tmp
+__pycache__/
+*.py[cod]
 .lazycodex/
 .omo/
 src/*
@@ -10,8 +12,7 @@ src/*
 !src/README.ko.md
 scratch/
 plugins/
-shared-skills
-ast-grep-mcp
-git-bash-mcp
-lsp-tools-mcp
+/ast-grep-mcp
+/git-bash-mcp
+/lsp-tools-mcp
 package-lock.json

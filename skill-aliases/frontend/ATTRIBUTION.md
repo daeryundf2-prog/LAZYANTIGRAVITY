@@ -7,12 +7,11 @@ oh-my-opencode Software are licensed under the original license provided by the 
 the applicable component"). Each upstream's license and required notices are reproduced
 below. Modifications to the original files are noted where applicable.
 
-These third-party references are NOT committed to this repository. Each upstream is
-tracked as a pinned git submodule under `packages/shared-skills/upstreams/<name>`, and the
-build materializes the referenced files verbatim, path-mapped into this skill's
-`references/` tree, when packaging the published artifact. The `Pinned upstream commit`
-line in each section below records the exact submodule commit that the materialization
-reads.
+These third-party references are tracked in this aggregate checkout so
+`scripts/sync-skills.mjs` can rebuild the packaged `skills/frontend-ui-ux/` surface from
+source. In the upstream shared-skills package they are materialized from pinned upstream
+repositories; the `Pinned upstream commit` line in each section below records the exact
+upstream commit used for provenance.
 
 ---
 
@@ -21,13 +20,15 @@ reads.
 The brand design-system reference files under `frontend/references/design/<brand>.md`
 (Apple, Stripe, Linear, Nike, BMW, Airbnb, Bugatti, Tesla, and the other named brands)
 are path-mapped verbatim copies of the `design-systems/<brand>/DESIGN.md` files from the
-Open Design project. They are not committed here; the build materializes them from the
-pinned submodule under `packages/shared-skills/upstreams/open-design` into
-`frontend/references/design/<brand>.md` (dots in `<brand>` map to dashes for the upstream
-directory name, e.g. `linear.app` -> `linear-app`).
+Open Design project. In the upstream shared-skills package, the build materializes them
+from the pinned submodule under `packages/shared-skills/upstreams/open-design` into
+`frontend/references/design/<brand>.md`; in this aggregate checkout, those materialized
+files are tracked as alias inputs so clean-clone skill synchronization remains complete
+(dots in `<brand>` map to dashes for the upstream directory name, e.g. `linear.app` ->
+`linear-app`).
 
 - Source: https://github.com/nexu-io/open-design
-- Pinned upstream commit: 6afe7eae156bfa29251a51fd0636649c257f7444
+- Pinned upstream commit: 54de349c476c0cb107bd9f85aca73ba6d7c4f9a8
 - Copyright 2026 Open Design contributors
 - Licensed under the Apache License, Version 2.0 (the "License"); you may not use these
   files except in compliance with the License. You may obtain a copy of the License at:
@@ -66,8 +67,9 @@ The taste-skill files and image-generation skills under `frontend/references/des
 `imagegen-brandkit.md`) are path-mapped verbatim copies of the per-skill `SKILL.md` files
 from the taste-skill project (each `skills/<name>/SKILL.md` is renamed to
 `references/design/<name>.md`; `imagegen-brandkit.md` maps from `skills/brandkit/SKILL.md`).
-They are not committed here; the build materializes them from the pinned submodule under
-`packages/shared-skills/upstreams/taste-skill`.
+In the upstream shared-skills package, the build materializes them from the pinned
+submodule under `packages/shared-skills/upstreams/taste-skill`; in this aggregate
+checkout, those materialized files are tracked as alias inputs.
 
 - Source: https://github.com/Leonxlnx/taste-skill
 - Pinned upstream commit: 06d6028b5c623016c59ce8536f578e5a1127b499
@@ -102,9 +104,10 @@ SOFTWARE.
 
 The search engine and dataset under `frontend/references/ui-ux-db/` (`scripts/core.py`,
 `scripts/search.py`, `scripts/design_system.py`, `README.md`, and the `data/*.csv`
-knowledge base) are path-mapped verbatim copies from the UI/UX Pro Max skill. They are not
-committed here; the build materializes them from the pinned submodule under
-`packages/shared-skills/upstreams/ui-ux-pro-max`:
+knowledge base) are path-mapped verbatim copies from the UI/UX Pro Max skill. In the
+upstream shared-skills package, the build materializes them from the pinned submodule
+under `packages/shared-skills/upstreams/ui-ux-pro-max`; in this aggregate checkout, those
+materialized files are tracked as alias inputs:
 `scripts/*.py` from `src/ui-ux-pro-max/scripts/`, `data/*.csv` from
 `src/ui-ux-pro-max/data/` (`data/web-interface.csv` maps from the upstream
 `data/app-interface.csv`), and `README.md` from `.claude/skills/ui-ux-pro-max/SKILL.md`.

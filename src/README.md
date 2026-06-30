@@ -506,9 +506,9 @@ This project incorporates ideas and code from the following open-source projects
 | [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) | [@code-yeongyu](https://github.com/code-yeongyu) | OMX orchestration, multi-agent delegation, model routing |
 | [asbrowse](../skills/browse/) | abworser | Session browser visual dashboard |
 | [insane-research](https://github.com/fivetaku/insane-research) | [@fivetaku](https://github.com/fivetaku) | ultraresearch verification gate idea (MIT) |
-| [open-design](../src/packages/shared-skills/upstreams/open-design/) | [@nexu-io](https://github.com/nexu-io) | Design system skill upstream |
-| [taste-skill](../src/packages/shared-skills/upstreams/taste-skill/) | [@Leonxlnx](https://github.com/Leonxlnx) | UI/UX taste router |
-| [designpowers](../src/packages/shared-skills/upstreams/designpowers/) | [@Owl-Listener](https://github.com/Owl-Listener) | Design power references |
+| [open-design](https://github.com/nexu-io/open-design) | [@nexu-io](https://github.com/nexu-io) | Design system skill upstream |
+| [taste-skill](https://github.com/Leonxlnx/taste-skill) | [@Leonxlnx](https://github.com/Leonxlnx) | UI/UX taste router |
+| [designpowers](https://github.com/Owl-Listener/designpowers) | [@Owl-Listener](https://github.com/Owl-Listener) | Design power references |
 | [ast-grep](https://ast-grep.github.io/) | ast-grep team | AST structural search & codemods |
 | [Context7](https://context7.com/) | Context7 team | Official docs MCP server |
 | [Grep.app](https://grep.app/) | Grep.app team | GitHub code search MCP server |
