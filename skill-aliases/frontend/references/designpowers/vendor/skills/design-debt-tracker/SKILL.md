@@ -1,6 +1,6 @@
 ---
 name: design-debt-tracker
-description: Use when critique or review produces deferred findings, when checking accumulated design compromises, or when deciding what to address in the next iteration. Maintains a living register of design debt — the minor issues, future-iteration notes, and conscious compromises that accumulate across a project
+description: "Use when critique or review produces deferred findings, when checking accumulated design compromises, or when deciding what to address in the next iteration. Maintains a living register of design debt — the minor issues, future-iteration notes, and conscious compromises that accumulate across a project"
 ---
 
 # Design Debt Tracker

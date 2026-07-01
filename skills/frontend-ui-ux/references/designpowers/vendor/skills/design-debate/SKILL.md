@@ -1,6 +1,6 @@
 ---
 name: design-debate
-description: Use when a design direction is uncertain, when the team could go multiple ways, or when the user wants to see competing approaches argued before committing — orchestrates structured debate between agents who advocate for different directions
+description: "Use when a design direction is uncertain, when the team could go multiple ways, or when the user wants to see competing approaches argued before committing — orchestrates structured debate between agents who advocate for different directions"
 ---
 
 # Design Debate

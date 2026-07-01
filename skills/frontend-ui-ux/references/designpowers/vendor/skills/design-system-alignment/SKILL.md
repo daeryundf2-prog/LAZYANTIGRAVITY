@@ -1,6 +1,6 @@
 ---
 name: design-system-alignment
-description: Use when working with or building design systems — tokens, components, naming conventions, theming, or pattern libraries — ensures consistency, accessibility compliance, and systematic thinking
+description: "Use when working with or building design systems — tokens, components, naming conventions, theming, or pattern libraries — ensures consistency, accessibility compliance, and systematic thinking"
 ---
 
 # Design System Alignment

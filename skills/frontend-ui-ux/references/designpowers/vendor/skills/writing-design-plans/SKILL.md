@@ -1,6 +1,6 @@
 ---
 name: writing-design-plans
-description: Use when you have a design brief or strategy and need to break implementation into reviewable chunks — creates step-by-step plans with verification criteria for each task
+description: "Use when you have a design brief or strategy and need to break implementation into reviewable chunks — creates step-by-step plans with verification criteria for each task"
 ---
 
 # Writing Design Plans

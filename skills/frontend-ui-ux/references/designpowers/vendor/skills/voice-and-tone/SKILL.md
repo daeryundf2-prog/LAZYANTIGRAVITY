@@ -1,6 +1,6 @@
 ---
 name: voice-and-tone
-description: Use when establishing or applying brand voice — defining voice attributes, tone adaptation across contexts, vocabulary lists, writing examples, and ensuring consistent personality across the interface
+description: "Use when establishing or applying brand voice — defining voice attributes, tone adaptation across contexts, vocabulary lists, writing examples, and ensuring consistent personality across the interface"
 ---
 
 # Voice and Tone

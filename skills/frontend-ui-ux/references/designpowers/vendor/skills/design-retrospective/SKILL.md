@@ -1,6 +1,6 @@
 ---
 name: design-retrospective
-description: Use after shipping or completing a design project — structured reflection on what worked, what didn't, and what taste decisions landed. Adds observations to the design record (design-memory) about how the user designs — a descriptive journal, not preferences applied to future projects
+description: "Use after shipping or completing a design project — structured reflection on what worked, what didn't, and what taste decisions landed. Adds observations to the design record (design-memory) about how the user designs — a descriptive journal, not preferences applied to future projects"
 ---
 
 # Design Retrospective

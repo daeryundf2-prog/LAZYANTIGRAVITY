@@ -1,6 +1,6 @@
 ---
 name: usability-testing
-description: Use when planning or conducting usability tests — writing test scripts, defining tasks, selecting participants, analysing findings, and turning observations into design actions
+description: "Use when planning or conducting usability tests — writing test scripts, defining tasks, selecting participants, analysing findings, and turning observations into design actions"
 ---
 
 # Usability Testing

@@ -1,6 +1,6 @@
 ---
 name: designpowers-critique
-description: Use when reviewing design work against a plan, design principles, or quality standards — provides structured critique covering design intent, accessibility, consistency, and user impact. This is the Designpowers critique skill — use this instead of the Superpowers design-critique when working within a Designpowers workflow
+description: "Use when reviewing design work against a plan, design principles, or quality standards — provides structured critique covering design intent, accessibility, consistency, and user impact. This is the Designpowers critique skill — use this instead of the Superpowers design-critique when working within a Designpowers workflow"
 ---
 
 # Design Critique

@@ -1,6 +1,6 @@
 ---
 name: adaptive-interfaces
-description: Use when designing for user preferences — motion sensitivity, contrast needs, colour schemes, text sizing, information density, or any interface behaviour that should adapt to individual needs
+description: "Use when designing for user preferences — motion sensitivity, contrast needs, colour schemes, text sizing, information density, or any interface behaviour that should adapt to individual needs"
 ---
 
 # Adaptive Interfaces

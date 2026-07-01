@@ -1,6 +1,6 @@
 ---
 name: inspiration-scouting
-description: Use when the team needs aesthetic references, interaction examples, or visual inspiration beyond competitive research — finds design patterns, UI references, and creative approaches that match the brief and taste profile
+description: "Use when the team needs aesthetic references, interaction examples, or visual inspiration beyond competitive research — finds design patterns, UI references, and creative approaches that match the brief and taste profile"
 ---
 
 # Inspiration Scouting

@@ -1,6 +1,6 @@
 ---
 name: motion-choreography
-description: Use when designing animation sequences, page transitions, micro-interactions, loading states, or any motion that communicates meaning — ensures motion is purposeful, performant, and safe for motion-sensitive users
+description: "Use when designing animation sequences, page transitions, micro-interactions, loading states, or any motion that communicates meaning — ensures motion is purposeful, performant, and safe for motion-sensitive users"
 ---
 
 # Motion Choreography

@@ -1,6 +1,6 @@
 ---
 name: verification-before-shipping
-description: Use before declaring any design work complete, fixed, or ready — requires running verification and confirming output before making any success claims. Evidence before assertions, always
+description: "Use before declaring any design work complete, fixed, or ready — requires running verification and confirming output before making any success claims. Evidence before assertions, always"
 ---
 
 # Verification Before Shipping

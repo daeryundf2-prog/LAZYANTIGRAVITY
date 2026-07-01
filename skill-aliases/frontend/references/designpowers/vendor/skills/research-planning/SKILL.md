@@ -1,6 +1,6 @@
 ---
 name: research-planning
-description: Use when user needs are unclear, assumptions need validation, or the design brief identifies gaps in understanding — plans what to learn, which methods to use, and from whom
+description: "Use when user needs are unclear, assumptions need validation, or the design brief identifies gaps in understanding — plans what to learn, which methods to use, and from whom"
 ---
 
 # Research Planning

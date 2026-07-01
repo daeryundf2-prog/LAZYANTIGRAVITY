@@ -1,6 +1,6 @@
 ---
 name: ui-composition
-description: Use when building layouts, choosing colours, setting typography, establishing visual hierarchy, designing responsive behaviour, or making any visual design decision — ensures every visual choice serves both aesthetics and accessibility
+description: "Use when building layouts, choosing colours, setting typography, establishing visual hierarchy, designing responsive behaviour, or making any visual design decision — ensures every visual choice serves both aesthetics and accessibility"
 ---
 
 # UI Composition

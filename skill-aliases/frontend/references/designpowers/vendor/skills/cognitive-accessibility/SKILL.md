@@ -1,6 +1,6 @@
 ---
 name: cognitive-accessibility
-description: Use when evaluating mental load, wayfinding, focus management, memory demands, or decision complexity in any interface — ensures designs work for people with cognitive differences, under stress, or managing divided attention
+description: "Use when evaluating mental load, wayfinding, focus management, memory demands, or decision complexity in any interface — ensures designs work for people with cognitive differences, under stress, or managing divided attention"
 ---
 
 # Cognitive Accessibility

@@ -1,6 +1,6 @@
 ---
 name: taste-feedback
-description: Use during the build phase to show the user intermediate visual output and ask for taste direction before the full build completes — enables mid-flight course correction so taste mismatches are caught early, not in review
+description: "Use during the build phase to show the user intermediate visual output and ask for taste direction before the full build completes — enables mid-flight course correction so taste mismatches are caught early, not in review"
 ---
 
 # Live Taste Feedback

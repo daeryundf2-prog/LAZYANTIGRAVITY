@@ -1,6 +1,6 @@
 ---
 name: interaction-design
-description: Use when designing states, transitions, animations, error handling, loading patterns, feedback, or any behaviour that responds to user action — ensures interactions are perceivable, operable, and inclusive
+description: "Use when designing states, transitions, animations, error handling, loading patterns, feedback, or any behaviour that responds to user action — ensures interactions are perceivable, operable, and inclusive"
 ---
 
 # Interaction Design

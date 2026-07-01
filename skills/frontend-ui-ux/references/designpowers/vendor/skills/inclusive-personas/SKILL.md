@@ -1,6 +1,6 @@
 ---
 name: inclusive-personas
-description: Use when defining who a design serves — creating personas, user stories, or scenarios — ensures the full ability spectrum and situational contexts are represented from the start, not retrofitted
+description: "Use when defining who a design serves — creating personas, user stories, or scenarios — ensures the full ability spectrum and situational contexts are represented from the start, not retrofitted"
 ---
 
 # Inclusive Personas

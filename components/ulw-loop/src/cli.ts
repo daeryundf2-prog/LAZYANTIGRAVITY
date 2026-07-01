@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+if (typeof (globalThis as any).structuredClone !== "function") {
+	(globalThis as any).structuredClone = <T>(val: T): T => {
+		if (val === undefined) return undefined as any;
+		return JSON.parse(JSON.stringify(val));
+	};
+}
 import { isUlwLoopSubcommand, ulwLoopCommand } from "./cli-commands.js";
 import { runPreToolUseGoalBudgetGuardCli, runUlwLoopHookCli } from "./codex-hook.js";
 

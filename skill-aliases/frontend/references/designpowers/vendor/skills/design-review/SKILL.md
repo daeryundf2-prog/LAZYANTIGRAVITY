@@ -1,6 +1,6 @@
 ---
 name: design-review
-description: Use when the user wants to evaluate something that ALREADY EXISTS rather than build something new — "review this", "audit this screen", "what's wrong with this page", "is this accessible?", or when they share a screenshot, URL, or existing code/markup. Runs the existing reviewers (design-critic, accessibility-reviewer, heuristic-evaluator) in parallel against the artefact and reconciles their findings into one prioritised report — WITHOUT running discovery, strategy, or the full build pipeline
+description: "Use when the user wants to evaluate something that ALREADY EXISTS rather than build something new — \"review this\", \"audit this screen\", \"what's wrong with this page\", \"is this accessible?\", or when they share a screenshot, URL, or existing code/markup. Runs the existing reviewers (design-critic, accessibility-reviewer, heuristic-evaluator) in parallel against the artefact and reconciles their findings into one prioritised report — WITHOUT running discovery, strategy, or the full build pipeline"
 ---
 
 # Design Review (the review lane)

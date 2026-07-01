@@ -1,6 +1,6 @@
 ---
 name: responsive-patterns
-description: Use when designing complex responsive layouts — breakpoint strategy, layout shifts, content reflow, responsive typography, container queries, and ensuring the experience works across the full device spectrum
+description: "Use when designing complex responsive layouts — breakpoint strategy, layout shifts, content reflow, responsive typography, container queries, and ensuring the experience works across the full device spectrum"
 ---
 
 # Responsive Patterns

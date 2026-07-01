@@ -1,6 +1,6 @@
 ---
 name: token-architecture
-description: Use when building or restructuring design token systems — global tokens, semantic tokens, component tokens, naming conventions, theming, and multi-platform token distribution
+description: "Use when building or restructuring design token systems — global tokens, semantic tokens, component tokens, naming conventions, theming, and multi-platform token distribution"
 ---
 
 # Token Architecture

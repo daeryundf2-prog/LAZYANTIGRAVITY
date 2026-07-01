@@ -1,7 +1,3 @@
----
-name: review-work
-description: "Post-implementation review orchestrator. Launches 5 parallel background sub-agents: Oracle (goal/constraint verification), Oracle (code quality), Oracle (security), unspecified-high (hands-on QA execution), unspecified-high (context mining from GitHub/git/Slack/Notion). All must pass for review to pass. MUST USE after completing any significant implementation work. Triggers: 'review work', 'review my work', 'review changes', 'QA my work', 'verify implementation', 'check my work', 'validate changes', 'post-implementation review'."
----
 ## Antigravity Harness Tool Compatibility
 
 This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
@@ -21,6 +17,10 @@ Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` suba
 
 For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
 
+---
+name: review-work
+description: "Post-implementation review orchestrator. Launches 5 parallel background sub-agents: Oracle (goal/constraint verification), Oracle (code quality), Oracle (security), unspecified-high (hands-on QA execution), unspecified-high (context mining from GitHub/git/Slack/Notion). All must pass for review to pass. MUST USE after completing any significant implementation work. Triggers: 'review work', 'review my work', 'review changes', 'QA my work', 'verify implementation', 'check my work', 'validate changes', 'post-implementation review'."
+---
 ## Codex Harness Tool Compatibility
 
 This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
@@ -36,6 +36,10 @@ This skill may include examples copied from the OpenCode harness. In Codex, do n
 | `team_*(...)` | Use Codex native subagents via `multi_agent_v1.spawn_agent`, `multi_agent_v1.send_input`, `multi_agent_v1.wait_agent`, and `multi_agent_v1.close_agent` |
 
 Role-specific behavior must be described in a self-contained `message`. Use `fork_context: false` to start the child with only the initial prompt (no parent history); use `fork_context: true` only when full parent history is truly required. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. OMO installs these selectable agent roles into `~/.codex/agents/`: `explorer`, `librarian`, `plan`, `momus`, `metis`, `lazycodex-code-reviewer`, `lazycodex-qa-executor`, and `lazycodex-gate-reviewer` - pass the matching name as `agent_type` so the child gets that role's model and instructions. If the spawn tool exposes no `agent_type` parameter, omit it and describe the role inside `message`. If a code block below conflicts with this section, this section wins.
+
+On `multi_agent_v2` sessions the same `agent_type` applies (the OMO installer exposes it) with `fork_turns` instead of `fork_context`. If a code block below conflicts with this section, this section wins.
+
+When translating `load_skills=[...]`, include the requested skill names in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
 
 For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `multi_agent_v1.wait_agent` timeout only means no new mailbox update arrived. Treat a running child as alive. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.
 
@@ -77,7 +81,11 @@ gate, it is blocking. A timeout, missing deliverable, ack-only response,
 explicit `BLOCKED:`, or inconclusive lane is not a pass. Treat that lane as
 failed, investigate the underlying uncertainty with the `debugging` skill when
 runtime behavior may be wrong, fix with evidence, and rerun the affected lane
-before claiming completion or handing off a PR.
+before claiming completion, creating or handing off a PR, or merging.
+
+When reviewing a PR or branch, collect diff, file contents, and verification
+results from a dedicated review worktree attached to that branch. Never
+checkout, test, or edit the review branch in the main worktree.
 
 Review evidence must be safe to share. Redact or mask secrets and sensitive
 user data before including evidence in logs, PR bodies, or handoffs. Never
@@ -114,7 +122,7 @@ Before launching agents, collect these inputs. Extract from conversation history
 </required_inputs>
 
 
-**NEVER CHECKOUT A PR BRANCH IN THE MAIN WORKTREE. ALWAYS CREATE A NEW GIT WORKTREE (`git worktree add`) AND WORK THERE. THIS PREVENTS CONTAMINATING THE USER'S WORKING DIRECTORY WITH UNRELATED BRANCH STATE.**
+Review PRs and branches from a dedicated review worktree only: create or attach one with `git worktree add <path> <branch>` before collecting changed files, diff, file contents, or running checks. The main worktree is read-only context; never checkout, test, or edit the review branch there.
 
 **Auto-collection sequence:**
 
@@ -232,7 +240,7 @@ The QA agent follows a structured process: brainstorm scenarios exhaustively fir
 task(
   category="unspecified-high",
   run_in_background=true,
-  load_skills=["playwright", "dev-browser"],
+  load_skills=["browser:control-in-app-browser", "playwright", "dev-browser"],
   description="QA by actually running and using the application",
   prompt="""
 <review_type>QA - HANDS-ON APP EXECUTION</review_type>
@@ -300,7 +308,7 @@ Work through the task list in priority order (P0 first). For each test:
 6. Mark the task complete
 
 **Execution guidance by app type:**
-- **Web app**: Use playwright/dev-browser to navigate, click, fill forms, verify visual output.
+- **Web app**: In Codex, use `browser:control-in-app-browser` first for browser work that does not need an authenticated user session. Fall back to playwright/dev-browser when the Browser plugin is unavailable, lacks the needed action, or the test specifically needs a persistent/authenticated browser profile. Navigate, click, fill forms, and verify visual output through the chosen browser surface.
 - **CLI tool**: Run commands with various arguments, pipe inputs, check exit codes and output.
 - **Library/SDK**: Write and execute a test script that imports and exercises the public API.
 - **Backend API**: Use curl/httpie to hit endpoints with various payloads, verify response codes and bodies.

@@ -1,6 +1,6 @@
 ---
 name: taste-report
-description: Use when the user wants to see how they design — "what's my taste", "show me my taste report", "how do I decide", "what are my patterns", or periodically as the personal profile matures. Generates a longitudinal, reflective report from the PERSONAL taste profile (design-memory) — recurring moves, tells, evolution, blind spots — that helps a designer understand their own instincts. Personal layer only: it never reports client-specific signals from any project's DESIGN.md
+description: "Use when the user wants to see how they design — \"what's my taste\", \"show me my taste report\", \"how do I decide\", \"what are my patterns\", or periodically as the personal profile matures. Generates a longitudinal, reflective report from the PERSONAL taste profile (design-memory) — recurring moves, tells, evolution, blind spots — that helps a designer understand their own instincts. Personal layer only: it never reports client-specific signals from any project's DESIGN.md"
 ---
 
 # Taste Report

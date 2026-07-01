@@ -1,6 +1,6 @@
 ---
 name: accessible-content
-description: Use when writing or structuring any user-facing content — interface copy, labels, error messages, help text, headings, alt text, link text, or form instructions — ensures content is readable, navigable, and meaningful for everyone
+description: "Use when writing or structuring any user-facing content — interface copy, labels, error messages, help text, headings, alt text, link text, or form instructions — ensures content is readable, navigable, and meaningful for everyone"
 ---
 
 # Accessible Content

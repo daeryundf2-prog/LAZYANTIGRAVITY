@@ -1,6 +1,6 @@
 ---
 name: design-handoff
-description: Use when design work is complete and needs to be communicated to engineering — creates specifications, documents rationale, accessibility requirements, and interaction details in a format engineers can implement directly
+description: "Use when design work is complete and needs to be communicated to engineering — creates specifications, documents rationale, accessibility requirements, and interaction details in a format engineers can implement directly"
 ---
 
 # Design Handoff
