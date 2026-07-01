@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-if (typeof globalThis.structuredClone !== "function") {
-    globalThis.structuredClone = (val) => {
+if (typeof globalThis["structuredClone"] !== "function") {
+    globalThis["structuredClone"] = (val) => {
         if (val === undefined)
             return undefined;
         return JSON.parse(JSON.stringify(val));
