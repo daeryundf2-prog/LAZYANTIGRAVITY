@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 if (typeof (globalThis as Record<string, unknown>)["structuredClone"] !== "function") {
 	(globalThis as Record<string, unknown>)["structuredClone"] = <T>(val: T): T => {
-		if (val === undefined) return undefined as unknown as T;
+		if (val === undefined) return val;
 		return JSON.parse(JSON.stringify(val)) as T;
 	};
 }

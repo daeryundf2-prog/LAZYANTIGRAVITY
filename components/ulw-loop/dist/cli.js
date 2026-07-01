@@ -2,7 +2,7 @@
 if (typeof globalThis["structuredClone"] !== "function") {
     globalThis["structuredClone"] = (val) => {
         if (val === undefined)
-            return undefined;
+            return val;
         return JSON.parse(JSON.stringify(val));
     };
 }
