@@ -61,6 +61,23 @@ async function main() {
 		let stdoutData = "";
 		let stderrData = "";
 
+		const forwardSignal = (sig) => {
+			try {
+				child.kill(sig);
+			} catch (e) {
+				// ignore
+			}
+			process.exit(1);
+		};
+
+		const sigIntHandler = () => forwardSignal("SIGINT");
+		const sigTermHandler = () => forwardSignal("SIGTERM");
+		const sigBreakHandler = () => forwardSignal("SIGBREAK");
+
+		process.on("SIGINT", sigIntHandler);
+		process.on("SIGTERM", sigTermHandler);
+		process.on("SIGBREAK", sigBreakHandler);
+
 		child.stdout.on("data", (chunk) => {
 			stdoutData += chunk;
 		});
@@ -76,6 +93,10 @@ async function main() {
 		child.stdin.end();
 
 		child.on("close", (code) => {
+			process.off("SIGINT", sigIntHandler);
+			process.off("SIGTERM", sigTermHandler);
+			process.off("SIGBREAK", sigBreakHandler);
+
 			if (code === 0) {
 				// Success
 				process.stdout.write(stdoutData);
