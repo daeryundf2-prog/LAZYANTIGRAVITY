@@ -41,3 +41,14 @@ When a raw transcript is provided:
     - **Key Decisions**: Explicit bulleted actions or decisions made.
     - **Follow-up Tasks**: Assigned items and next milestones.
     - **Technical Context**: Glossary terms observed in this turn.
+
+---
+
+## 3. Automatic Context-Aware Diarization (Route B Integration)
+
+To completely eliminate manual corrections of phonetic errors, the STT Pipeline (`stt-diarize-gemini.mjs`) automatically scans and incorporates metadata JSON files (such as `*.info.json` from `yt-dlp` or `video_info.json` containing the video title, uploader/channel, and description).
+
+### How it Works:
+1. **Metadata Auto-Resolution**: When processing an audio file (e.g. `.omo/stt-temp/beKjAiS8n44_preprocessed.wav`), the pipeline automatically looks for a matching `beKjAiS8n44.json` or `video_info.json`.
+2. **Context-Aware Prompt Injection**: The script reads the title and uploader (e.g., K-pop group RESCENE / channel "안원잘부") and passes them to Gemini 2.5 Flash as inline context instructions.
+3. **Automatic Correction**: This prevents common ASR failures (e.g. transcribing "쪽팔려게임" as "쪽팔륙", "할래말래" as "할리발레", "리트랑 메트" as "리툰아 매트") in a single pass without needing manual post-editing.
