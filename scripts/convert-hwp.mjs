@@ -31,23 +31,42 @@ console.log(`=== Parsing HWP Document: ${hwpFile} ===`);
 let success = false;
 let parsedText = "";
 
-// 1. Try running Rust-based rhwp CLI if installed in PATH or cargo
+// 1. Try running kordoc via npx or global command
 try {
-	// rhwp export-markdown <file> -o <cacheDir>
-	execSync(`rhwp export-markdown "${targetPath}" -o "${cacheDir}"`, { cwd: root, stdio: ["ignore", "pipe", "ignore"] });
-	
-	// The CLI exports pages as markdown inside cacheDir
-	// e.g. <cacheDir>/<basename>.md
-	const expectedOut = join(cacheDir, `${basename(hwpFile).replace(/\.hwp(x)?$/, "")}.md`);
-	if (existsSync(expectedOut)) {
+	// kordoc <file> -o <outMarkdownPath>
+	// Since kordoc parses HWP, HWPX, PDF, DOCX, XLSX, etc., we can run it via npx.
+	execSync(`npx -y kordoc "${targetPath}" -o "${outMarkdownPath}"`, { cwd: root, stdio: ["ignore", "pipe", "ignore"] });
+	if (existsSync(outMarkdownPath)) {
 		const fs = await import("node:fs");
-		parsedText = fs.readFileSync(expectedOut, "utf8");
-		fs.unlinkSync(expectedOut); // clean up intermediate file
-		success = true;
-		console.log("Successfully parsed using native rhwp CLI!");
+		parsedText = fs.readFileSync(outMarkdownPath, "utf8");
+		if (parsedText.trim().length > 0) {
+			success = true;
+			console.log("Successfully parsed using kordoc!");
+		}
 	}
-} catch (e1) {
-	console.warn("Native rhwp CLI is not available or failed. Trying Node.js binary strings fallback...");
+} catch (e0) {
+	console.warn("kordoc CLI is not available or failed. Trying native rhwp CLI fallback...");
+}
+
+// 2. Try running Rust-based rhwp CLI if installed in PATH or cargo
+if (!success) {
+	try {
+		// rhwp export-markdown <file> -o <cacheDir>
+		execSync(`rhwp export-markdown "${targetPath}" -o "${cacheDir}"`, { cwd: root, stdio: ["ignore", "pipe", "ignore"] });
+		
+		// The CLI exports pages as markdown inside cacheDir
+		// e.g. <cacheDir>/<basename>.md
+		const expectedOut = join(cacheDir, `${basename(hwpFile).replace(/\.hwp(x)?$/, "")}.md`);
+		if (existsSync(expectedOut)) {
+			const fs = await import("node:fs");
+			parsedText = fs.readFileSync(expectedOut, "utf8");
+			fs.unlinkSync(expectedOut); // clean up intermediate file
+			success = true;
+			console.log("Successfully parsed using native rhwp CLI!");
+		}
+	} catch (e1) {
+		console.warn("Native rhwp CLI is not available or failed. Trying Node.js binary strings fallback...");
+	}
 }
 
 // 2. Fallback: Extract raw Korean UTF-16 / ASCII text fragments directly from binary file

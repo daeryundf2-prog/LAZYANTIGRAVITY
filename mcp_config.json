@@ -21,6 +21,14 @@
 				"mcp"
 			],
 			"cwd": "."
+		},
+		"kordoc": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"kordoc",
+				"mcp"
+			]
 		}
 	}
 }

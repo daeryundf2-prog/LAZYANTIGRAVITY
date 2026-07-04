@@ -23,6 +23,7 @@ const expectedSkills = [
 	"git-master",
 	"hwp-loader",
 	"init-deep",
+	"kordoc",
 	"lcx-contribute-bug-fix",
 	"lcx-doctor",
 	"lcx-report-bug",
