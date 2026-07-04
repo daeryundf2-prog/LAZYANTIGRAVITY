@@ -33,20 +33,21 @@ let parsedText = "";
 
 // 1. Try running Rust-based rhwp CLI if installed in PATH or cargo
 try {
-	// Query CLI for help or dump
-	// Usually rhwp dump <file> or rhwp parse
-	parsedText = execSync(`rhwp parse "${targetPath}"`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-	success = true;
-	console.log("Successfully parsed using native rhwp CLI!");
-} catch (e1) {
-	try {
-		// Try fallback: rhwp print <file>
-		parsedText = execSync(`rhwp print "${targetPath}"`, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+	// rhwp export-markdown <file> -o <cacheDir>
+	execSync(`rhwp export-markdown "${targetPath}" -o "${cacheDir}"`, { cwd: root, stdio: ["ignore", "pipe", "ignore"] });
+	
+	// The CLI exports pages as markdown inside cacheDir
+	// e.g. <cacheDir>/<basename>.md
+	const expectedOut = join(cacheDir, `${basename(hwpFile).replace(/\.hwp(x)?$/, "")}.md`);
+	if (existsSync(expectedOut)) {
+		const fs = await import("node:fs");
+		parsedText = fs.readFileSync(expectedOut, "utf8");
+		fs.unlinkSync(expectedOut); // clean up intermediate file
 		success = true;
-		console.log("Successfully parsed using native rhwp CLI (print fallback)!");
-	} catch (e2) {
-		console.warn("Native rhwp CLI is not available or failed. Trying Node.js binary strings fallback...");
+		console.log("Successfully parsed using native rhwp CLI!");
 	}
+} catch (e1) {
+	console.warn("Native rhwp CLI is not available or failed. Trying Node.js binary strings fallback...");
 }
 
 // 2. Fallback: Extract raw Korean UTF-16 / ASCII text fragments directly from binary file
