@@ -44,6 +44,7 @@ const expectedSkills = [
 	"ulw-plan",
 	"ulw-research",
 	"visual-qa",
+	"voice-interpreter",
 ];
 
 const componentSkillSources = [
