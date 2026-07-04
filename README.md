@@ -152,10 +152,13 @@ If you want to use the **Ultimate Browsing / Insane Search** skill to bypass Clo
 Run the setup script using the absolute plugin directory path (or by changing directory to the plugin folder):
 
 ```bash
-# Option A: Direct execution via absolute path
-node /Users/shinyoohag/.gemini/config/plugins/lazyantigravity/scripts/install-browsing-deps.mjs
+# macOS / Linux (Direct run)
+node ~/.gemini/config/plugins/lazyantigravity/scripts/install-browsing-deps.mjs
 
-# Option B: Navigate to plugin folder and execute
+# Windows PowerShell (Direct run)
+node $env:USERPROFILE\.gemini\config\plugins\lazyantigravity\scripts\install-browsing-deps.mjs
+
+# Or navigate to the folder and execute:
 cd ~/.gemini/config/plugins/lazyantigravity && node scripts/install-browsing-deps.mjs
 ```
 *(This automatically configures a local Python virtual environment under `.omo/ulw-loop/browsing-venv` and installs `curl_cffi`, `playwright`, `yt-dlp`, and Playwright Chromium drivers.)*

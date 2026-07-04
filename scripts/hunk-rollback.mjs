@@ -19,7 +19,7 @@ if (!targetFile || isNaN(errorLineNum)) {
 
 try {
 	// 1. Get raw diff for the file
-	const diffRaw = execSync(`git diff -U0 "${join(root, targetFile)}"`, { encoding: "utf8" });
+	const diffRaw = execSync(`git diff -U0 "${join(root, targetFile)}"`, { cwd: root, shell: process.platform === "win32", encoding: "utf8" });
 	if (!diffRaw.trim()) {
 		console.log("No changes detected in target file.");
 		process.exit(0);
@@ -80,7 +80,7 @@ try {
 	// 4. Run git apply -R to revert only this hunk
 	try {
 		console.log(`Reverting hunk containing error line ${errorLineNum} in ${targetFile}...`);
-		execSync(`git apply -R "${tmpDiffPath}"`, { cwd: root });
+		execSync(`git apply -R "${tmpDiffPath}"`, { cwd: root, shell: process.platform === "win32" });
 		console.log("Successfully rolled back the failing hunk!");
 	} finally {
 		unlinkSync(tmpDiffPath);

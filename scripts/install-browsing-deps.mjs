@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -17,23 +17,22 @@ try {
 
 function run(cmd, args = {}) {
 	console.log(`> Running: ${cmd}`);
-	execSync(cmd, { stdio: "inherit", ...args });
-}
-
-function dirname(path) {
-	return path.split("/").slice(0, -1).join("/");
+	execSync(cmd, { stdio: "inherit", shell: process.platform === "win32", ...args });
 }
 
 try {
 	// 2. Create python venv
 	if (!existsSync(venvPath)) {
-		run(`python3 -m venv "${venvPath}"`);
+		const pythonCmd = process.platform === "win32" ? "python" : "python3";
+		run(`${pythonCmd} -m venv "${venvPath}"`);
 	} else {
 		console.log(`Python venv already exists at ${venvPath}`);
 	}
 
-	const pipBin = join(venvPath, "bin", "pip");
-	const playwrightBin = join(venvPath, "bin", "playwright");
+	const isWin = process.platform === "win32";
+	const binDir = isWin ? "Scripts" : "bin";
+	const pipBin = join(venvPath, binDir, isWin ? "pip.exe" : "pip");
+	const playwrightBin = join(venvPath, binDir, isWin ? "playwright.exe" : "playwright");
 
 	// 3. Install packages
 	console.log("Installing python packages (curl_cffi, playwright, yt-dlp)...");
