@@ -286,6 +286,35 @@ async function main() {
 		} catch {}
 	}
 
+	// 3.7. Scan workspace for HWP/HWPX documents and bind parsed text context
+	try {
+		const workspaceFilesRaw = runCmd("git ls-files", cwd) || "";
+		const hwpFiles = workspaceFilesRaw
+			.split("\n")
+			.map(f => f.trim())
+			.filter(f => f.endsWith(".hwp") || f.endsWith(".hwpx"))
+			.slice(0, 3);
+
+		for (const hwpFile of hwpFiles) {
+			const absoluteHwp = join(cwd, hwpFile);
+			if (existsSync(absoluteHwp)) {
+				runCmd(`node "${join(__dirname, "convert-hwp.mjs")}" "${hwpFile}"`, cwd);
+				
+				const cacheMarkdownPath = join(cwd, ".omo", "hwp-cache", `${basename(hwpFile)}.md`);
+				if (existsSync(cacheMarkdownPath)) {
+					const hwpText = readFileSync(cacheMarkdownPath, "utf8").trim();
+					if (hwpText) {
+						additionalContextParts.push(
+							`<hwp-context source="${hwpFile}">\n` +
+							`${safeMarkdownSlice(hwpText, 3000)}\n` +
+							`</hwp-context>`
+						);
+					}
+				}
+			}
+		}
+	} catch {}
+
 	// 4. Gather LSP diagnostics for recently modified files
 	const modifiedFilesRaw = runCmd("git status --porcelain", cwd);
 	if (modifiedFilesRaw) {
