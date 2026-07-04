@@ -228,7 +228,7 @@ test("#given synced lcx-report-bug skill #when inspected #then it files LazyCode
 	assert.match(skill, /^---\r?\nname: lcx-report-bug\r?\n/m);
 	assert.match(skill, /code-yeongyu\/lazycodex/);
 	assert.match(skill, /openai\/codex/);
-	assert.match(skill, /\/tmp\/openai-codex-source/);
+	assert.match(skill, /(?:\/tmp|\$LAZYCODEX_SOURCE_ROOT)\/openai-codex-source/);
 	assert.match(skill, /\$omo:debugging/);
 	assert.match(skill, /Repository Decision/);
 	assert.match(skill, /TARGET_REPO="code-yeongyu\/lazycodex" # or openai\/codex/);

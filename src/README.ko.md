@@ -72,6 +72,20 @@ $browse
 ```
 *(웹 서버 포트 3000이 활성화되어 있지 않으면 백그라운드로 Next.js 개발 서버를 자동 기동한 뒤 대시보드 브라우저 탭이 자동 팝업됩니다.)*
 
+### 3. 웹 브라우징 (Ultimate Browsing) 환경 구성 (선택 사항)
+
+Cloudflare WAF 우회 웹 크롤링, 웹 스크래핑, 또는 유튜브 자막 추출을 수행하는 **Ultimate Browsing / Insane Search** 스킬을 온전히 사용하려면 로컬 파이썬 가상환경 구성이 필요합니다.
+아래처럼 플러그인 절대 경로(또는 폴더 내부로 이동하여)를 이용해 설치 스크립트를 기동하십시오.
+
+```bash
+# 방법 A: 절대 경로로 즉시 실행
+node /Users/shinyoohag/.gemini/config/plugins/lazyantigravity/scripts/install-browsing-deps.mjs
+
+# 방법 B: 플러그인 폴더로 이동 후 실행
+cd ~/.gemini/config/plugins/lazyantigravity && node scripts/install-browsing-deps.mjs
+```
+*(이 명령은 `.omo/ulw-loop/browsing-venv` 가상환경을 잡고 `curl_cffi`, `playwright`, `yt-dlp` 및 Playwright Chromium 드라이버 브라우저 바이너리를 자동 다운로드/세팅합니다.)*
+
 ---
 
 ## 🤖 지원 모델 (Supported Models)

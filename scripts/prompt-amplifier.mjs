@@ -112,6 +112,33 @@ function getLspSupportedExtensions(cwd) {
 	return Array.from(extensions);
 }
 
+async function getLspDiagnosticsFallback(cwd, files) {
+	const diagnostics = [];
+	for (const file of files.slice(0, 3)) {
+		const ext = file.split(".").pop();
+		const absolutePath = join(cwd, file);
+		try {
+			if (ext === "ts" || ext === "tsx") {
+				const output = runCmd(`npx tsc --noEmit --skipLibCheck --target esnext "${absolutePath}"`, cwd);
+				if (output && (output.includes("error TS") || output.toLowerCase().includes("error"))) {
+					diagnostics.push(`- Compiler Fallback Warnings in ${file}:\n${output}`);
+				}
+			} else if (ext === "go") {
+				const output = runCmd(`go vet "${absolutePath}"`, cwd);
+				if (output) {
+					diagnostics.push(`- Compiler Fallback Warnings in ${file}:\n${output}`);
+				}
+			} else if (ext === "py") {
+				const output = runCmd(`ruff check "${absolutePath}" --quiet`, cwd);
+				if (output) {
+					diagnostics.push(`- Linter Fallback Warnings in ${file}:\n${output}`);
+				}
+			}
+		} catch {}
+	}
+	return diagnostics.join("\n\n");
+}
+
 async function getLspDiagnostics(cwd, files) {
 	try {
 		const { callDiagnosticsViaDaemon, currentRequestContext } = require("@code-yeongyu/lsp-daemon");
@@ -129,13 +156,15 @@ async function getLspDiagnostics(cwd, files) {
 					diagnostics.push(`- LSP Warnings/Errors in ${file}:\n${text}`);
 				}
 			} catch {
-				// Ignore daemon timeout or connection error
+				// Fallback to local compiler check on daemon error/timeout for this file
+				const fallback = await getLspDiagnosticsFallback(cwd, [file]);
+				if (fallback) diagnostics.push(fallback);
 			}
 		});
 		await Promise.all(promises);
 		return diagnostics.join("\n\n");
 	} catch {
-		return "";
+		return getLspDiagnosticsFallback(cwd, files);
 	}
 }
 
@@ -186,7 +215,7 @@ async function main() {
 2. Review code diffs line-by-line; check for type safety, missing error handling, or performance slops.
 3. For UI or terminal output, enforce CJK text clipping, responsive wrap limits, and alignment checks.
 4. Do not trust worker reports; verify by re-running tests and inspection commands.
-5. Absolute Hallucination Ban: Never accept simulated or hand-written test run logs. The evidence MUST reside in a physical output file you can query or execute.
+5. Absolute Hallucination Ban: Never accept simulated, hand-written, or touch-updated logs. The physical evidence-verifier gates files based on birthtimeMs (<30s) from a disk clock anchor (blocking metadata-only touch bypass) and normalizes unicode (NFKC) to detect compact, space-stripped, or colored failure keywords.
 </role-instructions>
 `.trim();
 	} else if (lowerPrompt.includes("worker") || lowerPrompt.includes("implementation") || lowerPrompt.includes("debugging")) {
@@ -195,7 +224,7 @@ async function main() {
 1. Apply the smallest, cleanest, type-safe change that satisfies the success criteria.
 2. Adhere to zero-slop coding guidelines: keep functions under 250 lines, avoid "any" types, and check imports.
 3. Ensure any new file edits are locked by unit/integration tests before claiming completion.
-4. Absolute Hallucination Ban: Never claim a feature is verified based on simulated output. You must write a physical test and run it, or output the real CLI output to a verified evidence file.
+4. Absolute Hallucination Ban: Never claim verification via simulated or stale files. The physical verification engine verifies the file's birthtimeMs (must be freshly created <30s; touch updates to fake timestamps are blocked) and scans normalized text for obfuscated error keywords. You must execute actual commands to a fresh output file.
 </role-instructions>
 `.trim();
 	}

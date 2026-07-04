@@ -146,6 +146,20 @@ $browse
 ```
 *(Auto-boots Next.js dev server on port 3000 if inactive, then opens the dashboard in your browser.)*
 
+### 3. Ultimate Browsing Setup (Optional)
+
+If you want to use the **Ultimate Browsing / Insane Search** skill to bypass Cloudflare WAF, scrape websites, or extract YouTube subtitles, you must configure the local Python virtual environment.
+Run the setup script using the absolute plugin directory path (or by changing directory to the plugin folder):
+
+```bash
+# Option A: Direct execution via absolute path
+node /Users/shinyoohag/.gemini/config/plugins/lazyantigravity/scripts/install-browsing-deps.mjs
+
+# Option B: Navigate to plugin folder and execute
+cd ~/.gemini/config/plugins/lazyantigravity && node scripts/install-browsing-deps.mjs
+```
+*(This automatically configures a local Python virtual environment under `.omo/ulw-loop/browsing-venv` and installs `curl_cffi`, `playwright`, `yt-dlp`, and Playwright Chromium drivers.)*
+
 ---
 
 ## 🤖 Supported Models

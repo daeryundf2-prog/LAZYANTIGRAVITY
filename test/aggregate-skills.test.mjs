@@ -29,7 +29,7 @@ test("#given synced skills with Codex compatibility guidance #when a bundled age
 	}
 
 	const expected = [...referencedAgentTypes].sort();
-	assert.deepEqual(expected, ["explorer", "librarian", "plan"]);
+	assert.deepEqual(expected, ["explorer", "lazycodex-clone-fidelity-reviewer", "librarian", "plan"]);
 
 	for (const agentType of expected) {
 		const tomlPath = join(root, "components", "ultrawork", "agents", `${agentType}.toml`);
