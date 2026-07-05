@@ -2,6 +2,7 @@
 	"name": "lazyantigravity",
 	"version": "0.1.0",
 	"description": "Aggregate Codex plugin root for OMO components.",
+	"license": "MIT",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"private": true,

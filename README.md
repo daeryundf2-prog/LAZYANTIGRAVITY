@@ -38,6 +38,16 @@ You can immediately navigate to the detailed technical documentation guide in yo
 
 ---
 
+## 🧭 Project Intent & Codex Maintainer Workflow
+
+`lazyantigravity` began with a practical maintainer question: **can the LazyCodex way of working also run well inside Google Antigravity?** The project adapts the skills, hooks, evidence loops, and multi-agent workflows shaped by [lazycodex](https://github.com/code-yeongyu/lazycodex) and Kim Yeongyu's OpenCode/Codex-oriented work, then tests how those ideas behave in the Gemini CLI ecosystem.
+
+OpenAI/Codex-oriented agents and Google's Gemini/Antigravity stack still differ in model behavior, runtime ergonomics, and tool boundaries. This repository exists to make those differences productive: expand how LazyCodex-style workflows can be used from OpenCode into Antigravity, keep the useful improvements, and feed practical lessons back into the broader agent-maintenance direction.
+
+For day-to-day OSS maintenance, the Codex maintainer workflow is concrete: use Codex to review TypeScript changes, test Windows and Git Bash compatibility, improve skills and hooks, update documentation, and audit security-sensitive paths such as credential masking, shell execution, and automation boundaries.
+
+---
+
 ## ⭐ If this project helped you, please give it a Star!
 
 `lazyantigravity` is continuously updated with new skills, hooks, and agent workflows. Click the ⭐ **Star** button at the top to support the developer and help others discover this project!
