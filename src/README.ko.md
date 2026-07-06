@@ -474,7 +474,7 @@ Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합�
 
 ## 🔌 MCP 통합
 
-lazyantigravity는 4개의 MCP (Model Context Protocol) 서버를 번들합니다:
+lazyantigravity는 5개의 MCP (Model Context Protocol) 서버를 번들합니다:
 
 | MCP 서버 | 타입 | 용도 |
 | :--- | :--- | :--- |

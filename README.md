@@ -394,7 +394,7 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 ### 🔌 Skill-Embedded MCPs
 - Standard MCP servers bloat context windows permanently.
 - lazyantigravity embeds MCP servers *within individual skills* — they launch on-demand and terminate when the task completes.
-- Built-in MCPs: `grep_app` (GitHub code search), `context7` (official documentation), `git_bash` (git operations), `lsp` (language server).
+- Built-in MCPs: `grep_app` (GitHub code search), `context7` (official documentation), `git_bash` (git operations), `lsp` (language server), `database` (database inspection).
 
 ### 🎨 Frontend & Visual QA
 - **react-scan** + **react-doctor**: Diagnose rendering bottlenecks and React antipatterns.

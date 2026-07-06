@@ -455,7 +455,7 @@ We are actively designing and proposing the following core features to enhance t
 
 ## 🔌 MCP Integration
 
-lazyantigravity bundles 4 MCP (Model Context Protocol) servers:
+lazyantigravity bundles 5 MCP (Model Context Protocol) servers:
 
 | MCP Server | Type | Purpose |
 | :--- | :--- | :--- |
