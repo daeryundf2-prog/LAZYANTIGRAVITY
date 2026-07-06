@@ -438,6 +438,7 @@ On top of everything inherited above, lazyantigravity adds an extension layer sp
 - **26 Specialized Skills**: From ultraresearch swarms to visual QA to TDD workflows.
 - **ulw-loop**: Evidence-audited multi-goal orchestration with safe-resume checkpoints.
 - **Skill-Embedded MCPs**: On-demand MCP servers that don't permanently bloat context.
+- **Database MCP Server**: Query databases (SQLite, Postgres, MySQL) and auto-discover running Docker DB containers.
 
 ---
 
@@ -462,6 +463,7 @@ lazyantigravity bundles 4 MCP (Model Context Protocol) servers:
 | **context7** | Remote | Official documentation lookup and query |
 | **git_bash** | Local | Git operations via MCP protocol |
 | **lsp** | Local | Language Server Protocol diagnostics via MCP |
+| **database** | Local | Database inspection, discovery, and queries (inspired by sqlit-tui) |
 
 Unlike standard MCP servers that permanently occupy context window space, lazyantigravity's **Skill-Embedded MCP** pattern launches servers on-demand within individual skills and terminates them when the task scope ends — keeping context lean.
 

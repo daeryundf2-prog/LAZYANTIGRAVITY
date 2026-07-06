@@ -455,6 +455,7 @@ Gemini 3.5 Flash는 탁월한 속도를 자랑하지만, 에이전트의 환각(
 - **26개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 팀 오케스트레이션 등.
 - **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
 - **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
+- **Database MCP Server**: 데이터베이스 조회(SQLite, Postgres, MySQL) 및 실행 중인 Docker DB 컨테이너 자동 감지 지원.
 
 Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
 
@@ -481,6 +482,7 @@ lazyantigravity는 4개의 MCP (Model Context Protocol) 서버를 번들합니�
 | **context7** | 리모트 | 공식 문서 조회 및 쿼리 |
 | **git_bash** | 로컬 | MCP 프로토콜을 통한 Git 작업 |
 | **lsp** | 로컬 | MCP를 통한 Language Server Protocol 진단 |
+| **database** | 로컬 | 데이터베이스 조회, 감지 및 쿼리 도구 (sqlit-tui 영감) |
 
 일반 MCP 서버가 컨텍스트 윈도우 공간을 영구적으로 차지하는 것과 달리, lazyantigravity의 **Skill-Embedded MCP** 패턴은 개별 스킬 내에서 서버를 온디맨드로 기동하고 태스크 스코프가 끝나면 종료합니다 — 컨텍스트를 최소한으로 유지.
 

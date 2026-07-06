@@ -68,6 +68,7 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 | Basic code editing | **Hash-Anchored Edits** — near-0% code corruption (Hashline) |
 | No built-in research | **Ultraresearch swarms** — parallel agents scan web, docs, and codebase simultaneously |
 | Solo work only | **Team Mode** — up to 8 parallel agents with tmux visualization |
+| No database introspection | **Database MCP Server** — auto-discover Docker DBs, query SQLite/Postgres/MySQL, manage connections |
 
 > **Summary**: A premium plugin that enhances the Antigravity agent with autonomous loops, a visual dashboard, automatic quality gates, and multi-agent collaboration.
 
@@ -229,6 +230,16 @@ Just include these words anywhere in your prompt — the system detects and trig
 | `spec interview`, `grill me` | `$spec-interview` | Socratic Q&A → requirements report |
 | `debug this`, `why is X not working` | `$debugging` | Hypothesis-driven debugging loop |
 | `visual QA`, `screenshot diff` | `$visual-qa` | Pixel-diff analysis for UI regressions |
+
+---
+
+## 🗄️ Database Inspection: sqlit-inspired MCP Server
+
+lazyantigravity features an integrated, high-performance **Database MCP Server** inspired by the core connection management and querying engine of `sqlit-tui`. It exposes standard Model Context Protocol (MCP) tools that allow the agent and the developer to inspect schemas and run queries natively.
+
+- **Automated Docker Discovery**: Automatically scans active Docker containers (`db_discover_containers`) to detect running database instances (PostgreSQL, MySQL, MariaDB, SQL Server, etc.) and lists their port mappings.
+- **SQLite Direct Fallback**: Zero-dependency querying (`db_query`) for local development. If `sqlit` is not installed, it falls back to native `sqlite3` CLI executions, using stdin piping for 100% parameter injection safety.
+- **Keyring-Safe Connections**: Manages connections (`db_add_connection`, `db_list_connections`) and securely writes to your local `connections.json` matching `sqlit` connection configurations.
 
 ---
 
