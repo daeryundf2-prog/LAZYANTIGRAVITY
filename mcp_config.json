@@ -21,6 +21,13 @@
 				"mcp"
 			],
 			"cwd": "."
+		},
+		"database": {
+			"command": "node",
+			"args": [
+				"./scripts/database-mcp.mjs"
+			],
+			"cwd": "."
 		}
 	}
 }
