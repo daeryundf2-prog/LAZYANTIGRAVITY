@@ -99,6 +99,7 @@ lazyantigravity는 **Antigravity가 제공하는 모든 모델**에서 동작합
 | :--- | :--- |
 | **Gemini 3.5 Flash** (High/Medium) | 빠른 반복 작업, 디버깅, 코드베이스 탐색 — 기본 추천 모델 |
 | **Gemini 3.1 Pro** (High) | Claude 쿼터가 제한적일 때의 고품질 대안 |
+| **Claude Fable 5** (High) | 극한의 추론 성능, 복잡한 비즈니스 로직, 프롬프트 튜닝 (쿼터 소모 높음) |
 | **Claude Opus 4.6** (Thinking) | 아키텍처 설계, 복잡한 리팩토링, 깊은 분석 |
 | **Claude Sonnet** | 일반적인 구현 작업 |
 
@@ -182,7 +183,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 
 ---
 
-## 📦 전체 스킬 카탈로그 (29개)
+## 📦 전체 스킬 카탈로그 (30개)
 
 모든 스킬은 마법 키워드로 자동 트리거되거나 `$name` / `/name`으로 수동 호출됩니다.
 
@@ -190,13 +191,14 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 > - **워크플로우 엔진 (6개)**: 전체 자율 코딩 루프와 에이전트 조율을 주도하는 **뇌(Brain)** 역할을 합니다.
 > - **전문화된 스킬 (20개)**: 코딩 루프 실행 중 코드를 수정하거나 검증할 때 백그라운드 훅(Lifecycle Hooks)으로 자동 연동되거나 필요에 따라 엔진에 의해 호출(Call)되는 **도구 및 품질 게이트** 역할을 합니다.
 
-### ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) 워크플로우 엔진 (6개)
+### ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) 워크플로우 엔진 (7개)
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
 | **ultrawork / ulw** | `ultrawork`, `ulw`, `parallel` | 자율 검증 루프를 갖춘 최대 병렬성 |
 | **ulw-loop** | `/ulw-loop` | 체크포인트를 갖춘 증거 감사 멀티 골 루프 |
 | **ulw-plan** | `/ulw-plan` | ulw-loop 세션의 계획 단계 |
+| **eval-loop** | `/eval-loop`, `$eval-loop` | 판정 모델(LLM-as-judge)을 활용한 에이전트 평가 및 프롬프트 튜닝 루프 |
 | **start-work** | `start work`, `execute plan`, `resume plan` | 상태 추적을 포함한 Prometheus 작업 계획 실행 |
 | **ralph** | `ralph`, `don't stop`, `keep going` | 자기참조 영속 루프 (우로보로스에서 상속) |
 | **autopilot** | `autopilot`, `build me` | 아이디어 → 작동 코드 자율 파이프라인 |

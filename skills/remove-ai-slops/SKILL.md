@@ -125,6 +125,13 @@ The agent looks for these nine categories. The first three are stylistic, the ne
 
    KEEP: genuinely self-contained single-responsibility scripts (e.g., a standalone CLI checker). Opt out with `# noqa: SIZE_OK` in first 5 lines and a comment explaining why.
 
+### UI Design
+11. **UI Design Slops** — generic, unrequested styled patterns that deviate from the design system or `DESIGN.md` tokens.
+    - **Unsolicited Gradients**: Adding gradient borders, background fills, or text gradients unless explicitly styled in design tokens.
+    - **Arbitrary Text Transformations**: Excessive uppercase styles, bolding everything, or arbitrary font size variations not mapping to the project's type scale.
+    - **Over-Decoration**: Unnecessary hover/transition animations, decorative shadows, or micro-animations on static/non-interactive items.
+    - **Component Re-creation**: Implementing custom styles or inline styles when a reusable, standard component (like a button, card, or modal) already exists in the workspace libraries.
+
 ---
 
 ## Quality Gates

@@ -82,6 +82,7 @@ lazyantigravity works with **all models available in Antigravity**. While optimi
 | :--- | :--- |
 | **Gemini 3.5 Flash** (High/Medium) | Fast iterations, debugging, codebase exploration — default recommended model |
 | **Gemini 3.1 Pro** (High) | High-quality alternative when Claude quota is limited |
+| **Claude Fable 5** (High) | Ultimate reasoning power, complex logic, prompt tuning (Quota intensive) |
 | **Claude Opus 4.6** (Thinking) | Architecture design, complex refactoring, deep analysis |
 | **Claude Sonnet** | General implementation work |
 
@@ -165,7 +166,7 @@ The asbrowse dashboard replaces terminal log overload with a structured, real-ti
 
 ---
 
-## 📦 Complete Skill Catalog (29 Skills)
+## 📦 Complete Skill Catalog (30 Skills)
 
 Every skill is either auto-triggered by magic keywords or manually invoked via `$name` / `/name`.
 
@@ -173,13 +174,14 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 > - **Workflow Engines (6 skills)**: Act as the **"Brain/Orchestrator"** leading the autonomous loop.
 > - **Specialized Skills (20 skills)**: Act as the **"Tools/Quality Gates"** called by the engine or triggered automatically by lifecycle hooks (like type checking, comment protection, and pixel-diff QA) during execution.
 
-### ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) Workflow Engines (6 skills)
+### ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) Workflow Engines (7 skills)
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
 | **ultrawork / ulw** | `ultrawork`, `ulw`, `parallel` | Maximum parallelism with autonomous verification loop |
 | **ulw-loop** | `/ulw-loop` | Evidence-audited multi-goal loop with checkpoints |
 | **ulw-plan** | `/ulw-plan` | Planning phase for ulw-loop sessions |
+| **eval-loop** | `/eval-loop`, `$eval-loop` | Agent evaluation and benchmark loop with LLM-as-judge scoring |
 | **start-work** | `start work`, `execute plan`, `resume plan` | Prometheus work plan execution with state tracking |
 | **ralph** | `ralph`, `don't stop`, `keep going` | Self-referential persistence loop (inherited from Ouroboros) |
 | **autopilot** | `autopilot`, `build me` | Idea → working code autonomous pipeline |

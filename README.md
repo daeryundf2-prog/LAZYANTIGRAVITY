@@ -60,7 +60,7 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Single agent, single task | **29 specialized skills** auto-triggered by keywords |
+| Single agent, single task | **30 specialized skills** auto-triggered by keywords |
 | No quality gates | **13 hooks** guard every edit (comment preservation, type checking, rule compliance) |
 | Terminal log chaos | **asbrowse visual dashboard** — real-time progress, diffs, and QA in one view |
 | Manual model selection | **ULW Model Routing** — auto-recommends optimal model per role |
@@ -184,6 +184,7 @@ lazyantigravity works on **all models supported by Antigravity**. While optimize
 | :--- | :--- |
 | **Gemini 3.5 Flash** (High/Medium) | Rapid iterative work, debugging, codebase exploration — Default recommended model |
 | **Gemini 3.1 Pro** (High) | High-quality alternative when Claude quota is limited |
+| **Claude Fable 5** (High) | Ultimate reasoning power, complex logic, prompt tuning (Quota intensive) |
 | **Claude Opus 4.6** (Thinking) | System design, complex refactoring, deep analysis |
 | **Claude Sonnet** | General implementation tasks |
 
@@ -259,7 +260,7 @@ A Next.js–powered local dashboard that replaces the chaos of scrolling termina
 
 ---
 
-## 📦 Complete Skill Catalog (29 Skills)
+## 📦 Complete Skill Catalog (30 Skills)
 
 Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 
@@ -270,7 +271,7 @@ Every skill is auto-triggered by keywords or invoked via `$name` / `/name`:
 
 | Category | Skills | Description |
 | :--- | :--- | :--- |
-| ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) | `ultrawork` / `ulw`, `ulw-loop`, `ulw-plan`, `ralph`, `autopilot`, `start-work` | Autonomous coding loops, evidence-audited orchestration, persistence |
+| ![Workflow Engines](https://img.shields.io/badge/Workflow_Engines-4285F4?style=flat-square) | `ultrawork` / `ulw`, `ulw-loop`, `ulw-plan`, `eval-loop`, `ralph`, `autopilot`, `start-work` | Autonomous coding loops, agent evaluation pipeline, persistence |
 | ![Research](https://img.shields.io/badge/Research-34A853?style=flat-square) | `ultraresearch` | Parallel swarm research with empirical verification |
 | ![Team & Orchestration](https://img.shields.io/badge/Team_%26_Orchestration-EA4335?style=flat-square) | `teammode` | Multi-agent collaboration with tmux visualization |
 | ![Code Quality](https://img.shields.io/badge/Code_Quality-FBBC05?style=flat-square) | `programming`, `refactor`, `remove-ai-slops`, `review-work`, `comment-checker` | Strict types, AI slop removal, post-implementation review |
