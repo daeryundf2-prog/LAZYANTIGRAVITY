@@ -90,7 +90,8 @@ Astryx utilizes CSS custom properties (`--color-*`) for design tokens.
 ### Do
 - Use CSS custom property tokens (`var(--color-brand)`) to preserve clean theme configurations.
 - Reuse existing primitives (like `Button`, `Card`, `Badge`) rather than writing new custom styles.
-- Leverage the `xds` MCP server's `--dense` mode to fetch component structures with minimum token overhead.
+- Leverage the `section` parameter in `xds/get` to retrieve only the relevant sections of documentation, minimizing token overhead.
+- Add rich JSDoc annotations (specifying types, defaults, and composition hints) to all customized, swizzled, or newly created components to maintain their "AI-fluent" capabilities.
 - Apply Albert Sans for friendly geometric display headers.
 
 ### Don't
