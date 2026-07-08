@@ -79,6 +79,24 @@ Astryx utilizes CSS custom properties (`--color-*`) for design tokens.
 - Interactive input zone featuring file attachment action and vertical arrow send CTA.
 - Floating backdrop and dynamic growth line height (up to `176px`).
 
+### Theming & Theme Provider
+- **Theme Definition (`defineTheme`):** Define static themes with name and custom tokens (e.g. `--color-accent`, `--color-background-surface`, `--radius-container`).
+- **Theme Component (`Theme`):** Wraps subtree. Custom color mode overrides (`light` | `dark` | `system`).
+- **Build integration:** Precompiled static assets via `npx astryx theme build` for production first-paint/SSR optimization.
+
+### Layout & Shells
+- **AppShell:** Outermost app frame. Outermost slots for top/side navigation and collapsible control panels.
+- **Layout & LayoutPanel:** Page-level flex layouts with complémentary side drawer inspector widgets. Handles mobile collapse automatically.
+
+### Forms & Progress
+- **DatePicker & DateRangeInput:** Select start/end dates from dual-month calendar popovers.
+- **Switch:** Toggle controls with immediate state updates (e.g. preferences/settings).
+- **CircularProgress:** radial progress completion arcs and score display widgets.
+
+### Styling Interop & Compiles
+- **StyleX overrides:** Create build-time optimized styles via `stylex.create()` and override components via `xstyle={overrides.card}`. All `:hover` styles inside StyleX must use `@media (hover: hover)` media queries.
+- **Tailwind Interop:** Custom inline layout adjustments are configured using Tailwind via `className="flex gap-3 p-4"`.
+
 ## 5. Layout & Breakpoints
 
 - Mobile: `<768px` (Single column, navigation drawer menu).
@@ -93,11 +111,13 @@ Astryx utilizes CSS custom properties (`--color-*`) for design tokens.
 - Leverage the `section` parameter in `xds/get` to retrieve only the relevant sections of documentation, minimizing token overhead.
 - Add rich JSDoc annotations (specifying types, defaults, and composition hints) to all customized, swizzled, or newly created components to maintain their "AI-fluent" capabilities.
 - Apply Albert Sans for friendly geometric display headers.
+- Build static production themes using `npx astryx theme build` for optimal SSR hydration.
 
 ### Don't
 - Don't write inline StyleX declarations when design tokens already cover the styling properties.
 - Don't introduce duplicate layout patterns; use the unified grid and spacing scales.
 - Don't use heavy shadows on dark theme containers — rely on `rgba(255, 255, 255, 0.05)` or borders to divide layers.
+- Don't use hover classes without `@media (hover: hover)` guards inside StyleX configurations.
 
 ## 7. Agent Prompt Guide
 
@@ -105,3 +125,5 @@ Astryx utilizes CSS custom properties (`--color-*`) for design tokens.
 - "Create an Astryx-style chat composer with balanced density, `#225BFF` primary send action, and file upload attachment icon."
 - "Generate a document layout under Albert Sans display headers featuring a 3-column Card grid with 12px rounded borders."
 - "Configure an MCP dialog wrapper with a frosted glass backdrop filter, displaying key indicator badges (`↑`, `↓`, `↵`)."
+- "Setup an Astryx Theme wrapper utilizing defineTheme to configure custom `--color-accent` and `--radius-container` variables."
+- "Implement a responsive AppShell layout with a collapsible SideNav panel and main content viewport."
