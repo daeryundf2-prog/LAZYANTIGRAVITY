@@ -190,7 +190,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
-| **ultraresearch** | `research`, `deep research`, `ultraresearch` | Parallel swarm: Exa web search + Context7 docs + local codebase + empirical verification → cited synthesis report |
+| **ultraresearch** | `research`, `deep research`, `ultraresearch` | Parallel swarm with search-tree query planning, visited URL logs, recursive deep reading (depth up to 3), and empirical terminal verification -> cited synthesis report |
 
 <div align="center">
   <img src="../assets/readme/ultraresearch_swarm.png" alt="Ultraresearch Swarm" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
@@ -235,7 +235,7 @@ Every skill is either auto-triggered by magic keywords or manually invoked via `
 
 | Skill | Trigger | Description |
 | :--- | :--- | :--- |
-| **frontend** | `frontend`, `UI`, `UX`, `design` | Anti-slop taste router with 12 taste skills + 69 brand design refs. React dev tooling: react-scan, react-doctor. Lighthouse 100 via Playwright Chromium audits |
+| **frontend** | `frontend`, `UI`, `UX`, `design` | Anti-slop taste router with 12 taste skills + 69 brand design refs (including detailed Astryx layout/theme/component specs). React dev tooling: react-scan, react-doctor. Lighthouse 100 via Playwright Chromium audits |
 | **visual-qa** | `visual QA`, `screenshot diff`, `UI looks wrong` | Pixel-diff analysis + CJK text precision + two parallel oracle passes for design-system and functional integrity |
 | **clone** | `clone`, `clone website` | Reverse-engineer and clone target website URL into a Next.js/Tailwind v4/shadcn UI React project |
 
@@ -440,7 +440,7 @@ On top of everything inherited above, lazyantigravity adds an extension layer sp
 - **26 Specialized Skills**: From ultraresearch swarms to visual QA to TDD workflows.
 - **ulw-loop**: Evidence-audited multi-goal orchestration with safe-resume checkpoints.
 - **Skill-Embedded MCPs**: On-demand MCP servers that don't permanently bloat context.
-- **Database MCP Server**: Query databases (SQLite, Postgres, MySQL) and auto-discover running Docker DB containers.
+- **Database MCP Server**: sqlit-inspired DB connection management, automated Docker DB containers discovery, and keyring-safe database connection registry.
 
 ---
 

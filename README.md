@@ -66,9 +66,9 @@ Antigravity is powerful out of the box. lazyantigravity makes it **dramatically 
 | Manual model selection | **ULW Model Routing** — auto-recommends optimal model per role |
 | No persistence across interruptions | **Safe-Resume Checkpoints** — resume exactly where you left off |
 | Basic code editing | **Hash-Anchored Edits** — near-0% code corruption (Hashline) |
-| No built-in research | **Ultraresearch swarms** — parallel agents scan web, docs, and codebase simultaneously |
+| No built-in research | **Ultraresearch swarms** — parallel agents with search-tree query planning, visited URL logs, and recursive deep reading (up to depth 3) |
 | Solo work only | **Team Mode** — up to 8 parallel agents with tmux visualization |
-| No database introspection | **Database MCP Server** — auto-discover Docker DBs, query SQLite/Postgres/MySQL, manage connections |
+| No database introspection | **Database MCP Server** — sqlit-inspired DB engine, auto-discover Docker DBs, key-safe connection keyring, query SQLite/Postgres/MySQL |
 
 > **Summary**: A premium plugin that enhances the Antigravity agent with autonomous loops, a visual dashboard, automatic quality gates, and multi-agent collaboration.
 
@@ -361,6 +361,8 @@ AI agents often silently delete user comments during edits. lazyantigravity's Po
 <br />
 
 - **Parallel Knowledge Swarms**: Concurrent agents scanning Exa (web), Context7 (docs), local codebase, and OSS repos.
+- **Search-Tree Planning (Phase 0.5)**: Pre-plans a hierarchical tree of 10+ target sub-queries utilizing advanced operators before initiating the search swarms.
+- **Recursive Deep Reading**: Extracts page links from results and recursively crawls/reads relevant target pages up to depth 3 with duplicate path protection (`visited-urls.md`).
 - **Empirical Verification**: Discovered code is actually *executed* in a sandbox before the final report.
 - **Cited Synthesis**: Every claim in the report includes source URLs and file references.
 

@@ -207,7 +207,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
-| **ultraresearch** | `research`, `deep research`, `ultraresearch` | 병렬 스웜: Exa 웹검색 + Context7 문서 + 로컬 코드베이스 + 실증 검증 → 출처 명시 합성 보고서 |
+| **ultraresearch** | `research`, `deep research`, `ultraresearch` | 검색 트리 쿼리 계획, 방문 URL 로그 및 재귀적 딥 리딩(최대 깊이 3)을 도입한 병렬 스웜: Exa 웹검색 + Context7 문서 + 로컬 코드베이스 + 실증 검증 -> 출처 명시 합성 보고서 |
 
 <div align="center">
   <img src="../assets/readme/ultraresearch_swarm.png" alt="Ultraresearch 스웜" width="80%" style="border-radius: 8px; border: 1px solid #262626; box-shadow: 0 8px 30px rgba(0,0,0,0.5);" />
@@ -252,7 +252,7 @@ asbrowse 대시보드는 터미널 로그 과부하를 구조화된 실시간 �
 
 | 스킬 | 트리거 | 설명 |
 | :--- | :--- | :--- |
-| **frontend** | `frontend`, `UI`, `UX`, `design` | 12개 테이스트 스킬 + 69개 브랜드 디자인 레퍼런스의 안티슬롭 테이스트 라우터. React 개발 도구: react-scan, react-doctor. Playwright Chromium 오딧으로 Lighthouse 100 |
+| **frontend** | `frontend`, `UI`, `UX`, `design` | 12개 테이스트 스킬 + 69개 브랜드 디자인 레퍼런스(상세 Astryx 레이아웃/테마/컴포넌트 명세 포함)의 안티슬롭 테이스트 라우터. React 개발 도구: react-scan, react-doctor. Playwright Chromium 오딧으로 Lighthouse 100 |
 | **visual-qa** | `visual QA`, `screenshot diff`, `UI looks wrong` | 픽셀 디프 분석 + CJK 텍스트 정밀도 + 디자인 시스템 및 기능 무결성을 위한 2개 병렬 Oracle 패스 |
 | **clone** | `clone`, `clone website` | 대상 웹사이트 URL을 리버스 엔지니어링하여 Next.js/Tailwind v4/shadcn UI React 프로젝트로 복제 및 구축 |
 
@@ -457,7 +457,7 @@ Gemini 3.5 Flash는 탁월한 속도를 자랑하지만, 에이전트의 환각(
 - **26개 전문 스킬**: ultraresearch 스웜, 시각 QA, TDD 워크플로우, 팀 오케스트레이션 등.
 - **ulw-loop**: 안전 복원 체크포인트를 갖춘 증거 감사 기반 멀티 골 오케스트레이션.
 - **Skill-Embedded MCPs**: 컨텍스트를 영구적으로 부풀리지 않는 온디맨드 MCP 서버.
-- **Database MCP Server**: 데이터베이스 조회(SQLite, Postgres, MySQL) 및 실행 중인 Docker DB 컨테이너 자동 감지 지원.
+- **Database MCP Server**: sqlit-tui의 설계를 녹여낸 데이터베이스 조회(SQLite, Postgres, MySQL) 기능, 실행 중인 Docker DB 컨테이너 자동 감지 및 키링 기반 연결 관리 기능 제공.
 
 Ouroboros와 lazycodex의 모든 핵심 기능은 **100% 상속되어 작동합니다** — lazyantigravity는 이를 확장할 뿐, 대체하지 않습니다.
 
