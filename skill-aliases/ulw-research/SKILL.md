@@ -112,9 +112,18 @@ This is `$SESSION_DIR`. The orchestrator owns the journal: you write every file 
 
 - `wave-<N>-<kind>-<axis>.md` — your digest of each worker return: key findings, sources with URLs, and the worker's EXPAND markers verbatim.
 - `expansion-log.md` — per wave: workers spawned, markers gained, leads opened and closed.
+- `visited-urls.md` — log of all crawled URLs to prevent duplicate reads.
+- `search-tree.md` — hierarchical tree of planned and executed query variations.
 - `verify-<slug>.md`, `SYNTHESIS.md`, `REPORT.*` from later phases.
 
 Append each digest the moment its worker returns, not in a batch at the end — the journal is your recovery point after context loss and the user's audit trail.
+
+## Phase 0.5 — Search-Tree Planning (Web-facing)
+
+Before launching the saturation wave (Phase 1), if the query has any web/external scope:
+1. Synthesize a **Search-Tree** of 10+ queries in a hierarchical tree layout inside `search-tree.md`.
+2. Each branch of the tree must target a specific angle and use advanced operators (`site:`, `inurl:`, `filetype:`, `"exact"`, `OR`, `after:`, `before:`).
+3. Update `search-tree.md` as queries are executed, recording the query string, executing worker ID, and timestamp.
 
 ## Phase 1 — Saturation wave
 
@@ -133,8 +142,8 @@ Scaling floor — more angles always justify more workers:
 Role protocols — embed the relevant one in each spawn message; every worker gets a unique angle:
 
 - **Codebase (explore), 2-4 workers.** Grep with 3+ keyword variations; structural/AST search; LSP definitions and references; file-name globs; `git log --all -S '<keyword>'` and `--grep` for history including deleted code. Cross-validate hits across tools. Report absolute file paths, patterns with `file:line`, and how findings connect.
-- **Web (librarian), 3-6 workers.** At least 10 distinct websearch queries per worker, each with a different operator or angle (see Search craft); fetch the full page for every result that matters — snippets lie. Context7 with 3+ queries per known library. grep.app and `gh search code|repos|issues` for real-world usage. Official docs via sitemap discovery (`<base>/sitemap.xml`), then targeted pages.
-- **Browsing, 0-3 workers.** Pages plain fetch cannot read (WAF, 403, Cloudflare, dynamic rendering, login): the worker loads the `ultimate-browsing` skill and escalates through its tiers — Tier-1 insane-search engine first, then Tier-2 Chrome stealth — rather than abandoning the source. Capture screenshots when visual context matters. When one blocked territory hides many leads, fan out more browsing subagents in parallel for breadth instead of serializing one worker through them.
+- **Web (librarian), 3-6 workers.** At least 10 distinct websearch queries per worker from the planned search tree; fetch the full page for every result that matters. **Recursive Deep Reading:** Parse and extract links (URLs) from retrieved pages. If a link is highly relevant to the core axis, recursively fetch and read the link content using `read_url_content` or `read_browser_page` (up to a depth of 3). Record every crawled URL in `visited-urls.md` to prevent duplicate reads.
+- **Browsing, 0-3 workers.** Pages plain fetch cannot read (WAF, 403, Cloudflare, dynamic rendering, login): the worker loads the `ultimate-browsing` skill and escalates through its tiers. **Recursive Deep Reading:** Perform the same link extraction and recursive reading loop (up to depth 3) on the rendered pages, logging visited URLs in `visited-urls.md`.
 - **Repo deep-dive (librarian), 0-2 workers.** Shallow-clone the most relevant repos to `${TMPDIR:-/tmp}`, pin the HEAD SHA, read core modules, follow call chains, return SHA-pinned permalinks.
 
 Example spawn (codebase axis; librarian, browsing, and repo-dive follow the same contract with their own protocol):
