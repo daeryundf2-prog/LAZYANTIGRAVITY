@@ -28,6 +28,9 @@
 				"./scripts/database-mcp.mjs"
 			],
 			"cwd": "."
+		},
+		"xds": {
+			"url": "https://astryx.atmeta.com/mcp"
 		}
 	}
 }

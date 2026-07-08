@@ -79,11 +79,12 @@ Each file ships with: visual theme, hex color palette + semantic roles, full typ
 | `voltagent.md` | AI agent framework. Void-black canvas, emerald accent, terminal-native. |
 | `x.ai.md` | Elon Musk's AI lab. Stark monochrome, futuristic minimalism. |
 
-### Developer Tools & IDEs (8)
+### Developer Tools & IDEs (9)
 
 | File | Aesthetic |
 |---|---|
 | `aside.md` | AI browser agent. Bright product-app marketing, custom display type, soft squircle controls, browser-product framing. |
+| `astryx.md` | Meta's open-source, AI-fluent design system. Clean React/StyleX, custom properties, JSDoc annotations, MCP integration. |
 | `cursor.md` | AI-first code editor. Sleek dark interface, gradient accents. |
 | `expo.md` | React Native platform. Dark theme, tight letter-spacing, code-centric. |
 | `lovable.md` | AI full-stack builder. Playful gradients, friendly dev aesthetic. |
