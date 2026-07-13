@@ -1,35 +1,20 @@
 ---
 name: lsp
-description: Use when Codex needs language-server diagnostics, definitions, references, symbols, or rename safety checks in the current workspace.
+description: Use for on-demand language-server diagnostics through the local LSP MCP server.
 ---
 
-# Codex LSP
+# lsp
 
-Call `lsp` MCP tools through the tool interface; `lsp.*`/`mcp__lsp__*` are tool-call names, not shell commands.
+Use this skill for language-server diagnostics. Call the local MCP server through Antigravity's tool interface with server id `lsp` and tool `diagnostics`; do not use double-underscore tool names.
 
-## Tools
+## Verified quality-gate policy
 
-- `lsp.status`: list configured, installed, missing, disabled, and active language servers.
-- `lsp.diagnostics`: check one file or directory for LSP diagnostics. Prefer `severity: "error"` after edits.
-- `lsp.goto_definition`: locate a symbol definition from file, line, and character.
-- `lsp.find_references`: find usages of a symbol across the workspace.
-- `lsp.symbols`: inspect document symbols or search workspace symbols.
-- `lsp.prepare_rename`: check whether a rename is valid at a position.
-- `lsp.rename`: apply a language-server workspace edit for a rename.
+After edits, request on-demand LSP verification with server id `lsp`, tool `diagnostics`, and exact arguments `{filePath:"<absolute changed file>",severity:"error"}`.
 
-## Config
+Use the checked fixtures as the contract source:
 
-Project config lives at `.codex/lsp-client.json`; user config lives at `~/.codex/lsp-client.json`.
+- `test/fixtures/lsp/clean.json` renders `LSP verification: clean (<file>)`
+- `test/fixtures/lsp/diagnostics.json` renders `LSP verification: <N> error(s) (<file>)`
+- `test/fixtures/lsp/unavailable.json` renders `LSP verification unavailable: <reason>`
 
-```json
-{
-	"lsp": {
-		"typescript": {
-			"command": ["typescript-language-server", "--stdio"],
-			"extensions": [".ts", ".tsx", ".js", ".jsx"]
-		}
-	}
-}
-```
-
-Use `lsp.status` first when diagnostics report a missing language server.
+Treat unavailable verification as unavailable, never as clean.

@@ -33,6 +33,16 @@ This skill is intentionally compact. The full workflow lives in `references/full
 - Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running. Then record inconclusive and respawn a smaller `fork_context: false` task with the missing deliverable.
 - Use `git-master` for git-tracked edits: inspect recent and touched-path commit history, then commit each verified work unit atomically in the repository's observed language, scope, and message style with only that unit's files staged.
 
+## Verified quality-gate policy
+
+For each post-edit source-file verification step, call the local LSP diagnostics capability semantically with server id `lsp`, tool `diagnostics`, and arguments `{filePath:"<absolute changed file>",severity:"error"}`. The workflow maps the outcome to `test/fixtures/lsp/clean.json`, `test/fixtures/lsp/diagnostics.json`, or `test/fixtures/lsp/unavailable.json`.
+
+- Clean output is exactly `LSP verification: clean (<file>)`.
+- Diagnostic output starts with `LSP verification: <N> error(s) (<file>)` and includes only bounded, sanitized locations.
+- Unavailable output is exactly `LSP verification unavailable: <reason>` and is never a clean result.
+
+Only bounded context and bounded continuation are verified automatic gates. Comment-preservation feedback and file-targeted diagnostics outside the local LSP invocation are experimental.
+
 ## Codex Tool Mapping
 
 The full workflow may mention OpenCode-style orchestration examples. In Codex, translate them to native tools:

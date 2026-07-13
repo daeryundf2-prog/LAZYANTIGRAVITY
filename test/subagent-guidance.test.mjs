@@ -6,97 +6,48 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
-const SKILLS = [
+const orchestrationSkills = [
 	"review-work",
 	"start-work",
+	"ulw",
 	"ulw-loop",
+	"ulw-plan",
 ];
 
-const AGENT_FILES = [
-	"components/ultrawork/agents/lazycodex-gate-reviewer.toml",
-	"components/ultrawork/agents/plan.toml",
-];
-
-test("#given orchestration skills #when inspected #then Codex subagent delegation is hardened", async () => {
-	// given
-	const skillPaths = SKILLS.map((skillName) => join("skills", skillName, "SKILL.md"));
-
-	// when
-	const missing = [];
-	for (const skillPath of skillPaths) {
-		const text = await readFile(join(root, skillPath), "utf8");
-		if (
-			!/TASK:/.test(text) ||
-			!(/fork_turns:\s*"none"/.test(text) || /fork_context:\s*false/.test(text)) ||
-			!(/wait_agent/s.test(text)) ||
-			!/Fallback only when/i.test(text) ||
-			!/respawn/i.test(text) ||
-			!/Plan and reviewer agents/i.test(text) ||
-			!/blocking wait/i.test(text) ||
-			!/A timeout only means/i.test(text) ||
-			!/WORKING:/.test(text)
-		) {
-			missing.push(skillPath);
-		}
+test("[todo13.subagents.native-guidance] #given active orchestration skills #when inspected #then they use Antigravity native collaboration names", async () => {
+	for (const skillName of orchestrationSkills) {
+		const text = await readFile(join(root, "skills", skillName, "SKILL.md"), "utf8");
+		assert.doesNotMatch(text, /spawn_agent|wait_agent|call_omo_agent|background_output|multi_agent_v[0-9]+/);
+		assert.doesNotMatch(text, /Codex Harness Tool Compatibility/);
+		assert.match(text, /Verified quality-gate policy/);
 	}
 
-	// then
-	assert.deepEqual(missing, []);
+	const ulw = await readFile(join(root, "skills", "ulw", "SKILL.md"), "utf8");
+	assert.match(ulw, /invoke_subagent/);
+	assert.match(ulw, /send_message/);
+	assert.match(ulw, /manage_subagents/);
 });
 
-test("#given ultrawork directive #when inspected #then reviewer fallback keeps an agent role", async () => {
-	// given
-	const directivePath = "components/ultrawork/directive.md";
-
-	// when
-	const text = await readFile(join(root, directivePath), "utf8");
-
-	// then
-	assert.doesNotMatch(text, /any `gpt-5\.2`\s+xhigh reviewer/);
-	assert.match(text, /reviewer/);
-	assert.match(text, /agent_type/);
-	assert.match(text, /model/);
-	assert.match(text, /timeout only means/i);
-	assert.match(text, /WORKING:/);
+test("[todo13.subagents.start-work-prefix] #given active start-work skill #when inspected #then continuation state is Antigravity-only", async () => {
+	const text = await readFile(join(root, "skills", "start-work", "SKILL.md"), "utf8");
+	assert.match(text, /antigravity:<conversationId>/);
+	assert.match(text, /Antigravity Stop continuation/);
+	assert.doesNotMatch(text, /codex:/i);
 });
 
-test("#given ulw-loop workflow #when inspected #then stale review refresh keeps policy changes narrow", async () => {
-	// given
-	const workflowPaths = [
-		"components/ulw-loop/skills/ulw-loop/references/full-workflow.md",
-		"skills/ulw-loop/references/full-workflow.md",
+test("[todo13.subagents.sources-retain-todo8-fixtures] #given publishing workflow sources #when inspected #then LSP fixture contract is present before sync", async () => {
+	const workflowFiles = [
+		"skill-aliases/ulw/SKILL.md",
+		"components/ulw-loop/skills/ulw-loop/SKILL.md",
+		"skill-aliases/start-work/SKILL.md",
+		"skill-aliases/review-work/SKILL.md",
 	];
-
-	// when
-	const missing = [];
-	for (const workflowPath of workflowPaths) {
-		const text = await readFile(join(root, workflowPath), "utf8");
-		if (
-			!/refresh current branch\/PR\/issue state/.test(text) ||
-			!/preserve existing ordering\/policy/.test(text) ||
-			!/separate compatibility detection from policy changes/.test(text)
-		) {
-			missing.push(workflowPath);
-		}
+	for (const workflowFile of workflowFiles) {
+		const text = await readFile(join(root, workflowFile), "utf8");
+		assert.match(text, /Verified quality-gate policy/);
+		assert.match(text, /server id `lsp`, tool `diagnostics`/);
+		assert.match(text, /test\/fixtures\/lsp\/clean\.json/);
+		assert.match(text, /test\/fixtures\/lsp\/diagnostics\.json/);
+		assert.match(text, /test\/fixtures\/lsp\/unavailable\.json/);
 	}
-
-	// then
-	assert.deepEqual(missing, []);
-});
-
-test("#given ultrawork agents #when inspected #then inter-agent commentary is treated as assignments", async () => {
-	// given
-	const agentPaths = AGENT_FILES;
-
-	// when
-	const missing = [];
-	for (const agentPath of agentPaths) {
-		const text = await readFile(join(root, agentPath), "utf8");
-		if (!/TASK:|Input|recommendation/.test(text) || !/context|commentary/.test(text)) {
-			missing.push(agentPath);
-		}
-	}
-
-	// then
-	assert.deepEqual(missing, []);
 });

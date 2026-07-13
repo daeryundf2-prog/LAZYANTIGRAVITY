@@ -127,6 +127,16 @@ For each checkbox, complete all five gates before marking it done:
 4. Adversarial QA: exercise every class the Phase 3 trigger map marks applicable and capture the observable result for each.
 5. Cleanup: register every QA resource teardown as its own todo when spawned (QA scripts, tmux assets, browser sessions, PIDs, ports, containers, temp dirs), execute each, and capture the receipt. No QA asset is left running.
 
+### Verified quality-gate policy
+
+For the post-edit source-file verification step, use the local LSP diagnostics capability semantically with server id `lsp`, tool `diagnostics`, and arguments `{filePath:"<absolute changed file>",severity:"error"}`. Map clean, diagnostic, and unavailable outcomes to `test/fixtures/lsp/clean.json`, `test/fixtures/lsp/diagnostics.json`, and `test/fixtures/lsp/unavailable.json`.
+
+- Clean output is exactly `LSP verification: clean (<file>)`.
+- Diagnostic output starts with `LSP verification: <N> error(s) (<file>)` and includes only bounded, sanitized locations.
+- Unavailable output is exactly `LSP verification unavailable: <reason>` and is never a clean result.
+
+Do not promote comment-preservation feedback, file-targeted diagnostics outside this invocation, or unsupported automatic diagnostic payloads into verified clean gates.
+
 Append evidence to `.omo/start-work/ledger.jsonl`, one JSON object per line. Include at least `event`, `plan`, `task`, `session_id`, `commands`, `artifact`, `adversarial_classes`, and `cleanup` fields. `adversarial_classes` lists each probed class with its observable result and each ruled-out class with a one-line reason.
 
 ### Sisyphus-style completion contract
