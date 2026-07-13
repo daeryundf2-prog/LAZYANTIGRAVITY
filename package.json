@@ -1,29 +1,32 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.1.0",
-	"description": "Aggregate Codex plugin root for OMO components.",
+	"version": "0.2.2",
+	"description": "Aggregated Antigravity plugin root for OMO components.",
 	"license": "MIT",
+	"author": {
+		"name": "shin"
+	},
+	"keywords": ["antigravity", "antigravity-plugin", "omo", "hooks", "mcp", "skills"],
+	"interface": {
+		"displayName": "LazyAntigravity",
+		"shortDescription": "Unified local Antigravity components",
+		"longDescription": "LazyAntigravity exposes the local OMO Rules, LSP, Ultrawork, and ulw-loop components as one plugin namespace.",
+		"developerName": "shin",
+		"category": "Developer Tools",
+		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection"],
+		"brandColor": "#7C3AED"
+	},
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"private": true,
-	"workspaces": [
-		"components/comment-checker",
-		"components/git-bash",
-		"components/rules",
-		"components/lsp",
-		"components/telemetry",
-		"components/start-work-continuation",
-		"components/ulw-loop",
-		"components/ultrawork"
-	],
-	"dependencies": {
-		"@oh-my-opencode/shared-skills": "file:./shared-skills"
+	"engines": {
+		"node": ">=20.17"
 	},
 	"scripts": {
-		"build": "node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node scripts/build-components.mjs",
-		"check": "npm run build && npm test",
-		"sync:hooks": "node scripts/sync-hook-status-messages.mjs",
+		"check": "node scripts/validate-root-toolchain.mjs",
+		"rebuild:maintainer": "node scripts/rebuild-components.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
-		"test": "node --test test/*.test.mjs"
+		"test": "node scripts/run-tests.mjs",
+		"validate:distribution": "node scripts/validate-antigravity-distribution.mjs"
 	}
 }

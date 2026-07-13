@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "contract": {
+    "path": "contracts/antigravity/skills.md",
+    "url": "https://antigravity.google/assets/docs/antigravity-2-0/skills.md",
+    "sha256": "f9edcffbe1758127c68146b072022f597d63767e1cf9397fc6ae7475e7cdd705"
+  },
+  "core": [
+    {
+      "name": "ast-grep",
+      "reason": "Selected for deterministic syntax-aware search and rewrites without a harness-specific orchestration dependency."
+    },
+    {
+      "name": "debugging",
+      "reason": "Selected for evidence-led diagnosis and reproducible runtime verification."
+    },
+    {
+      "name": "frontend-ui-ux",
+      "reason": "Selected for user-interface implementation, accessibility review, and visual quality guidance."
+    },
+    {
+      "name": "git-master",
+      "reason": "Selected for explicit, user-authorized Git history and publication workflows."
+    },
+    {
+      "name": "init-deep",
+      "reason": "Selected for repository-local instruction discovery and hierarchy generation."
+    },
+    {
+      "name": "lsp",
+      "reason": "Selected for on-demand language-server diagnostics through the local LSP MCP."
+    },
+    {
+      "name": "lsp-setup",
+      "reason": "Selected for portable language-server detection and configuration guidance."
+    },
+    {
+      "name": "programming",
+      "reason": "Selected for typed implementation practices and language-specific quality gates."
+    },
+    {
+      "name": "review-work",
+      "reason": "Selected for independent post-implementation correctness, security, and QA review."
+    },
+    {
+      "name": "rules",
+      "reason": "Selected for repository rule discovery and explicit project instruction handling."
+    },
+    {
+      "name": "start-work",
+      "reason": "Selected for evidence-bound execution of an approved repository work plan."
+    },
+    {
+      "name": "ulw",
+      "reason": "Selected for bounded parallel execution using native Antigravity collaboration tools."
+    },
+    {
+      "name": "ulw-loop",
+      "reason": "Selected for durable, evidence-backed execution loops with explicit completion gates."
+    },
+    {
+      "name": "ulw-plan",
+      "reason": "Selected for decision-complete planning before high-risk multi-module implementation."
+    },
+    {
+      "name": "visual-qa",
+      "reason": "Selected for observable visual verification of web and terminal interfaces."
+    }
+  ],
+  "experimental": [
+    {
+      "name": "browse",
+      "reason": "Browser and network workflows have not been proven against native Antigravity tools and resource boundaries."
+    },
+    {
+      "name": "clone",
+      "reason": "Session cloning depends on harness-specific conversation state that is not an Antigravity skill contract."
+    },
+    {
+      "name": "coding-agent-sessions",
+      "reason": "Local coding-agent transcript stores and session APIs are platform-specific and not yet ported."
+    },
+    {
+      "name": "comment-checker",
+      "reason": "Automatic post-tool file feedback requires invocation fields absent from the pinned Antigravity hook contract."
+    },
+    {
+      "name": "deep-interview",
+      "reason": "Its interactive interview workflow has not been validated against the native Antigravity question surface."
+    },
+    {
+      "name": "eval-loop",
+      "reason": "Its evaluator loop relies on orchestration and evidence semantics that have not been ported."
+    },
+    {
+      "name": "hwp-loader",
+      "reason": "External document conversion dependencies and resource handling are not verified for this distribution."
+    },
+    {
+      "name": "lcx-contribute-bug-fix",
+      "reason": "The workflow is specific to LazyCodex and Codex upstream contribution surfaces."
+    },
+    {
+      "name": "lcx-doctor",
+      "reason": "The health checks inspect LazyCodex and Codex installation state rather than Antigravity."
+    },
+    {
+      "name": "lcx-report-bug",
+      "reason": "The reporting workflow targets LazyCodex and Codex repositories with platform-specific evidence."
+    },
+    {
+      "name": "refactor",
+      "reason": "The delegated refactor workflow still references non-native orchestration tools."
+    },
+    {
+      "name": "remove-ai-slops",
+      "reason": "Its parallel cleanup and reviewer workflow has not been translated to native Antigravity tools."
+    },
+    {
+      "name": "skill-gen",
+      "reason": "Generated metadata, paths, and tool references have not been constrained to the pinned Antigravity skills contract."
+    },
+    {
+      "name": "sync-rules",
+      "reason": "Rule synchronization currently targets Codex-specific rule locations and injection behavior."
+    },
+    {
+      "name": "teammode",
+      "reason": "It creates and coordinates Codex threads through codex_app APIs unavailable in Antigravity."
+    },
+    {
+      "name": "ultimate-browsing",
+      "reason": "Stealth browser, network, and external runtime dependencies are outside the verified offline core."
+    },
+    {
+      "name": "ultraresearch",
+      "reason": "The research orchestration wrapper has not been validated against native Antigravity subagents and tools."
+    },
+    {
+      "name": "ulw-research",
+      "reason": "Its maximum-saturation research workflow still depends on non-native agent and browsing surfaces."
+    },
+    {
+      "name": "voice-interpreter",
+      "reason": "Audio tooling, external runtimes, and credential boundaries are not verified for this distribution."
+    }
+  ]
+}

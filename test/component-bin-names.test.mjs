@@ -11,7 +11,6 @@ const EXPECTED_COMPONENT_BINS = new Map([
 	["lsp", "omo-lsp"],
 	["rules", "omo-rules"],
 	["start-work-continuation", "omo-start-work-continuation"],
-	["telemetry", "omo-telemetry"],
 	["ultrawork", "omo-ultrawork"],
 	["ulw-loop", "omo-ulw-loop"],
 ]);
@@ -21,7 +20,6 @@ const EXPECTED_USAGE_PREFIXES = new Map([
 	["lsp", "Usage: omo-lsp "],
 	["rules", "Usage: omo-rules "],
 	["start-work-continuation", "Usage: omo-start-work-continuation "],
-	["telemetry", "Usage: omo-telemetry "],
 	["ultrawork", "Usage: omo-ultrawork "],
 ]);
 

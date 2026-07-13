@@ -1,0 +1,78 @@
+{
+  "browse": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "clone": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "coding-agent-sessions": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "comment-checker": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "deep-interview": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "eval-loop": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "hwp-loader": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "lcx-contribute-bug-fix": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "lcx-doctor": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "lcx-report-bug": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "refactor": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "remove-ai-slops": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "skill-gen": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "sync-rules": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "teammode": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "ultimate-browsing": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "ultraresearch": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "ulw-research": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  },
+  "voice-interpreter": {
+    "ide": "unsupported",
+    "cli": "unsupported"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    ".github/workflows/ci.yml",
+    ".runtime-hint.json",
+    "CHANGELOG.md",
+    "LICENSE.md",
+    "README.md",
+    "hooks.json",
+    "mcp_config.json",
+    "package.json",
+    "plugin.json",
+    "shared-skills/index.mjs",
+    "src/README.ko.md",
+    "src/README.md"
+  ],
+  "directories": [
+    "components/git-bash-mcp/dist",
+    "components/lsp-daemon/dist",
+    "components/lsp-tools-mcp/dist",
+    "config",
+    "contracts",
+    "docs",
+    "examples",
+    "scripts",
+    "skill-aliases",
+    "skills",
+    "test"
+  ],
+  "exclude": [
+    ".git",
+    ".omo/evidence",
+    "experimental-skills",
+    "node_modules"
+  ]
+}

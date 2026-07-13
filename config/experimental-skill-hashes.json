@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "sourceRoot": "experimental-skills",
+  "algorithm": "sha256(JSON.stringify(sorted [{path,sha256,bytes}]))",
+  "baselineFingerprint": "eded1e97c8e3156dae270427ee1bcda75716b850aca03fdef2d16bcef78eacd3",
+  "skills": {
+    "browse": {
+      "sha256": "c4c26e0d7ade96abf1b2dec775c81d785d8b14b4f437eeb1491959a871bf4f10",
+      "fileCount": 2,
+      "totalBytes": 3584
+    },
+    "clone": {
+      "sha256": "418634c04ba13f5fe34553925789f29dfe246a21d89953e55e61335363d2b384",
+      "fileCount": 1,
+      "totalBytes": 3518
+    },
+    "coding-agent-sessions": {
+      "sha256": "9ded8c0379a810b36b74c19fc681f751e77708223a91aa9d3d1c804a34b83064",
+      "fileCount": 22,
+      "totalBytes": 96518
+    },
+    "comment-checker": {
+      "sha256": "c78f9b63a337504421838ad70b6e5ac21d31b96e1ae824a24312d4336b0eaeb4",
+      "fileCount": 1,
+      "totalBytes": 656
+    },
+    "deep-interview": {
+      "sha256": "67b9b197bb75206719e776a93cf7932ae9ca0c35a1f67c02b4c8aad64bdaeeab",
+      "fileCount": 1,
+      "totalBytes": 3622
+    },
+    "eval-loop": {
+      "sha256": "931b455ef001e594450da15367577ba2db3753dbd5b82097f5d382e0991f78be",
+      "fileCount": 1,
+      "totalBytes": 3194
+    },
+    "hwp-loader": {
+      "sha256": "1f076178553e5f5b8f2a00cd1ff6bbe65718a0976433dd9c8f4023da45b0f7fe",
+      "fileCount": 1,
+      "totalBytes": 1906
+    },
+    "lcx-contribute-bug-fix": {
+      "sha256": "4d1455105b91052b898a6a6d32236cb310e978e2f19d32d09f0e996e927b650b",
+      "fileCount": 3,
+      "totalBytes": 15253
+    },
+    "lcx-doctor": {
+      "sha256": "19ffc3ec10f961236a7b4a84c75c5037864f2e089bcb9fcb49f3cae7f29b5eee",
+      "fileCount": 2,
+      "totalBytes": 9790
+    },
+    "lcx-report-bug": {
+      "sha256": "335e3e122db2cb81c857e18bf589f4e04bd5827b400e14ff4400ac9ad88fa66b",
+      "fileCount": 2,
+      "totalBytes": 13038
+    },
+    "refactor": {
+      "sha256": "cd02c93eac7fe4f984cd3915c9d8c43d4119952268a2a497fa7ba81f17624d93",
+      "fileCount": 2,
+      "totalBytes": 31608
+    },
+    "remove-ai-slops": {
+      "sha256": "f54064c9a6412547158aa005f805f9e955e672d4d87544a72498a47c62adc1cf",
+      "fileCount": 2,
+      "totalBytes": 28446
+    },
+    "skill-gen": {
+      "sha256": "2d42aa682839657d3d7eae46591f261be421e5f0a242fba917832b28c7957de6",
+      "fileCount": 1,
+      "totalBytes": 2706
+    },
+    "sync-rules": {
+      "sha256": "eca0a7186a1e86dc80aa28ea4bae9aefa05582663d3bc75fde3f783654d19a0a",
+      "fileCount": 2,
+      "totalBytes": 4993
+    },
+    "teammode": {
+      "sha256": "3928d056fa5b9e0360b24372270ef217d5ffedbd935d37429226070486adcb35",
+      "fileCount": 6,
+      "totalBytes": 58265
+    },
+    "ultimate-browsing": {
+      "sha256": "2806ad2e726681c78da7dc0f9520c7555989a7732bc7e85de613e242063836fa",
+      "fileCount": 49,
+      "totalBytes": 222682
+    },
+    "ultraresearch": {
+      "sha256": "8b6998a0380dadffe72060869a929fb3a3fbaaa27b30704f8a62978bc38ff88d",
+      "fileCount": 2,
+      "totalBytes": 599
+    },
+    "ulw-research": {
+      "sha256": "8781da2e52086e0048063f14a5f1dacaeefe816298e6577ca87529e0aa239922",
+      "fileCount": 3,
+      "totalBytes": 29829
+    },
+    "voice-interpreter": {
+      "sha256": "3eda4e1128c42ab3cefd5eb35f98b126079383cfa619e8fbe2a352af7d021b6b",
+      "fileCount": 1,
+      "totalBytes": 3180
+    }
+  }
+}

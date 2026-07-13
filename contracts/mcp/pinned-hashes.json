@@ -1,0 +1,35 @@
+{
+	"antigravity": {
+		"mcp": {
+			"source": "https://antigravity.google/assets/docs/antigravity-2-0/mcp.md",
+			"pinnedMarkdownSha256": "d7b3886d23fdfc25492ac704796b99788abb64ad682c80e525f39edb26b52cf8",
+			"vendoredPath": "contracts/antigravity/mcp.md"
+		}
+	},
+	"modelContextProtocol": {
+		"2025-06-18": {
+			"lifecycle": {
+				"source": "https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle.md",
+				"vendoredPath": "contracts/mcp/2025-06-18/basic/lifecycle.md",
+				"sha256": "a70df88f043e6bba615e437359b7576e87967033f6c4bc0aaebcf10c91604682"
+			},
+			"transports": {
+				"source": "https://modelcontextprotocol.io/specification/2025-06-18/basic/transports.md",
+				"vendoredPath": "contracts/mcp/2025-06-18/basic/transports.md",
+				"sha256": "e4df3c146b524d58f282d3c56e19b2f2df365fbf160c89cdabaed9a182811675"
+			}
+		},
+		"2024-11-05": {
+			"lifecycle": {
+				"source": "https://modelcontextprotocol.io/specification/2024-11-05/basic/lifecycle.md",
+				"vendoredPath": "contracts/mcp/2024-11-05/basic/lifecycle.md",
+				"sha256": "7f33d6ba5015ea2f997262ec24a6609b22191beb78d52ca20fdbf93468e96c4d"
+			},
+			"transports": {
+				"source": "https://modelcontextprotocol.io/specification/2024-11-05/basic/transports.md",
+				"vendoredPath": "contracts/mcp/2024-11-05/basic/transports.md",
+				"sha256": "c35909550e534d5be4f62f341a7b15d74cde08e8017110ed37ec191f694e9c48"
+			}
+		}
+	}
+}

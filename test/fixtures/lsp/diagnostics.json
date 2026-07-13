@@ -1,0 +1,42 @@
+{
+  "case": "diagnostics",
+  "serverId": "lsp",
+  "tool": "diagnostics",
+  "arguments": {
+    "filePath": "C:/repo/src/broken.ts",
+    "severity": "error"
+  },
+  "diagnostics": [
+    {
+      "file": "C:/repo/src/broken.ts",
+      "range": {
+        "start": {
+          "line": 12,
+          "character": 4
+        },
+        "end": {
+          "line": 12,
+          "character": 9
+        }
+      },
+      "severity": "error",
+      "message": "Type 'string' is not assignable to type 'number'."
+    },
+    {
+      "file": "C:/repo/src/broken.ts",
+      "range": {
+        "start": {
+          "line": 27,
+          "character": 10
+        },
+        "end": {
+          "line": 27,
+          "character": 18
+        }
+      },
+      "severity": "error",
+      "message": "Cannot find name 'missingValue'."
+    }
+  ],
+  "expectedUserText": "LSP verification: 2 error(s) (src/broken.ts)\n- src/broken.ts:13:5 Type 'string' is not assignable to type 'number'.\n- src/broken.ts:28:11 Cannot find name 'missingValue'."
+}

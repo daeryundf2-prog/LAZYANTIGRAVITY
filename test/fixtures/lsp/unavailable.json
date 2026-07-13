@@ -1,0 +1,14 @@
+{
+  "case": "unavailable",
+  "serverId": "lsp",
+  "tool": "diagnostics",
+  "arguments": {
+    "filePath": "C:/repo/src/unavailable.ts",
+    "severity": "error"
+  },
+  "error": {
+    "reason": "language server unavailable"
+  },
+  "diagnostics": null,
+  "expectedUserText": "LSP verification unavailable: language server unavailable"
+}
