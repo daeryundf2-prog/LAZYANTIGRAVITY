@@ -1,414 +1,176 @@
 #!/usr/bin/env node
-import { stdin, stdout, env } from "node:process";
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { env, stdin, stdout } from "node:process";
+import { fileURLToPath } from "node:url";
 
-// Buffer to store incoming data
-let buffer = "";
+import { publicDiagnostic, redactText, redactValue } from "./database-mcp/redaction.mjs";
+import { DatabaseBoundaryError, executeReadOnlyQuery } from "./database-mcp/sqlite-readonly.mjs";
 
-stdin.on("data", (chunk) => {
-	buffer += chunk.toString();
-	processMessages();
-});
+const INPUT_LIMIT = 1024 * 1024;
+const RESPONSE_LIMIT = 1024 * 1024;
+const CONFIG_LIMIT = 1024 * 1024;
+const ID_LIMIT = 256;
+const SUPPORTED_PROTOCOL_VERSIONS = new Set(["2025-06-18", "2024-11-05"]);
 
-function processMessages() {
-	while (true) {
-		const newlineIndex = buffer.indexOf("\n");
-		if (newlineIndex === -1) break;
-		const line = buffer.slice(0, newlineIndex).trim();
-		buffer = buffer.slice(newlineIndex + 1);
-		if (line) {
-			try {
-				const message = JSON.parse(line);
-				handleMessage(message);
-			} catch (e) {
-				sendError(null, -32700, "Parse error");
-			}
-		}
-	}
+export const DATABASE_TOOLS = Object.freeze([
+	{
+		name: "db_list_connections",
+		description: "List redacted metadata for saved SQLite-only connections without modifying configuration.",
+		inputSchema: { type: "object", properties: {}, additionalProperties: false },
+	},
+	{
+		name: "db_query",
+		description: "Run one bounded read-only SQLite SELECT and return redacted JSON from an existing local SQLite database.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				databasePath: { type: "string", description: "Path to an existing SQLite database file." },
+				query: { type: "string", description: "One read-only SELECT statement." },
+				format: { type: "string", enum: ["json"], default: "json" },
+			},
+			required: ["databasePath", "query"],
+			additionalProperties: false,
+		},
+	},
+]);
+
+function validRequestId(id) {
+	return id === null
+		|| (typeof id === "number" && Number.isFinite(id))
+		|| (typeof id === "string" && Buffer.byteLength(id) <= ID_LIMIT);
+}
+
+function writeResponse(response) {
+	const line = `${JSON.stringify(response)}\n`;
+	if (Buffer.byteLength(line) <= RESPONSE_LIMIT) return stdout.write(line);
+	const fallback = {
+		jsonrpc: "2.0",
+		id: validRequestId(response.id) ? response.id : null,
+		error: { code: -32603, message: "Response limit exceeded" },
+	};
+	return stdout.write(`${JSON.stringify(fallback)}\n`);
 }
 
 function sendResponse(id, result) {
-	stdout.write(JSON.stringify({ jsonrpc: "2.0", id, result }) + "\n");
+	writeResponse({ jsonrpc: "2.0", id: validRequestId(id) ? id : null, result });
 }
 
-function sendError(id, code, message, data) {
-	stdout.write(JSON.stringify({ jsonrpc: "2.0", id, error: { code, message, data } }) + "\n");
+function sendError(id, code, message) {
+	writeResponse({
+		jsonrpc: "2.0",
+		id: validRequestId(id) ? id : null,
+		error: { code, message: redactText(message, 1024) },
+	});
 }
 
-function getSqlitConfigDir() {
-	if (env.SQLIT_CONFIG_DIR) return env.SQLIT_CONFIG_DIR;
+function toolResult(text, isError = false) {
+	return { content: [{ type: "text", text }], isError };
+}
+
+function configPath() {
 	const home = env.HOME || env.USERPROFILE || "";
-	return join(home, ".config", "sqlit");
-}
-
-function handleMessage(message) {
-	if (!message || typeof message !== "object") {
-		return sendError(null, -32600, "Invalid Request");
-	}
-	
-	const { method, params, id } = message;
-	
-	// Safe routing with try-catch to avoid crashing the stdin process
-	try {
-		if (method === "initialize") {
-			return sendResponse(id, {
-				protocolVersion: "2024-11-05",
-				capabilities: {
-					tools: {}
-				},
-				serverInfo: {
-					name: "sqlit-database-mcp",
-					version: "1.0.0"
-				}
-			});
-		}
-		if (method === "notifications/initialized") {
-			return;
-		}
-		if (method === "tools/list") {
-			return sendResponse(id, {
-				tools: [
-					{
-						name: "db_discover_containers",
-						description: "Automatically discover running Docker database containers (PostgreSQL, MySQL, MS SQL, etc.) and list their port mappings and details.",
-						inputSchema: {
-							type: "object",
-							properties: {}
-						}
-					},
-					{
-						name: "db_query",
-						description: "Execute a SQL query against a database connection or a direct connection URL using sqlit CLI.",
-						inputSchema: {
-							type: "object",
-							properties: {
-								connectionName: {
-									type: "string",
-									description: "Name of the saved sqlit connection."
-								},
-								connectionUrl: {
-									type: "string",
-									description: "Direct connection URL (e.g., sqlite:///path/to/db.db, postgresql://user:pass@localhost:5432/db)."
-								},
-								query: {
-									type: "string",
-									description: "The SQL query to execute."
-								},
-								format: {
-									type: "string",
-									enum: ["json", "csv", "table"],
-									description: "Output format of the query result (default: json)."
-								}
-							},
-							required: ["query"]
-						}
-					},
-					{
-						name: "db_list_connections",
-						description: "List all saved database connections in sqlit connection manager.",
-						inputSchema: {
-							type: "object",
-							properties: {}
-						}
-					},
-					{
-						name: "db_add_connection",
-						description: "Save a new database connection configuration in sqlit.",
-						inputSchema: {
-							type: "object",
-							properties: {
-								name: {
-									type: "string",
-									description: "Unique name for the connection."
-								},
-								dbType: {
-									type: "string",
-									enum: ["sqlite", "postgresql", "mysql", "mssql", "cockroachdb", "turso"],
-									description: "Type of the database."
-								},
-								url: {
-									type: "string",
-									description: "Connection URL (alternative to individual parameters)."
-								},
-								server: {
-									type: "string",
-									description: "Database server host."
-								},
-								port: {
-									type: "string",
-									description: "Database server port."
-								},
-								database: {
-									type: "string",
-									description: "Database name."
-								},
-								username: {
-									type: "string",
-									description: "Database username."
-								},
-								password: {
-									type: "string",
-									description: "Database password."
-								},
-								filePath: {
-									type: "string",
-									description: "File path for SQLite database."
-								}
-							},
-							required: ["name", "dbType"]
-						}
-					}
-				]
-			});
-		}
-		if (method === "tools/call") {
-			if (!params || typeof params !== "object") {
-				return sendError(id, -32602, "Invalid params: params object is required");
-			}
-			const { name, arguments: args } = params;
-			if (!name || typeof name !== "string") {
-				return sendError(id, -32602, "Invalid params: name must be a string");
-			}
-			return handleToolCall(id, name, args || {});
-		}
-		sendError(id, -32601, `Method not found: ${method}`);
-	} catch (e) {
-		sendError(id, -32603, `Internal error: ${e.message}`);
-	}
-}
-
-function handleToolCall(id, name, args) {
-	try {
-		let textResult = "";
-		let isError = false;
-
-		if (name === "db_discover_containers") {
-			const res = discoverContainers();
-			textResult = res.textResult;
-			isError = res.isError;
-		} else if (name === "db_list_connections") {
-			const res = listConnections();
-			textResult = res.textResult;
-			isError = res.isError;
-		} else if (name === "db_add_connection") {
-			const res = addConnection(args);
-			textResult = res.textResult;
-			isError = res.isError;
-		} else if (name === "db_query") {
-			const res = executeQuery(args);
-			textResult = res.textResult;
-			isError = res.isError;
-		} else {
-			return sendError(id, -32601, `Tool not found: ${name}`);
-		}
-		
-		return sendResponse(id, {
-			content: [
-				{
-					type: "text",
-					text: textResult
-				}
-			],
-			isError
-		});
-	} catch (e) {
-		return sendResponse(id, {
-			content: [
-				{
-					type: "text",
-					text: `Unexpected internal error executing tool '${name}': ${e.message}`
-				}
-			],
-			isError: true
-		});
-	}
-}
-
-function discoverContainers() {
-	try {
-		// Use execFileSync to execute docker CLI securely with arguments separated
-		const stdout = execFileSync(
-			"docker",
-			["ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Ports}}\t{{.Image}}"],
-			{ encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
-		);
-		const lines = stdout.trim().split("\n").filter(Boolean);
-		const containers = [];
-		for (const line of lines) {
-			const [cid, name, ports, image] = line.split("\t");
-			if (!cid || !name) continue;
-			
-			let dbType = null;
-			const target = `${image || ""} ${name}`;
-			if (/postgres/i.test(target)) dbType = "postgresql";
-			else if (/mysql/i.test(target)) dbType = "mysql";
-			else if (/mariadb/i.test(target)) dbType = "mariadb";
-			else if (/mssql|sqlserver/i.test(target)) dbType = "mssql";
-			else if (/cockroach/i.test(target)) dbType = "cockroachdb";
-			else if (/surreal/i.test(target)) dbType = "surrealdb";
-			else if (/redis/i.test(target)) dbType = "redis";
-			
-			if (dbType) {
-				containers.push({ id: cid, name, ports: ports || "", image: image || "", dbType });
-			}
-		}
-		if (containers.length === 0) {
-			return { textResult: "No running database containers discovered.", isError: false };
-		}
-		return { textResult: JSON.stringify(containers, null, 2), isError: false };
-	} catch (e) {
-		return { 
-			textResult: "Docker CLI is not running or not available on the path.", 
-			isError: false
-		};
-	}
+	return join(env.SQLIT_CONFIG_DIR || join(home, ".config", "sqlit"), "connections.json");
 }
 
 function listConnections() {
-	const configDir = getSqlitConfigDir();
-	const connPath = join(configDir, "connections.json");
-	if (existsSync(connPath)) {
-		try {
-			const connections = JSON.parse(readFileSync(connPath, "utf8"));
-			return { textResult: JSON.stringify(connections, null, 2), isError: false };
-		} catch (e) {
-			return { textResult: `Failed to parse connections.json at ${connPath}: ${e.message}`, isError: true };
-		}
-	}
-	return { 
-		textResult: `No saved connections found in ${connPath}. You can add one using 'db_add_connection' or install 'sqlit-tui' to manage connections.`, 
-		isError: false 
-	};
-}
-
-function addConnection(args) {
-	const { name, dbType, url, server, port, database, username, password, filePath } = args;
-	
-	// Basic Validation
-	if (!name || typeof name !== "string") {
-		return { textResult: "Validation failed: 'name' is required and must be a string.", isError: true };
-	}
-	if (dbType === "sqlite" && !filePath && !url) {
-		return { textResult: "Validation failed: 'filePath' or 'url' is required for SQLite connections.", isError: true };
-	}
-
-	const configDir = getSqlitConfigDir();
-	const connPath = join(configDir, "connections.json");
-	
-	let connections = {};
-	if (existsSync(connPath)) {
-		try {
-			connections = JSON.parse(readFileSync(connPath, "utf8"));
-		} catch (e) {
-			// ignore corruption and overwrite
-		}
-	} else {
-		try {
-			mkdirSync(configDir, { recursive: true });
-		} catch (e) {
-			return { textResult: `Failed to create config directory: ${e.message}`, isError: true };
-		}
-	}
-	
-	connections[name] = {
-		db_type: dbType,
-		url,
-		server,
-		port,
-		database,
-		username,
-		password,
-		file_path: filePath,
-		created_at: new Date().toISOString()
-	};
-	
+	const path = configPath();
+	if (!existsSync(path)) return toolResult(JSON.stringify({ connections: {} }));
 	try {
-		writeFileSync(connPath, JSON.stringify(connections, null, 2));
-		return { textResult: `Connection '${name}' successfully configured and saved to ${connPath}.`, isError: false };
-	} catch (e) {
-		return { textResult: `Failed to write connection: ${e.message}`, isError: true };
+		const metadata = lstatSync(path);
+		if (!metadata.isFile() || metadata.isSymbolicLink() || metadata.size > CONFIG_LIMIT) {
+			return toolResult(publicDiagnostic("CONFIG_UNAVAILABLE"), true);
+		}
+		const parsed = JSON.parse(readFileSync(path, "utf8"));
+		if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+			return toolResult(publicDiagnostic("CONFIG_CORRUPT"), true);
+		}
+		const connections = {};
+		for (const [name, connection] of Object.entries(parsed)) {
+			if (!connection || typeof connection !== "object" || Array.isArray(connection)) continue;
+			if ((connection.db_type ?? connection.dbType) !== "sqlite") continue;
+			connections[name] = redactValue(connection);
+		}
+		return toolResult(JSON.stringify({ connections }, null, 2));
+	} catch {
+		return toolResult(publicDiagnostic("CONFIG_CORRUPT"), true);
 	}
 }
 
-function executeQuery(args) {
-	const { connectionName, connectionUrl, query, format = "json" } = args;
-	if (!query) {
-		return { textResult: "Validation failed: 'query' parameter is required.", isError: true };
-	}
+function validQueryArguments(args) {
+	if (!args || Array.isArray(args) || typeof args !== "object") return false;
+	const keys = Object.keys(args);
+	return keys.every((key) => key === "databasePath" || key === "query" || key === "format");
+}
 
-	const formatFlag = format === "csv" ? "-csv" : (format === "json" ? "-json" : "-line");
-	
-	// Priority 1: Direct SQLite connectionUrl fallback (Safe from injection)
-	if (connectionUrl && (connectionUrl.startsWith("sqlite://") || connectionUrl.startsWith("sqlite:///"))) {
-		const filePath = connectionUrl.replace(/^sqlite:\/\/\/?/, "");
-		try {
-			const output = execFileSync("sqlite3", [filePath, formatFlag], {
-				input: query,
-				encoding: "utf8"
-			});
-			return { textResult: output || "Query executed successfully (empty result set).", isError: false };
-		} catch (e) {
-			return { 
-				textResult: `Failed to execute SQLite query directly via sqlite3: ${e.message}\nEnsure 'sqlite3' CLI is installed.`, 
-				isError: true 
-			};
-		}
-	}
-	
-	// Priority 2: Use sqlit command if available (Safe from injection)
-	let sqlitAvailable = false;
+function queryDatabase(args) {
+	if (!validQueryArguments(args)) return toolResult(publicDiagnostic("QUERY_REJECTED"), true);
 	try {
-		execFileSync("sqlit", ["--version"], { stdio: "ignore" });
-		sqlitAvailable = true;
-	} catch (e) {
-		// sqlit not in path
+		const result = executeReadOnlyQuery(args);
+		return toolResult(result.text);
+	} catch (error) {
+		const code = error instanceof DatabaseBoundaryError ? error.code : "DATABASE_INTERNAL_ERROR";
+		const status = error instanceof DatabaseBoundaryError ? error.status : "failed";
+		return toolResult(publicDiagnostic(code, status), true);
 	}
-	
-	if (sqlitAvailable) {
-		try {
-			const formatFlagSqlit = format === "table" ? "table" : format;
-			const sqlitArgs = ["query"];
-			if (connectionName) {
-				sqlitArgs.push("-c", connectionName);
-			} else if (connectionUrl) {
-				sqlitArgs.push("--url", connectionUrl);
-			} else {
-				return { textResult: "Either connectionName or connectionUrl must be provided to run a query via sqlit.", isError: true };
-			}
-			sqlitArgs.push("-q", query, "--format", formatFlagSqlit);
-			
-			const output = execFileSync("sqlit", sqlitArgs, { encoding: "utf8" });
-			return { textResult: output, isError: false };
-		} catch (e) {
-			return { textResult: `Failed to run query via sqlit CLI: ${e.message}`, isError: true };
+}
+
+function handleToolCall(id, params) {
+	if (!params || typeof params !== "object" || typeof params.name !== "string") {
+		return sendError(id, -32602, "Invalid params");
+	}
+	if (params.name === "db_list_connections") return sendResponse(id, listConnections());
+	if (params.name === "db_query") return sendResponse(id, queryDatabase(params.arguments ?? {}));
+	return sendError(id, -32601, "Tool not found");
+}
+
+export function handleMessage(message) {
+	if (!message || Array.isArray(message) || typeof message !== "object" || typeof message.method !== "string") {
+		return sendError(null, -32600, "Invalid Request");
+	}
+	if (message.method === "notifications/initialized") return undefined;
+	if (message.jsonrpc !== "2.0" || !validRequestId(message.id)) {
+		return sendError(null, -32600, "Invalid Request");
+	}
+	if (message.method === "initialize") {
+		const requestedVersion = message.params?.protocolVersion;
+		if (!SUPPORTED_PROTOCOL_VERSIONS.has(requestedVersion)) {
+			return sendError(message.id, -32602, "Unsupported protocolVersion");
 		}
+		return sendResponse(message.id, {
+			protocolVersion: requestedVersion,
+			capabilities: { tools: {} },
+			serverInfo: { name: "lazyantigravity-sqlite-readonly", version: "0.2.2" },
+		});
 	}
-	
-	// Priority 3: Fallback for SQLite saved connections (Safe from injection)
-	if (connectionName) {
-		const configDir = getSqlitConfigDir();
-		const connPath = join(configDir, "connections.json");
-		if (existsSync(connPath)) {
+	if (message.method === "tools/list") return sendResponse(message.id, { tools: DATABASE_TOOLS });
+	if (message.method === "tools/call") return handleToolCall(message.id, message.params);
+	return sendError(message.id ?? null, -32601, "Method not found");
+}
+
+export function startServer() {
+	let buffer = "";
+	stdin.setEncoding("utf8");
+	stdin.on("data", (chunk) => {
+		buffer += chunk;
+		if (Buffer.byteLength(buffer) > INPUT_LIMIT) {
+			buffer = "";
+			sendError(null, -32600, "Input limit exceeded");
+			return;
+		}
+		for (;;) {
+			const newline = buffer.indexOf("\n");
+			if (newline < 0) break;
+			const line = buffer.slice(0, newline).trim();
+			buffer = buffer.slice(newline + 1);
+			if (!line) continue;
 			try {
-				const connections = JSON.parse(readFileSync(connPath, "utf8"));
-				const conn = connections[connectionName];
-				if (conn && conn.db_type === "sqlite" && conn.file_path) {
-					const output = execFileSync("sqlite3", [conn.file_path, formatFlag], {
-						input: query,
-						encoding: "utf8"
-					});
-					return { textResult: output || "Query executed successfully (empty result set).", isError: false };
-				}
-			} catch (e) {
-				// fallback parsing failed
+				handleMessage(JSON.parse(line));
+			} catch {
+				sendError(null, -32700, "Parse error");
 			}
 		}
-	}
-	
-	return { 
-		textResult: "sqlit CLI is not installed or not in the PATH. Please install it using 'pipx install sqlit-tui' to run queries on non-SQLite databases.", 
-		isError: true 
-	};
+	});
 }
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) startServer();

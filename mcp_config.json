@@ -1,12 +1,6 @@
 {
 	"mcpServers": {
-		"grep_app": {
-			"url": "https://mcp.grep.app"
-		},
-		"context7": {
-			"url": "https://mcp.context7.com/mcp"
-		},
-		"git_bash": {
+		"git-bash": {
 			"command": "node",
 			"args": [
 				"./components/git-bash-mcp/dist/cli.js",
@@ -28,9 +22,6 @@
 				"./scripts/database-mcp.mjs"
 			],
 			"cwd": "."
-		},
-		"xds": {
-			"url": "https://astryx.atmeta.com/mcp"
 		}
 	}
 }

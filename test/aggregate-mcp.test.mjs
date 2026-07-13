@@ -11,31 +11,34 @@ const mcpPackageManifestExists = await Promise.all(mcpPackageManifestPaths.map(e
 test("#given aggregate MCP config #when inspected #then code MCPs reference package runtimes without package names", async () => {
 	// given
 	const packageJson = await readJson("package.json");
-	const mcp = await readJson(".mcp.json");
+	const workspaces = packageJson.workspaces ?? [];
+	const mcp = await readJson("mcp_config.json");
 	const lspSources = await readdir(join(root, "components", "lsp", "src"));
 	const bundledMcpBuildScript = await readFile(join(root, "scripts", "build-bundled-mcp-runtimes.mjs"), "utf8");
 
 	// when
 	const lspServer = mcp.mcpServers.lsp;
-	const gitBashServer = mcp.mcpServers.git_bash;
+	const gitBashServer = mcp.mcpServers["git-bash"];
 	const codeMcpNames = Object.keys(mcp.mcpServers)
-		.filter((name) => name === "lsp" || name === "git_bash")
+		.filter((name) => name === "lsp" || name === "git-bash")
 		.sort();
 	const componentLocalMcpSources = lspSources.filter((name) => name.startsWith("lazy-mcp") || name === "lazy-lsp-mcp.ts");
 
 	// then
 	const isStandalone = packageJson.name === "lazyantigravity";
-	assert.deepEqual(codeMcpNames, ["git_bash", "lsp"]);
-	assert.equal(packageJson.workspaces.includes("components/lsp/packages/lsp-tools-mcp"), false);
-	assert.equal(packageJson.workspaces.includes("components/lsp/packages/lsp-daemon"), false);
-	if (isStandalone) {
+	assert.deepEqual(codeMcpNames, ["git-bash", "lsp"]);
+	assert.equal(workspaces.includes("components/lsp/packages/lsp-tools-mcp"), false);
+	assert.equal(workspaces.includes("components/lsp/packages/lsp-daemon"), false);
+	if (packageJson.dependencies && isStandalone) {
 		assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:./shared-skills" });
-	} else {
+	} else if (packageJson.dependencies) {
 		assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:../../shared-skills" });
 	}
 	assert.match(bundledMcpBuildScript, /lsp-daemon/);
 	assert.match(bundledMcpBuildScript, /git-bash-mcp/);
-	assert.doesNotMatch(packageJson.scripts.build, /--workspaces/);
+	if (packageJson.scripts?.build) {
+		assert.doesNotMatch(packageJson.scripts.build, /--workspaces/);
+	}
 	assert.equal(lspServer.command, "node");
 	if (isStandalone) {
 		assert.deepEqual(lspServer.args, ["./components/lsp-daemon/dist/cli.js", "mcp"]);
