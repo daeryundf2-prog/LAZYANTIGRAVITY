@@ -1,0 +1,9 @@
+{
+	"$schema": "https://example.invalid/antigravity/mcp-remote.opt-in.schema.json",
+	"comment": "Opt-in examples only. Do not copy these into mcp_config.json without a user-owned endpoint and credential handling review.",
+	"mcpServers": {
+		"example-remote-streamable-http": {
+			"serverUrl": "https://mcp.example.invalid/mcp"
+		}
+	}
+}

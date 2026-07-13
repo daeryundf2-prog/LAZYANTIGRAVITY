@@ -1,0 +1,65 @@
+{
+  "name": "CI",
+  "on": {
+    "push": {},
+    "pull_request": {},
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "core": {
+      "name": "core-${{ matrix.os }}-node-${{ matrix.node }}",
+      "runs-on": "${{ matrix.os }}",
+      "strategy": {
+        "fail-fast": false,
+        "matrix": {
+          "os": ["ubuntu-latest", "windows-latest"],
+          "node": ["20", "22"]
+        }
+      },
+      "steps": [
+        { "name": "Checkout", "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5" # v4.3.1
+        },
+        { "name": "Select Node", "with": { "node-version": "${{ matrix.node }}", "cache": false }, "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020" # v4.4.0
+        },
+        { "name": "Focused contracts", "run": "node --test test/antigravity-plugin-contract.test.mjs test/antigravity-hook-contract.test.mjs test/antigravity-mcp-contract.test.mjs" },
+        { "name": "Full regression", "run": "node scripts/run-tests.mjs" },
+        { "name": "Workspace snapshot", "run": "node --test test/antigravity-workspace-snapshot.test.mjs" },
+        { "name": "Staged distribution", "run": "node scripts/validate-antigravity-distribution.mjs --receipt .omo/evidence/ci-staged-report.json" },
+        { "name": "Upload receipts", "if": "${{ always() }}", "with": { "name": "receipts-${{ matrix.os }}-node-${{ matrix.node }}", "path": ".omo/evidence", "if-no-files-found": "error" }, "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" # v4.6.2
+        }
+      ]
+    },
+    "real_sqlite": {
+      "name": "ubuntu-node-22-real-sqlite",
+      "runs-on": "ubuntu-latest",
+      "env": { "LAZYANTIGRAVITY_REQUIRE_REAL_SQLITE": "1" },
+      "steps": [
+        { "name": "Checkout", "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5" # v4.3.1
+        },
+        { "name": "Select Node", "with": { "node-version": "22", "cache": false }, "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020" # v4.4.0
+        },
+        { "name": "Real SQLite fail-closed gate", "run": "node --test test/database-mcp-security.test.mjs" },
+        { "name": "Upload receipts", "if": "${{ always() }}", "with": { "name": "receipts-real-sqlite", "path": ".omo/evidence", "if-no-files-found": "warn" }, "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" # v4.6.2
+        }
+      ]
+    },
+    "cli_live": {
+      "name": "optional-provisioned-cli-live",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        { "name": "Checkout", "uses": "actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5" # v4.3.1
+        },
+        { "name": "Select Node", "with": { "node-version": "22", "cache": false }, "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020" # v4.4.0
+        },
+        { "name": "Provision runtime receipt", "run": "node --input-type=module -e \"import{createHash}from'node:crypto';import{mkdirSync,writeFileSync}from'node:fs';mkdirSync('.omo/evidence',{recursive:true});const runtime={version:process.version,executable:process.execPath};const workspaceFingerprint=createHash('sha256').update(process.cwd()).digest('hex');writeFileSync('.omo/evidence/ci-runtime.json',JSON.stringify({publishedRuntime:runtime,validatorRuntime:runtime,workspaceFingerprint}));\"" },
+        { "name": "CLI live status", "shell": "bash", "run": "set +e\nnode scripts/smoke-agy-plugin.mjs --runtime-receipt .omo/evidence/ci-runtime.json --receipt .omo/evidence/ci-cli-live.json\ncode=$?\nset -e\nPROBE_EXIT=$code node --input-type=module -e \"import{readFileSync}from'node:fs';const r=JSON.parse(readFileSync('.omo/evidence/ci-cli-live.json'));const c=Number(process.env.PROBE_EXIT);if(c===77){if(!['unavailable','skipped'].includes(r.status)||r.liveStatus!==r.status||r.exitCode!==77)process.exit(1)}else if(c===0){if(r.status!=='passed'||r.liveStatus!=='passed')process.exit(1)}else process.exit(c)\"" },
+        { "name": "IDE remains unavailable", "shell": "bash", "run": "set +e\nnode scripts/probe-antigravity-ide.mjs --runtime-receipt .omo/evidence/ci-runtime.json --receipt .omo/evidence/ci-ide-live.json\ncode=$?\nset -e\nPROBE_EXIT=$code node --input-type=module -e \"import{readFileSync}from'node:fs';const r=JSON.parse(readFileSync('.omo/evidence/ci-ide-live.json'));if(Number(process.env.PROBE_EXIT)!==77||r.status!=='unavailable'||r.liveStatus!=='unavailable'||r.exitCode!==77)process.exit(1)\"" },
+        { "name": "Upload receipts", "if": "${{ always() }}", "with": { "name": "receipts-cli-live", "path": ".omo/evidence", "if-no-files-found": "error" }, "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" # v4.6.2
+        }
+      ]
+    }
+  }
+}

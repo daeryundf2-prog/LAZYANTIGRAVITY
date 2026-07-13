@@ -1,21 +1,18 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project uses semantic versioning where practical.
+All notable changes are documented here.
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Documented the project intent: bringing LazyCodex-style skills, hooks, and maintainer workflows into Google Antigravity/Gemini CLI.
-- Added OSS maintainer workflow notes for Codex-assisted review, Windows compatibility, documentation, hook maintenance, and security-sensitive automation checks.
-- Added an MIT license file and repository changelog so contributors can understand reuse terms and release history.
+- Replaced the previous aspirational user documentation with the verified inventory: 15 active skills, 19 unsupported experimental skills, 2 official hooks, and 3 local MCP servers.
+- Added deterministic English and Korean experimental-status guides generated from checked-in fixtures.
+- Restored the approved exact 100-point capability rubric. Real SQLite, hosted matrix execution, CLI live install/list, and IDE live inspection remain unavailable and earn zero; unrelated local checks cannot substitute for them.
+- Documented Node.js >=20.17 and the limits of staged, CLI, IDE, hosted, and real SQLite verification.
 
 ## [0.1.0] - 2026-07-05
 
 ### Added
 
-- Initial public LAZYANTIGRAVITY plugin package for Google Antigravity/Gemini CLI.
-- Skill, hook, dashboard, and orchestration documentation inherited from the LazyCodex and Ouroboros ecosystem.
+- Initial repository publication.
