@@ -51,3 +51,15 @@ test("[todo13.subagents.sources-retain-todo8-fixtures] #given publishing workflo
 		assert.match(text, /test\/fixtures\/lsp\/unavailable\.json/);
 	}
 });
+
+test("[todo13.subagents.ulw-fresh-install] #given fresh install ulw skill and alias #when inspected #then no missing workflow reference is required", async () => {
+	const installedUlw = await readFile(join(root, "skills", "ulw", "SKILL.md"), "utf8");
+	const sourceAlias = await readFile(join(root, "skill-aliases", "ulw", "SKILL.md"), "utf8");
+
+	for (const text of [installedUlw, sourceAlias]) {
+		assert.match(text, /\bulw-loop\b/);
+		assert.match(text, /durable, evidence-backed execution loops/i);
+		assert.doesNotMatch(text, /\.\.\/ulw-loop\/references\/full-workflow\.md/);
+		assert.doesNotMatch(text, /references\/full-workflow\.md/);
+	}
+});

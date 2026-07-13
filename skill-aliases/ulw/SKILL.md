@@ -7,13 +7,13 @@ metadata:
 
 # /ulw - Shorthand for ulw-loop
 
-This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <task>`, execute the complete `ulw-loop` workflow.
+This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <task>`, execute durable, evidence-backed execution loops with native Antigravity collaboration tools.
 
 ## Instructions
 
-1. Read the `ulw-loop` skill by opening `../ulw-loop/SKILL.md` with `view_file`. Follow all instructions there exactly.
-2. Read `../ulw-loop/references/full-workflow.md` as the `ulw-loop` skill instructs.
-3. Execute the full `ulw-loop` procedure. Do not stop at the alias; run the entire workflow.
+1. If `ulw-loop` is available in the active skill list, read that skill and follow its instructions exactly.
+2. If only this `ulw` alias is visible after a fresh install, run the same bounded loop directly from the inline Antigravity execution semantics below.
+3. Do not require extra reference files. This alias must work when the installed package contains only the active `skills/ulw`, `skills/ulw-loop`, and `skills/ulw-plan` directories.
 
 ## Antigravity Execution Semantics
 
@@ -34,4 +34,4 @@ Do not describe unsupported automatic diagnostic payloads as verified gates; com
 
 ## After reading this file
 
-Immediately proceed to read and execute the `ulw-loop` skill. This alias adds no additional steps beyond the user-managed selection rule above.
+Immediately proceed to execute the `ulw-loop` workflow if it is available; otherwise execute the inline bounded loop above. This alias adds no additional steps beyond the user-managed selection rule above.

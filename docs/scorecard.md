@@ -2,7 +2,7 @@
 
 **Evidence-backed score: 80 / 100**
 
-**Evidence mode: `frozen-checked-in`.** This is a checked-in snapshot derived from source evidence digest `d251873eb01eb1fc4a5b04b92a2ffa1adbad7bb2d6f7bcc282b6533f997fe725`; it does not claim that ignored local receipts are present or fresh in this checkout. In a release workspace where `.omo/evidence` is present, the generator revalidates final receipt freshness and exact current subjects before accepting these values.
+**Evidence mode: `frozen-checked-in`.** This is a checked-in snapshot derived from source evidence digest `e515655cd5e3ec5ba75364f3a9ffcc55fec440acd82a93b3033e6630ddc5261f`; it does not claim that ignored local receipts are present or fresh in this checkout. In a release workspace where `.omo/evidence` is present, the generator revalidates final receipt freshness and exact current subjects before accepting these values.
 
 Real SQLite, GitHub-hosted matrix execution, CLI live install/list, and IDE live inspection are unavailable in the source evidence and earn 0. Local substitutes do not earn those points.
 
