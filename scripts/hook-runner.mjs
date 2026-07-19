@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = join(fileURLToPath(import.meta.url), "..");
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function readAllStdin() {
 	return new Promise((resolve) => {
@@ -46,16 +46,28 @@ async function main() {
 
 		let stdoutData = "";
 		let stderrData = "";
+		const MAX_CAPTURE_BYTES = 10 * 1024 * 1024;
 
 		child.stdout.on("data", (chunk) => {
+			if (stdoutData.length + chunk.length > MAX_CAPTURE_BYTES) {
+				stdoutData = stdoutData.slice(0, MAX_CAPTURE_BYTES);
+				process.stderr.write(`[hook-runner] stdout truncated at ${MAX_CAPTURE_BYTES} bytes\n`);
+				return;
+			}
 			stdoutData += chunk;
 		});
 
 		child.stderr.on("data", (chunk) => {
+			if (stderrData.length + chunk.length > MAX_CAPTURE_BYTES) {
+				stderrData = stderrData.slice(0, MAX_CAPTURE_BYTES);
+				process.stderr.write(`[hook-runner] stderr truncated at ${MAX_CAPTURE_BYTES} bytes\n`);
+				return;
+			}
 			stderrData += chunk;
 		});
 
 		// Pass stdin down
+		child.stdin.on("error", () => {});
 		if (stdinData) {
 			child.stdin.write(stdinData);
 		}
@@ -72,7 +84,8 @@ async function main() {
 
 			// Failure occurred, enforce policy
 			if (policy === "FAIL_OPEN") {
-				// Suppress error, exit 0
+				// Suppress error, exit 0 but write stderr to enable diagnostics
+				process.stderr.write(stderrData);
 				resolve(0);
 			} else if (policy === "FAIL_CLOSED") {
 				// Forward error, exit 1
