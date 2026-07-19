@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const repoRoot = join(pluginRoot, "..", "..", "..");
+const repoRoot = join(pluginRoot, "src");
 
 test("#given Codex Light install docs #when inspected #then lazycodex is npm-first and Bun-free", async () => {
 	// given

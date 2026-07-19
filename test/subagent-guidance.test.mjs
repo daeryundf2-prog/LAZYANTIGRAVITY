@@ -19,33 +19,24 @@ const AGENT_FILES = [
 ];
 
 test("#given orchestration skills #when inspected #then Codex subagent delegation is hardened", async () => {
-	// given
+	// given / when / then
 	const skillPaths = SKILLS.map((skillName) => join("skills", skillName, "SKILL.md"));
 
-	// when
-	const missing = [];
 	for (const skillPath of skillPaths) {
 		const text = await readFile(join(root, skillPath), "utf8");
-		if (
-			!/TASK:/.test(text) ||
-			!/fork_turns:\s*"none"/.test(text) ||
-			!/wait_agent.*mailbox signals/s.test(text) ||
-			!/Fallback only when/.test(text) ||
-			!/respawn.*smaller/s.test(text) ||
-			!/model.*reasoning_effort.*default agent/s.test(text) ||
-			!/Plan and reviewer agents may run for a long time/.test(text) ||
-			!/short wait_agent cycles/.test(text) ||
-			!/single long blocking wait/.test(text) ||
-			!/A timeout only means no new mailbox update arrived/i.test(text) ||
-			!/WORKING:/.test(text) ||
-			!/single `list_agents`/.test(text)
-		) {
-			missing.push(skillPath);
-		}
+		assert.match(text, /TASK:/);
+		assert.match(text, /fork_turns:\s*"none"/);
+		assert.match(text, /wait_agent.*mailbox signals/s);
+		assert.match(text, /Fallback only when/);
+		assert.match(text, /respawn.*smaller/s);
+		assert.match(text, /model.*reasoning_effort.*default agent/s);
+		assert.match(text, /Plan and reviewer agents may run for a long time/);
+		assert.match(text, /short wait_agent cycles/);
+		assert.match(text, /single long blocking wait/);
+		assert.match(text, /A timeout only means no new mailbox update arrived/i);
+		assert.match(text, /WORKING:/);
+		assert.match(text, /single `list_agents`/);
 	}
-
-	// then
-	assert.deepEqual(missing, []);
 });
 
 test("#given ultrawork directive #when inspected #then reviewer fallback keeps an agent role", async () => {
@@ -66,42 +57,27 @@ test("#given ultrawork directive #when inspected #then reviewer fallback keeps a
 });
 
 test("#given ulw-loop workflow #when inspected #then stale review refresh keeps policy changes narrow", async () => {
-	// given
+	// given / when / then
 	const workflowPaths = [
 		"components/ulw-loop/skills/ulw-loop/references/full-workflow.md",
 		"skills/ulw-loop/references/full-workflow.md",
 	];
 
-	// when
-	const missing = [];
 	for (const workflowPath of workflowPaths) {
 		const text = await readFile(join(root, workflowPath), "utf8");
-		if (
-			!/refresh current branch\/PR\/issue state/.test(text) ||
-			!/preserve existing ordering\/policy/.test(text) ||
-			!/separate compatibility detection from policy changes/.test(text)
-		) {
-			missing.push(workflowPath);
-		}
+		assert.match(text, /refresh current branch\/PR\/issue state/);
+		assert.match(text, /preserve existing ordering\/policy/);
+		assert.match(text, /separate compatibility detection from policy changes/);
 	}
-
-	// then
-	assert.deepEqual(missing, []);
 });
 
 test("#given ultrawork agents #when inspected #then inter-agent commentary is treated as assignments", async () => {
-	// given
+	// given / when / then
 	const agentPaths = AGENT_FILES;
 
-	// when
-	const missing = [];
 	for (const agentPath of agentPaths) {
 		const text = await readFile(join(root, agentPath), "utf8");
-		if (!/TASK:|active review assignment/.test(text) || !/context|commentary/.test(text)) {
-			missing.push(agentPath);
-		}
+		assert.match(text, /TASK:|active review assignment/);
+		assert.match(text, /context|commentary/);
 	}
-
-	// then
-	assert.deepEqual(missing, []);
 });

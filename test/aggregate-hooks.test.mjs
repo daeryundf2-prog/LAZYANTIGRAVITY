@@ -7,8 +7,25 @@ import {
 	hookLocation,
 	readComponentHookManifests,
 	readJson,
-	readPluginVersion,
 } from "./aggregate-plugin-fixture.mjs";
+
+test("#given runtime hook manifests #when identity labels are inspected #then LazyAntigravity is the product identity", async () => {
+	// given
+	const aggregateHooks = await readJson("hooks/hooks.json");
+	const componentHooks = await readComponentHookManifests();
+
+	// when
+	const commandHooks = [
+		...collectCommandHooks(aggregateHooks, "hooks/hooks.json"),
+		...componentHooks.flatMap(({ source, hooks }) => collectCommandHooks(hooks, source)),
+	];
+	const legacyIdentityLocations = commandHooks
+		.filter(({ handler }) => /LazyCodex|lazycodex-ai|LAZYCODEX/.test(JSON.stringify(handler)))
+		.map(hookLocation);
+
+	// then
+	assert.deepEqual(legacyIdentityLocations, []);
+});
 
 test("#given isolated components #when hooks are inspected #then commands stay inside component roots", async () => {
 	// given
@@ -24,13 +41,15 @@ test("#given isolated components #when hooks are inspected #then commands stay i
 		"components/telemetry/dist/cli.js",
 		"components/ulw-loop/dist/cli.js",
 		"components/ultrawork/dist/cli.js",
-		"scripts/auto-update.mjs",
 	];
 
 	// then
 	for (const marker of componentMarkers) {
 		assert.match(text, new RegExp(marker.replaceAll("/", "\\/")));
 	}
+	// auto-update.mjs is invoked as a CLI (`npm run` + `scripts/auto-update.mjs --status`),
+	// not as a SessionStart hook in the antigravity-only manifest.
+	assert.doesNotMatch(text, /scripts\/auto-update\.mjs/);
 	assert.doesNotMatch(text, /codex-(comment-checker|lsp|rules|telemetry|ulw-loop|ultrawork)@/);
 	assert.equal(await exists("scripts/migrate-codex-config.mjs"), true);
 });
@@ -38,7 +57,7 @@ test("#given isolated components #when hooks are inspected #then commands stay i
 test("#given aggregate PostCompact hooks #when hooks are inspected #then LSP diagnostics cache reset is registered", async () => {
 	// given
 	const hooks = await readJson("hooks/hooks.json");
-	const aggregateVersion = await readPluginVersion();
+	const aggregateVersion = (await readJson("plugin.json")).version;
 
 	// when
 	const lspPostCompactHooks = collectCommandHooks(hooks, "hooks/hooks.json").filter(
@@ -49,7 +68,7 @@ test("#given aggregate PostCompact hooks #when hooks are inspected #then LSP dia
 
 	// then
 	assert.equal(lspPostCompactHooks.length, 1);
-	assert.equal(lspPostCompactHooks[0]?.handler.statusMessage, `LazyCodex(${aggregateVersion}): Resetting LSP Diagnostics Cache`);
+	assert.equal(lspPostCompactHooks[0]?.handler.statusMessage, `LazyAntigravity(${aggregateVersion}): Resetting LSP Diagnostics Cache`);
 });
 
 test("#given aggregate hook commands #when inspected #then every command exposes a Codex status message", async () => {
@@ -116,20 +135,25 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), ["^Bash$", "^create_goal$"]);
 });
 
-test("#given aggregate SessionStart hooks #when inspected #then LazyCodex auto-update is registered", async () => {
-	// given
-	const hooks = await readJson("hooks/hooks.json");
-	const text = JSON.stringify(hooks);
+test("#given aggregate SessionStart hooks #when inspected #then LazyAntigravity auto-update hook is NOT registered (antigravity-only)", async () => {
+		// given
+		const hooks = await readJson("hooks/hooks.json");
+		const text = JSON.stringify(hooks);
 
-	// when
-	const sessionStartCommands = collectCommandHooks(hooks, "hooks/hooks.json")
-		.filter(({ eventName }) => eventName === "SessionStart")
-		.map(({ handler }) => handler.command);
-	const autoUpdateGroup = hooks.hooks.SessionStart.find((group) => JSON.stringify(group).includes("scripts/auto-update.mjs"));
+		// when
+		const sessionStartCommands = collectCommandHooks(hooks, "hooks/hooks.json")
+			.filter(({ eventName }) => eventName === "SessionStart")
+			.map(({ handler }) => handler.command);
+		const autoUpdateGroup = hooks.hooks.SessionStart.find((group) => JSON.stringify(group).includes("scripts/auto-update.mjs"));
 
-	// then
-	assert.equal(autoUpdateGroup?.matcher, "^startup$");
-	assert.match(text, /scripts\/auto-update\.mjs/);
-	assert.match(text, /Checking Auto Update/);
-	assert(sessionStartCommands.some((command) => command.includes("scripts/auto-update.mjs")));
-});
+		// then
+		assert.equal(autoUpdateGroup, undefined, "auto-update SessionStart hook must not be registered for antigravity-only runtime (it is a no-op under autoUpdateEnabled=false and wastes 5s on every session start)");
+		assert.doesNotMatch(text, /Checking Auto Update/);
+		assert.equal(
+			sessionStartCommands.some((command) => command.includes("scripts/auto-update.mjs")),
+			false,
+			"auto-update.mjs must not be wired as a SessionStart hook in the antigravity-only manifest"
+		);
+		// auto-update.mjs file itself remains for CLI status/dry-run use (`npm run` + test surfaces)
+		assert.equal(await exists("scripts/auto-update.mjs"), true);
+	});

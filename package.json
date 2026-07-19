@@ -1,10 +1,15 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.1.0",
+	"version": "0.2.2",
 	"description": "Aggregate Codex plugin root for OMO components.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"private": true,
+	"files": [
+		"shared-skills/package.json",
+		"shared-skills/index.mjs",
+		"shared-skills/skills"
+	],
 	"workspaces": [
 		"components/comment-checker",
 		"components/git-bash",
@@ -16,11 +21,20 @@
 		"components/ultrawork"
 	],
 	"dependencies": {
-		"@oh-my-opencode/shared-skills": "file:../../shared-skills"
+		"@iarna/toml": "^2.2.5",
+		"@oh-my-opencode/shared-skills": "file:./shared-skills"
 	},
 	"scripts": {
-		"build": "node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node ../scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs",
+		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack",
 		"check": "npm run build && npm test",
+		"doctor": "node scripts/lazyantigravity-doctor.mjs",
+		"evidence:map": "node scripts/lazyantigravity-evidence-map.mjs",
+		"hooks:report": "node scripts/lazyantigravity-hooks-report.mjs",
+		"icons:report": "node scripts/lazyantigravity-oss-icons-report.mjs",
+		"mcp:status": "node scripts/lazyantigravity-mcp-status.mjs",
+		"prepack": "node scripts/materialize-shared-skills.mjs --pack",
+		"postpack": "node scripts/materialize-shared-skills.mjs --restore",
+		"provenance": "node scripts/lazyantigravity-provenance.mjs",
 		"sync:hooks": "node scripts/sync-hook-status-messages.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
 		"test": "node --test test/*.test.mjs"

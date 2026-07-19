@@ -23,6 +23,7 @@ const expectedSkills = [
 	"review-work",
 	"rules",
 	"start-work",
+	"ulw",
 	"ulw-loop",
 	"ulw-plan",
 	"visual-qa",
@@ -46,7 +47,9 @@ const codexCompatibilityEndMarkers = [
 function removeCodexCompatibilityGuidance(content) {
 	const start = content.indexOf("## Codex Harness Tool Compatibility\n\n");
 	if (start === -1) return content;
-	const endMarker = codexCompatibilityEndMarkers.find((marker) => content.indexOf(marker, start) !== -1);
+	const endMarker = codexCompatibilityEndMarkers
+		.filter((marker) => content.indexOf(marker, start) !== -1)
+		.sort((left, right) => content.indexOf(right, start) - content.indexOf(left, start))[0];
 	assert.notEqual(endMarker, undefined, "Codex compatibility guidance block is missing its terminator");
 	const end = content.indexOf(endMarker, start);
 	assert.notEqual(end, -1, "Codex compatibility guidance block is missing its terminator");
@@ -100,8 +103,8 @@ test("#given synced aggregate Codex skills #when inspected #then component and s
 test("#given aggregate Codex skills #when source wiring is inspected #then shared skills are imported from the shared-skills package", async () => {
 	// given
 	const pluginPackageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
-	const sharedPackageJson = JSON.parse(await readFile(join(root, "..", "..", "shared-skills", "package.json"), "utf8"));
-	const rootPackageJson = JSON.parse(await readFile(join(repoRoot, "package.json"), "utf8"));
+	const sharedPackageJson = JSON.parse(await readFile(join(sharedSkillsRootPath(), "..", "package.json"), "utf8"));
+	const rootPackageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 	const syncScript = await readFile(join(root, "scripts", "sync-skills.mjs"), "utf8");
 
 	// when
@@ -111,12 +114,24 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 	// then
 	assert.equal(sharedPackageJson.exports?.["."], "./index.mjs");
 	assert.equal(sharedPackageJson.files?.includes("skills"), true);
-	assert.equal(rootPackageFiles.includes("packages/shared-skills/package.json"), true);
-	assert.equal(rootPackageFiles.includes("packages/shared-skills/index.mjs"), true);
-	assert.equal(rootPackageFiles.includes("packages/shared-skills/skills"), true);
-	assert.equal(sharedSkillDependency, "file:../../shared-skills");
+	assert.equal(rootPackageFiles.includes("shared-skills/package.json"), true);
+	assert.equal(rootPackageFiles.includes("shared-skills/index.mjs"), true);
+	assert.equal(rootPackageFiles.includes("shared-skills/skills"), true);
+	assert.equal(sharedSkillDependency, "file:./shared-skills");
 	assert.match(syncScript, /from "@oh-my-opencode\/shared-skills"/);
 	assert.doesNotMatch(syncScript, /shared-skills",\s*"skills"/);
+});
+
+test("#given npm pack command #when pack dry-run is run #then the pack files include materialized shared-skills assets", async () => {
+	const { execSync } = await import("node:child_process");
+	const output = execSync("npm pack --dry-run --json", { cwd: root, encoding: "utf8" });
+	const parsed = JSON.parse(output);
+	const files = parsed[0].files.map((f) => f.path);
+
+	assert.equal(parsed[0].entryCount > 100, true);
+	assert.equal(files.includes("shared-skills/package.json"), true);
+	assert.equal(files.includes("shared-skills/index.mjs"), true);
+	assert.equal(files.includes("shared-skills/skills/programming/SKILL.md"), true);
 });
 
 test("#given shared skill package source #when aggregate Codex shared skills are inspected #then generated copies have no hand-authored drift", async () => {
@@ -192,7 +207,7 @@ test("#given synced ulw-loop skill #when Codex hint metadata is inspected #then 
 	assert.match(interfaceMetadata, /- "ulw-loop"/);
 });
 
-test("#given synced lcx-report-bug skill #when inspected #then it files LazyCodex bug issues from proven debugging evidence", async () => {
+test("#given synced lcx-report-bug skill #when inspected #then it files LazyAntigravity bug issues from proven debugging evidence", async () => {
 	// given
 	const skillRoot = join(root, "skills", "lcx-report-bug");
 
@@ -202,21 +217,20 @@ test("#given synced lcx-report-bug skill #when inspected #then it files LazyCode
 
 	// then
 	assert.match(skill, /^---\r?\nname: lcx-report-bug\r?\n/m);
-	assert.match(skill, /code-yeongyu\/lazycodex/);
-	assert.match(skill, /openai\/codex/);
-	assert.match(skill, /\/tmp\/openai-codex-source/);
+	assert.match(skill, /daeryundf2-prog\/LAZYANTIGRAVITY/);
+	assert.match(skill, /\/tmp\/lazyantigravity-source/);
 	assert.match(skill, /\$omo:debugging/);
 	assert.match(skill, /Repository Decision/);
-	assert.match(skill, /TARGET_REPO="code-yeongyu\/lazycodex" # or openai\/codex/);
+	assert.match(skill, /TARGET_REPO="daeryundf2-prog\/LAZYANTIGRAVITY"/);
 	assert.match(skill, /gh issue create --repo "\$TARGET_REPO"/);
 	assert.match(skill, /gh pr create --repo "\$TARGET_REPO"/);
-	assert.match(skill, /🤖 This issue\/PR was debugged and created with \[LazyCodex\]/);
+	assert.match(skill, /🤖 This issue\/PR was debugged and created with \[LazyAntigravity\]/);
 	assert.match(skill, /Browser use fallback/);
 	assert.match(skill, /Computer use fallback/);
 	assert.match(skill, /## Issue Body Template/);
 	assert.match(interfaceMetadata, /display_name: "lcx-report-bug \(omo\)"/);
-	assert.match(interfaceMetadata, /- "lazycodex bug"/);
-	assert.match(interfaceMetadata, /- "openai codex bug"/);
+	assert.match(interfaceMetadata, /- "lazyantigravity bug"/);
+	assert.match(interfaceMetadata, /- "antigravity plugin bug"/);
 });
 
 test("#given synced git-master skill #when inspected #then commits and git history route through it", async () => {

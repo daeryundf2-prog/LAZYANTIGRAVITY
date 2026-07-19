@@ -12,6 +12,7 @@ test("#given aggregate MCP config #when inspected #then code MCPs reference pack
 	// given
 	const packageJson = await readJson("package.json");
 	const mcp = await readJson(".mcp.json");
+	const sharedSkillsPackage = await readJson("shared-skills/package.json");
 	const lspSources = await readdir(join(root, "components", "lsp", "src"));
 	const bundledMcpBuildScript = await readFile(join(root, "scripts", "build-bundled-mcp-runtimes.mjs"), "utf8");
 
@@ -28,18 +29,22 @@ test("#given aggregate MCP config #when inspected #then code MCPs reference pack
 	assert.deepEqual(codeMcpNames, ["ast_grep", "git_bash", "lsp"]);
 	assert.equal(packageJson.workspaces.includes("components/lsp/packages/lsp-tools-mcp"), false);
 	assert.equal(packageJson.workspaces.includes("components/ast-grep/packages/ast-grep-mcp"), false);
-	assert.deepEqual(packageJson.dependencies, { "@oh-my-opencode/shared-skills": "file:../../shared-skills" });
+	assert.deepEqual(packageJson.dependencies, {
+		"@iarna/toml": "^2.2.5",
+		"@oh-my-opencode/shared-skills": "file:./shared-skills"
+	});
+	assert.equal(sharedSkillsPackage.name, "@oh-my-opencode/shared-skills");
 	assert.match(bundledMcpBuildScript, /ast-grep-mcp/);
 	assert.match(bundledMcpBuildScript, /git-bash-mcp/);
 	assert.doesNotMatch(packageJson.scripts.build, /--workspaces/);
 	assert.equal(lspServer.command, "node");
-	assert.deepEqual(lspServer.args, ["../../lsp-tools-mcp/dist/cli.js", "mcp"]);
+	assert.deepEqual(lspServer.args, ["./lsp-tools-mcp/dist/cli.js", "mcp"]);
 	assert.equal(lspServer.cwd, ".");
 	assert.equal(astGrepServer.command, "node");
-	assert.deepEqual(astGrepServer.args, ["../../ast-grep-mcp/dist/cli.js", "mcp"]);
+	assert.deepEqual(astGrepServer.args, ["./ast-grep-mcp/dist/cli.js", "mcp"]);
 	assert.equal(astGrepServer.cwd, ".");
 	assert.equal(gitBashServer.command, "node");
-	assert.deepEqual(gitBashServer.args, ["../../git-bash-mcp/dist/cli.js", "mcp"]);
+	assert.deepEqual(gitBashServer.args, ["./git-bash-mcp/dist/cli.js", "mcp"]);
 	assert.equal(gitBashServer.cwd, ".");
 	assert.deepEqual(componentLocalMcpSources, []);
 });

@@ -5,9 +5,9 @@ import test from "node:test";
 
 import { exists, readJson, root } from "./aggregate-plugin-fixture.mjs";
 
-test("#given aggregate plugin manifest #when inspected #then it owns the omo namespace", async () => {
+test("#given aggregate plugin manifest #when inspected #then it owns the LazyAntigravity namespace", async () => {
 	// given
-	const manifest = await readJson(".codex-plugin/plugin.json");
+	const manifest = await readJson("plugin.json");
 
 	// when
 	const hookPath = manifest.hooks;
@@ -15,15 +15,15 @@ test("#given aggregate plugin manifest #when inspected #then it owns the omo nam
 	const mcpPath = manifest.mcpServers;
 
 	// then
-	assert.equal(manifest.name, "omo");
-	assert.equal(hookPath, "./hooks/hooks.json");
+	assert.equal(manifest.name, "lazyantigravity");
+	assert.equal(hookPath, "./hooks.json");
 	assert.equal(skillsPath, "./skills/");
-	assert.equal(mcpPath, "./.mcp.json");
+	assert.equal(mcpPath, "./mcp_config.json");
 });
 
 test("#given aggregate plugin metadata #when inspected #then ulw-loop is the public loop name", async () => {
 	// given
-	const manifestText = await readFile(join(root, ".codex-plugin", "plugin.json"), "utf8");
+	const manifestText = await readFile(join(root, "plugin.json"), "utf8");
 	const manifest = JSON.parse(manifestText);
 
 	// when
@@ -36,7 +36,7 @@ test("#given aggregate plugin metadata #when inspected #then ulw-loop is the pub
 test("#given component directories #when scanned #then only intentional resource roots declare plugin manifests", async () => {
 	// given
 	const components = await readdir(join(root, "components"), { withFileTypes: true });
-	const expectedComponentManifests = new Map([["rules", { hooks: "./hooks/hooks.json" }]]);
+	const expectedComponentManifests = new Map();
 
 	// when
 	const componentNames = [];

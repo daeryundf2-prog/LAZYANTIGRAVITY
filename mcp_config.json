@@ -3,7 +3,7 @@
 		"ast_grep": {
 			"command": "node",
 			"args": [
-				"./components/ast-grep-mcp/dist/cli.js",
+				"./ast-grep-mcp/dist/cli.js",
 				"mcp"
 			],
 			"cwd": "."
@@ -17,7 +17,7 @@
 		"git_bash": {
 			"command": "node",
 			"args": [
-				"./components/git-bash-mcp/dist/cli.js",
+				"./git-bash-mcp/dist/cli.js",
 				"mcp"
 			],
 			"cwd": "."
@@ -25,7 +25,7 @@
 		"lsp": {
 			"command": "node",
 			"args": [
-				"./components/lsp-tools-mcp/dist/cli.js",
+				"./lsp-tools-mcp/dist/cli.js",
 				"mcp"
 			],
 			"cwd": "."
