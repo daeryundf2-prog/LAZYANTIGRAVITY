@@ -1,18 +1,17 @@
-import { getRuntimeConfig } from "./runtime-adapter.mjs";
-
-const PRODUCT_NAME = getRuntimeConfig().productName;
+const PRODUCT_NAME = "LazyAntigravity";
+const LEGACY_PRODUCT_NAME = "LazyCodex";
 
 const WORD_OVERRIDES = new Map([
 	["lsp", "LSP"],
 	["ulw-loop", "Ulw-Loop"],
 ]);
 
-export function formatLazyCodexHookStatusMessage(version, label) {
-	return `${PRODUCT_NAME}(${normalizeVersion(version)}): ${normalizeLazyCodexHookStatusLabel(label)}`;
+export function formatLazyAntigravityHookStatusMessage(version, label) {
+	return `${PRODUCT_NAME}(${normalizeVersion(version)}): ${normalizeLazyAntigravityHookStatusLabel(label)}`;
 }
 
-export function normalizeLazyCodexHookStatusLabel(label) {
-	const parsed = parseLazyCodexHookStatusMessage(label);
+export function normalizeLazyAntigravityHookStatusLabel(label) {
+	const parsed = parseLazyAntigravityHookStatusMessage(label);
 	const rawLabel = parsed === null ? label : parsed.label;
 	const normalized = rawLabel.replace(/\bOMO\b/gi, " ").replace(/\s+/g, " ").trim();
 	if (normalized.length === 0) return "";
@@ -22,12 +21,20 @@ export function normalizeLazyCodexHookStatusLabel(label) {
 		.join(" ");
 }
 
-export function parseLazyCodexHookStatusMessage(message) {
+export function parseLazyAntigravityHookStatusMessage(message) {
 	const match = /^(?:LazyCodex|LazyAntigravity)\(([^)]+)\):\s+(.+)$/.exec(message.trim());
 	if (match === null) return null;
 	const [, version, label] = match;
 	return { version, label };
 }
+
+// Legacy compatibility exports: keep existing callers working while generated
+// hook status messages use the runtime product identity above.
+export function formatLazyCodexHookStatusMessage(version, label) {
+	return `${LEGACY_PRODUCT_NAME}(${normalizeVersion(version)}): ${normalizeLazyAntigravityHookStatusLabel(label)}`;
+}
+export const normalizeLazyCodexHookStatusLabel = normalizeLazyAntigravityHookStatusLabel;
+export const parseLazyCodexHookStatusMessage = parseLazyAntigravityHookStatusMessage;
 
 function normalizeVersion(version) {
 	const normalized = version.trim();

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
 
-import { formatLazyCodexHookStatusMessage, normalizeLazyCodexHookStatusLabel } from "./hook-status-message.mjs";
+import { formatLazyAntigravityHookStatusMessage, normalizeLazyAntigravityHookStatusLabel } from "./hook-status-message.mjs";
 
 const defaultRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -44,21 +44,79 @@ async function readComponentNames(root) {
 	return names;
 }
 
+function splitCommandArgs(cmdStr) {
+	const tokens = [];
+	let i = 0;
+	const len = cmdStr.length;
+	while (i < len) {
+		while (i < len && /\s/.test(cmdStr[i])) i++;
+		if (i >= len) break;
+		const ch = cmdStr[i];
+		if (ch === '"' || ch === "'") {
+			const quote = ch;
+			i++;
+			let token = "";
+			while (i < len) {
+				const c = cmdStr[i];
+				if (c === "\\" && i + 1 < len) {
+					token += cmdStr[i + 1];
+					i += 2;
+					continue;
+				}
+				if (c === quote) {
+					i++;
+					break;
+				}
+				token += c;
+				i++;
+			}
+			tokens.push(token);
+		} else {
+			let token = "";
+			while (i < len && !/\s/.test(cmdStr[i])) {
+				if (cmdStr[i] === "\\" && i + 1 < len) {
+					token += cmdStr[i + 1];
+					i += 2;
+					continue;
+				}
+				token += cmdStr[i];
+				i++;
+			}
+			tokens.push(token);
+		}
+	}
+	return tokens;
+}
+
 function syncHooksJson(hooksJson, versionForCommand) {
 	for (const groups of Object.values(hooksJson.hooks)) {
 		for (const group of groups) {
 			for (const hook of group.hooks) {
 				if (hook.type !== "command") continue;
-				const label = normalizeLazyCodexHookStatusLabel(hook.statusMessage);
-				hook.statusMessage = formatLazyCodexHookStatusMessage(versionForCommand(hook.command), label);
+				const label = normalizeLazyAntigravityHookStatusLabel(hook.statusMessage);
+				hook.statusMessage = formatLazyAntigravityHookStatusMessage(versionForCommand(hook.command), label);
 				
 				// Wrap command if failurePolicy is defined and not already wrapped
 				if (hook.failurePolicy && !hook.command.includes("hook-runner.mjs")) {
 					const policy = hook.failurePolicy;
 					const fallback = hook.fallbackPayload ? Buffer.from(JSON.stringify(hook.fallbackPayload)).toString("base64") : "none";
 					const hitlEvent = hook.hitlEventName || "none";
+					
+					const escapeArg = (arg) => {
+						if (arg.startsWith('"') && arg.endsWith('"')) return arg;
+						if (/\s|'|"/.test(arg)) {
+							return `"${arg.replace(/"/g, '\\"')}"`;
+						}
+						return arg;
+					};
+					
+					const policyEscaped = escapeArg(policy);
+					const fallbackEscaped = escapeArg(fallback);
+					const hitlEventEscaped = escapeArg(hitlEvent);
+					const escapedArgs = splitCommandArgs(hook.command).map(escapeArg);
+					
 					// Wrap the original command in the hook runner
-					hook.command = `node "\${PLUGIN_ROOT}/scripts/hook-runner.mjs" ${policy} ${fallback} ${hitlEvent} ${hook.command}`;
+					hook.command = `node "\${PLUGIN_ROOT}/scripts/hook-runner.mjs" ${policyEscaped} ${fallbackEscaped} ${hitlEventEscaped} ${escapedArgs.join(" ")}`;
 				}
 			}
 		}
@@ -79,19 +137,23 @@ function normalizeReleaseVersion(version) {
 }
 
 function readReleaseVersion(options) {
-	const releaseVersion = normalizeReleaseVersion(options.releaseVersion ?? process.env.LAZYCODEX_RELEASE_VERSION);
+	const releaseVersion = normalizeReleaseVersion(
+		options.releaseVersion ?? process.env.LAZYANTIGRAVITY_RELEASE_VERSION ?? process.env.LAZYCODEX_RELEASE_VERSION,
+	);
 	if (releaseVersion.length > 0) return releaseVersion;
 	return undefined;
 }
 
 export async function syncHookStatusMessages(root = defaultRoot, options = {}) {
 	const releaseVersion = readReleaseVersion(options);
-	const aggregateVersion = releaseVersion ?? (await readPackageVersion(join(root, ".codex-plugin", "plugin.json")));
+	const aggregateVersion = releaseVersion ?? (await readPackageVersion(join(root, "plugin.json")));
 	const componentNames = await readComponentNames(root);
-	const aggregateHooksPath = join(root, "hooks", "hooks.json");
-	const aggregateHooks = await readJson(aggregateHooksPath);
-	syncHooksJson(aggregateHooks, () => aggregateVersion);
-	await writeJson(aggregateHooksPath, aggregateHooks);
+	for (const aggregateHooksPath of [join(root, "hooks.json"), join(root, "hooks", "hooks.json")]) {
+		if (!(await exists(aggregateHooksPath))) continue;
+		const aggregateHooks = await readJson(aggregateHooksPath);
+		syncHooksJson(aggregateHooks, () => aggregateVersion);
+		await writeJson(aggregateHooksPath, aggregateHooks);
+	}
 
 	for (const componentName of componentNames) {
 		const componentVersion =

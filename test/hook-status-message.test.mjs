@@ -5,18 +5,17 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+	formatLazyAntigravityHookStatusMessage,
 	formatLazyCodexHookStatusMessage,
+	parseLazyAntigravityHookStatusMessage,
 	normalizeLazyCodexHookStatusLabel,
-	parseLazyCodexHookStatusMessage,
 } from "../scripts/hook-status-message.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const repoRoot = join(root, "..", "..", "..");
 
 const AGGREGATE_EXPECTED_LABELS = new Map([
 	["hooks/hooks.json:SessionStart:0:0", "Loading Project Rules"],
 	["hooks/hooks.json:SessionStart:1:0", "Recording Session Telemetry"],
-	["hooks/hooks.json:SessionStart:2:0", "Checking Auto Update"],
 	["hooks/hooks.json:UserPromptSubmit:0:0", "Loading Project Rules"],
 	["hooks/hooks.json:UserPromptSubmit:1:0", "Checking Ultrawork Trigger"],
 	["hooks/hooks.json:UserPromptSubmit:2:0", "Checking Ulw-Loop Steering"],
@@ -50,12 +49,8 @@ async function readJson(relativePath) {
 	return JSON.parse(await readFile(join(root, relativePath), "utf8"));
 }
 
-async function readRepoJson(relativePath) {
-	return JSON.parse(await readFile(join(repoRoot, relativePath), "utf8"));
-}
-
 async function readPluginVersion() {
-	return (await readJson(".codex-plugin/plugin.json")).version;
+	return (await readJson("plugin.json")).version;
 }
 
 async function readComponentVersion(componentName) {
@@ -106,7 +101,7 @@ function collectCommandHooks(hooks, source, version) {
 
 test("#given hook status label #when formatting #then prefixes LazyCodex with current version", async () => {
 	// given
-	const version = (await readRepoJson("package.json")).version;
+	const version = (await readJson("package.json")).version;
 	const label = "Checking Comments";
 
 	// when
@@ -130,7 +125,7 @@ test("#given hook status label with blank version #when formatting #then prefixe
 
 test("#given loose legacy status label #when normalizing #then removes OMO wording and title-cases label", async () => {
 	// given
-	const version = (await readRepoJson("package.json")).version;
+	const version = (await readJson("package.json")).version;
 	const label = "  checking   OMO comments  ";
 
 	// when
@@ -142,7 +137,7 @@ test("#given loose legacy status label #when normalizing #then removes OMO wordi
 	assert.equal(message, `LazyCodex(${version}): Checking Comments`);
 });
 
-test("#given aggregate comment-checker hook #when status is inspected #then it uses LazyCodex comments label", async () => {
+test("#given aggregate comment-checker hook #when status is inspected #then it uses LazyAntigravity comments label", async () => {
 	// given
 	const aggregateVersion = await readPluginVersion();
 	const aggregateHooks = await readJson("hooks/hooks.json");
@@ -152,11 +147,11 @@ test("#given aggregate comment-checker hook #when status is inspected #then it u
 	const commentCheckerHook = hooks.find((hook) => hook.id === "hooks/hooks.json:PostToolUse:0:0");
 
 	// then
-	assert.equal(commentCheckerHook?.statusMessage, formatLazyCodexHookStatusMessage(aggregateVersion, "Checking Comments"));
+	assert.equal(commentCheckerHook?.statusMessage, formatLazyAntigravityHookStatusMessage(aggregateVersion, "Checking Comments"));
 	assert.doesNotMatch(JSON.stringify(aggregateHooks), /checking\s+OMO\s+comments/i);
 });
 
-test("#given aggregate and component hooks #when status messages are inspected #then all use the LazyCodex formatter", async () => {
+test("#given aggregate and component hooks #when status messages are inspected #then all use the LazyAntigravity formatter", async () => {
 	// given
 	const aggregateVersion = await readPluginVersion();
 	const aggregateHooks = await readJson("hooks/hooks.json");
@@ -170,9 +165,9 @@ test("#given aggregate and component hooks #when status messages are inspected #
 	const expectedLabels = new Map([...AGGREGATE_EXPECTED_LABELS, ...COMPONENT_EXPECTED_LABELS]);
 	const mismatches = commandHooks
 		.map((hook) => {
-			const parsed = parseLazyCodexHookStatusMessage(hook.statusMessage);
+			const parsed = parseLazyAntigravityHookStatusMessage(hook.statusMessage);
 			const label = parsed?.label;
-			const expected = label === undefined ? undefined : formatLazyCodexHookStatusMessage(hook.version, label);
+			const expected = label === undefined ? undefined : formatLazyAntigravityHookStatusMessage(hook.version, label);
 			return { ...hook, expected, parsed };
 		})
 		.filter((hook) => hook.expected === undefined || hook.statusMessage !== hook.expected || hook.parsed === null)
@@ -180,7 +175,7 @@ test("#given aggregate and component hooks #when status messages are inspected #
 
 	// then
 	assert.deepEqual(mismatches, []);
-	const actualLabels = new Set(commandHooks.map((hook) => parseLazyCodexHookStatusMessage(hook.statusMessage)?.label));
+	const actualLabels = new Set(commandHooks.map((hook) => parseLazyAntigravityHookStatusMessage(hook.statusMessage)?.label));
 	assert.deepEqual([...expectedLabels.values()].filter((label) => !actualLabels.has(label)), []);
 	for (const hook of commandHooks) {
 		assert.doesNotMatch(hook.statusMessage, /\bOMO\b/i);
