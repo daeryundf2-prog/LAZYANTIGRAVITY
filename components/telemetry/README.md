@@ -44,7 +44,7 @@ A single PostHog `capture` call with:
   - `day_utc` (today's UTC date)
   - `$process_person_profile: false`
 
-The component never sends prompt contents, file contents, API keys, raw hostnames, or any user-identifying data.
+The component never sends prompt contents, file contents, API keys, or raw hostnames. Hashed host IDs and system configuration attributes are collected as pseudonymous device-level telemetry.
 
 ## Opt-Out
 

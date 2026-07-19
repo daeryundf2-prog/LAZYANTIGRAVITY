@@ -18,7 +18,7 @@
 		"longDescription": "LazyAntigravity exposes the local OMO Rules, Comment Checker, LSP, Ultrawork, and ulw-loop components as one plugin namespace.",
 		"developerName": "Yeongyu Kim",
 		"category": "Developer Tools",
-		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection"],
+		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection", "Telemetry"],
 		"brandColor": "#7C3AED"
 	}
 }

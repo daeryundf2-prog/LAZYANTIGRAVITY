@@ -1,5 +1,9 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { existsSync, readFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import os from "node:os";
+import { getActivityStateDir } from "./data-path.js";
+import { writeFileAtomically } from "./atomic-write.js";
 
 import type { PostHog } from "posthog-node";
 
@@ -16,6 +20,7 @@ import {
 	DEFAULT_POSTHOG_HOST,
 	EVENT_NAME,
 	getComponentVersion,
+	MACHINE_ID_PREFIX,
 	PACKAGE_NAME,
 	PRODUCT_NAME,
 } from "./product-identity.js";
@@ -85,7 +90,7 @@ function getSharedProperties(): NonNullable<PostHogCaptureEvent["properties"]> {
 	const cpuInfo = getSafeCpuInfo();
 
 	return {
-		platform: "omo-codex",
+		platform: PRODUCT_NAME,
 		product_name: PRODUCT_NAME,
 		package_name: PACKAGE_NAME,
 		package_version: getComponentVersion(),
@@ -136,7 +141,7 @@ export async function createPluginPostHog(): Promise<PostHogClient> {
 			flushAt: 1,
 			flushInterval: 0,
 			host: getPostHogHost(),
-			disableGeoip: false,
+			disableGeoip: true,
 		});
 	} catch (error) {
 		writePostHogDiagnostic(
@@ -173,7 +178,19 @@ export async function createPluginPostHog(): Promise<PostHogClient> {
 }
 
 export function getPostHogDistinctId(): string {
-	return createHash("sha256").update(`omo-codex:${resolveOsProvider().hostname()}`).digest("hex");
+	try {
+		const stateDir = getActivityStateDir();
+		const machineIdPath = join(stateDir, "machine-id.txt");
+		if (existsSync(machineIdPath)) {
+			return readFileSync(machineIdPath, "utf-8").trim();
+		}
+		const newId = `${MACHINE_ID_PREFIX}${randomUUID()}`;
+		mkdirSync(stateDir, { recursive: true });
+		writeFileAtomically(machineIdPath, newId);
+		return newId;
+	} catch {
+		return createHash("sha256").update(`${MACHINE_ID_PREFIX}${resolveOsProvider().hostname()}`).digest("hex");
+	}
 }
 
 /** @internal test-only */
