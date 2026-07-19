@@ -13,7 +13,7 @@ import {
 	type TelemetryDiagnosticSource,
 	writeTelemetryDiagnostic,
 } from "./diagnostics.js";
-import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, shouldDisablePostHog } from "./env-flags.js";
+import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, isTelemetryOptedIn, shouldDisablePostHog } from "./env-flags.js";
 import { getPostHogActivityCaptureState } from "./posthog-activity-state.js";
 import {
 	DEFAULT_POSTHOG_API_KEY,
@@ -114,6 +114,14 @@ function getSharedProperties(): NonNullable<PostHogCaptureEvent["properties"]> {
 
 export async function createPluginPostHog(): Promise<PostHogClient> {
 	if (shouldDisablePostHog() || !hasPostHogApiKey()) {
+		if (isTelemetryOptedIn() && !hasPostHogApiKey()) {
+			writePostHogDiagnostic(
+				"telemetry_posthog_import_failed",
+				"plugin",
+				new Error("Telemetry opted in but POSTHOG_API_KEY is not set; events will be dropped"),
+				"error",
+			);
+		}
 		return NO_OP_POSTHOG;
 	}
 

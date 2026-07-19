@@ -5,7 +5,7 @@ import os from "node:os";
 import { getActivityStateDir } from "./data-path.js";
 import { writeFileAtomically } from "./atomic-write.js";
 import { writeTelemetryDiagnostic, } from "./diagnostics.js";
-import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, shouldDisablePostHog } from "./env-flags.js";
+import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, isTelemetryOptedIn, shouldDisablePostHog } from "./env-flags.js";
 import { getPostHogActivityCaptureState } from "./posthog-activity-state.js";
 import { DEFAULT_POSTHOG_API_KEY, DEFAULT_POSTHOG_HOST, EVENT_NAME, getComponentVersion, MACHINE_ID_PREFIX, PACKAGE_NAME, PRODUCT_NAME, } from "./product-identity.js";
 export { DEFAULT_POSTHOG_API_KEY, DEFAULT_POSTHOG_HOST };
@@ -67,6 +67,9 @@ function getSharedProperties() {
 }
 export async function createPluginPostHog() {
     if (shouldDisablePostHog() || !hasPostHogApiKey()) {
+        if (isTelemetryOptedIn() && !hasPostHogApiKey()) {
+            writePostHogDiagnostic("telemetry_posthog_import_failed", "plugin", new Error("Telemetry opted in but POSTHOG_API_KEY is not set; events will be dropped"), "error");
+        }
         return NO_OP_POSTHOG;
     }
     let PostHogClientConstructor;
