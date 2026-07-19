@@ -200,6 +200,11 @@ async function runConfigMigration({ env }) {
 		await migrateCodexConfig({ env });
 	} catch (error) {
 		if (!(error instanceof Error)) throw error;
+		// Swallow Error instances: config migration failure must not block
+		// auto-update, but surface to stderr for diagnostics.
+		if (env.LAZYCODEX_CONFIG_MIGRATION_VERBOSE === "1" || env.OMO_CODEX_CONFIG_MIGRATION_VERBOSE === "1") {
+			process.stderr.write(`[auto-update] config migration failed: ${error.message}\n`);
+		}
 		return;
 	}
 }
