@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { lstat, mkdir, readFile, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, writeFile, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import TOML from "@iarna/toml";
 import { getRuntimeConfig } from "./runtime-adapter.mjs";
 
 const FALLBACK_CATALOG = {
@@ -41,9 +41,23 @@ const FALLBACK_CATALOG = {
 
 const MANAGED_KEYS = ["model", "model_context_window", "model_reasoning_effort", "plan_mode_reasoning_effort"];
 
+async function writeFileAtomically(filePath, content) {
+	const tempPath = `${filePath}.${Math.random().toString(36).slice(2)}.tmp`;
+	await writeFile(tempPath, content, "utf8");
+	try {
+		await rename(tempPath, filePath);
+	} catch (error) {
+		try {
+			await rm(tempPath, { force: true });
+		} catch {}
+		throw error;
+	}
+}
+
 export async function migrateCodexConfig({ env = process.env, cwd = process.cwd() } = {}) {
 	const runtimeConfig = getRuntimeConfig(env);
-	if (!runtimeConfig.configMigrationEnabled) {
+	const optIn = env.LAZYCODEX_CONFIG_MIGRATION_OPT_IN === "1" || env.OMO_CODEX_CONFIG_MIGRATION_OPT_IN === "1";
+	if (!runtimeConfig.configMigrationEnabled || !optIn) {
 		return { changed: [] };
 	}
 	const catalog = await readModelCatalog(env);
@@ -75,16 +89,38 @@ export async function migrateConfigFile(configPath, { catalog = FALLBACK_CATALOG
 	const after = ensureCodexReasoningConfig(before, catalog.current);
 	if (after === before) return { changed: false, written: catalog.current, managed: true };
 	await mkdir(dirname(configPath), { recursive: true });
-	await writeFile(configPath, `${after.trimEnd()}\n`);
+
+	// Create backup prior to rewriting; abort on failure to prevent data loss
+	if (before) {
+		const allowSkipBackup = process.env.LAZYCODEX_CONFIG_MIGRATION_SKIP_BACKUP === "1" || process.env.OMO_CODEX_CONFIG_MIGRATION_SKIP_BACKUP === "1";
+		try {
+			await writeFile(`${configPath}.bak`, before, "utf8");
+		} catch (error) {
+			if (allowSkipBackup) {
+				// user explicitly opted into skip-backup; proceed without backup
+			} else {
+				throw new Error(`Failed to create backup at ${configPath}.bak (set LAZYCODEX_CONFIG_MIGRATION_SKIP_BACKUP=1 to override): ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+	}
+
+	// Atomic write
+	await writeFileAtomically(configPath, `${after.trimEnd()}\n`);
 	return { changed: true, written: catalog.current, managed: true };
 }
 
 export function ensureCodexReasoningConfig(config, profile = FALLBACK_CATALOG.current) {
-	let next = replaceOrInsertRootSetting(config, "model", JSON.stringify(profile.model));
-	next = replaceOrInsertRootSetting(next, "model_context_window", profile.model_context_window.toString());
-	next = replaceOrInsertRootSetting(next, "model_reasoning_effort", JSON.stringify(profile.model_reasoning_effort));
-	next = replaceOrInsertRootSetting(next, "plan_mode_reasoning_effort", JSON.stringify(profile.plan_mode_reasoning_effort));
-	return next;
+	let parsed;
+	try {
+		parsed = TOML.parse(config);
+	} catch {
+		parsed = {};
+	}
+	parsed.model = profile.model;
+	parsed.model_context_window = profile.model_context_window;
+	parsed.model_reasoning_effort = profile.model_reasoning_effort;
+	parsed.plan_mode_reasoning_effort = profile.plan_mode_reasoning_effort;
+	return TOML.stringify(parsed);
 }
 
 export async function readModelCatalog(env = process.env) {
@@ -122,30 +158,18 @@ function matchesProfile(current, profile) {
 }
 
 function readRootSettings(config) {
-	const settings = {};
-	for (const line of config.split(/\n/)) {
-		if (isSectionHeader(line)) break;
+	try {
+		const parsed = TOML.parse(config);
+		const settings = {};
 		for (const key of MANAGED_KEYS) {
-			if (!isRootSetting(line, key)) continue;
-			const value = parseTomlScalar(line.slice(line.indexOf("=") + 1));
-			if (value !== undefined) settings[key] = value;
+			if (parsed[key] !== undefined) {
+				settings[key] = parsed[key];
+			}
 		}
+		return settings;
+	} catch {
+		return {};
 	}
-	return settings;
-}
-
-function parseTomlScalar(value) {
-	const trimmed = value.trim();
-	if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-		try {
-			return JSON.parse(trimmed);
-		} catch (error) {
-			if (error instanceof SyntaxError) return undefined;
-			throw error;
-		}
-	}
-	const numeric = Number(trimmed);
-	return Number.isFinite(numeric) ? numeric : undefined;
 }
 
 function parseCatalog(value) {
@@ -244,44 +268,9 @@ async function isRegularDirectory(path) {
 	}
 }
 
-function replaceOrInsertRootSetting(config, key, value) {
-	const lines = config.split(/\n/);
-	const output = [];
-	let replaced = false;
-	let inserted = false;
-	for (const line of lines) {
-		if (!inserted && isSectionHeader(line)) {
-			if (!replaced) output.push(`${key} = ${value}`);
-			inserted = true;
-		}
-		if (isRootSetting(line, key)) {
-			if (!replaced) {
-				output.push(`${key} = ${value}`);
-				replaced = true;
-			}
-			continue;
-		}
-		output.push(line);
-	}
-	if (!replaced && !inserted) output.push(`${key} = ${value}`);
-	return output.join("\n");
-}
-
-function isSectionHeader(line) {
-	const trimmed = line.trim();
-	return trimmed.startsWith("[") && trimmed.endsWith("]");
-}
-
-function isRootSetting(line, key) {
-	const trimmed = line.trimStart();
-	if (trimmed.startsWith("#") || trimmed.startsWith("[")) return false;
-	const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=/);
-	return match?.[1] === key;
-}
-
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
 	migrateCodexConfig().catch((error) => {
 		if (!(error instanceof Error)) throw error;
-		process.exit(0);
+		process.exit(1);
 	});
 }

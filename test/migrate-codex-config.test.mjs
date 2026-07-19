@@ -25,7 +25,7 @@ test("#given stale root reasoning config #when ensuring config #then replaces st
 	assert.equal(result.match(/^model_reasoning_effort\s*=/gm)?.length, 1);
 	assert.equal(result.match(/^plan_mode_reasoning_effort\s*=/gm)?.length, 1);
 	assert.match(result, /model = "gpt-5\.5"/);
-	assert.match(result, /model_context_window = 400000/);
+	assert.match(result, /model_context_window = 400_?000/);
 	assert.match(result, /model_reasoning_effort = "high"/);
 	assert.match(result, /plan_mode_reasoning_effort = "xhigh"/);
 	assert.doesNotMatch(result, /gpt-5\.2/);
@@ -56,6 +56,7 @@ test("#given project .codex is a symlink #when migrating #then project config is
 		env: {
 			CODEX_HOME: codexHome,
 			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
+			LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1",
 		},
 		cwd: projectNested,
 	});
@@ -84,6 +85,7 @@ test("#given project config.toml is a symlink #when migrating #then project conf
 		env: {
 			CODEX_HOME: codexHome,
 			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
+			LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1",
 		},
 		cwd: project,
 	});
@@ -103,13 +105,13 @@ test("#given global and project-local stale Codex configs #when migrating #then 
 	await writeFile(projectConfig, 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
 
 	const result = await migrateCodexConfig({
-		env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json") },
+		env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"), LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1" },
 		cwd: project,
 	});
 
 	assert.deepEqual(result.changed.sort(), [join(codexHome, "config.toml"), projectConfig].sort());
 	assert.match(await readFile(join(codexHome, "config.toml"), "utf8"), /model = "gpt-5\.5"/);
-	assert.match(await readFile(projectConfig, "utf8"), /model_context_window = 400000/);
+	assert.match(await readFile(projectConfig, "utf8"), /model_context_window = 400_?000/);
 });
 
 test("#given model catalog is unavailable and stale 272k config #when migrating #then fallback catalog still upgrades it", async () => {
@@ -124,6 +126,7 @@ test("#given model catalog is unavailable and stale 272k config #when migrating 
 			CODEX_HOME: codexHome,
 			LAZYCODEX_MODEL_CATALOG_PATH: missingCatalog,
 			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
+			LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1",
 		},
 		cwd: root,
 	});
@@ -131,7 +134,7 @@ test("#given model catalog is unavailable and stale 272k config #when migrating 
 	const content = await readFile(join(codexHome, "config.toml"), "utf8");
 	assert.deepEqual(result.changed, [join(codexHome, "config.toml")]);
 	assert.match(content, /model = "gpt-5\.5"/);
-	assert.match(content, /model_context_window = 400000/);
+	assert.match(content, /model_context_window = 400_?000/);
 });
 
 test("#given user-customized Codex model config #when migrating #then user values are preserved", async () => {
@@ -150,7 +153,7 @@ test("#given user-customized Codex model config #when migrating #then user value
 	);
 
 	const result = await migrateCodexConfig({
-		env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json") },
+		env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"), LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1" },
 		cwd: root,
 	});
 
@@ -191,6 +194,7 @@ test("#given managed catalog state #when catalog version advances #then only pre
 			CODEX_HOME: codexHome,
 			LAZYCODEX_MODEL_CATALOG_PATH: catalogPath,
 			LAZYCODEX_MODEL_CATALOG_STATE_PATH: statePath,
+			LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1",
 		},
 		cwd: root,
 	});
@@ -216,6 +220,7 @@ test("#given managed catalog state #when catalog version advances #then only pre
 			CODEX_HOME: codexHome,
 			LAZYCODEX_MODEL_CATALOG_PATH: catalogPath,
 			LAZYCODEX_MODEL_CATALOG_STATE_PATH: statePath,
+			LAZYCODEX_CONFIG_MIGRATION_OPT_IN: "1",
 		},
 		cwd: root,
 	});
@@ -224,7 +229,7 @@ test("#given managed catalog state #when catalog version advances #then only pre
 	assert.deepEqual(first.changed, [join(codexHome, "config.toml")]);
 	assert.deepEqual(second.changed, [join(codexHome, "config.toml")]);
 	assert.match(content, /model = "gpt-5\.5"/);
-	assert.match(content, /model_context_window = 400000/);
+	assert.match(content, /model_context_window = 400_?000/);
 });
 
 async function canCreateSymlink(type) {
@@ -252,3 +257,22 @@ async function canCreateSymlink(type) {
 		return false;
 	}
 }
+
+test("#given stale root reasoning config #when opt-in environment flag is missing #then config migration is skipped", async () => {
+	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-no-opt-in-"));
+	const codexHome = join(root, "codex-home");
+	await mkdir(codexHome, { recursive: true });
+	await writeFile(join(codexHome, "config.toml"), 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
+
+	const result = await migrateCodexConfig({
+		env: {
+			CODEX_HOME: codexHome,
+			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
+		},
+		cwd: root,
+	});
+
+	assert.deepEqual(result.changed, []);
+	const content = await readFile(join(codexHome, "config.toml"), "utf8");
+	assert.match(content, /model_context_window = 272000/);
+});
