@@ -14,6 +14,7 @@ const expectedSkills = [
 	"debugging",
 	"frontend-ui-ux",
 	"git-master",
+	"image-prompt",
 	"init-deep",
 	"lcx-report-bug",
 	"lsp",
