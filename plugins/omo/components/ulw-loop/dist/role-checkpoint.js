@@ -1,0 +1,40 @@
+import { existsSync } from "node:fs";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+export async function saveRoleCheckpoint(repoRoot, data) {
+    const checkpointsDir = join(repoRoot, ".lazycodex", "checkpoints");
+    if (!existsSync(checkpointsDir)) {
+        await mkdir(checkpointsDir, { recursive: true });
+    }
+    const timestamp = new Date().toISOString();
+    // Replace colons for Windows filename compatibility
+    const safeTimestamp = timestamp.replace(/:/g, "-");
+    const filename = `${data.dryRun ? "dryrun" : "ulw"}-${safeTimestamp}.json`;
+    const filepath = join(checkpointsDir, filename);
+    const checkpoint = {
+        ...data,
+        timestamp,
+    };
+    await writeFile(filepath, JSON.stringify(checkpoint, null, 2), "utf8");
+    return filepath;
+}
+export async function findLatestRoleCheckpoint(repoRoot) {
+    const checkpointsDir = join(repoRoot, ".lazycodex", "checkpoints");
+    if (!existsSync(checkpointsDir)) {
+        return null;
+    }
+    const files = await readdir(checkpointsDir);
+    const ulwFiles = files.filter((file) => file.startsWith("ulw-") && file.endsWith(".json"));
+    if (ulwFiles.length === 0) {
+        return null;
+    }
+    // Sort files by name (which has the ISO timestamp) to get the latest
+    ulwFiles.sort();
+    const latestFile = ulwFiles[ulwFiles.length - 1];
+    if (!latestFile) {
+        return null;
+    }
+    const filepath = join(checkpointsDir, latestFile);
+    const content = await readFile(filepath, "utf8");
+    return JSON.parse(content);
+}
