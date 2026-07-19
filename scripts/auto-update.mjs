@@ -10,6 +10,7 @@ import {
 	appendUpdateLog,
 	readState,
 	resolveLockPath,
+	resolveLogPath,
 	resolveStatePath,
 	writeState,
 } from "./auto-update-state.mjs";
@@ -17,71 +18,87 @@ import { migrateCodexConfig } from "./migrate-codex-config.mjs";
 import { getRuntimeConfig } from "./runtime-adapter.mjs";
 import { resolveSpawnInvocation } from "./spawn-command.mjs";
 
+const PRODUCT_NAME = "LazyAntigravity";
 const DEFAULT_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 const DEFAULT_RETRY_INTERVAL_MS = 30 * 60 * 1_000;
 const DEFAULT_UPDATE_COMMAND = "npx";
-const DEFAULT_UPDATE_ARGS = ["--yes", "lazycodex-ai@latest", "install", "--no-tui", "--codex-autonomous"];
 const INSTALLED_VERSION_FILE = "lazycodex-install.json";
 
 export function resolveAutoUpdatePlan({ env = process.env, now = Date.now(), lastCheckedAt, lastAttemptedAt, lastStatus } = {}) {
-	if (env.LAZYCODEX_AUTO_UPDATE_DISABLED === "1" || env.OMO_CODEX_AUTO_UPDATE_DISABLED === "1") {
-		return { shouldRun: false, reason: "disabled" };
+	if (readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_DISABLED", "LAZYCODEX_AUTO_UPDATE_DISABLED", "OMO_CODEX_AUTO_UPDATE_DISABLED"]) === "1") {
+		return statusPlan("disabled");
 	}
 
-	const intervalMs = parsePositiveInteger(env.LAZYCODEX_AUTO_UPDATE_INTERVAL_MS, DEFAULT_INTERVAL_MS);
+	const intervalMs = parsePositiveInteger(readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_INTERVAL_MS", "LAZYCODEX_AUTO_UPDATE_INTERVAL_MS"]), DEFAULT_INTERVAL_MS);
 	const successStatus = lastStatus === undefined || lastStatus === "success";
 	if (successStatus && typeof lastCheckedAt === "number" && intervalMs > 0 && now - lastCheckedAt < intervalMs) {
-		return { shouldRun: false, reason: "throttled" };
+		return statusPlan("throttled");
 	}
-	const retryIntervalMs = parsePositiveInteger(env.LAZYCODEX_AUTO_UPDATE_RETRY_INTERVAL_MS, DEFAULT_RETRY_INTERVAL_MS);
+	const retryIntervalMs = parsePositiveInteger(readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_RETRY_INTERVAL_MS", "LAZYCODEX_AUTO_UPDATE_RETRY_INTERVAL_MS"]), DEFAULT_RETRY_INTERVAL_MS);
 	if (!successStatus && typeof lastAttemptedAt === "number" && retryIntervalMs > 0 && now - lastAttemptedAt < retryIntervalMs) {
-		return { shouldRun: false, reason: "retry-throttled" };
+		return statusPlan("retry-throttled");
 	}
 
-	const updatePlan = resolveLazyCodexUpdatePlan({
+	const source = resolveUpdateSource(env);
+	if (!source.configured) return statusPlan("missing-update-source");
+
+	const updatePlan = resolveAntigravityUpdatePlan({
 		currentVersion: resolveCurrentVersion(env),
 		latestVersion: resolveLatestVersion(env),
-		command: resolveCommand(env),
-		args: resolveArgs(env),
+		command: source.command,
+		args: source.args,
+		legacyCompatibility: source.legacyCompatibility,
 	});
-	if (!updatePlan.shouldUpdate) return { shouldRun: false, reason: updatePlan.reason };
+	if (!updatePlan.shouldUpdate) return statusPlan(updatePlan.reason, source);
 
 	return {
 		shouldRun: true,
+		product: PRODUCT_NAME,
+		mode: "update",
+		mutating: true,
 		command: updatePlan.command,
 		args: updatePlan.args,
+		legacyCompatibility: updatePlan.legacyCompatibility,
 		env: {
 			...env,
+			ANTIGRAVITY_AUTO_UPDATE_DISABLED: "1",
 			LAZYCODEX_AUTO_UPDATE_DISABLED: "1",
 			OMO_CODEX_AUTO_UPDATE_DISABLED: "1",
 		},
 	};
 }
 
-export function resolveLazyCodexUpdatePlan({ currentVersion, latestVersion, command = DEFAULT_UPDATE_COMMAND, args = DEFAULT_UPDATE_ARGS } = {}) {
+export function resolveAntigravityUpdatePlan({ currentVersion, latestVersion, command = DEFAULT_UPDATE_COMMAND, args, legacyCompatibility = false } = {}) {
+	if (!Array.isArray(args) || args.length === 0) return statusPlan("missing-update-source", { legacyCompatibility });
 	const current = parseVersion(currentVersion);
-	if (current === null) return { shouldUpdate: false, reason: "unknown-current" };
+	if (current === null) return statusPlan("unknown-current", { legacyCompatibility });
 	const latest = parseVersion(latestVersion);
-	if (latest === null) return { shouldUpdate: false, reason: "unknown-latest" };
-	if (compareVersions(latest, current) <= 0) return { shouldUpdate: false, reason: "up-to-date" };
-	return { shouldUpdate: true, command, args };
+	if (latest === null) return statusPlan("unknown-latest", { legacyCompatibility });
+	if (compareVersions(latest, current) <= 0) return statusPlan("up-to-date", { legacyCompatibility });
+	return { shouldUpdate: true, command, args, legacyCompatibility };
+}
+
+export function resolveLazyCodexUpdatePlan(options = {}) {
+	return resolveAntigravityUpdatePlan(options);
 }
 
 export async function runLazyCodexManualUpdate({ env = process.env, dryRun = false, log = console.log, runCommand } = {}) {
 	const commandRunner = runCommand ?? defaultRunCommandForManualUpdate;
+	const source = resolveUpdateSource(env);
 	const currentVersion = resolveCurrentVersion(env);
 	const latestVersion = resolveLatestVersion(env);
-	const plan = resolveLazyCodexUpdatePlan({
+	const plan = resolveAntigravityUpdatePlan({
 		currentVersion,
 		latestVersion,
-		command: resolveCommand(env),
-		args: resolveArgs(env),
+		command: source.command,
+		args: source.args,
+		legacyCompatibility: source.legacyCompatibility,
 	});
 	if (!plan.shouldUpdate) {
 		const printableVersion = currentVersion ?? "unknown";
 		log(plan.reason === "up-to-date"
-			? `lazycodex-ai ${printableVersion} is already up to date.`
-			: `Unable to check lazycodex-ai updates (${plan.reason}).`);
+			? `${PRODUCT_NAME} ${printableVersion} is already up to date.`
+			: `Unable to check ${PRODUCT_NAME} updates (${plan.reason}).`);
 		return plan.reason === "up-to-date" ? 0 : 1;
 	}
 	if (dryRun) {
@@ -94,10 +111,7 @@ export async function runLazyCodexManualUpdate({ env = process.env, dryRun = fal
 
 export async function runAutoUpdateCheck({ env = process.env, now = Date.now() } = {}) {
 	const runtimeConfig = getRuntimeConfig(env);
-	if (!runtimeConfig.autoUpdateEnabled) {
-		return { started: false, reason: "runtime-unsupported" };
-	}
-	await runConfigMigration({ env });
+	if (runtimeConfig.configMigrationEnabled) await runConfigMigration({ env });
 	const statePath = resolveStatePath(env);
 	const state = await readState(statePath);
 	const plan = resolveAutoUpdatePlan({
@@ -112,7 +126,7 @@ export async function runAutoUpdateCheck({ env = process.env, now = Date.now() }
 		return { started: false, reason: plan.reason };
 	}
 
-	const lockStaleMs = parsePositiveInteger(env.LAZYCODEX_AUTO_UPDATE_LOCK_STALE_MS, DEFAULT_LOCK_STALE_MS);
+	const lockStaleMs = parsePositiveInteger(readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_LOCK_STALE_MS", "LAZYCODEX_AUTO_UPDATE_LOCK_STALE_MS"]), DEFAULT_LOCK_STALE_MS);
 	const lock = await acquireLock(resolveLockPath(env, statePath), now, lockStaleMs);
 	if (lock === null) {
 		await appendUpdateLog(env, now, "locked");
@@ -120,7 +134,7 @@ export async function runAutoUpdateCheck({ env = process.env, now = Date.now() }
 	}
 	try {
 		await appendUpdateLog(env, now, "started", { command: plan.command, args: plan.args });
-		if (env.LAZYCODEX_AUTO_UPDATE_WAIT === "1") {
+		if (readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_WAIT", "LAZYCODEX_AUTO_UPDATE_WAIT"]) === "1") {
 			const invocation = resolveSpawnInvocation(plan.command, plan.args);
 			const result = spawnSync(invocation.command, invocation.args, {
 				env: plan.env,
@@ -148,6 +162,38 @@ export async function runAutoUpdateCheck({ env = process.env, now = Date.now() }
 	}
 }
 
+export function resolveAutoUpdateStatus({ env = process.env, now = Date.now() } = {}) {
+	const plan = resolveAutoUpdatePlan({ env, now });
+	const commandPlan = plan.shouldRun
+		? {
+			command: plan.command,
+			args: plan.args,
+			wouldRun: true,
+			legacyCompatibility: plan.legacyCompatibility === true,
+		}
+		: null;
+	const statePath = resolveStatePath(env);
+	return {
+		product: PRODUCT_NAME,
+		mode: plan.shouldRun ? "dry-run" : "status",
+		dryRun: true,
+		mutating: false,
+		shouldRun: false,
+		reason: plan.reason ?? (plan.shouldRun ? "would-run" : "status-only"),
+		commandPlan,
+		state: {
+			statePath,
+			logPath: resolveLogPath(env),
+			lockPath: resolveLockPath(env, statePath),
+		},
+		compatibilityAliases: {
+			envPrefix: "LAZYCODEX_AUTO_UPDATE_*",
+			statePrefix: "LAZYCODEX_AUTO_UPDATE_*_PATH",
+			usage: "legacy compatibility aliases only; no default lazycodex-ai update source is configured",
+		},
+	};
+}
+
 async function runConfigMigration({ env }) {
 	if (env.LAZYCODEX_CONFIG_MIGRATION_DISABLED === "1" || env.OMO_CODEX_CONFIG_MIGRATION_DISABLED === "1") return;
 	try {
@@ -158,22 +204,70 @@ async function runConfigMigration({ env }) {
 	}
 }
 
-function resolveCommand(env) {
-	return env.LAZYCODEX_AUTO_UPDATE_COMMAND?.trim() || DEFAULT_UPDATE_COMMAND;
+function statusPlan(reason, extra = {}) {
+	return {
+		shouldRun: false,
+		shouldUpdate: false,
+		product: PRODUCT_NAME,
+		mode: "status",
+		mutating: false,
+		reason,
+		...extra,
+	};
 }
 
-function resolveArgs(env) {
-	if (env.LAZYCODEX_AUTO_UPDATE_ARGS_JSON) {
-		const parsed = JSON.parse(env.LAZYCODEX_AUTO_UPDATE_ARGS_JSON);
-		if (!Array.isArray(parsed) || parsed.some((value) => typeof value !== "string")) {
-			throw new TypeError("LAZYCODEX_AUTO_UPDATE_ARGS_JSON must be a JSON string array");
-		}
-		return parsed;
+function resolveUpdateSource(env) {
+	if (env.ANTIGRAVITY_AUTO_UPDATE_ARGS_JSON !== undefined) {
+		return {
+			configured: true,
+			command: readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_COMMAND"]) || DEFAULT_UPDATE_COMMAND,
+			args: parseArgsJson(env.ANTIGRAVITY_AUTO_UPDATE_ARGS_JSON, "ANTIGRAVITY_AUTO_UPDATE_ARGS_JSON"),
+			legacyCompatibility: false,
+		};
 	}
-	return DEFAULT_UPDATE_ARGS;
+	const antigravitySource = readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_SOURCE"]);
+	if (antigravitySource) {
+		return {
+			configured: true,
+			command: readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_COMMAND"]) || DEFAULT_UPDATE_COMMAND,
+			args: argsForSource(antigravitySource),
+			legacyCompatibility: false,
+		};
+	}
+	if (env.LAZYCODEX_AUTO_UPDATE_ARGS_JSON !== undefined) {
+		return {
+			configured: true,
+			command: readEnv(env, ["LAZYCODEX_AUTO_UPDATE_COMMAND"]) || DEFAULT_UPDATE_COMMAND,
+			args: parseArgsJson(env.LAZYCODEX_AUTO_UPDATE_ARGS_JSON, "LAZYCODEX_AUTO_UPDATE_ARGS_JSON"),
+			legacyCompatibility: true,
+		};
+	}
+	const legacySource = readEnv(env, ["LAZYCODEX_AUTO_UPDATE_SOURCE"]);
+	if (legacySource) {
+		return {
+			configured: true,
+			command: readEnv(env, ["LAZYCODEX_AUTO_UPDATE_COMMAND"]) || DEFAULT_UPDATE_COMMAND,
+			args: argsForSource(legacySource),
+			legacyCompatibility: true,
+		};
+	}
+	return { configured: false, legacyCompatibility: false };
+}
+
+function argsForSource(source) {
+	return ["--yes", source, "install", "--no-tui", "--codex-autonomous"];
+}
+
+function parseArgsJson(raw, name) {
+	const parsed = JSON.parse(raw);
+	if (!Array.isArray(parsed) || parsed.length === 0 || parsed.some((value) => typeof value !== "string" || value.length === 0)) {
+		throw new TypeError(`${name} must be a non-empty JSON string array`);
+	}
+	return parsed;
 }
 
 function resolveCurrentVersion(env) {
+	if (env.ANTIGRAVITY_CURRENT_VERSION?.trim()) return env.ANTIGRAVITY_CURRENT_VERSION.trim();
 	if (env.LAZYCODEX_CURRENT_VERSION?.trim()) return env.LAZYCODEX_CURRENT_VERSION.trim();
 	const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 	return (
@@ -184,15 +278,9 @@ function resolveCurrentVersion(env) {
 }
 
 function resolveLatestVersion(env) {
+	if (env.ANTIGRAVITY_LATEST_VERSION?.trim()) return env.ANTIGRAVITY_LATEST_VERSION.trim();
 	if (env.LAZYCODEX_LATEST_VERSION?.trim()) return env.LAZYCODEX_LATEST_VERSION.trim();
-	const invocation = resolveSpawnInvocation("npm", ["view", "lazycodex-ai", "version", "--silent"]);
-	const result = spawnSync(invocation.command, invocation.args, {
-		encoding: "utf8",
-		stdio: ["ignore", "pipe", "ignore"],
-	});
-	if (result.status !== 0) return undefined;
-	const version = result.stdout.trim();
-	return version.length > 0 ? version : undefined;
+	return undefined;
 }
 
 function defaultRunCommandForManualUpdate(command, args, options) {
@@ -243,6 +331,7 @@ function compareVersions(left, right) {
 }
 
 function resolveInstalledVersionPath(env, pluginRoot) {
+	if (env.ANTIGRAVITY_INSTALLED_VERSION_PATH?.trim()) return env.ANTIGRAVITY_INSTALLED_VERSION_PATH;
 	if (env.LAZYCODEX_INSTALLED_VERSION_PATH?.trim()) return env.LAZYCODEX_INSTALLED_VERSION_PATH;
 	return join(pluginRoot, INSTALLED_VERSION_FILE);
 }
@@ -265,9 +354,29 @@ function parsePositiveInteger(value, fallback) {
 	return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+function readEnv(env, keys) {
+	for (const key of keys) {
+		const value = env[key]?.trim();
+		if (value) return value;
+	}
+	return undefined;
+}
+
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
-	runAutoUpdateCheck().catch((error) => {
+	const args = process.argv.slice(2);
+	const runRequested = args.includes("--run") || args.includes("hook") || args.includes("session-start");
+	const statusRequested = args.includes("--status") || args.includes("--json") || args.length === 0;
+	(runRequested
+		? runAutoUpdateCheck()
+		: Promise.resolve(resolveAutoUpdateStatus()).then((status) => {
+			if (args.includes("--json")) {
+				console.log(JSON.stringify(status, null, 2));
+				return;
+			}
+			if (statusRequested) console.log(`${status.product}: ${status.mode} (${status.reason})`);
+		})
+	).catch((error) => {
 		console.error(error instanceof Error ? error.message : String(error));
-		process.exit(0);
+		process.exit(1);
 	});
 }
