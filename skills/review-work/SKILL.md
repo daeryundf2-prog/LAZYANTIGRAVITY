@@ -1,22 +1,3 @@
-## Antigravity Harness Tool Compatibility
-
-This skill may include examples copied from the OpenCode or Codex harnesses. In Antigravity, do not call OpenCode/Codex-specific tools such as `call_omo_agent(...)`, `spawn_agent(...)`, `task(...)`, `background_output(...)`, `wait_agent(...)`, or `close_agent(...)` literally. Translate those examples to Antigravity native tools:
-
-| OpenCode/Codex example | Antigravity tool to use |
-| --- | --- |
-| `call_omo_agent(subagent_type="explore", ...)` or `spawn_agent(agent_type="explorer", ...)` | `invoke_subagent(Subagents: [{TypeName: "research", Role: "Codebase Researcher", Prompt: "..."}])` |
-| `call_omo_agent(subagent_type="librarian", ...)` or `spawn_agent(agent_type="librarian", ...)` | `invoke_subagent(Subagents: [{TypeName: "research", Role: "Codebase Researcher", Prompt: "..."}])` |
-| `task(subagent_type="plan", ...)` or `spawn_agent(agent_type="plan", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Prometheus Planner", Prompt: "..."}])` |
-| `task(subagent_type="oracle", ...)` or `spawn_agent(agent_type="codex-ultrawork-reviewer", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Oracle Reviewer", Prompt: "..."}])` |
-| `task(category="...", ...)` or `spawn_agent(agent_type="worker", ...)` | `invoke_subagent(Subagents: [{TypeName: "self", Role: "Hephaestus Worker", Prompt: "..."}])` |
-| `background_output(task_id="...")` or `wait_agent(...)` | Antigravity is reactive: you will automatically be resumed when a subagent sends a message. Simply stop calling tools/go idle while waiting. |
-| `team_*(...)` | Use `invoke_subagent` to start concurrent subagents, then communicate with `send_message(Recipient, Message)`. |
-| `close_agent(...)` or `kill` | `manage_subagents(Action="kill", ConversationIds=[...])` |
-
-Antigravity subagents can be spawned with `invoke_subagent`. Use the `self` subagent type to inherit the parent config but run in a separate context, and `research` type to delegate read-only codebase or web search tasks. Communicate with active subagents using the `send_message` tool by their conversation ID. If a code block below conflicts with this section, this section wins.
-
-For work likely to exceed one cycle, instruct the subagent to report progress regularly. When you launch a subagent or start a task in the background, you do not need to poll or check status in a loop. You will be automatically notified when there is an update. Simply go idle or proceed with other work.
-
 ---
 name: review-work
 description: "Post-implementation review orchestrator. Launches 5 parallel background sub-agents: Oracle (goal/constraint verification), Oracle (code quality), Oracle (security), unspecified-high (hands-on QA execution), unspecified-high (context mining from GitHub/git/Slack/Notion). All must pass for review to pass. MUST USE after completing any significant implementation work. Triggers: 'review work', 'review my work', 'review changes', 'QA my work', 'verify implementation', 'check my work', 'validate changes', 'post-implementation review'."

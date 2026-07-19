@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const repoPackagesRoot = join(pluginRoot, "..", "..");
+const repoPackagesRoot = pluginRoot;
 
 const runtimes = [
 	{

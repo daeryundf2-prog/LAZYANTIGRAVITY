@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const lspToolsDir = join(__dirname, "..", "..", "..", "..", "..", "lsp-tools-mcp");
+const lspToolsDir = join(__dirname, "..", "..", "..", "lsp-tools-mcp");
 const packageJson = join(lspToolsDir, "package.json");
 const requiredOutputs = [
 	join(lspToolsDir, "dist", "cli.js"),
