@@ -107,9 +107,11 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 	const sharedPackageJson = JSON.parse(await readFile(join(sharedSkillsRootPath(), "..", "package.json"), "utf8"));
 	const rootPackageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 	const syncScript = await readFile(join(root, "scripts", "sync-skills.mjs"), "utf8");
+	const syncSkillsModule = await readFile(join(root, "src", "packages", "sync-skills", "index.mjs"), "utf8");
 
 	// when
 	const sharedSkillDependency = pluginPackageJson.dependencies?.["@oh-my-opencode/shared-skills"];
+	const syncSkillsDependency = pluginPackageJson.dependencies?.["@oh-my-opencode/sync-skills"];
 	const rootPackageFiles = rootPackageJson.files ?? [];
 
 	// then
@@ -119,7 +121,9 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 	assert.equal(rootPackageFiles.includes("shared-skills/index.mjs"), true);
 	assert.equal(rootPackageFiles.includes("shared-skills/skills"), true);
 	assert.equal(sharedSkillDependency, "file:./shared-skills");
-	assert.match(syncScript, /from "@oh-my-opencode\/shared-skills"/);
+	assert.equal(syncSkillsDependency, "file:./src/packages/sync-skills");
+	assert.match(syncScript, /from "@oh-my-opencode\/sync-skills"/);
+	assert.match(syncSkillsModule, /from "@oh-my-opencode\/shared-skills"/);
 	assert.doesNotMatch(syncScript, /shared-skills",\s*"skills"/);
 });
 

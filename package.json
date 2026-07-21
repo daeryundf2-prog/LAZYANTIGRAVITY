@@ -22,7 +22,8 @@
 	],
 	"dependencies": {
 		"@iarna/toml": "^2.2.5",
-		"@oh-my-opencode/shared-skills": "file:./shared-skills"
+		"@oh-my-opencode/shared-skills": "file:./shared-skills",
+		"@oh-my-opencode/sync-skills": "file:./src/packages/sync-skills"
 	},
 	"scripts": {
 		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack",

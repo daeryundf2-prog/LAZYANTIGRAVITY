@@ -31,7 +31,8 @@ test("#given aggregate MCP config #when inspected #then code MCPs reference pack
 	assert.equal(packageJson.workspaces.includes("components/ast-grep/packages/ast-grep-mcp"), false);
 	assert.deepEqual(packageJson.dependencies, {
 		"@iarna/toml": "^2.2.5",
-		"@oh-my-opencode/shared-skills": "file:./shared-skills"
+		"@oh-my-opencode/shared-skills": "file:./shared-skills",
+		"@oh-my-opencode/sync-skills": "file:./src/packages/sync-skills"
 	});
 	assert.equal(sharedSkillsPackage.name, "@oh-my-opencode/shared-skills");
 	assert.match(bundledMcpBuildScript, /ast-grep-mcp/);
