@@ -5,38 +5,35 @@ import test from "node:test";
 
 import { exists, readJson, root } from "./aggregate-plugin-fixture.mjs";
 
-test("#given aggregate plugin manifest #when inspected #then it owns the omo namespace", async () => {
+test("#given aggregate plugin manifest #when inspected #then identity metadata follows the active package contract", async () => {
 	// given
 	const manifest = await readJson(".codex-plugin/plugin.json");
-
-	// when
-	const hookPath = manifest.hooks;
-	const skillsPath = manifest.skills;
-	const mcpPath = manifest.mcpServers;
+	const packageJson = await readJson("package.json");
 
 	// then
 	if (manifest.name === "lazyantigravity") {
-		assert.equal(hookPath, "./hooks.json");
-		assert.equal(skillsPath, "./skills/");
-		assert.equal(mcpPath, "./mcp_config.json");
+		assert.deepEqual(manifest, {
+			name: packageJson.name,
+			description: packageJson.description,
+		});
 	} else {
 		assert.equal(manifest.name, "omo");
-		assert.equal(hookPath, "./hooks/hooks.json");
-		assert.equal(skillsPath, "./skills/");
-		assert.equal(mcpPath, "./.mcp.json");
+		assert.equal(manifest.hooks, "./hooks/hooks.json");
+		assert.equal(manifest.skills, "./skills/");
+		assert.equal(manifest.mcpServers, "./.mcp.json");
 	}
 });
 
 test("#given aggregate plugin metadata #when inspected #then ulw-loop is the public loop name", async () => {
 	// given
 	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
-	const manifestText = isStandalone
-		? await readFile(join(root, "plugin.json"), "utf8")
+	const metadataText = isStandalone
+		? await readFile(join(root, "package.json"), "utf8")
 		: await readFile(join(root, ".codex-plugin", "plugin.json"), "utf8");
-	const manifest = JSON.parse(manifestText);
+	const metadata = JSON.parse(metadataText);
 
 	// when
-	const longDescription = String(manifest.interface?.longDescription ?? "");
+	const longDescription = String(metadata.interface?.longDescription ?? "");
 
 	// then
 	assert.match(longDescription, /ulw-loop/);
@@ -64,7 +61,6 @@ test("#given component directories #when scanned #then only intentional resource
 		"lsp",
 		"rules",
 		"start-work-continuation",
-		"telemetry",
 		"ultrawork",
 		"ulw-loop",
 	]);

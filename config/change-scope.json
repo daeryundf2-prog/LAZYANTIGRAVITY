@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "task": "task-5-lazyantigravity-antigravity-rebuild",
+  "allowlist": [
+    "package.json",
+    "scripts/toolchain/**",
+    "scripts/build-baseline-snapshot.mjs",
+    "scripts/build-workspace-snapshot.mjs",
+    "scripts/preflight.mjs",
+    "scripts/rebuild-components.mjs",
+    "scripts/run-tests.mjs",
+    "scripts/validate-antigravity-distribution.mjs",
+    "scripts/validate-evidence.mjs",
+    "scripts/validate-root-toolchain.mjs",
+    "config/component-sources.json",
+    "config/distribution-files.json",
+    "config/test-files.json",
+    "config/change-scope.json",
+    "config/evidence.schema.json",
+    "config/score-rubric.json",
+    "test/antigravity-root-toolchain.test.mjs",
+    "test/antigravity-workspace-snapshot.test.mjs",
+    ".omo/evidence/task-5-*"
+  ],
+  "excludedSnapshotDirectories": [
+    ".git",
+    ".omo/evidence",
+    "node_modules"
+  ],
+  "allowlistedUntrackedFiles": [
+    "config/component-sources.json",
+    "config/distribution-files.json",
+    "config/test-files.json",
+    "config/change-scope.json",
+    "config/evidence.schema.json",
+    "config/score-rubric.json",
+    "scripts/build-baseline-snapshot.mjs",
+    "scripts/build-workspace-snapshot.mjs",
+    "scripts/preflight.mjs",
+    "scripts/rebuild-components.mjs",
+    "scripts/run-tests.mjs",
+    "scripts/validate-antigravity-distribution.mjs",
+    "scripts/validate-evidence.mjs",
+    "scripts/validate-root-toolchain.mjs",
+    "scripts/toolchain/preserved-baseline-snapshot.mjs",
+    "test/antigravity-root-toolchain.test.mjs",
+    "test/antigravity-workspace-snapshot.test.mjs"
+  ]
+}

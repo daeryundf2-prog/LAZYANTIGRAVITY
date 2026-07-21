@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lazyantigravity.local/schemas/task15-artifact-bundle.schema.json",
+  "title": "LAZYANTIGRAVITY Todo15 sanitized artifact bundle",
+  "$ref": "#/$defs/manifest",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!/|[A-Za-z]:|//)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "sha256"],
+      "properties": {
+        "bytes": { "type": "integer", "minimum": 0, "maximum": 1048576 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts", "bundleVersion", "createdAt", "logicalFingerprint", "subjectFingerprint"],
+      "properties": {
+        "artifacts": {
+          "type": "object",
+          "maxProperties": 2048,
+          "propertyNames": { "$ref": "#/$defs/safePath" },
+          "additionalProperties": { "$ref": "#/$defs/artifact" }
+        },
+        "bundleVersion": { "const": 1 },
+        "createdAt": { "$ref": "#/$defs/timestamp" },
+        "logicalFingerprint": { "$ref": "#/$defs/sha256" },
+        "subjectFingerprint": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "logicalFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "path", "sha256"],
+      "properties": {
+        "bytes": { "type": "integer", "minimum": 0 },
+        "path": { "$ref": "#/$defs/safePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "logicalLayoutRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileCount", "files", "layoutHash", "layoutId", "relativeRoot", "ruleStatus", "schemaVersion"],
+      "properties": {
+        "fileCount": { "type": "integer", "minimum": 0 },
+        "files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/logicalFile" }
+        },
+        "layoutHash": { "$ref": "#/$defs/sha256" },
+        "layoutId": { "type": "string", "minLength": 1 },
+        "relativeRoot": { "$ref": "#/$defs/safePath" },
+        "ruleStatus": { "enum": ["unverified", "not-applicable"] },
+        "schemaVersion": { "const": 1 }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "version"],
+      "properties": {
+        "executable": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+" }
+      }
+    },
+    "processRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "escalation", "exitCode", "finishedAt", "id", "kind", "pid", "runtime", "schemaVersion", "startedAt", "status", "stderr", "stdout", "timedOut"],
+      "properties": {
+        "command": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "escalation": { "enum": ["none", "graceful", "forced"] },
+        "exitCode": { "type": ["integer", "null"] },
+        "finishedAt": { "$ref": "#/$defs/timestamp" },
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["contract", "hook", "mcp", "skills"] },
+        "pid": { "type": "integer", "minimum": 1 },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "schemaVersion": { "const": 1 },
+        "startedAt": { "$ref": "#/$defs/timestamp" },
+        "status": { "enum": ["passed", "failed", "unavailable"] },
+        "stderr": { "type": "string", "maxLength": 65536 },
+        "stdout": { "type": "string", "maxLength": 65536 },
+        "timedOut": { "type": "boolean" }
+      }
+    },
+    "cleanupRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["escalations", "id", "orphanCount", "pids", "schemaVersion", "tempRootRemoved"],
+      "properties": {
+        "escalations": {
+          "type": "array",
+          "items": { "enum": ["graceful", "forced"] }
+        },
+        "id": { "type": "string", "minLength": 1 },
+        "orphanCount": { "const": 0 },
+        "pids": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "uniqueItems": true
+        },
+        "schemaVersion": { "const": 1 },
+        "tempRootRemoved": { "const": true }
+      }
+    },
+    "mutationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectedFailure", "id", "message", "observedFailure", "schemaVersion"],
+      "properties": {
+        "expectedFailure": { "const": true },
+        "id": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "observedFailure": { "const": true },
+        "schemaVersion": { "const": 1 }
+      }
+    },
+    "reconstructionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["logicalFiles", "schemaVersion", "subjectFingerprint"],
+      "properties": {
+        "layoutHashes": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/sha256" }
+        },
+        "logicalFiles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/logicalFile" }
+        },
+        "logicalFingerprint": { "$ref": "#/$defs/sha256" },
+        "schemaVersion": { "const": 1 },
+        "subjectFingerprint": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

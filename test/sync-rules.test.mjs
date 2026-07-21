@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -29,7 +29,7 @@ Rule 3: Use Claude-specific tools.
 
   // 2. Execute the sync script in sandbox using child_process
   try {
-    execSync(`node "${syncScriptPath}"`, {
+    execFileSync(process.execPath, [syncScriptPath], {
       cwd: testDir,
       env: { ...process.env },
       stdio: "pipe"

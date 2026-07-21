@@ -1,256 +1,102 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-process.env.OMO_FORCE_RUNTIME = "codex";
+import { MODEL_ROUTING_CAPABILITY } from "../scripts/runtime-adapter.mjs";
+import { migrateCodexConfig } from "../scripts/migrate-codex-config.mjs";
 
-import { ensureCodexReasoningConfig, migrateCodexConfig } from "../scripts/migrate-codex-config.mjs";
+const expectedResult = {
+	changed: [],
+	modelRouting: MODEL_ROUTING_CAPABILITY,
+};
 
-test("#given stale root reasoning config #when ensuring config #then replaces stale values without duplicate keys", () => {
-	const result = ensureCodexReasoningConfig(
-		[
-			'model = "gpt-5.5"',
-			"model_context_window = 272000",
-			'model_reasoning_effort = "low"',
-			'plan_mode_reasoning_effort = "medium"',
-			"",
-			"[features]",
-			"plugins = true",
-			"",
-		].join("\n"),
-	);
-
-	assert.equal(result.match(/^model\s*=/gm)?.length, 1);
-	assert.equal(result.match(/^model_context_window\s*=/gm)?.length, 1);
-	assert.equal(result.match(/^model_reasoning_effort\s*=/gm)?.length, 1);
-	assert.equal(result.match(/^plan_mode_reasoning_effort\s*=/gm)?.length, 1);
-	assert.match(result, /model = "gpt-5\.5"/);
-	assert.match(result, /model_context_window = 400000/);
-	assert.match(result, /model_reasoning_effort = "high"/);
-	assert.match(result, /plan_mode_reasoning_effort = "xhigh"/);
-	assert.doesNotMatch(result, /gpt-5\.2/);
-	assert.match(result, /\[features\]/);
-});
-
-test("#given project .codex is a symlink #when migrating #then project config is skipped", async (t) => {
-	if (!(await canCreateSymlink("dir"))) t.skip("symbolic links are unavailable in this environment");
-
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-symlink-dir-"));
-	const codexHome = join(root, "codex-home");
-	const project = join(root, "project");
-	const projectNested = join(project, "nested");
-	const projectCodexDirectory = join(root, "project-codex-real");
-	const projectConfigTarget = join(projectCodexDirectory, "config.toml");
-	const projectConfig = join(project, ".codex", "config.toml");
-
-	await mkdir(codexHome, { recursive: true });
-	await mkdir(projectCodexDirectory, { recursive: true });
-	await mkdir(dirname(projectConfigTarget), { recursive: true });
-	await mkdir(projectNested, { recursive: true });
-	await writeFile(join(codexHome, "config.toml"), 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
-	await writeFile(projectConfigTarget, 'model = "gpt-5.4"\nmodel_context_window = 272000\n');
-	await rm(join(project, ".codex"), { recursive: true, force: true });
-	await symlink(projectCodexDirectory, join(project, ".codex"), "dir");
-
-	const result = await migrateCodexConfig({
-		env: {
-			CODEX_HOME: codexHome,
-			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
-		},
-		cwd: projectNested,
-	});
-
-	assert.deepEqual(result.changed, [join(codexHome, "config.toml")]);
-	assert.match(await readFile(projectConfig, "utf8"), /model = "gpt-5\.4"/);
-});
-
-test("#given project config.toml is a symlink #when migrating #then project config is skipped", async (t) => {
-	if (!(await canCreateSymlink("file"))) t.skip("symbolic links are unavailable in this environment");
-
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-symlink-file-"));
-	const codexHome = join(root, "codex-home");
-	const project = join(root, "project");
-	const projectConfigDirectory = join(project, ".codex");
-	const projectConfig = join(projectConfigDirectory, "config.toml");
-	const realConfigSource = join(root, "shared-config.toml");
-
-	await mkdir(codexHome, { recursive: true });
-	await mkdir(projectConfigDirectory, { recursive: true });
-	await writeFile(join(codexHome, "config.toml"), 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
-	await writeFile(realConfigSource, 'model = "gpt-5.4"\nmodel_context_window = 272000\n');
-	await symlink(realConfigSource, projectConfig, "file");
-
-	const result = await migrateCodexConfig({
-		env: {
-			CODEX_HOME: codexHome,
-			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
-		},
-		cwd: project,
-	});
-
-	assert.deepEqual(result.changed, [join(codexHome, "config.toml")]);
-	assert.match(await readFile(realConfigSource, "utf8"), /model = "gpt-5\.4"/);
-});
-
-test("#given global and project-local stale Codex configs #when migrating #then both configs are forced to current defaults", async () => {
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-migration-"));
-	const codexHome = join(root, "codex-home");
-	const project = join(root, "project", "nested");
-	const projectConfig = join(root, "project", ".codex", "config.toml");
-	await mkdir(codexHome, { recursive: true });
-	await mkdir(dirname(projectConfig), { recursive: true });
-	await writeFile(join(codexHome, "config.toml"), 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
-	await writeFile(projectConfig, 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
-
-	const result = await migrateCodexConfig({
-		env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json") },
-		cwd: project,
-	});
-
-	assert.deepEqual(result.changed.sort(), [join(codexHome, "config.toml"), projectConfig].sort());
-	assert.match(await readFile(join(codexHome, "config.toml"), "utf8"), /model = "gpt-5\.5"/);
-	assert.match(await readFile(projectConfig, "utf8"), /model_context_window = 400000/);
-});
-
-test("#given model catalog is unavailable and stale 272k config #when migrating #then fallback catalog still upgrades it", async () => {
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-fallback-catalog-"));
-	const codexHome = join(root, "codex-home");
-	const missingCatalog = join(root, "missing-model-catalog.json");
-	await mkdir(codexHome, { recursive: true });
-	await writeFile(join(codexHome, "config.toml"), 'model = "gpt-5.5"\nmodel_context_window = 272000\n');
-
-	const result = await migrateCodexConfig({
-		env: {
-			CODEX_HOME: codexHome,
-			LAZYCODEX_MODEL_CATALOG_PATH: missingCatalog,
-			LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json"),
-		},
-		cwd: root,
-	});
-
-	const content = await readFile(join(codexHome, "config.toml"), "utf8");
-	assert.deepEqual(result.changed, [join(codexHome, "config.toml")]);
-	assert.match(content, /model = "gpt-5\.5"/);
-	assert.match(content, /model_context_window = 400000/);
-});
-
-test("#given user-customized Codex model config #when migrating #then user values are preserved", async () => {
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-custom-"));
-	const codexHome = join(root, "codex-home");
-	await mkdir(codexHome, { recursive: true });
-	await writeFile(
-		join(codexHome, "config.toml"),
-		[
-			'model = "gpt-5.4"',
-			"model_context_window = 123456",
-			'model_reasoning_effort = "medium"',
-			'plan_mode_reasoning_effort = "medium"',
-			"",
-		].join("\n"),
-	);
-
-	const result = await migrateCodexConfig({
-		env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(root, "model-state.json") },
-		cwd: root,
-	});
-
-	const content = await readFile(join(codexHome, "config.toml"), "utf8");
-	assert.deepEqual(result.changed, []);
-	assert.match(content, /model = "gpt-5\.4"/);
-	assert.match(content, /model_context_window = 123456/);
-	assert.match(content, /model_reasoning_effort = "medium"/);
-	assert.match(content, /plan_mode_reasoning_effort = "medium"/);
-});
-
-test("#given managed catalog state #when catalog version advances #then only previously managed config is updated", async () => {
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-config-catalog-state-"));
-	const codexHome = join(root, "codex-home");
-	const catalogPath = join(root, "catalog.json");
-	const statePath = join(root, "model-state.json");
-	await mkdir(codexHome, { recursive: true });
-	await writeFile(
-		catalogPath,
-		JSON.stringify(
-			{
-				version: "test.v1",
-				current: {
-					model: "gpt-5.4",
-					model_context_window: 1000000,
-					model_reasoning_effort: "high",
-					plan_mode_reasoning_effort: "xhigh",
-				},
-				managedProfiles: [],
-			},
-			null,
-			2,
-		),
-	);
-
-	const first = await migrateCodexConfig({
-		env: {
-			CODEX_HOME: codexHome,
-			LAZYCODEX_MODEL_CATALOG_PATH: catalogPath,
-			LAZYCODEX_MODEL_CATALOG_STATE_PATH: statePath,
-		},
-		cwd: root,
-	});
-	await writeFile(
-		catalogPath,
-		JSON.stringify(
-			{
-				version: "test.v2",
-				current: {
-					model: "gpt-5.5",
-					model_context_window: 400000,
-					model_reasoning_effort: "high",
-					plan_mode_reasoning_effort: "xhigh",
-				},
-				managedProfiles: [],
-			},
-			null,
-			2,
-		),
-	);
-	const second = await migrateCodexConfig({
-		env: {
-			CODEX_HOME: codexHome,
-			LAZYCODEX_MODEL_CATALOG_PATH: catalogPath,
-			LAZYCODEX_MODEL_CATALOG_STATE_PATH: statePath,
-		},
-		cwd: root,
-	});
-
-	const content = await readFile(join(codexHome, "config.toml"), "utf8");
-	assert.deepEqual(first.changed, [join(codexHome, "config.toml")]);
-	assert.deepEqual(second.changed, [join(codexHome, "config.toml")]);
-	assert.match(content, /model = "gpt-5\.5"/);
-	assert.match(content, /model_context_window = 400000/);
-});
-
-async function canCreateSymlink(type) {
-	const root = await mkdtemp(join(tmpdir(), "lazycodex-symlink-capability-"));
-	const target = join(root, "target");
-	const link = join(root, "link");
-
+test("[todo14.migration-noop] #given existing user config and state #when migration runs #then bytes remain unchanged and static capability is returned", async () => {
+	const fixture = await mkdtemp(join(tmpdir(), "todo14-migration-noop-"));
 	try {
-		if (type === "dir") {
-			await mkdir(target, { recursive: true });
-			await symlink(target, link, "dir");
-		} else {
-			await writeFile(target, "");
-			await symlink(target, link, "file");
-		}
+		const codexHome = join(fixture, "codex-home");
+		const statePath = join(fixture, "model-state.json");
+		const configPath = join(codexHome, "config.toml");
+		await mkdir(codexHome, { recursive: true });
+		await writeFile(configPath, 'model = "user-selected"\ncustom = true\n');
+		await writeFile(statePath, '{"owned":"by-user"}\n');
+		const configBefore = await readFile(configPath);
+		const stateBefore = await readFile(statePath);
 
-		await rm(link);
-		await rm(target, { recursive: true, force: true });
-		await rm(root, { recursive: true, force: true });
-		return true;
-	} catch (error) {
-		await rm(root, { recursive: true, force: true });
-		if (!(error instanceof Error)) throw error;
-		if (error.code === "EPERM" || error.code === "EEXIST") return false;
-		return false;
+		const result = await migrateCodexConfig({
+			env: { CODEX_HOME: codexHome, LAZYCODEX_MODEL_CATALOG_STATE_PATH: statePath },
+			cwd: fixture,
+		});
+
+		assert.deepEqual(result, expectedResult);
+		assert.equal(result.modelRouting, MODEL_ROUTING_CAPABILITY);
+		assert.deepEqual(await readFile(configPath), configBefore);
+		assert.deepEqual(await readFile(statePath), stateBefore);
+	} finally {
+		await rm(fixture, { recursive: true, force: true });
 	}
-}
+});
+
+test("[todo14.migration-noop] #given absent config, state, and catalog #when migration runs #then no filesystem state is created", async () => {
+	const fixture = await mkdtemp(join(tmpdir(), "todo14-migration-absent-"));
+	try {
+		const codexHome = join(fixture, "codex-home");
+		const statePath = join(fixture, "state", "model-state.json");
+		const catalogPath = join(fixture, "catalog", "model-catalog.json");
+		const result = await migrateCodexConfig({
+			env: {
+				CODEX_HOME: codexHome,
+				LAZYCODEX_MODEL_CATALOG_STATE_PATH: statePath,
+				LAZYCODEX_MODEL_CATALOG_PATH: catalogPath,
+			},
+			cwd: fixture,
+		});
+
+		assert.deepEqual(result, expectedResult);
+		await assert.rejects(stat(codexHome), { code: "ENOENT" });
+		await assert.rejects(stat(statePath), { code: "ENOENT" });
+		await assert.rejects(stat(catalogPath), { code: "ENOENT" });
+	} finally {
+		await rm(fixture, { recursive: true, force: true });
+	}
+});
+
+test("[todo14.migration-surface] #given migration module #when imported #then only compatible no-op entrypoint is exported", async () => {
+	const module = await import("../scripts/migrate-codex-config.mjs");
+	assert.deepEqual(Object.keys(module), ["migrateCodexConfig"]);
+});
+
+test("[todo14.migration-surface] #given migration source #when inspected #then no filesystem write surface remains", async () => {
+	const source = await readFile(join(process.cwd(), "scripts", "migrate-codex-config.mjs"), "utf8");
+	assert.doesNotMatch(source, /node:fs|writeFile|mkdir|appendFile|rename|unlink|rm\s*\(/);
+});
+
+test("[todo14.migration-cli] #given isolated user paths #when CLI is invoked #then it exits zero silently without changes", async () => {
+	const fixture = await mkdtemp(join(tmpdir(), "todo14-migration-cli-"));
+	try {
+		const configPath = join(fixture, "codex-home", "config.toml");
+		await mkdir(join(fixture, "codex-home"), { recursive: true });
+		await writeFile(configPath, "user_setting = true\n");
+		const before = await readFile(configPath);
+		const result = spawnSync(process.execPath, [join(process.cwd(), "scripts", "migrate-codex-config.mjs")], {
+			cwd: fixture,
+			env: {
+				...process.env,
+				CODEX_HOME: join(fixture, "codex-home"),
+				LAZYCODEX_MODEL_CATALOG_STATE_PATH: join(fixture, "state.json"),
+			},
+			encoding: "utf8",
+			windowsHide: true,
+		});
+
+		assert.equal(result.status, 0, result.stderr);
+		assert.equal(result.stdout, "");
+		assert.equal(result.stderr, "");
+		assert.deepEqual(await readFile(configPath), before);
+		await assert.rejects(stat(join(fixture, "state.json")), { code: "ENOENT" });
+	} finally {
+		await rm(fixture, { recursive: true, force: true });
+	}
+});

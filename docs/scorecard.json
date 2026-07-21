@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 2,
+  "rubric": "config/score-rubric.json",
+  "totalPoints": 100,
+  "earnedPoints": 80,
+  "availabilityCeiling": 80,
+  "awardRule": "fresh-passed-receipt-only",
+  "assertionMode": "all-or-zero",
+  "provenance": {
+    "evidenceMode": "frozen-checked-in",
+    "generatorSha256": "c3c5530a71656f76674c5f5e3350be7d5607a7baf5bd5b7bc82b4f7bbf6c68af",
+    "sourceEvidenceDigest": "e515655cd5e3ec5ba75364f3a9ffcc55fec440acd82a93b3033e6630ddc5261f"
+  },
+  "liveValidation": {
+    "hostedMatrix": "unavailable",
+    "cli": "unavailable",
+    "ide": "unavailable",
+    "realSqlite": "unavailable"
+  },
+  "items": [
+    {
+      "category": "contracts",
+      "id": "manifest",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-1-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "contracts",
+      "id": "hooks",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-2-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "contracts",
+      "id": "ide-layout",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-15-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "contracts",
+      "id": "cli-layout",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-15-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "runtime",
+      "id": "context",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-7-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "runtime",
+      "id": "stop",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-9-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "runtime",
+      "id": "offline-defaults",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-10-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "mcp-database",
+      "id": "lifecycle",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-11-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "mcp-database",
+      "id": "path-portability",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-11-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "mcp-database",
+      "id": "sqlite-safe-readonly",
+      "points": 10,
+      "earnedPoints": 0,
+      "status": "unavailable",
+      "evidence": null,
+      "reason": "exact capability receipt status is unavailable"
+    },
+    {
+      "category": "skills",
+      "id": "exact-core",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-13-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "skills",
+      "id": "metadata-references",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-4-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "skills",
+      "id": "workflow-lsp",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-8-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "distribution",
+      "id": "no-install",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-17-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "distribution",
+      "id": "snapshot-stage",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-15-lazyantigravity-antigravity-rebuild.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "distribution",
+      "id": "hosted-matrix",
+      "points": 5,
+      "earnedPoints": 0,
+      "status": "unavailable",
+      "evidence": null,
+      "reason": "no fresh passed GitHub-hosted Ubuntu/Windows Node 20/22 and Ubuntu SQLite receipt"
+    },
+    {
+      "category": "evidence-docs",
+      "id": "freshness",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-18-local-score-evidence.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "evidence-docs",
+      "id": "bilingual-truth",
+      "points": 5,
+      "earnedPoints": 5,
+      "status": "passed",
+      "evidence": ".omo/evidence/task-18-local-score-evidence.json",
+      "reason": "passed in source evidence snapshot"
+    },
+    {
+      "category": "live",
+      "id": "cli-install-list-live",
+      "points": 3,
+      "earnedPoints": 0,
+      "status": "unavailable",
+      "evidence": null,
+      "reason": "agy binary unavailable; no live install/list receipt"
+    },
+    {
+      "category": "live",
+      "id": "ide-live",
+      "points": 2,
+      "earnedPoints": 0,
+      "status": "unavailable",
+      "evidence": null,
+      "reason": "pinned noninteractive IDE inspection contract unavailable"
+    }
+  ]
+}

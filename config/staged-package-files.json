@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    ".runtime-hint.json",
+    "CHANGELOG.md",
+    "LICENSE.md",
+    "README.md",
+    "hooks.json",
+    "mcp_config.json",
+    "package.json",
+    "plugin.json",
+    "scripts/antigravity-hook.mjs",
+    "scripts/database-mcp.mjs",
+    "src/README.ko.md",
+    "src/README.md"
+  ],
+  "directories": [
+    "components/git-bash-mcp/dist",
+    "components/lsp-daemon/dist",
+    "components/lsp-tools-mcp/dist",
+    "docs",
+    "scripts/antigravity-hooks",
+    "scripts/database-mcp",
+    "skills/ast-grep",
+    "skills/debugging",
+    "skills/frontend-ui-ux",
+    "skills/git-master",
+    "skills/init-deep",
+    "skills/lsp",
+    "skills/lsp-setup",
+    "skills/programming",
+    "skills/review-work",
+    "skills/rules",
+    "skills/start-work",
+    "skills/ulw",
+    "skills/ulw-loop",
+    "skills/ulw-plan",
+    "skills/visual-qa"
+  ]
+}

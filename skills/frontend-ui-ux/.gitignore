@@ -1,3 +1,0 @@
-# Keep upstream-derived frontend references tracked in this aggregate checkout.
-# `scripts/sync-skills.mjs` rebuilds `skills/frontend-ui-ux/` from this alias, so
-# ignoring these files would make clean-clone builds drop packaged references.

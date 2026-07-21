@@ -1,44 +1,27 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import test from "node:test";
 
-import { readJson, root } from "./aggregate-plugin-fixture.mjs";
+import { readJson } from "./aggregate-plugin-fixture.mjs";
 
-test("#given aggregate plugin build script #when inspected #then hook status sync runs before workspace builds", async () => {
-	// given
+test("[todo5.build.retired] dependency-free Antigravity root exposes no automatic build lifecycle", async () => {
 	const packageJson = await readJson("package.json");
-	const isStandalone = packageJson.name === "lazyantigravity";
-
-	// when
-	const buildScript = packageJson.scripts.build;
-
-	// then
-	if (isStandalone) {
-		assert.equal(
-			buildScript,
-			"node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node scripts/build-components.mjs",
-		);
-	} else {
-		assert.equal(
-			buildScript,
-			"node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node scripts/build-components.mjs",
-		);
-	}
+	assert.equal(packageJson.scripts.build, undefined);
+	assert.equal(packageJson.scripts.prepack, undefined);
+	assert.equal(packageJson.scripts.prepare, undefined);
+	assert.equal(packageJson.scripts["rebuild:maintainer"], "node scripts/rebuild-components.mjs");
 });
 
-test("#given omo-codex package build script #when inspected #then delegates to the aggregate plugin package", async () => {
-	// given
-	const packageJson = await readJson("package.json");
-	if (packageJson.name === "lazyantigravity") {
-		// Standalone mode, skip parent checks
-		return;
-	}
-	const parentPackageJson = JSON.parse(await readFile(join(root, "..", "package.json"), "utf8"));
+test("[todo17.full-runner.serial] full regression runner fixes process-heavy tests to deterministic serial execution", async () => {
+	const source = await readFile(new URL("../scripts/run-tests.mjs", import.meta.url), "utf8");
+	assert.match(source, /\["--test",\s*"--test-concurrency=1",\s*\.\.\.files/);
+});
 
-	// when
-	const buildPluginScript = parentPackageJson.scripts["build:plugin"];
-
-	// then
-	assert.equal(buildPluginScript, "bun run --cwd plugin build");
+test("[todo17.full-runner.paths] full regression runner enumerates sorted concrete test paths", async () => {
+	const source = await readFile(new URL("../scripts/run-tests.mjs", import.meta.url), "utf8");
+	assert.match(source, /readdirSync\(testDirectory,\s*\{\s*withFileTypes:\s*true\s*\}\)/);
+	assert.match(source, /entry\.isFile\(\)\s*&&\s*entry\.name\.endsWith\("\.test\.mjs"\)/);
+	assert.match(source, /\.map\(\(entry\)\s*=>\s*join\(testDirectory,\s*entry\.name\)\)/);
+	assert.match(source, /\.sort\(\)/);
+	assert.doesNotMatch(source, /test\/\*\.test\.mjs/);
 });

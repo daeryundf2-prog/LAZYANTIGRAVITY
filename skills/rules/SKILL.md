@@ -1,32 +1,20 @@
 ---
 name: rules
-description: Use when the user asks about Codex Rules behavior, injected project rules, supported rule file locations, matching, or environment configuration.
+description: Use for repository rule discovery and explicit project instruction handling.
 ---
 
-# Codex Rules
+# rules
 
-Codex Rules is automatic once the plugin is enabled. It injects:
+Use this skill for repository rule discovery and project instruction handling. Treat rule injection as explicit Antigravity context, not an automatic post-edit diagnostic.
 
-- static project instructions on `SessionStart` and `UserPromptSubmit`
-- matching file-specific rules after Codex `apply_patch` by default
+## Verified quality-gate policy
 
-Dynamic `PostToolUse` output is injected as additional context and is deduplicated per plugin data session. Codex Rules does not rewrite tool output.
+After edits, request on-demand LSP verification with server id `lsp`, tool `diagnostics`, and exact arguments `{filePath:"<absolute changed file>",severity:"error"}`.
 
-Supported project sources:
+Use the checked fixtures as the contract source:
 
-- `CONTEXT.md`
-- `.omo/rules/**/*.md`
-- `.claude/rules/**/*.md`
-- `.cursor/rules/**/*.md`
-- `.github/instructions/**/*.md`
-- `.github/copilot-instructions.md`
+- `test/fixtures/lsp/clean.json` renders `LSP verification: clean (<file>)`
+- `test/fixtures/lsp/diagnostics.json` renders `LSP verification: <N> error(s) (<file>)`
+- `test/fixtures/lsp/unavailable.json` renders `LSP verification unavailable: <reason>`
 
-Supported environment knobs:
-
-- `CODEX_RULES_DISABLED=1`
-- `CODEX_RULES_MODE=both|static|dynamic|off`
-- `CODEX_RULES_MAX_RULE_CHARS=<number>`
-- `CODEX_RULES_MAX_RESULT_CHARS=<number>`
-- `CODEX_RULES_ENABLED_SOURCES=CONTEXT.md,.omo/rules`
-
-The legacy `PI_RULES_*` variables are accepted as fallbacks for users migrating from `pi-rules`.
+Treat unavailable verification as unavailable, never as clean.
