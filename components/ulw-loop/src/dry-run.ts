@@ -146,8 +146,8 @@ Options:
 			process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
 			process.stdout.write(`  - Claude Opus 4.6 (Thinking)\n`);
 			process.stdout.write(`  - Gemini 3.1 Pro (High)\n`);
-			process.stdout.write(`  - Gemini 3.5 Flash (High)\n`);
-			process.stdout.write(`  - Gemini 3.5 Flash (Medium)\n`);
+			process.stdout.write(`  - Gemini 3.6 Flash (High)\n`);
+			process.stdout.write(`  - Gemini 3.6 Flash (Medium)\n`);
 			process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner)\n`);
 			process.stdout.write(`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher)\n`);
 			process.stdout.write(`[Dry-Run] Running role: worker (would invoke: self / Hephaestus Worker)\n`);
@@ -166,8 +166,8 @@ Options:
 			process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
 			process.stdout.write(`  - Claude Opus 4.6 (Thinking)\n`);
 			process.stdout.write(`  - Gemini 3.1 Pro (High)\n`);
-			process.stdout.write(`  - Gemini 3.5 Flash (High)\n`);
-			process.stdout.write(`  - Gemini 3.5 Flash (Medium)\n`);
+			process.stdout.write(`  - Gemini 3.6 Flash (High)\n`);
+			process.stdout.write(`  - Gemini 3.6 Flash (Medium)\n`);
 			process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner) - SUCCESS\n`);
 			process.stdout.write(
 				`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher) - SUCCESS\n`,
@@ -207,7 +207,7 @@ Options:
 		completedRoles = ["planner"];
 		failedRole = "researcher";
 		errorType = "context_window_exceeded";
-		nextRecommendedAction = "Switch to Gemini 3.5 Flash (High) and run /ulw resume in Compact Mode";
+		nextRecommendedAction = "Switch to Gemini 3.6 Flash (High) and run /ulw resume in Compact Mode";
 
 		if (!json) {
 			process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: ${scenario})...\n`);

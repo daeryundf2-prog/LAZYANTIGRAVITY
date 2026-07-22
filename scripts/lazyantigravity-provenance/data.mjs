@@ -19,7 +19,7 @@ export const buildSteps = [
 	},
 	{
 		id: "telemetry-component-sync",
-		owner: "upstream omo-codex sync",
+		owner: "telemetry component sync",
 		command: "node plugins/scripts/sync-telemetry-component.mjs",
 		description: "Copies selected upstream telemetry sources into the telemetry component.",
 	},

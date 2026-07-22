@@ -166,8 +166,8 @@ async function sourceRootEntries(root, dirtyState, componentPackages) {
 		},
 		{
 			path: "plugins/scripts",
-			kind: "upstream-build-scripts-symlink",
-			owner: "upstream omo-codex scripts",
+			kind: "telemetry-build-scripts-symlink",
+			owner: "telemetry component sync scripts",
 			build_step: "telemetry-component-sync",
 			classification: "vendored-script-reference",
 			exists: existsSync(join(root, "plugins/scripts")),

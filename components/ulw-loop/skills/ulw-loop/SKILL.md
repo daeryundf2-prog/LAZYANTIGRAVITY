@@ -78,13 +78,13 @@ If rate limit/quota is detected in Antigravity:
   - **When Claude Opus 4.6 (Thinking) is limited**:
     1. Gemini 3.1 Pro (High)
     2. Claude Sonnet 4.6 (Thinking) (if Sonnet quota is available)
-    3. Gemini 3.5 Flash (High)
+    3. Gemini 3.6 Flash (High)
   - **When Claude Sonnet 4.6 (Thinking) is limited**:
     1. Gemini 3.1 Pro (High)
-    2. Gemini 3.5 Flash (High)
+    2. Gemini 3.6 Flash (High)
   - **When Gemini 3.1 Pro (High) is limited**:
-    1. Gemini 3.5 Flash (High)
-    2. Gemini 3.5 Flash (Medium)
+    1. Gemini 3.6 Flash (High)
+    2. Gemini 3.6 Flash (Medium)
   - **When all models are limited/exhausted**:
     - Wait until the rate-limit/quota refresh window.
     - Or recommend that the user enable "AI Credit Overages" in settings.
