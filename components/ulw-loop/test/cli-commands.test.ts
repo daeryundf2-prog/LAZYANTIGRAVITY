@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ulwLoopCommand } from "../src/cli-commands.ts";
+import { appendRunEvent } from "../src/control-plane.js";
 import { ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE } from "../src/goal-status.js";
 
 let testDir: string;
@@ -62,6 +63,25 @@ async function createPlan(brief = "- Goal A\n- Goal B"): Promise<Record<string, 
 	const parsed = stdoutJson();
 	resetOutput();
 	return parsed;
+}
+
+async function seedSubagentCompletion(): Promise<void> {
+	await appendRunEvent(testDir, "default-run", "agent.completed_reported", {
+		result: {
+			runId: "default-run",
+			agentId: "worker-1",
+			role: "worker",
+			status: "success",
+			summary: "implemented changes and ran tests",
+			filesChanged: ["src/auth.ts", "test/auth.test.ts"],
+			commandsRun: ["npm test", "npm run build"],
+			artifactsGenerated: [],
+			blockers: [],
+			nextRecommendedAction: "checkpoint",
+			requiresParentAck: true,
+		},
+		role: "worker",
+	});
 }
 
 async function passCriterion(goalId: string, criterionId: string): Promise<void> {
@@ -247,6 +267,7 @@ describe("ulwLoopCommand checkpoint", () => {
 		await passCriterion("G001-goal-a", "C001");
 		await passCriterion("G001-goal-a", "C002");
 		await passCriterion("G001-goal-a", "C003");
+		await seedSubagentCompletion();
 
 		expect(
 			await ulwLoopCommand([

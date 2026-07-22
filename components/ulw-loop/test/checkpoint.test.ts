@@ -43,11 +43,31 @@ async function repoWith(seed: UlwLoopPlan): Promise<string> {
 	const repo = await mkdtemp(join(tmpdir(), "ug-checkpoint-"));
 	await mkdir(ulwLoopDir(repo), { recursive: true });
 	await writePlan(repo, seed);
+	await seedSubagentCompletion(repo);
 	return repo;
 }
 
 function snapshot(status: "active" | "complete", objective = ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE): string {
 	return JSON.stringify({ goal: { objective, status } });
+}
+
+async function seedSubagentCompletion(repo: string, runId = "default-run"): Promise<void> {
+	await appendRunEvent(repo, runId, "agent.completed_reported", {
+		result: {
+			runId,
+			agentId: "worker-1",
+			role: "worker",
+			status: "success",
+			summary: "implemented changes and ran tests",
+			filesChanged: ["src/auth.ts", "test/auth.test.ts"],
+			commandsRun: ["npm test", "npm run build"],
+			artifactsGenerated: [],
+			blockers: [],
+			nextRecommendedAction: "checkpoint",
+			requiresParentAck: true,
+		},
+		role: "worker",
+	});
 }
 
 async function lastLedger(repo: string): Promise<UlwLoopLedgerEntry> {
@@ -544,20 +564,15 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 	it("blocks finalization and transitions to needs_user_decision when rework attempts loop limit is hit", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
 
-		await appendRunEvent(repo, "default-run", "agent.completed_reported", {
-			agentId: "worker-1",
-			result: { filesChanged: ["src/index.ts"], commandsRun: ["npm test"] },
-		});
-
 		const { calculateQualityFingerprint } = await import("../src/verification-pipeline.js");
 		const evidenceEnvelope = {
 			goal: "Implement JWT auth endpoint",
 			summary: "work done again",
-			filesChanged: ["src/index.ts"],
-			commandsRun: ["npm test"],
+			filesChanged: ["src/auth.ts", "test/auth.test.ts"],
+			commandsRun: ["npm test", "npm run build"],
 			testResults: ["npm test"],
 			artifactsGenerated: [],
-			completedRoles: [],
+			completedRoles: ["worker"],
 			acknowledgedRoles: [],
 			dryRunSafety: true,
 		};

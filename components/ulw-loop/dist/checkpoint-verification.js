@@ -10,6 +10,7 @@ import { collectLspDiagnostics, collectRulesViolations, injectFeedbackContext } 
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv, ulwLoopBriefPath } from "./paths.js";
 import { validateQualityGate } from "./quality-gate.js";
 import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
+import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
 import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline } from "./verification-pipeline.js";
 function textMentionsUlwLoopPlanArtifact(value) {
     const normalized = (value ?? "").toLowerCase();
@@ -102,18 +103,31 @@ function makeAggregateCompletion(now, evidence, codexGoal) {
 export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, args, now, scope) {
     const runId = normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
     const events = await readRunEvents(repoRoot, runId);
+    const stagnationPolicy = await loadStagnationPolicy(repoRoot);
+    const stagnationResult = checkStagnation(events, stagnationPolicy);
+    if (stagnationResult.status !== "ok" && stagnationResult.payload) {
+        if (!events.some((e) => e.type === "parent.stagnation_detected" && e.fingerprint === stagnationResult.payload.fingerprint)) {
+            await appendRunEvent(repoRoot, runId, "parent.stagnation_detected", {
+                ...stagnationResult.payload,
+                fingerprint: stagnationResult.payload.fingerprint,
+            });
+        }
+    }
     const completedEvents = events.filter((e) => e.type === "agent.completed_reported");
     const latestCompleted = completedEvents[completedEvents.length - 1];
     const subagentResult = latestCompleted?.result;
-    const filesChanged = subagentResult?.filesChanged || ["src/index.ts"];
-    const commandsRun = subagentResult?.commandsRun || ["npm test"];
+    if (subagentResult === undefined) {
+        throw new UlwLoopError("No subagent completion event found. Refusing to fabricate evidence — checkpoint requires a real agent.completed_reported event with filesChanged and commandsRun.", "ulw_loop_missing_subagent_result");
+    }
+    const filesChanged = subagentResult.filesChanged ?? [];
+    const commandsRun = subagentResult.commandsRun ?? [];
     const evidenceEnvelope = {
         goal: goal.objective,
         summary: evidence,
         filesChanged,
         commandsRun,
         testResults: commandsRun.filter((c) => c.includes("test")),
-        artifactsGenerated: subagentResult?.artifactsGenerated || [],
+        artifactsGenerated: subagentResult.artifactsGenerated ?? [],
         completedRoles: events.filter((e) => e.type === "agent.completed_reported" && e.role).map((e) => e.role),
         acknowledgedRoles: events.filter((e) => e.type === "parent.acknowledged" && e.role).map((e) => e.role),
         dryRunSafety: true,

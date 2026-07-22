@@ -12,6 +12,7 @@ import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv, type UlwLoop
 import { validateQualityGate } from "./quality-gate.js";
 import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan, UlwLoopQualityGate } from "./types.js";
 import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
+import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
 import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline, type VerificationContext } from "./verification-pipeline.js";
 
 function textMentionsUlwLoopPlanArtifact(value: string | undefined): boolean {
@@ -108,12 +109,31 @@ export async function runCheckpointQualityGate(
 ): Promise<CheckpointQualityGateResult> {
 	const runId = normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
 	const events = await readRunEvents(repoRoot, runId);
+
+	const stagnationPolicy = await loadStagnationPolicy(repoRoot);
+	const stagnationResult = checkStagnation(events, stagnationPolicy);
+	if (stagnationResult.status !== "ok" && stagnationResult.payload) {
+		if (!events.some((e) => e.type === "parent.stagnation_detected" && e.fingerprint === stagnationResult.payload!.fingerprint)) {
+			await appendRunEvent(repoRoot, runId, "parent.stagnation_detected", {
+				...stagnationResult.payload,
+				fingerprint: stagnationResult.payload.fingerprint,
+			});
+		}
+	}
+
 	const completedEvents = events.filter((e) => e.type === "agent.completed_reported");
 	const latestCompleted = completedEvents[completedEvents.length - 1];
 	const subagentResult = latestCompleted?.result as SubagentResultEnvelope | undefined;
 
-	const filesChanged = subagentResult?.filesChanged || ["src/index.ts"];
-	const commandsRun = subagentResult?.commandsRun || ["npm test"];
+	if (subagentResult === undefined) {
+		throw new UlwLoopError(
+			"No subagent completion event found. Refusing to fabricate evidence — checkpoint requires a real agent.completed_reported event with filesChanged and commandsRun.",
+			"ulw_loop_missing_subagent_result",
+		);
+	}
+
+	const filesChanged = subagentResult.filesChanged ?? [];
+	const commandsRun = subagentResult.commandsRun ?? [];
 
 	const evidenceEnvelope: QualityEvidenceEnvelope = {
 		goal: goal.objective,
@@ -121,7 +141,7 @@ export async function runCheckpointQualityGate(
 		filesChanged,
 		commandsRun,
 		testResults: commandsRun.filter((c) => c.includes("test")),
-		artifactsGenerated: subagentResult?.artifactsGenerated || [],
+		artifactsGenerated: subagentResult.artifactsGenerated ?? [],
 		completedRoles: events.filter((e) => e.type === "agent.completed_reported" && e.role).map((e) => e.role as string),
 		acknowledgedRoles: events.filter((e) => e.type === "parent.acknowledged" && e.role).map((e) => e.role as string),
 		dryRunSafety: true,

@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import type { UlwLoopScope } from "./paths.js";
+import { ulwLoopDir, ulwLoopGoalsPath, ulwLoopLedgerPath } from "./paths.js";
 import { parseUlwLoopSteeringDirective, steerUlwLoop } from "./steering.js";
 
 export interface UserPromptSubmitPayload {
@@ -23,6 +25,15 @@ export interface PreToolUsePayload {
 	readonly tool_use_id: string;
 	readonly transcript_path: string | null;
 	readonly turn_id: string;
+}
+
+export interface PostCompactPayload {
+	readonly cwd: string;
+	readonly hook_event_name: "PostCompact";
+	readonly model?: string;
+	readonly session_id: string;
+	readonly transcript_path?: string;
+	readonly turn_id?: string;
 }
 
 interface PreToolUseHookOutput {
@@ -54,6 +65,17 @@ export function parsePreToolUsePayload(raw: string): PreToolUsePayload | null {
 	try {
 		const parsed: unknown = JSON.parse(raw);
 		return isPreToolUsePayload(parsed) ? parsed : null;
+	} catch (error) {
+		if (error instanceof SyntaxError) return null;
+		return null;
+	}
+}
+
+export function parsePostCompactPayload(raw: string): PostCompactPayload | null {
+	if (raw.trim().length === 0) return null;
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		return isPostCompactPayload(parsed) ? parsed : null;
 	} catch (error) {
 		if (error instanceof SyntaxError) return null;
 		return null;
@@ -98,11 +120,40 @@ export function applyPreToolUseGoalBudgetGuard(payload: PreToolUsePayload): stri
 	return `${JSON.stringify(output)}\n`;
 }
 
+export async function applyPostCompactRecovery(payload: PostCompactPayload): Promise<string> {
+	if (payload.hook_event_name !== "PostCompact") return "";
+	const repoRoot = payload.cwd;
+	if (!existsSync(ulwLoopDir(repoRoot))) return "";
+	const lines: string[] = [];
+	lines.push("ULW-LOOP CONTEXT RECOVERY (PostCompact):");
+	lines.push(`  ulw-loop directory found at ${ulwLoopDir(repoRoot)}`);
+	const goalsExists = existsSync(ulwLoopGoalsPath(repoRoot));
+	const ledgerExists = existsSync(ulwLoopLedgerPath(repoRoot));
+	if (goalsExists) lines.push("  goals.json exists — re-read it to restore active goal state.");
+	if (ledgerExists) lines.push("  ledger.jsonl exists — re-read it to restore evidence chain.");
+	if (!goalsExists && !ledgerExists) return "";
+	lines.push("  ACTION REQUIRED: Run `omo ulw-loop status --json` before continuing any ulw-loop work.");
+	lines.push("  Do NOT re-plan from scratch. Re-read brief + goals + ledger FIRST, then resume.");
+	return `${JSON.stringify({ additionalContext: lines.join("\n") })}\n`;
+}
+
 export async function runUlwLoopHookCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Promise<void> {
 	try {
 		const payload = parseUserPromptSubmitPayload(await readAll(stdin));
 		if (payload === null) return;
 		const output = await applyUserPromptUlwLoopSteering(payload);
+		if (output.length > 0) stdout.write(output);
+	} catch (error) {
+		if (error instanceof Error) return;
+		return;
+	}
+}
+
+export async function runPostCompactHookCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Promise<void> {
+	try {
+		const payload = parsePostCompactPayload(await readAll(stdin));
+		if (payload === null) return;
+		const output = await applyPostCompactRecovery(payload);
 		if (output.length > 0) stdout.write(output);
 	} catch (error) {
 		if (error instanceof Error) return;
@@ -149,6 +200,16 @@ function isPreToolUsePayload(value: unknown): value is PreToolUsePayload {
 		(value["transcript_path"] === null || typeof value["transcript_path"] === "string") &&
 		typeof value["turn_id"] === "string" &&
 		Object.hasOwn(value, "tool_input")
+	);
+}
+
+function isPostCompactPayload(value: unknown): value is PostCompactPayload {
+	if (!isRecord(value)) return false;
+	return (
+		value["hook_event_name"] === "PostCompact" &&
+		typeof value["cwd"] === "string" &&
+		typeof value["session_id"] === "string" &&
+		["model", "transcript_path", "turn_id"].every((key) => optionalString(value[key]))
 	);
 }
 
