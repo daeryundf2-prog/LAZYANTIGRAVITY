@@ -9,7 +9,7 @@
 ## 2. 파이프라인 구성
 
 ### Stage 1: Mechanical Verification (비용 최소화 단계)
-- **주체**: 자동화된 훅(Hook) 또는 매우 가벼운 모델(Gemini 3.5 Flash).
+- **주체**: 자동화된 훅(Hook) 또는 가장 가벼운 reasoning 모델(현재 Gemini 3.6 Flash Low).
 - **작업**: 문법 오류(Syntax Error), 린트(Lint) 통과, 빌드(Build) 성공, 타입(Type) 체크를 수행.
 - **로직**:
   - `filesChanged`가 감지되면 TypeScript의 경우 `tsc --noEmit` 또는 Biome 체크를 자동으로 실행.

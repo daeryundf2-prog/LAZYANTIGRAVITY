@@ -1,5 +1,5 @@
 {
-	"version": "2026-06-07.dual-platform-v2",
+	"version": "2026-07-19.antigravity-gemini36",
 	"current": {
 		"model": "gpt-5.5",
 		"model_context_window": 400000,
@@ -218,6 +218,30 @@
 				"availabilitySource": "ui"
 			},
 			{
+				"modelId": "gemini-3.5-flash-low",
+				"displayName": "Gemini 3.5 Flash (Low)",
+				"provider": "google",
+				"speed": "fast",
+				"reasoningLevel": "low",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-3.5-flash-medium",
+				"displayName": "Gemini 3.5 Flash (Medium)",
+				"provider": "google",
+				"speed": "fast",
+				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-3.5-flash-high",
+				"displayName": "Gemini 3.5 Flash (High)",
+				"provider": "google",
+				"speed": "fast",
+				"reasoningLevel": "high",
+				"availabilitySource": "ui"
+			},
+			{
 				"modelId": "gemini-3.1-pro-low",
 				"displayName": "Gemini 3.1 Pro (Low)",
 				"provider": "google",
@@ -268,14 +292,10 @@
 			"note": "Codex는 config.toml에서 전역 모델을 설정하고, spawn_agent에서 역할별 모델을 지정 가능"
 		},
 		"antigravity": {
-			"supported": "hint-only",
-			"mechanism": "conversation 단위 UI 모델 선택 + invoke_subagent modelTier (inherit만 확인됨)",
-			"note": "Antigravity는 대화 시작 시 UI 드롭다운으로 모델 선택. invoke_subagent의 modelTier는 MODEL_TIER_INHERIT만 확인됨. 플러그인/훅에서 모델 강제 지정 API 미확인. model-catalog는 추천 힌트로만 사용.",
-			"limitations": [
-				"플러그인에서 런타임 모델 전환 API 없음",
-				"invoke_subagent는 부모 모델 상속만 확인됨",
-				"역할별 자동 라우팅은 불가능 — 사용자가 UI에서 수동 선택"
-			]
+			"supported": true,
+			"mechanism": "invoke_subagent Model 파라미터 ('pro' | 'flash' | 'flash_lite' | 'inherit')",
+			"note": "Antigravity 서브에이전트 호출 시 invoke_subagent의 Model 파라미터를 통해 티어별 모델을 직접 지정 가능 ('pro': 고난도 추론/기획/검증, 'flash': 탐색/조사, 'flash_lite': 경량 작업, 'inherit': 부모 모델 상속).",
+			"limitations": []
 		}
 	}
 }
