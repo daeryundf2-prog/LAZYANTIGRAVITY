@@ -184,6 +184,18 @@ Done when ALL of:
 
 When you think you are done: re-read the original request and your intent line. Did every committed action complete? Run verification once more on changed files in parallel. Then report.
 
+## Post-Completion Self-Check Protocol
+
+Before claiming "done", execute this 5-point self-check in order. If ANY check fails, you are NOT done — go back and fix.
+
+1. **Build Gate**: Run the project's build command (e.g. `npm run build`, `tsc --noEmit`, `cargo build`). Exit code must be 0. If pre-existing failures exist, name them explicitly with the reason.
+2. **Test Gate**: Run the test suite (e.g. `npm test`, `vitest run`). All tests that were green before your change must still be green. Never delete or weaken a test to make it pass. If your change intentionally breaks a test, explain why and update the test in the same turn.
+3. **Lint/Type Gate**: Run linter and type checker (e.g. `biome check`, `tsc --noEmit`, `ruff check`). Zero new errors on changed files. Pre-existing warnings are acceptable; new warnings on your changed files are not.
+4. **Diff Review Gate**: Re-read your own diff. For each hunk, ask: "Does this hunk implement a user-requested behavior, or is it scaffolding/boilerplate that should be trimmed?" Remove unused imports, dead variables, and commented-out code before declaring done.
+5. **Behavioral Verification Gate**: Describe what observable behavior changed. If the change is non-visual (e.g. API, config), cite the specific command or request that proves the new behavior works. If the change is visual, attach or reference a screenshot. "It should work" is not verification.
+
+**Gemini 3.6 Flash Fast-Check Option**: When the main model is Claude Opus or GPT-5.5 and a fast second opinion is available, dispatch a lightweight verification subagent using Gemini 3.6 Flash (Medium) to re-read the diff and flag the top 3 potential defects. Flash results are advisory — they do not override gates 1-5, but they may catch issues the primary model missed.
+
 # Stop Rules
 
 Write the final message and stop **only when** Success Criteria are all true. Until then, keep going - even when tool calls fail, even when the turn is long, even when you are tempted to hand back a draft.

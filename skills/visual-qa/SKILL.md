@@ -166,6 +166,44 @@ BLOCKING: items that must be fixed; empty if PASS
 )
 ```
 
+### Pass C - Gemini 3.6 Flash vision pre-screen (fast, optional)
+
+When Gemini 3.6 Flash is available as a subagent model, dispatch a fast vision pre-screen before the oracle passes. This pass uses Flash's multimodal image input capability to directly analyze the screenshot pixels, complementing the text-based oracle passes.
+
+```
+task(subagent_type="oracle",
+  run_in_background=true,
+  model="flash",
+  load_skills=[],
+  description="Visual QA pass C: Gemini 3.6 Flash vision pre-screen",
+  prompt="""
+REVIEW TYPE: FAST VISION PRE-SCREEN (read-only, advisory)
+MODEL: Gemini 3.6 Flash — use your multimodal image input capability.
+
+INTENT:
+{What the user requested and the mock or baseline to match.}
+
+CAPTURES (attach images directly):
+{Web: attach actual and reference screenshot PNGs. TUI: paste capture.txt inline.}
+
+SCRIPT EVIDENCE:
+{Paste the image-diff or tui-check JSON for numeric reference.}
+
+CHECK QUICKLY (this is a pre-screen, not a deep review):
+1. Are there obvious visual regressions visible in the screenshot pixels? (layout shifts, color changes, missing elements, broken text)
+2. For CJK text: any clipping, tofu (missing glyphs), or broken wrapping visible in the image?
+3. Does the overall visual structure match the reference/baseline at a glance?
+
+OUTPUT (advisory — does not override Pass A/B verdicts):
+FLASH VERDICT: CLEAR | SUSPECT | FAIL
+FLASH SUMMARY: 1-2 sentences
+FLASH FLAGS: list each visual anomaly with approximate location (top-left, center, etc.)
+"""
+)
+```
+
+Flash results are advisory. If Flash flags SUSPECT or FAIL, prioritize those regions in Pass A and Pass B. If Flash says CLEAR but Pass A/B find issues, the Pass A/B verdict wins.
+
 ## Step 4 - Synthesize one verdict
 
 When both passes return, merge them into a single report. Per dimension, mark good or bad with evidence. For each bad item, state what is wrong, where (file/line, hotspot grid, or capture line), and the concrete fix. Call out what is genuinely good so it is not regressed later.

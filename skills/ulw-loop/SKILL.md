@@ -99,6 +99,7 @@ If rate limit/quota is detected in Codex:
 
 ### 5. Compact Mode (On Context Window Exceeded)
 If `context_window_exceeded` occurs, transition to Compact Mode:
+- **Switch to Gemini 3.6 Flash (High)**: In Antigravity UI, switch to Gemini 3.6 Flash (High) to leverage its 1M token context window — 3.5x larger than GPT-5.5/Claude. This often eliminates the need for compaction entirely.
 - **Summarize Logs**: Condense long test/execution logs into short summaries.
 - **Relevant Slices**: Read/display only relevant lines of files instead of printing whole files.
 - **Compress Outputs**: Limit role response size to 20-40 lines of summary in the transcript.
