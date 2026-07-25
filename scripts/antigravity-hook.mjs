@@ -15,6 +15,10 @@ import { blockOnce, recoverGate } from "./antigravity-hooks/work-supervisor/gate
 import { appendAgentEvent } from "./antigravity-hooks/work-supervisor/agent-log.mjs";
 import { shellCandidatePaths } from "./antigravity-hooks/work-supervisor/shell-hints.mjs";
 import { loadProvenanceConfig, isPathInScope, isHardExcluded, canonicalizeProjectPath } from "./antigravity-hooks/work-supervisor/provenance-policy.mjs";
+import { validateToolCall } from "./antigravity-hooks/work-supervisor/tool-call-validator.mjs";
+import { recordTokenUsage, checkCostThreshold, getTokenUsageSummary } from "./antigravity-hooks/work-supervisor/token-usage-tracker.mjs";
+import { classifyIntent, shouldBlockWriteForIntent } from "./antigravity-hooks/work-supervisor/intent-classifier.mjs";
+import { detectPlatform, getPlatformGuide, recommendModel } from "./antigravity-hooks/work-supervisor/platform-detector.mjs";
 
 const event = process.argv[2];
 let rawInput = "";
@@ -81,12 +85,26 @@ function selectPreToolUseResponse(hookInput) {
 
 	captureRequestedScope(hookInput);
 
+	const validation = validateToolCall(toolName, toolArgs);
+	if (!validation.valid) {
+		return success(formatPreToolUseDenyResponse(
+			`Tool call validation failed: ${validation.errors.join("; ")}`
+		));
+	}
+
 	if (workspaceRoot) {
 		touchTurn(workspaceRoot, agentKey);
 		const staleResult = evaluateStaleMutation(workspaceRoot, agentKey);
 		if (staleResult.decision === "deny") {
 			return success(formatPreToolUseDenyResponse(staleResult.reason));
 		}
+	}
+
+	const intentResult = classifyIntent("", toolName, toolArgs);
+	if (shouldBlockWriteForIntent(intentResult, toolName)) {
+		return success(formatPreToolUseDenyResponse(
+			`Intent classifier: ${intentResult.reason || "질문 의도 감지 — 쓰기 도구 차단"}`
+		));
 	}
 
 	if (toolName === "run_command" && workspaceRoot) {
@@ -221,6 +239,26 @@ function selectPreInvocationResponse(hookInput) {
 	if (workspaceRoot) {
 		registerTurn(workspaceRoot, agentKey);
 		touchTurn(workspaceRoot, agentKey);
+
+		const costCheck = checkCostThreshold(workspaceRoot, agentKey);
+		if (costCheck.level === "critical") {
+			parts.push(`<cost-alert level="critical">\n${costCheck.message}\n</cost-alert>`);
+		} else if (costCheck.level === "warning") {
+			parts.push(`<cost-alert level="warning">\n${costCheck.message}\n</cost-alert>`);
+		}
+
+		if (hookInput.invocationNum === 0) {
+			const platformGuide = getPlatformGuide(workspaceRoot);
+			if (platformGuide.platform === "antigravity" && platformGuide.recommendation) {
+				const rec = platformGuide.recommendation;
+				parts.push(`<platform-guide platform="antigravity">
+감지: Antigravity (Gemini 3.6 Flash 최적화)
+강점: ${rec.strengths.join(", ")}
+약점: ${rec.weaknesses.join(", ")}
+팁: ${rec.tips.join(" / ")}
+</platform-guide>`);
+			}
+		}
 	}
 
 	if (hookInput.invocationNum === 0 && workspaceRoot) {
