@@ -8,14 +8,18 @@ const COMMON_FIELDS = Object.freeze([
 const EVENT_FIELDS = Object.freeze({
 	PreInvocation: Object.freeze(["invocationNum", "initialNumSteps"]),
 	Stop: Object.freeze(["executionNum", "terminationReason", "error", "fullyIdle"]),
+	PreToolUse: Object.freeze(["toolCall", "stepIdx"]),
+	PostToolUse: Object.freeze(["stepIdx", "error"]),
 });
 
 const REQUIRED_EVENT_FIELDS = Object.freeze({
 	PreInvocation: Object.freeze(["invocationNum", "initialNumSteps"]),
 	Stop: Object.freeze(["executionNum", "terminationReason", "fullyIdle"]),
+	PreToolUse: Object.freeze(["toolCall", "stepIdx"]),
+	PostToolUse: Object.freeze(["stepIdx"]),
 });
 
-export const SUPPORTED_HOOK_EVENTS = Object.freeze(["PreInvocation", "Stop"]);
+export const SUPPORTED_HOOK_EVENTS = Object.freeze(["PreInvocation", "Stop", "PreToolUse", "PostToolUse"]);
 
 export function parseAntigravityHookInput(event, rawInput) {
 	if (!SUPPORTED_HOOK_EVENTS.includes(event)) return failure("ANTIGRAVITY_HOOK_EVENT_UNSUPPORTED");
@@ -51,6 +55,7 @@ export function parseAntigravityHookInput(event, rawInput) {
 				event,
 				conversationId: payload.conversationId,
 				workspacePaths: [...payload.workspacePaths],
+				transcriptPath: payload.transcriptPath,
 				artifactDirectoryPath: payload.artifactDirectoryPath,
 				invocationNum: payload.invocationNum,
 				initialNumSteps: payload.initialNumSteps,
@@ -70,10 +75,49 @@ export function parseAntigravityHookInput(event, rawInput) {
 				event,
 				conversationId: payload.conversationId,
 				workspacePaths: [...payload.workspacePaths],
+				transcriptPath: payload.transcriptPath,
 				artifactDirectoryPath: payload.artifactDirectoryPath,
 				executionNum: payload.executionNum,
 				terminationReason: payload.terminationReason,
 				fullyIdle: payload.fullyIdle,
+			};
+			return success(Object.hasOwn(payload, "error") ? { ...value, error: payload.error } : value);
+		}
+		case "PreToolUse": {
+			if (!isRecord(payload.toolCall) || typeof payload.toolCall.name !== "string" || payload.toolCall.name.length === 0) {
+				return failure("ANTIGRAVITY_HOOK_INPUT_FIELD_TYPE_INVALID");
+			}
+			if (!isCounter(payload.stepIdx)) {
+				return failure("ANTIGRAVITY_HOOK_INPUT_FIELD_TYPE_INVALID");
+			}
+			return success({
+				event,
+				conversationId: payload.conversationId,
+				workspacePaths: [...payload.workspacePaths],
+				transcriptPath: payload.transcriptPath,
+				artifactDirectoryPath: payload.artifactDirectoryPath,
+				toolCall: {
+					name: payload.toolCall.name,
+					args: payload.toolCall.args && isRecord(payload.toolCall.args) ? payload.toolCall.args : {},
+				},
+				stepIdx: payload.stepIdx,
+			});
+		}
+		case "PostToolUse": {
+			if (!isCounter(payload.stepIdx)) {
+				return failure("ANTIGRAVITY_HOOK_INPUT_FIELD_TYPE_INVALID");
+			}
+			const errorIsValid = !Object.hasOwn(payload, "error") || typeof payload.error === "string";
+			if (!errorIsValid) {
+				return failure("ANTIGRAVITY_HOOK_INPUT_FIELD_TYPE_INVALID");
+			}
+			const value = {
+				event,
+				conversationId: payload.conversationId,
+				workspacePaths: [...payload.workspacePaths],
+				transcriptPath: payload.transcriptPath,
+				artifactDirectoryPath: payload.artifactDirectoryPath,
+				stepIdx: payload.stepIdx,
 			};
 			return success(Object.hasOwn(payload, "error") ? { ...value, error: payload.error } : value);
 		}

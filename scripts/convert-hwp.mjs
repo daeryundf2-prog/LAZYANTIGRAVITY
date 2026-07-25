@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cleanCjkSpacing } from "./clean-cjk-spacing.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(__dirname, "..");
 
-const hwpFile = process.argv[2];
+const args = process.argv.slice(2).filter(arg => arg !== "--clean");
+const hwpFile = args[0];
+const shouldClean = process.argv.includes("--clean");
+
 if (!hwpFile) {
-	console.error("Usage: node convert-hwp.mjs <relative_path_to_hwp>");
+	console.error("Usage: node convert-hwp.mjs <relative_path_to_hwp> [--clean]");
 	process.exit(1);
 }
 
@@ -109,6 +113,14 @@ if (!success) {
 if (success && parsedText) {
 	writeFileSync(outMarkdownPath, parsedText, "utf8");
 	console.log(`Saved parsed HWP content to: .omo/hwp-cache/${basename(hwpFile)}.md`);
+
+	if (shouldClean) {
+		const textToClean = readFileSync(outMarkdownPath, "utf8");
+		const cleanedText = cleanCjkSpacing(textToClean);
+		writeFileSync(outMarkdownPath, cleanedText, "utf8");
+		console.log(`Successfully cleaned CJK spacing in: ${outMarkdownPath}`);
+	}
+
 	process.exit(0);
 } else {
 	console.error("Failed to extract any text from HWP file.");

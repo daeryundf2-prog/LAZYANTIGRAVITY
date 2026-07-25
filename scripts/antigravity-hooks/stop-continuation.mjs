@@ -199,13 +199,21 @@ function uniqueCanonicalDirectories(paths) {
 }
 
 function isSafeExistingDirectory(path) {
-	const stat = lstatSync(path);
-	return stat.isDirectory() && !stat.isSymbolicLink();
+	try {
+		const stat = lstatSync(path);
+		return stat.isDirectory() && !stat.isSymbolicLink();
+	} catch {
+		return false;
+	}
 }
 
 function isSafeExistingFile(path) {
-	const stat = lstatSync(path);
-	return stat.isFile() && !stat.isSymbolicLink();
+	try {
+		const stat = lstatSync(path);
+		return stat.isFile() && !stat.isSymbolicLink();
+	} catch {
+		return false;
+	}
 }
 
 function isSafeRelativePath(base, target) {
