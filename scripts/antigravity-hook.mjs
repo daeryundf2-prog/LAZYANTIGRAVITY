@@ -12,6 +12,9 @@ import { evaluateAmbiguity, checkInvestigationCompliance, formatInvestigationDir
 import { registerTurn, touchTurn, evaluateStaleMutation, settleTurn } from "./antigravity-hooks/work-supervisor/stale-mutation.mjs";
 import { checkEnvironmentConflicts } from "./antigravity-hooks/work-supervisor/runtime-env.mjs";
 import { blockOnce, recoverGate } from "./antigravity-hooks/work-supervisor/gate-counters.mjs";
+import { appendAgentEvent } from "./antigravity-hooks/work-supervisor/agent-log.mjs";
+import { shellCandidatePaths } from "./antigravity-hooks/work-supervisor/shell-hints.mjs";
+import { loadProvenanceConfig, isPathInScope, isHardExcluded, canonicalizeProjectPath } from "./antigravity-hooks/work-supervisor/provenance-policy.mjs";
 
 const event = process.argv[2];
 let rawInput = "";
@@ -63,11 +66,6 @@ function selectStopResponse(hookInput) {
 		return success(formatContinueResponse(verification.reason));
 	}
 	if (workspaceRoot) {
-		appendLedgerEntry(workspaceRoot, {
-			type: "verification",
-			agent_key: agentKey,
-			decision: verification.decision,
-		});
 		recoverGate(workspaceRoot, agentKey, "r1_contract");
 		recoverGate(workspaceRoot, agentKey, "stop_verification");
 	}
@@ -94,6 +92,28 @@ function selectPreToolUseResponse(hookInput) {
 	if (toolName === "run_command" && workspaceRoot) {
 		const command = toolArgs.CommandLine || "";
 		if (command) {
+			const candidatePaths = shellCandidatePaths(command);
+			const provenanceConfig = loadProvenanceConfig(workspaceRoot);
+			for (const candidate of candidatePaths) {
+				const canonical = canonicalizeProjectPath(workspaceRoot, candidate);
+				if (canonical && isHardExcluded(canonical)) {
+					return success(formatPreToolUseDenyResponse(
+						`Provenance policy: "${canonical}" is a hard-excluded path (.git/.hg/.svn). ` +
+						`이 경로는 관측/수정에서 제외됩니다.`
+					));
+				}
+				if (canonical && !isPathInScope(canonical, provenanceConfig)) {
+					appendAgentEvent(workspaceRoot, "default", {
+						event: "scope_warning",
+						host: "antigravity",
+						session_id: conversationId,
+						path: canonical,
+						tool: toolName,
+					});
+					process.stderr.write(`provenance-policy: "${canonical}" is out of configured scope\n`);
+				}
+			}
+
 			const r2Result = evaluateR2Gate(workspaceRoot, command, agentKey);
 			if (r2Result.decision === "deny") {
 				addQuarantine(workspaceRoot, {
@@ -106,7 +126,7 @@ function selectPreToolUseResponse(hookInput) {
 			}
 			const r1Result = evaluateR1Contract(workspaceRoot, {
 				prompt: "",
-				file_paths: [],
+				file_paths: candidatePaths,
 				command,
 			});
 			if (r1Result.decision === "block") {
@@ -121,6 +141,12 @@ function selectPreToolUseResponse(hookInput) {
 	if (workspaceRoot && toolName !== "run_command") {
 		const targetFile = toolArgs.TargetFile || toolArgs.DirectoryPath;
 		if (targetFile) {
+			const canonical = canonicalizeProjectPath(workspaceRoot, targetFile);
+			if (canonical && isHardExcluded(canonical)) {
+				return success(formatPreToolUseDenyResponse(
+					`Provenance policy: "${canonical}" is a hard-excluded path.`
+				));
+			}
 			const r1Result = evaluateR1Contract(workspaceRoot, {
 				prompt: "",
 				file_paths: [targetFile],
@@ -138,14 +164,32 @@ function selectPreToolUseResponse(hookInput) {
 	if (workspaceRoot) {
 		const targetFile = toolArgs.TargetFile || toolArgs.DirectoryPath;
 		if (targetFile) {
-			recordInvocation(workspaceRoot, {
-				agentKey,
+			const isWriteTool = ["write_to_file", "replace_file_content", "multi_replace_file_content"].includes(toolName);
+			appendLedgerEntry(workspaceRoot, {
+				type: isWriteTool ? "file_write" : "invocation",
+				agent_key: agentKey,
 				host: "antigravity",
-				sessionId: conversationId,
+				session_id: conversationId,
 				agent: "default",
 				paths: [targetFile],
 				command: toolName,
+				settled: false,
 			});
+		}
+		if (toolName === "run_command") {
+			const command = toolArgs.CommandLine || "";
+			const VERIFICATION_RE = /\b(npm\s+test|npm\s+run\s+(test|spec|check|lint|typecheck)|bun\s+test|pytest|cargo\s+test|go\s+test|jest|vitest|ruff\s+check|eslint)\b/;
+			if (VERIFICATION_RE.test(command)) {
+				appendLedgerEntry(workspaceRoot, {
+					type: "verification",
+					agent_key: agentKey,
+					host: "antigravity",
+					session_id: conversationId,
+					agent: "default",
+					command,
+					settled: true,
+				});
+			}
 		}
 	}
 
