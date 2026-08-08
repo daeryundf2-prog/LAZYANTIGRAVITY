@@ -12,15 +12,17 @@ async function readAntigravityCatalog() {
 	return catalog.antigravity;
 }
 
-test("#given bundled model catalog #when antigravity availableModels inspected #then all Gemini 3.5 Flash tiers are present (restoration check)", async () => {
+test("#given bundled model catalog #when antigravity availableModels inspected #then Gemini 3.5 Flash tiers are absent and Gemini 3.6 Flash tiers are present (3.6-only)", async () => {
 	const antigravity = await readAntigravityCatalog();
 	const available = antigravity.availableModels;
 	assert.equal(Array.isArray(available), true, "availableModels must be an array");
 
 	const byId = new Map(available.map((m) => [m.modelId, m]));
 	for (const tier of ["low", "medium", "high"]) {
-		const id = `gemini-3.5-flash-${tier}`;
-		assert.ok(byId.has(id), `expected ${id} to be present in availableModels (3.5 Flash restoration)`);
+		const dropped = `gemini-3.5-flash-${tier}`;
+		assert.equal(byId.has(dropped), false, `expected ${dropped} to be dropped (3.5 Flash removed)`);
+		const id = `gemini-3.6-flash-${tier}`;
+		assert.ok(byId.has(id), `expected ${id} to be present in availableModels (3.6-only)`);
 		const entry = byId.get(id);
 		assert.equal(entry.provider, "google", `${id}.provider`);
 		assert.equal(entry.speed, "fast", `${id}.speed`);
