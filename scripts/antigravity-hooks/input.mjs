@@ -9,7 +9,7 @@ const EVENT_FIELDS = Object.freeze({
 	PreInvocation: Object.freeze(["invocationNum", "initialNumSteps"]),
 	Stop: Object.freeze(["executionNum", "terminationReason", "error", "fullyIdle"]),
 	PreToolUse: Object.freeze(["toolCall", "stepIdx"]),
-	PostToolUse: Object.freeze(["stepIdx", "error"]),
+	PostToolUse: Object.freeze(["toolCall", "stepIdx", "error"]),
 });
 
 const REQUIRED_EVENT_FIELDS = Object.freeze({
@@ -111,6 +111,12 @@ export function parseAntigravityHookInput(event, rawInput) {
 			if (!errorIsValid) {
 				return failure("ANTIGRAVITY_HOOK_INPUT_FIELD_TYPE_INVALID");
 			}
+			const toolCall = payload.toolCall && isRecord(payload.toolCall) && typeof payload.toolCall.name === "string"
+				? {
+						name: payload.toolCall.name,
+						args: payload.toolCall.args && isRecord(payload.toolCall.args) ? payload.toolCall.args : {},
+					}
+				: null;
 			const value = {
 				event,
 				conversationId: payload.conversationId,
@@ -119,6 +125,7 @@ export function parseAntigravityHookInput(event, rawInput) {
 				artifactDirectoryPath: payload.artifactDirectoryPath,
 				stepIdx: payload.stepIdx,
 			};
+			if (toolCall) value.toolCall = toolCall;
 			return success(Object.hasOwn(payload, "error") ? { ...value, error: payload.error } : value);
 		}
 	}

@@ -77,7 +77,7 @@ export function runStopVerificationGate(input) {
 	const agentKey = `antigravity:${input.conversationId}`;
 	const ledger = loadLedger(workspaceRoot);
 	const state = readVerifyState(input.artifactDirectoryPath);
-	const key = input.conversationId;
+	const key = verifyStateKey(input);
 
 	if (isDocsOnlyTurn(ledger, agentKey)) {
 		recordScorecard(workspaceRoot, agentKey, REASON_CODES.ALLOW, RESOLUTIONS.OBSERVATION, "docs-only turn");
@@ -139,6 +139,10 @@ export function runStopVerificationGate(input) {
 	}
 
 	return blockStop(input, workspaceRoot, agentKey, state, key, formatReason(missing, state, key), reasonCode);
+}
+
+function verifyStateKey(input) {
+	return `${input.artifactDirectoryPath}|${input.conversationId}`;
 }
 
 function blockStop(input, workspaceRoot, agentKey, state, key, reason, reasonCode) {
@@ -221,9 +225,9 @@ function isProvenanceComplete(ledger, agentKey) {
 		e.agent_key === agentKey && (e.type === "invocation" || e.type === "verification")
 	);
 	if (mutations.length === 0) return true;
-	const lastMutationTs = mutations[mutations.length - 1].ts || 0;
-	const lastObservationTs = observations.length > 0 ? observations[observations.length - 1].ts || 0 : 0;
-	return lastObservationTs >= lastMutationTs;
+	const lastMutationSeq = mutations[mutations.length - 1].seq || 0;
+	const lastObservationSeq = observations.length > 0 ? observations[observations.length - 1].seq || 0 : 0;
+	return lastObservationSeq >= lastMutationSeq;
 }
 
 function checkProvenanceScope(ledger, agentKey) {
@@ -287,11 +291,11 @@ function checkVerificationEvidence(transcript) {
 function hasUnsettledChanges(workspaceRoot, ledger, agentKey, transcript) {
 	const mutations = ledger.filter((e) => e.agent_key === agentKey && e.type === "file_write" && e.paths?.length > 0);
 	if (mutations.length === 0) return false;
-	const verifications = ledger.filter((e) => e.agent_key === agentKey && e.type === "verification");
+	const verifications = ledger.filter((e) => e.agent_key === agentKey && e.type === "verification" && !e.error);
 	if (verifications.length === 0) return true;
-	const lastMutationTs = mutations[mutations.length - 1].ts || 0;
-	const lastVerifyTs = verifications[verifications.length - 1].ts || 0;
-	return lastMutationTs > lastVerifyTs;
+	const lastMutationSeq = mutations[mutations.length - 1].seq || 0;
+	const lastVerifySeq = verifications[verifications.length - 1].seq || 0;
+	return lastMutationSeq > lastVerifySeq;
 }
 
 function readVerifyState(artifactDir) {

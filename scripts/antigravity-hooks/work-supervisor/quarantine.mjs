@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
+import { withOwnerLock } from "./file-lock.mjs";
 
 const QUARANTINE_FILE = "quarantine.json";
 const MAX_RECORDS = 64;
@@ -14,32 +15,34 @@ export function quarantinePath(workspaceRoot) {
 }
 
 export function addQuarantine(workspaceRoot, entry) {
-	const path = quarantinePath(workspaceRoot);
-	const records = loadQuarantine(workspaceRoot);
-	const now = Date.now();
-	const expired = records.filter((r) => now - r.ts < MAX_AGE_MS);
-	const truncatedCmd = entry.command.length > MAX_COMMAND_BYTES
-		? entry.command.slice(0, MAX_COMMAND_BYTES)
-		: entry.command;
-	expired.push({
-		...entry,
-		command: truncatedCmd,
-		originalBytes: Buffer.byteLength(entry.command, "utf8"),
-		storedBytes: Buffer.byteLength(truncatedCmd, "utf8"),
-		ts: now,
+	return withOwnerLock(workspaceRoot, "quarantine", () => {
+		const path = quarantinePath(workspaceRoot);
+		const records = loadQuarantine(workspaceRoot);
+		const now = Date.now();
+		const expired = records.filter((r) => now - r.ts < MAX_AGE_MS);
+		const truncatedCmd = entry.command.length > MAX_COMMAND_BYTES
+			? entry.command.slice(0, MAX_COMMAND_BYTES)
+			: entry.command;
+		expired.push({
+			...entry,
+			command: truncatedCmd,
+			originalBytes: Buffer.byteLength(entry.command, "utf8"),
+			storedBytes: Buffer.byteLength(truncatedCmd, "utf8"),
+			ts: now,
+		});
+		while (expired.length > MAX_RECORDS) expired.shift();
+		let totalBytes = 0;
+		const bounded = [];
+		for (let i = expired.length - 1; i >= 0; i--) {
+			const recBytes = Buffer.byteLength(JSON.stringify(expired[i]), "utf8");
+			if (totalBytes + recBytes > MAX_TOTAL_BYTES) break;
+			bounded.unshift(expired[i]);
+			totalBytes += recBytes;
+		}
+		const tmpPath = `${path}.tmp-${process.pid}`;
+		writeFileSync(tmpPath, JSON.stringify(bounded, null, 2) + "\n", "utf8");
+		renameSync(tmpPath, path);
 	});
-	while (expired.length > MAX_RECORDS) expired.shift();
-	let totalBytes = 0;
-	const bounded = [];
-	for (let i = expired.length - 1; i >= 0; i--) {
-		const recBytes = Buffer.byteLength(JSON.stringify(expired[i]), "utf8");
-		if (totalBytes + recBytes > MAX_TOTAL_BYTES) break;
-		bounded.unshift(expired[i]);
-		totalBytes += recBytes;
-	}
-	const tmpPath = `${path}.tmp-${process.pid}`;
-	writeFileSync(tmpPath, JSON.stringify(bounded, null, 2) + "\n", "utf8");
-	renameSync(tmpPath, path);
 }
 
 export function loadQuarantine(workspaceRoot) {

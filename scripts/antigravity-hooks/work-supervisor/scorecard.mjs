@@ -33,6 +33,23 @@ export function generateScorecard(workspaceRoot) {
 				agents[agentKey].invocations++;
 				if (entry.settled) agents[agentKey].settled++;
 				break;
+			case "gate_block":
+				agents[agentKey].blocks++;
+				totalBlocks++;
+				break;
+			case "gate_fail_open":
+				agents[agentKey].denials++;
+				totalDenials++;
+				break;
+			case "scorecard_transition":
+				if (entry.action === "block") {
+					agents[agentKey].denials++;
+					totalDenials++;
+				} else if (entry.action === "allow" || entry.action === "cap_allow") {
+					agents[agentKey].allows++;
+					totalAllows++;
+				}
+				break;
 			case "scope_drift":
 				agents[agentKey].scope_drift++;
 				totalScopeDrift++;

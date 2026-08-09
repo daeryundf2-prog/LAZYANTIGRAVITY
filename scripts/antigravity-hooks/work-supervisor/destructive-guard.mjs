@@ -1,6 +1,6 @@
 const SHELL_COMMANDS = new Set(["bash", "sh", "zsh", "dash", "ash", "csh", "tcsh", "ksh", "fish"]);
 const WRAPPER_COMMANDS = new Set([
-	...SHELL_COMMANDS, "sudo", "env", "exec", "nohup", "timeout", "nice",
+	...SHELL_COMMANDS, "sudo", "env", "exec", "nohup", "timeout", "gtimeout", "nice",
 	"ionice", "stdbuf", "doas", "setsid", "time", "xargs", "command",
 	"powershell", "pwsh", "busybox", "toybox", "eval",
 ]);
@@ -18,11 +18,34 @@ const CATEGORY_TRUNCATE = "truncate_redirect";
 const SEPARATOR_RE = /(?:^|\s)(?:&&|\|\||;|\||\n)(?:\s|$)/;
 
 function tokenize(command) {
-	try {
-		return command.trim().split(/\s+/).filter(Boolean);
-	} catch {
-		return [];
+	const tokens = [];
+	let current = "";
+	let quote = null;
+	for (let i = 0; i < command.length; i++) {
+		const ch = command[i];
+		if (quote) {
+			current += ch;
+			if (ch === quote) {
+				quote = null;
+				tokens.push(current);
+				current = "";
+			}
+			continue;
+		}
+		if (ch === "'" || ch === '"') {
+			if (current) { tokens.push(current); current = ""; }
+			quote = ch;
+			current = ch;
+			continue;
+		}
+		if (/\s/.test(ch)) {
+			if (current) { tokens.push(current); current = ""; }
+			continue;
+		}
+		current += ch;
 	}
+	if (current) tokens.push(current);
+	return tokens.filter(Boolean);
 }
 
 function commandName(token) {
@@ -44,6 +67,8 @@ function validateTarget(target) {
 	if (["/", "\\", "~", ".", "./", ".\\"].includes(target.trim()) || target.trim().startsWith("~")) return "implicit_scope";
 	return "ok";
 }
+
+const DEV_NULL_PATHS = new Set(["/dev/null", "NUL", "/dev/stdin", "/dev/stdout", "/dev/stderr", "/dev/tty", "nul"]);
 
 function blocked(category, reason) {
 	return { category, resolved: false, targets: [], reason };
@@ -88,12 +113,15 @@ function detectGit(tokens) {
 }
 
 function detectRemove(tokens) {
-	if (!REMOVE_COMMANDS.has(commandName(tokens[0]))) return null;
+	const cmd = commandName(tokens[0]);
+	if (!REMOVE_COMMANDS.has(cmd)) return null;
+	const isWindowsCmd = ["del", "rd", "remove-item"].includes(cmd);
 	const targets = [];
 	for (let i = 1; i < tokens.length; i++) {
 		const token = tokens[i];
 		if (COMMAND_SEPARATORS.has(token)) break;
-		if (token.startsWith("-") || token.startsWith("/")) continue;
+		if (token.startsWith("-")) continue;
+		if (isWindowsCmd && token.startsWith("/")) continue;
 		const target = unquote(token);
 		const validity = validateTarget(target);
 		if (validity === "ok") targets.push(target);
@@ -115,6 +143,7 @@ function detectTruncateRedirect(tokens) {
 			target = unquote(tokens[i + 1]);
 		}
 		if (target === "-" || /^\d+$/.test(target)) continue;
+		if (DEV_NULL_PATHS.has(target)) continue;
 		const validity = validateTarget(target);
 		if (validity === "ok") return { category: CATEGORY_TRUNCATE, resolved: true, targets: [target], reason: "" };
 		if (validity === "implicit_scope") return blocked(CATEGORY_TRUNCATE, "implicit_scope");
@@ -150,17 +179,40 @@ function detectTee(tokens) {
 	return { category: CATEGORY_TRUNCATE, resolved: true, targets: validated, reason: "" };
 }
 
+const TIMEOUT_VALUE_FLAGS = new Set(["-k", "--kill-after", "-s", "--signal"]);
+
+function isFlag(token) {
+	return token.startsWith("-") || token.startsWith("/");
+}
+
 function detectWrapper(tokens) {
 	const wrapper = commandName(tokens[0]);
 	if (!WRAPPER_COMMANDS.has(wrapper)) return null;
 	let payload = tokens.slice(1);
-	while (payload.length && (payload[0].startsWith("-") || payload[0].startsWith("/"))) {
-		payload = payload.slice(1);
+	const isTimeout = wrapper === "timeout" || wrapper === "gtimeout";
+	while (payload.length) {
+		const first = payload[0];
+		if (isTimeout && TIMEOUT_VALUE_FLAGS.has(first) && payload.length >= 2) {
+			payload = payload.slice(2);
+			continue;
+		}
+		if (isTimeout && /^--/.test(first)) {
+			payload = payload.slice(1);
+			continue;
+		}
+		if (isTimeout && /^\d+(?:\.\d+)?(?:[smhd]|ms)?$/.test(first)) {
+			payload = payload.slice(1);
+			continue;
+		}
+		if (isFlag(first)) {
+			payload = payload.slice(1);
+			continue;
+		}
+		break;
 	}
 	if (wrapper === "env") {
 		while (payload.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(payload[0])) payload = payload.slice(1);
 	}
-	if (wrapper === "timeout" && payload.length) payload = payload.slice(1);
 	if (!payload.length) return null;
 	const nested = parseDestructiveCommand(payload.join(" "));
 	if (nested) {
@@ -191,16 +243,24 @@ const DETECTORS = [detectTee, detectTruncateRedirect, detectGit, detectRemove, d
 
 export function parseDestructiveCommand(command) {
 	const segments = splitCommandSegments(command);
+	let combined = null;
 	for (const segment of segments) {
 		const tokens = tokenize(segment);
 		if (!tokens.length) continue;
-		const commandPosTokens = tokens;
 		for (const detector of DETECTORS) {
-			const result = detector(commandPosTokens);
-			if (result) return result;
+			const result = detector(tokens);
+			if (!result) continue;
+			if (!result.resolved) return result;
+			if (!combined) {
+				combined = { category: result.category, resolved: true, targets: [], reason: "" };
+			}
+			for (const target of result.targets) {
+				if (!combined.targets.includes(target)) combined.targets.push(target);
+			}
+			break;
 		}
 	}
-	return null;
+	return combined;
 }
 
 export function parseDestructiveCommands(command) {
@@ -227,6 +287,7 @@ function splitCommandSegments(command) {
 }
 
 import { hasUnsettledPeer, canonicalizePath } from "./audit-ledger.mjs";
+import { isHardExcluded } from "./provenance-policy.mjs";
 
 const REQUIRE = globalThis.require;
 const dynamicImport = REQUIRE
@@ -246,13 +307,19 @@ export function evaluateR2Gate(workspaceRoot, command, agentKey) {
 			reason: `R2 destructive guard: command classified as ${parsed.category} but target could not be resolved (${parsed.reason}). Fail-closed.`,
 		};
 	}
-	const { hasUnsettledPeer: hasPeer, canonicalizePath: canon } = resolveLedgerModule();
+const { hasUnsettledPeer: hasPeer, canonicalizePath: canon } = resolveLedgerModule();
 	for (const target of parsed.targets) {
 		const canonical = canon(workspaceRoot, target);
 		if (canonical === null) {
 			return {
 				decision: "deny",
 				reason: `R2 destructive guard: target "${target}" could not be canonicalized. Fail-closed.`,
+			};
+		}
+		if (isHardExcluded(canonical)) {
+			return {
+				decision: "deny",
+				reason: `R2 destructive guard: target "${canonical}" is a hard-excluded path (.git/.hg/.svn). 수정이 금지된 경로입니다.`,
 			};
 		}
 		const peerUnsettled = hasPeer(workspaceRoot, canonical, agentKey);

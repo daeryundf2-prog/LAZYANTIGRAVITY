@@ -1,23 +1,26 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { stateDir } from "./audit-ledger.mjs";
 
 const LEGACY_DIR_NAME = ".fable-lite";
 const CANONICAL_DIR_NAME = "work-supervisor";
 const MIGRATION_MARKER = ".migrated";
 const MIGRATING_MARKER = ".migrating";
 
+function canonicalDir(workspaceRoot) {
+	return join(workspaceRoot, ".omo", CANONICAL_DIR_NAME);
+}
+
 export function checkMigration(workspaceRoot) {
-	const canonicalDir = join(stateDir(workspaceRoot), "..", CANONICAL_DIR_NAME);
+	const canonical = canonicalDir(workspaceRoot);
 	const legacyDir = join(workspaceRoot, LEGACY_DIR_NAME);
-	const canonicalExists = existsSync(canonicalDir);
+	const canonicalExists = existsSync(canonical);
 	const legacyExists = existsSync(legacyDir);
 
 	if (!canonicalExists && !legacyExists) return { layout: "EMPTY", authority: null };
-	if (canonicalExists && !legacyExists) return { layout: "NATIVE", authority: canonicalDir };
+	if (canonicalExists && !legacyExists) return { layout: "NATIVE", authority: canonical };
 	if (!canonicalExists && legacyExists) return { layout: "LEGACY", authority: legacyDir };
-	if (existsSync(join(canonicalDir, MIGRATION_MARKER))) return { layout: "MIGRATED", authority: canonicalDir };
-	if (existsSync(join(canonicalDir, MIGRATING_MARKER))) return { layout: "MIGRATING", authority: legacyDir };
+	if (existsSync(join(canonical, MIGRATION_MARKER))) return { layout: "MIGRATED", authority: canonical };
+	if (existsSync(join(canonical, MIGRATING_MARKER))) return { layout: "MIGRATING", authority: legacyDir };
 	return { layout: "CONFLICT", authority: null };
 }
 
@@ -31,28 +34,28 @@ export function migrateState(workspaceRoot) {
 	}
 
 	const legacyDir = join(workspaceRoot, LEGACY_DIR_NAME);
-	const canonicalDir = join(stateDir(workspaceRoot), "..", CANONICAL_DIR_NAME);
-	const stagingDir = join(canonicalDir, ".staging");
+	const canonical = canonicalDir(workspaceRoot);
+	const stagingDir = join(canonical, ".staging");
 
 	try {
 		mkdirSync(stagingDir, { recursive: true });
 		const files = readdirSync(legacyDir);
+		const copied = [];
 		for (const file of files) {
 			const src = join(legacyDir, file);
+			if (!statSync(src).isFile()) continue;
 			const dst = join(stagingDir, file);
-			const content = readFileSync(src);
-			writeFileSync(dst, content);
+			writeFileSync(dst, readFileSync(src));
+			copied.push(file);
 		}
-		writeFileSync(join(canonicalDir, MIGRATING_MARKER), new Date().toISOString(), "utf8");
-		for (const file of files) {
-			const src = join(stagingDir, file);
-			const dst = join(canonicalDir, file);
-			renameSync(src, dst);
+		writeFileSync(join(canonical, MIGRATING_MARKER), new Date().toISOString(), "utf8");
+		for (const file of copied) {
+			renameSync(join(stagingDir, file), join(canonical, file));
 		}
-		writeFileSync(join(canonicalDir, MIGRATION_MARKER), new Date().toISOString(), "utf8");
+		writeFileSync(join(canonical, MIGRATION_MARKER), new Date().toISOString(), "utf8");
 		rmSync(stagingDir, { recursive: true, force: true });
-		rmSync(join(canonicalDir, MIGRATING_MARKER), { force: true });
-		return { migrated: true, files_copied: files.length };
+		rmSync(join(canonical, MIGRATING_MARKER), { force: true });
+		return { migrated: true, files_copied: copied.length };
 	} catch (e) {
 		try { rmSync(stagingDir, { recursive: true, force: true }); } catch {}
 		return { migrated: false, reason: e.message };

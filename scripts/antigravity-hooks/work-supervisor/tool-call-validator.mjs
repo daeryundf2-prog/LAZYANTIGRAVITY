@@ -61,10 +61,34 @@ const TOOL_SCHEMAS = {
 	},
 };
 
-const PATH_TRAVERSAL_RE = /\.\.[/\\]/;
+const PATH_TRAVERSAL_RE = /\.\.[/\\]|(?:^|\/|\\|%)\.\.(?=$|[/\\])|\.\.%2f|\.\.%2F/i;
+const ABSOLUTE_ROOT_CANDIDATES = ["/", "C:\\", "C:/", "//", "\\\\"];
 const COMMAND_INJECTION_RE = /[;&|`$(){}]/;
 
-export function validateToolCall(toolName, toolArgs) {
+function validatePathArg(value, workspaceRoot, fieldName) {
+	const normalized = value.replace(/\\/g, "/");
+	if (PATH_TRAVERSAL_RE.test(normalized)) {
+		return `경로 순회 공격 감지: ${fieldName}에 .. 포함`;
+	}
+	if (workspaceRoot && isAbsolutePath(normalized) && !isWithinRoot(workspaceRoot, normalized)) {
+		return `경로 범위 위반: ${fieldName}가 워크스페이스 밖 절대경로 (${value})`;
+	}
+	return null;
+}
+
+function isAbsolutePath(p) {
+	return p.startsWith("/") || (p.length >= 2 && p[1] === ":") || p.startsWith("//") || p.startsWith("\\\\");
+}
+
+function isWithinRoot(root, target) {
+	const rootNorm = root.replace(/\\/g, "/").replace(/\/+$/, "");
+	const targetNorm = target.replace(/\\/g, "/");
+	if (targetNorm === rootNorm) return true;
+	if (rootNorm.endsWith("/")) return targetNorm.startsWith(rootNorm);
+	return targetNorm.startsWith(rootNorm + "/");
+}
+
+export function validateToolCall(toolName, toolArgs, workspaceRoot) {
 	const schema = TOOL_SCHEMAS[toolName];
 	if (!schema) return { valid: true, warnings: [] };
 
@@ -92,19 +116,16 @@ export function validateToolCall(toolName, toolArgs) {
 	}
 
 	if (toolArgs.TargetFile && typeof toolArgs.TargetFile === "string") {
-		if (PATH_TRAVERSAL_RE.test(toolArgs.TargetFile)) {
-			errors.push(`경로 순회 공격 감지: TargetFile에 .. 포함`);
-		}
+		const pathCheck = validatePathArg(toolArgs.TargetFile, workspaceRoot, "TargetFile");
+		if (pathCheck) errors.push(pathCheck);
 	}
 	if (toolArgs.AbsolutePath && typeof toolArgs.AbsolutePath === "string") {
-		if (PATH_TRAVERSAL_RE.test(toolArgs.AbsolutePath)) {
-			errors.push(`경로 순회 공격 감지: AbsolutePath에 .. 포함`);
-		}
+		const pathCheck = validatePathArg(toolArgs.AbsolutePath, workspaceRoot, "AbsolutePath");
+		if (pathCheck) errors.push(pathCheck);
 	}
 	if (toolArgs.DirectoryPath && typeof toolArgs.DirectoryPath === "string") {
-		if (PATH_TRAVERSAL_RE.test(toolArgs.DirectoryPath)) {
-			errors.push(`경로 순회 공격 감지: DirectoryPath에 .. 포함`);
-		}
+		const pathCheck = validatePathArg(toolArgs.DirectoryPath, workspaceRoot, "DirectoryPath");
+		if (pathCheck) errors.push(pathCheck);
 	}
 
 	if (toolName === "read_url_content" && toolArgs.Url) {

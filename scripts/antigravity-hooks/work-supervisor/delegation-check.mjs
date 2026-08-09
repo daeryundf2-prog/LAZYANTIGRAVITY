@@ -1,6 +1,5 @@
-import { loadLedger, appendLedgerEntry, stateDir } from "./audit-ledger.mjs";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, statSync } from "node:fs";
+import { loadLedger, appendLedgerEntry, canonicalizePath } from "./audit-ledger.mjs";
 
 export function createBrief(workspaceRoot, params) {
 	const brief = {
@@ -26,27 +25,31 @@ export function checkDelegation(workspaceRoot, params) {
 	const ledger = loadLedger(workspaceRoot);
 	const agentKey = params.agentKey || "unknown";
 	const sinceFile = params.sinceFile;
-	const sinceTs = sinceFile && existsSync(sinceFile)
-		? getFileMtime(sinceFile)
-		: 0;
+	const sinceTs = sinceFile && existsSync(sinceFile) ? getFileMtime(sinceFile) : 0;
 
 	const briefs = ledger.filter(
 		(e) => e.type === "brief_created" && e.agent_key === agentKey && e.ts >= sinceTs,
 	);
 	const mutations = ledger.filter(
-		(e) => e.type === "invocation" && e.agent_key === agentKey && e.ts >= sinceTs,
+		(e) => e.type === "file_write" && e.agent_key === agentKey && e.ts >= sinceTs,
 	);
 	const verifications = ledger.filter(
-		(e) => e.type === "verification" && e.agent_key === agentKey && e.ts >= sinceTs,
+		(e) => e.type === "verification" && e.agent_key === agentKey && e.ts >= sinceTs && e.exit_ok === true,
 	);
 
 	const unverifiedPaths = [];
 	for (const brief of briefs) {
-		const briefPaths = brief.paths || [];
+		const briefPaths = (brief.paths || []).map((p) => canonicalizePath(workspaceRoot, p) || p);
 		for (const p of briefPaths) {
-			const hasMutation = mutations.some((m) => (m.paths || []).includes(p));
-			const hasVerification = verifications.length > 0;
-			if (hasMutation && !hasVerification) {
+			const mutationsForPath = mutations.filter((m) => {
+				const mPaths = (m.paths || []).map((mp) => canonicalizePath(workspaceRoot, mp) || mp);
+				return mPaths.some((mp) => mp === p || mp.startsWith(p + "/"));
+			});
+			const lastMutationSeq = mutationsForPath.length > 0
+				? mutationsForPath[mutationsForPath.length - 1].seq || 0
+				: 0;
+			const hasCoveringVerification = verifications.some((v) => (v.seq || 0) >= lastMutationSeq);
+			if (mutationsForPath.length > 0 && !hasCoveringVerification) {
 				unverifiedPaths.push(p);
 			}
 		}
@@ -66,8 +69,7 @@ export function checkDelegation(workspaceRoot, params) {
 
 function getFileMtime(path) {
 	try {
-		const stat = existsSync(path) ? require("node:fs").statSync(path) : null;
-		return stat ? stat.mtimeMs : 0;
+		return statSync(path).mtimeMs;
 	} catch {
 		return 0;
 	}

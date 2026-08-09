@@ -6,7 +6,7 @@ import { runAntigravityStopContinuation } from "./antigravity-hooks/stop-continu
 import { runStopVerificationGate } from "./antigravity-hooks/work-supervisor/stop-verification.mjs";
 import { evaluateR2Gate } from "./antigravity-hooks/work-supervisor/destructive-guard.mjs";
 import { addQuarantine } from "./antigravity-hooks/work-supervisor/quarantine.mjs";
-import { recordInvocation, appendLedgerEntry } from "./antigravity-hooks/work-supervisor/audit-ledger.mjs";
+import { recordInvocation, appendLedgerEntry, settleInvocation } from "./antigravity-hooks/work-supervisor/audit-ledger.mjs";
 import { runScopeDriftCheck, captureRequestedScope } from "./antigravity-hooks/work-supervisor/scope-drift.mjs";
 import { evaluateAmbiguity, checkInvestigationCompliance, formatInvestigationDirective, formatAmbiguityDirective, evaluateR1Contract, hasIntent, hasGoals } from "./antigravity-hooks/work-supervisor/investigation-discipline.mjs";
 import { registerTurn, touchTurn, evaluateStaleMutation, settleTurn } from "./antigravity-hooks/work-supervisor/stale-mutation.mjs";
@@ -20,6 +20,8 @@ import { recordTokenUsage, checkCostThreshold, getTokenUsageSummary } from "./an
 import { classifyIntent, shouldBlockWriteForIntent } from "./antigravity-hooks/work-supervisor/intent-classifier.mjs";
 import { detectPlatform, getPlatformGuide, recommendModel } from "./antigravity-hooks/work-supervisor/platform-detector.mjs";
 
+const VERIFICATION_RE = /\b(npm\s+test|npm\s+run\s+(test|spec|check|lint|typecheck)|bun\s+test|pytest|cargo\s+test|go\s+test|jest|vitest|ruff\s+check|eslint)\b/;
+
 const event = process.argv[2];
 let rawInput = "";
 
@@ -31,12 +33,17 @@ if (!parsed.ok) {
 	process.stderr.write(formatAntigravityHookDiagnostic(parsed.error));
 	process.exitCode = 2;
 } else {
-	const response = selectResponse(parsed.value);
-	if (!response.ok) {
-		process.stderr.write(formatAntigravityHookDiagnostic(response.error));
+	try {
+		const response = selectResponse(parsed.value);
+		if (!response.ok) {
+			process.stderr.write(formatAntigravityHookDiagnostic(response.error));
+			process.exitCode = 2;
+		} else {
+			process.stdout.write(response.value);
+		}
+	} catch (err) {
+		process.stderr.write(formatAntigravityHookDiagnostic(`UNCAUGHT_HANDLER_ERROR: ${err?.stack || err}`));
 		process.exitCode = 2;
-	} else {
-		process.stdout.write(response.value);
 	}
 }
 
@@ -50,6 +57,8 @@ function selectResponse(hookInput) {
 			return selectPreToolUseResponse(hookInput);
 		case "PostToolUse":
 			return selectPostToolUseResponse(hookInput);
+		default:
+			throw new Error(`Unsupported hook event: ${hookInput.event}`);
 	}
 }
 
@@ -59,6 +68,7 @@ function selectStopResponse(hookInput) {
 
 	if (workspaceRoot) {
 		settleTurn(workspaceRoot, agentKey);
+		settleInvocation(workspaceRoot, agentKey);
 	}
 
 	const continuation = runAntigravityStopContinuation(hookInput);
@@ -85,7 +95,7 @@ function selectPreToolUseResponse(hookInput) {
 
 	captureRequestedScope(hookInput);
 
-	const validation = validateToolCall(toolName, toolArgs);
+	const validation = validateToolCall(toolName, toolArgs, workspaceRoot);
 	if (!validation.valid) {
 		return success(formatPreToolUseDenyResponse(
 			`Tool call validation failed: ${validation.errors.join("; ")}`
@@ -93,11 +103,11 @@ function selectPreToolUseResponse(hookInput) {
 	}
 
 	if (workspaceRoot) {
-		touchTurn(workspaceRoot, agentKey);
 		const staleResult = evaluateStaleMutation(workspaceRoot, agentKey);
 		if (staleResult.decision === "deny") {
 			return success(formatPreToolUseDenyResponse(staleResult.reason));
 		}
+		touchTurn(workspaceRoot, agentKey);
 	}
 
 	const intentResult = classifyIntent("", toolName, toolArgs);
@@ -196,16 +206,16 @@ function selectPreToolUseResponse(hookInput) {
 		}
 		if (toolName === "run_command") {
 			const command = toolArgs.CommandLine || "";
-			const VERIFICATION_RE = /\b(npm\s+test|npm\s+run\s+(test|spec|check|lint|typecheck)|bun\s+test|pytest|cargo\s+test|go\s+test|jest|vitest|ruff\s+check|eslint)\b/;
-			if (VERIFICATION_RE.test(command)) {
+			if (command) {
 				appendLedgerEntry(workspaceRoot, {
-					type: "verification",
+					type: "invocation",
 					agent_key: agentKey,
 					host: "antigravity",
 					session_id: conversationId,
 					agent: "default",
 					command,
-					settled: true,
+					paths: shellCandidatePaths(command),
+					settled: false,
 				});
 			}
 		}
@@ -218,6 +228,25 @@ function selectPostToolUseResponse(hookInput) {
 	const driftResult = runScopeDriftCheck(hookInput);
 	if (driftResult.warning) {
 		process.stderr.write(`scope-drift: ${driftResult.warning}\n`);
+	}
+	const workspaceRoot = hookInput.workspacePaths?.[0];
+	const toolCall = hookInput.toolCall;
+	if (workspaceRoot && toolCall?.name === "run_command") {
+		const command = toolCall.args?.CommandLine || "";
+		const succeeded = typeof hookInput.error !== "string" || hookInput.error.length === 0;
+		if (command && VERIFICATION_RE.test(command)) {
+			appendLedgerEntry(workspaceRoot, {
+				type: "verification",
+				agent_key: `antigravity:${hookInput.conversationId}`,
+				host: "antigravity",
+				session_id: hookInput.conversationId,
+				agent: "default",
+				command,
+				error: succeeded ? undefined : hookInput.error,
+				exit_ok: succeeded,
+				settled: succeeded,
+			});
+		}
 	}
 	return success(formatPostToolUseResponse(driftResult.warning));
 }

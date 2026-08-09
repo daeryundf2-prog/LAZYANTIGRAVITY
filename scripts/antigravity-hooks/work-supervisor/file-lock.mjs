@@ -31,7 +31,8 @@ export function ownerLock(workspaceRoot, lockName) {
 	} catch (e) {
 		if (e.code !== "EEXIST") throw e;
 		const existing = readOwnerRecord(ownerPath);
-		if (existing && isStaleOwner(existing.pid, existing.ts)) {
+		const stale = !existing || isStaleOwner(existing.pid, existing.ts);
+		if (stale) {
 			try { unlinkSync(ownerPath); } catch {}
 			try {
 				const ownerFd = openSync(ownerPath, "wx");
@@ -73,12 +74,15 @@ export function withOwnerLock(workspaceRoot, lockName, fn) {
 
 function readOwnerRecord(ownerPath) {
 	try {
-		const content = readFileSync(ownerPath, "utf8").trim();
-		const [pidStr, uuid] = content.split(":");
-		const pid = parseInt(pidStr, 10);
-		if (!Number.isSafeInteger(pid) || pid <= 0) return null;
 		const stat = statSync(ownerPath);
-		return { pid, uuid, ts: stat.mtimeMs };
+		let pid = 0;
+		try {
+			const content = readFileSync(ownerPath, "utf8").trim();
+			const [pidStr] = content.split(":");
+			pid = parseInt(pidStr, 10);
+		} catch {}
+		if (!Number.isSafeInteger(pid) || pid <= 0) pid = 0;
+		return { pid, uuid: "", ts: stat.mtimeMs };
 	} catch {
 		return null;
 	}
@@ -87,6 +91,7 @@ function readOwnerRecord(ownerPath) {
 function isStaleOwner(pid, ts) {
 	const now = Date.now();
 	if (now - ts < STALE_THRESHOLD_MS) return false;
+	if (pid <= 0) return true;
 	return !isPidAlive(pid);
 }
 

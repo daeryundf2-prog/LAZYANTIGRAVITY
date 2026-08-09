@@ -22,26 +22,10 @@ export function runScopeDriftCheck(input) {
 	if (!workspaceRoot) return { stdout: "{}\n" };
 
 	const toolName = input.toolCall?.name;
-	const toolArgs = input.toolCall?.args || {};
 	const conversationId = input.conversationId;
 
-	if (FILE_WRITE_TOOLS.has(toolName)) {
-		const targetFile = toolArgs.TargetFile;
-		if (typeof targetFile === "string" && targetFile.length > 0) {
-			const canonical = canonicalizePath(workspaceRoot, targetFile);
-			if (canonical) {
-				appendLedgerEntry(workspaceRoot, {
-					type: "file_write",
-					agent_key: `antigravity:${conversationId}`,
-					paths: [canonical],
-					tool: toolName,
-				});
-			}
-		}
-	}
-
 	const state = readDriftState(input.artifactDirectoryPath);
-	const key = conversationId;
+	const key = driftStateKey(input);
 	if (!state || state.key !== key) return { stdout: "{}\n" };
 
 	const observedPaths = collectObservedPaths(workspaceRoot, conversationId);
@@ -96,7 +80,7 @@ export function captureRequestedScope(input) {
 
 	if (scope.length > 0) {
 		writeDriftState(input.artifactDirectoryPath, {
-			key: input.conversationId,
+			key: driftStateKey(input),
 			requestedScope: scope,
 		});
 	}
@@ -120,6 +104,10 @@ function collectObservedPaths(workspaceRoot, conversationId) {
 		}
 	}
 	return [...paths];
+}
+
+function driftStateKey(input) {
+	return `${input.artifactDirectoryPath}|${input.conversationId}`;
 }
 
 function readDriftState(artifactDir) {
