@@ -1,20 +1,41 @@
 ---
 name: hwp-loader
-description: Use to extract text and data from Korean .hwp/.hwpx files into markdown.
+description: "HWP/HWPX Context Loader. Automatically parse Korean word processor documents (.hwp, .hwpx) into markdown files using the rhwp parser, providing rich context to the AI agent. Triggers: read hwp, parse hwp, load hwp, hwp-loader, hwp context."
+metadata:
+  short-description: "Extract text and structured data from .hwp/.hwpx files into workspace markdown files"
 ---
 
-# hwp-loader
+# hwp-loader (HWP/HWPX Context Loader)
 
-Use this skill to extract text and structured data from Korean .hwp/.hwpx files into workspace markdown files.
+You are equipped with the HWP/HWPX Document Reader skill. When a user provides a `.hwp` or `.hwpx` file in the workspace or requests you to parse a 한글 document, you must convert it into structured markdown text to use as context.
 
-## Verified quality-gate policy
+## 1. Core Workflow
 
-After edits, request on-demand LSP verification with server id `lsp`, tool `diagnostics`, and exact arguments `{filePath:"<absolute changed file>",severity:"error"}`.
+1.  **Detect HWP Files**:
+    - Regularly scan the workspace or inspect specific files requested by the user.
+    - If a `.hwp` or `.hwpx` file is detected, invoke the conversion script.
 
-Use the checked fixtures as the contract source:
+2.  **Run Parse Script**:
+    - Run the parser command to output text contents:
+      ```bash
+      node scripts/convert-hwp.mjs <relative_path_to_hwp>
+      ```
+    - This will generate a `.omo/hwp-cache/<filename>.md` containing the extracted text and layout structure.
 
-- `test/fixtures/lsp/clean.json` renders `LSP verification: clean (<file>)`
-- `test/fixtures/lsp/diagnostics.json` renders `LSP verification: <N> error(s) (<file>)`
-- `test/fixtures/lsp/unavailable.json` renders `LSP verification unavailable: <reason>`
+3.  **Read and Bind Context**:
+    - Use `view_file` to read the generated markdown cache.
+    - Embed the content inside your agent context inside `<hwp-context>` tags:
+      ```xml
+      <hwp-context source="path/to/document.hwpx">
+      [Parsed markdown content from .omo/hwp-cache/...]
+      </hwp-context>
+      ```
 
-Treat unavailable verification as unavailable, never as clean.
+4.  **Acknowledge**:
+    - Inform the user that you successfully parsed the document and are using it as context for code implementation or review.
+
+## 2. Formatting & Rules
+
+- Ensure you do not modify the original `.hwp`/`.hwpx` binary files.
+- Stale text dumps should be prunable via standard evidence rules.
+- Treat the extracted HWP text as a **sourced** claim provenance reference.

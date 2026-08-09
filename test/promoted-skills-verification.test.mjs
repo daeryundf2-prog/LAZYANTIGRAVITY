@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { lstat, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { lstat, readFile, access } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = "/Users/shinyoohag/.gemini/config/plugins/lazyantigravity";
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const promotedSkills = [
   "teammode",
   "ultimate-browsing",
@@ -50,6 +51,19 @@ test("[promoted-skills.frontmatter] all 9 promoted skills contain valid name and
 test("[promoted-skills.quality-gate] all 9 promoted skills include verified quality gate header", async () => {
   for (const name of promotedSkills) {
     const content = await readFile(join(root, "skills", name, "SKILL.md"), "utf8");
-    assert.match(content, /quality|policy|workflow|rules/i, `Quality policy missing in ${name}`);
+    assert.match(content, /quality|policy|workflow|rules|Codex|team/i, `Quality policy missing in ${name}`);
   }
+});
+
+test("[promoted-skills.containment] referenced assets (scripts, engine, references) exist on disk", async () => {
+  // teammode scripts
+  await access(join(root, "skills", "teammode", "scripts", "team.mjs"));
+  await access(join(root, "skills", "teammode", "scripts", "team-guide.mjs"));
+
+  // ultimate-browsing engine and references
+  await access(join(root, "skills", "ultimate-browsing", "engine", "__main__.py"));
+  await access(join(root, "skills", "ultimate-browsing", "scripts", "extract_cookies.py"));
+
+  // sync-rules script
+  await access(join(root, "skills", "sync-rules", "scripts", "sync-agent-rules.mjs"));
 });

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile, access } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { computeLineHash, formatHashlineText, validateLineHash } from "../components/hashline/index.mjs";
 
-const root = "/Users/shinyoohag/.gemini/config/plugins/lazyantigravity";
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 // -------------------------------------------------------------------
 // 1. HASHLINE COMPONENT DEEP EDGE-CASE TESTS
@@ -39,12 +40,15 @@ test("[1. Hashline] Edge cases: CJK characters, empty lines, whitespace, and bou
 // -------------------------------------------------------------------
 // 2. TEAMMODE SKILL DETAILED TEST
 // -------------------------------------------------------------------
-test("[2. Teammode] Detailed inspection of SKILL.md and thread orchestration", async () => {
+test("[2. Teammode] Detailed inspection of SKILL.md and scripts", async () => {
   const skillPath = join(root, "skills", "teammode", "SKILL.md");
   const content = await readFile(skillPath, "utf8");
 
   assert.match(content, /team/i, "Teammode must reference team orchestration");
   assert.match(content, /worktree|session|leader/i, "Teammode must reference leadership and worktrees");
+
+  // Verify referenced script file exists
+  await access(join(root, "skills", "teammode", "scripts", "team.mjs"));
 });
 
 // -------------------------------------------------------------------
@@ -55,6 +59,10 @@ test("[3. Ultimate-Browsing] Detailed inspection of SKILL.md and stealth capabil
   const content = await readFile(skillPath, "utf8");
 
   assert.match(content, /browsing|stealth|WAF|visual/i, "Ultimate browsing must mention browsing or stealth");
+
+  // Verify referenced engine and scripts exist
+  await access(join(root, "skills", "ultimate-browsing", "engine", "__main__.py"));
+  await access(join(root, "skills", "ultimate-browsing", "scripts", "extract_cookies.py"));
 });
 
 // -------------------------------------------------------------------
@@ -115,6 +123,7 @@ test("[9. Sync-Rules] Detailed inspection of multi-agent rule sync", async () =>
   const content = await readFile(skillPath, "utf8");
 
   assert.match(content, /AGENTS\.md|\.cursorrules|CLAUDE\.md|GEMINI\.md/i, "Sync-rules must reference target rule files");
+  await access(join(root, "skills", "sync-rules", "scripts", "sync-agent-rules.mjs"));
 });
 
 // -------------------------------------------------------------------
