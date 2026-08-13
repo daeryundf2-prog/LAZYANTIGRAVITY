@@ -1,5 +1,5 @@
 {
-	"version": "2026-07-19.antigravity-gemini36",
+	"version": "2026-08-13.antigravity-gemini37",
 	"current": {
 		"model": "gpt-5.5",
 		"model_context_window": 400000,
@@ -140,7 +140,7 @@
 				"displayName": "Claude Sonnet 4.6 (Thinking)",
 				"reasoningLevel": "thinking",
 				"purpose": "매일 쓰기 좋은 균형 모델 — 빠르면서 충분한 품질",
-				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.6-flash-high"],
+				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"planner": {
@@ -156,7 +156,7 @@
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
 				"purpose": "교차 모델 검증 — default가 Claude이므로 Gemini로 편향 방지",
-				"fallbackChain": ["claude-opus-4.6", "gemini-3.6-flash-high"],
+				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"worker": {
@@ -164,23 +164,23 @@
 				"displayName": "Claude Sonnet 4.6 (Thinking)",
 				"reasoningLevel": "thinking",
 				"purpose": "서브에이전트 코드 작업 — Sonnet의 속도+품질 균형",
-				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.6-flash-medium"],
+				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-medium"],
 				"availabilitySource": "ui"
 			},
 			"researcher": {
-				"modelId": "gemini-3.6-flash-high",
-				"displayName": "Gemini 3.6 Flash (High)",
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "코드베이스 탐색/조사 — 빠른 속도 우선",
-				"fallbackChain": ["gemini-3.1-pro-low", "gemini-3.6-flash-medium"],
+				"fallbackChain": ["gemini-3.1-pro-low", "gemini-3.7-flash-medium"],
 				"availabilitySource": "ui"
 			},
 			"fast": {
-				"modelId": "gemini-3.6-flash-medium",
-				"displayName": "Gemini 3.6 Flash (Medium)",
+				"modelId": "gemini-3.7-flash-medium",
+				"displayName": "Gemini 3.7 Flash (Medium)",
 				"reasoningLevel": "medium",
 				"purpose": "빠른 단순 작업 — 최고 속도",
-				"fallbackChain": ["gemini-3.6-flash-low"],
+				"fallbackChain": ["gemini-3.7-flash-low"],
 				"availabilitySource": "ui"
 			},
 			"fallback": {
@@ -194,24 +194,24 @@
 		},
 		"availableModels": [
 			{
-				"modelId": "gemini-3.6-flash-low",
-				"displayName": "Gemini 3.6 Flash (Low)",
+				"modelId": "gemini-3.7-flash-low",
+				"displayName": "Gemini 3.7 Flash (Low)",
 				"provider": "google",
 				"speed": "fast",
 				"reasoningLevel": "low",
 				"availabilitySource": "ui"
 			},
 			{
-				"modelId": "gemini-3.6-flash-medium",
-				"displayName": "Gemini 3.6 Flash (Medium)",
+				"modelId": "gemini-3.7-flash-medium",
+				"displayName": "Gemini 3.7 Flash (Medium)",
 				"provider": "google",
 				"speed": "fast",
 				"reasoningLevel": "medium",
 				"availabilitySource": "ui"
 			},
 			{
-				"modelId": "gemini-3.6-flash-high",
-				"displayName": "Gemini 3.6 Flash (High)",
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
 				"provider": "google",
 				"speed": "fast",
 				"reasoningLevel": "high",
@@ -259,7 +259,7 @@
 			}
 		],
 		"managedProfiles": [],
-		"_modelIdNote": "Antigravity는 모델 ID를 외부에 노출하지 않음. 여기서 사용한 modelId는 UI displayName에서 추론한 규칙 기반 ID임 (예: 'Gemini 3.6 Flash (High)' → 'gemini-3.6-flash-high'). 실제 내부 API model ID가 다를 수 있으며, 이 경우 model-catalog는 추천/힌트 용도로만 사용됨."
+		"_modelIdNote": "Antigravity는 모델 ID를 외부에 노출하지 않음. 여기서 사용한 modelId는 UI displayName에서 추론한 규칙 기반 ID임 (예: 'Gemini 3.7 Flash (High)' → 'gemini-3.7-flash-high'). 실제 내부 API model ID가 다를 수 있으며, 이 경우 model-catalog는 추천/힌트 용도로만 사용됨."
 	},
 	"perRoleRouting": {
 		"codex": {

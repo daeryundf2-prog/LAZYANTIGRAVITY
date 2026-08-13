@@ -78,13 +78,13 @@ If rate limit/quota is detected in Antigravity:
   - **When Claude Opus 4.6 (Thinking) is limited**:
     1. Gemini 3.1 Pro (High)
     2. Claude Sonnet 4.6 (Thinking) (if Sonnet quota is available)
-    3. Gemini 3.6 Flash (High)
+    3. Gemini 3.7 Flash (High)
   - **When Claude Sonnet 4.6 (Thinking) is limited**:
     1. Gemini 3.1 Pro (High)
-    2. Gemini 3.6 Flash (High)
+    2. Gemini 3.7 Flash (High)
   - **When Gemini 3.1 Pro (High) is limited**:
-    1. Gemini 3.6 Flash (High)
-    2. Gemini 3.6 Flash (Medium)
+    1. Gemini 3.7 Flash (High)
+    2. Gemini 3.7 Flash (Medium)
   - **When all models are limited/exhausted**:
     - Wait until the rate-limit/quota refresh window.
     - Or recommend that the user enable "AI Credit Overages" in settings.
@@ -99,7 +99,7 @@ If rate limit/quota is detected in Codex:
 
 ### 5. Compact Mode (On Context Window Exceeded)
 If `context_window_exceeded` occurs, transition to Compact Mode:
-- **Switch to Gemini 3.6 Flash (High)**: In Antigravity UI, switch to Gemini 3.6 Flash (High) to leverage its 1M token context window — 3.5x larger than GPT-5.5/Claude. This often eliminates the need for compaction entirely.
+- **Switch to Gemini 3.7 Flash (High)**: In Antigravity UI, switch to Gemini 3.7 Flash (High) to leverage its 1M token context window — 3.5x larger than GPT-5.5/Claude. This often eliminates the need for compaction entirely.
 - **Summarize Logs**: Condense long test/execution logs into short summaries.
 - **Relevant Slices**: Read/display only relevant lines of files instead of printing whole files.
 - **Compress Outputs**: Limit role response size to 20-40 lines of summary in the transcript.

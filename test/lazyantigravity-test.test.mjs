@@ -12,7 +12,7 @@ async function readAntigravityCatalog() {
 	return catalog.antigravity;
 }
 
-test("#given bundled model catalog #when antigravity availableModels inspected #then Gemini 3.5 Flash tiers are absent and Gemini 3.6 Flash tiers are present (3.6-only)", async () => {
+test("#given bundled model catalog #when antigravity availableModels inspected #then Gemini 3.5 Flash tiers are absent and Gemini 3.7 Flash tiers are present (3.7-only)", async () => {
 	const antigravity = await readAntigravityCatalog();
 	const available = antigravity.availableModels;
 	assert.equal(Array.isArray(available), true, "availableModels must be an array");
@@ -21,8 +21,8 @@ test("#given bundled model catalog #when antigravity availableModels inspected #
 	for (const tier of ["low", "medium", "high"]) {
 		const dropped = `gemini-3.5-flash-${tier}`;
 		assert.equal(byId.has(dropped), false, `expected ${dropped} to be dropped (3.5 Flash removed)`);
-		const id = `gemini-3.6-flash-${tier}`;
-		assert.ok(byId.has(id), `expected ${id} to be present in availableModels (3.6-only)`);
+		const id = `gemini-3.7-flash-${tier}`;
+		assert.ok(byId.has(id), `expected ${id} to be present in availableModels (3.7-only)`);
 		const entry = byId.get(id);
 		assert.equal(entry.provider, "google", `${id}.provider`);
 		assert.equal(entry.speed, "fast", `${id}.speed`);
@@ -31,20 +31,20 @@ test("#given bundled model catalog #when antigravity availableModels inspected #
 	}
 });
 
-test("#given bundled model catalog #when antigravity roles inspected #then no role recommends Gemini 3.5 Flash as its primary modelId (upgrade to 3.6 holds)", async () => {
+test("#given bundled model catalog #when antigravity roles inspected #then no role recommends Gemini 3.5/3.6 Flash as its primary modelId (upgrade to 3.7 holds)", async () => {
 	const antigravity = await readAntigravityCatalog();
 	const roles = antigravity.roles ?? {};
 	for (const [roleName, role] of Object.entries(roles)) {
 		assert.ok(role.modelId, `role ${roleName} must have a modelId`);
 		assert.match(
 			role.modelId,
-			/^gemini-3\.6-flash|^gemini-3\.1-pro|^claude-|^gpt-oss/,
-			`role ${roleName} modelId=${role.modelId} must not recommend a 3.5 Flash tier`,
+			/^gemini-3\.7-flash|^gemini-3\.1-pro|^claude-|^gpt-oss/,
+			`role ${roleName} modelId=${role.modelId} must not recommend a 3.5/3.6 Flash tier`,
 		);
 		assert.doesNotMatch(
 			role.modelId,
-			/gemini-3\.5-flash/,
-			`role ${roleName} must NOT pin a 3.5 Flash modelId as primary`,
+			/gemini-3\.(5|6)-flash/,
+			`role ${roleName} must NOT pin a 3.5/3.6 Flash modelId as primary`,
 		);
 	}
 });

@@ -166,19 +166,19 @@ BLOCKING: items that must be fixed; empty if PASS
 )
 ```
 
-### Pass C - Gemini 3.6 Flash vision pre-screen (fast, optional)
+### Pass C - Gemini 3.7 Flash vision pre-screen (fast, optional)
 
-When Gemini 3.6 Flash is available as a subagent model, dispatch a fast vision pre-screen before the oracle passes. This pass uses Flash's multimodal image input capability to directly analyze the screenshot pixels, complementing the text-based oracle passes.
+When Gemini 3.7 Flash is available as a subagent model, dispatch a fast vision pre-screen before the oracle passes. This pass uses Flash's multimodal image input capability to directly analyze the screenshot pixels, complementing the text-based oracle passes.
 
 ```
 task(subagent_type="oracle",
   run_in_background=true,
   model="flash",
   load_skills=[],
-  description="Visual QA pass C: Gemini 3.6 Flash vision pre-screen",
+  description="Visual QA pass C: Gemini 3.7 Flash vision pre-screen",
   prompt="""
 REVIEW TYPE: FAST VISION PRE-SCREEN (read-only, advisory)
-MODEL: Gemini 3.6 Flash — use your multimodal image input capability.
+MODEL: Gemini 3.7 Flash — use your multimodal image input capability.
 
 INTENT:
 {What the user requested and the mock or baseline to match.}

@@ -194,7 +194,7 @@ Before claiming "done", execute this 5-point self-check in order. If ANY check f
 4. **Diff Review Gate**: Re-read your own diff. For each hunk, ask: "Does this hunk implement a user-requested behavior, or is it scaffolding/boilerplate that should be trimmed?" Remove unused imports, dead variables, and commented-out code before declaring done.
 5. **Behavioral Verification Gate**: Describe what observable behavior changed. If the change is non-visual (e.g. API, config), cite the specific command or request that proves the new behavior works. If the change is visual, attach or reference a screenshot. "It should work" is not verification.
 
-**Gemini 3.6 Flash Fast-Check Option**: When the main model is Claude Opus or GPT-5.5 and a fast second opinion is available, dispatch a lightweight verification subagent using Gemini 3.6 Flash (Medium) to re-read the diff and flag the top 3 potential defects. Flash results are advisory — they do not override gates 1-5, but they may catch issues the primary model missed.
+**Gemini 3.7 Flash Fast-Check Option**: When the main model is Claude Opus or GPT-5.5 and a fast second opinion is available, dispatch a lightweight verification subagent using Gemini 3.7 Flash (Medium) to re-read the diff and flag the top 3 potential defects. Flash results are advisory — they do not override gates 1-5, but they may catch issues the primary model missed.
 
 # Stop Rules
 

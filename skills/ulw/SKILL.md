@@ -31,8 +31,8 @@ At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocat
 > 💡 **Antigravity Recommended Model Configuration Guide**
 > - **With sufficient Claude quota**: Claude Opus 4.6 (Thinking)
 > - **With limited Claude quota**: Gemini 3.1 Pro (High)
-> - **For extensive codebase exploration**: Gemini 3.6 Flash (High)
-> - **For rapid iterative bug fixes**: Gemini 3.6 Flash (Medium)
+> - **For extensive codebase exploration**: Gemini 3.7 Flash (High)
+> - **For rapid iterative bug fixes**: Gemini 3.7 Flash (Medium)
 > 
 > *Note: Antigravity does not support automatic per-role model switching. All subagents (planner, researcher, worker, verifier) inherit the currently selected active model.*
 
