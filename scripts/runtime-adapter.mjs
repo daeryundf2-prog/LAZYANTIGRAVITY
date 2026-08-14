@@ -130,15 +130,15 @@ export function readModelCatalogForRuntime(env = process.env) {
 	// Sensible defaults per platform
 	if (config.runtime === "antigravity") {
 		return {
-			current: { model: "claude-opus-4.6", model_context_window: 200000, model_reasoning_effort: "high", plan_mode_reasoning_effort: "xhigh" },
+			current: { model: "gemini-3.7-flash-high", model_context_window: 1048576, model_reasoning_effort: "high", plan_mode_reasoning_effort: "high" },
 			roles: {
-				default: { model: "claude-sonnet-4.6", model_reasoning_effort: "thinking" },
-				planner: { model: "claude-opus-4.6", model_reasoning_effort: "thinking" },
+				default: { model: "gemini-3.7-flash-high", model_reasoning_effort: "high" },
+				planner: { model: "gemini-3.7-flash-high", model_reasoning_effort: "high" },
 				verifier: { model: "gemini-3.1-pro-high", model_reasoning_effort: "high" },
-				worker: { model: "claude-sonnet-4.6", model_reasoning_effort: "thinking" },
+				worker: { model: "gemini-3.7-flash-high", model_reasoning_effort: "high" },
 				researcher: { model: "gemini-3.7-flash-high", model_reasoning_effort: "high" },
 				fast: { model: "gemini-3.7-flash-medium", model_reasoning_effort: "medium" },
-				fallback: { model: "gpt-oss-120b", model_reasoning_effort: "medium" },
+				fallback: { model: "gemini-3.7-flash-low", model_reasoning_effort: "low" },
 			},
 			managedProfiles: [],
 		};

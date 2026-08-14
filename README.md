@@ -2,11 +2,11 @@
 
 AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).
 
-Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.7 Flash** as the default coding workhorse.
+Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.7 Flash** as the default planner + coding workhorse.
 
 [![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
-[![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Main%20Coder-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.3.0-black?style=for-the-badge)](./package.json)
+[![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
+[![Version](https://img.shields.io/badge/version-0.3.1-black?style=for-the-badge)](./package.json)
 
 ## Why this plugin
 
@@ -14,7 +14,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 | :--- | :--- |
 | Single agent, single task | **20 skills** (+ aliases) for ULW, review, refactor, visual QA, and more |
 | No quality gates | **7 hook events / 15 command hooks** (rules, comments, LSP, ULW steering) |
-| Manual model guessing | **Model catalog hints** — Gemini 3.7 Flash as default main coder |
+| Manual model guessing | **Model catalog hints** — Gemini 3.7 Flash for plan + code |
 | Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
 | Weak evidence discipline | **Evidence-bound ULW loop** — claims need local proof |
 
@@ -24,12 +24,12 @@ Antigravity does **not** auto-switch models per role (`canAutoRoute: false`). Pi
 
 | Role | Recommendation |
 | :--- | :--- |
-| **Default / main coder / worker** | **Gemini 3.7 Flash (High)** |
+| **Session default / planner / worker / researcher** | **Gemini 3.7 Flash (High)** |
 | Rapid iterative bug fixes | Gemini 3.7 Flash (Medium) |
-| Deep planning (optional) | Claude Opus 4.6 (Thinking) |
 | Cross-model verification | Gemini 3.1 Pro (High) |
+| Escape hatch (ambiguous, high-stakes design only) | Claude Opus 4.6 (Thinking) |
 
-`model-catalog.json` encodes these hints. Prefer **3.7 Flash** for day-to-day coding loops; keep **3.1 Pro** for verifier diversity, not as the primary coder.
+`model-catalog.json` encodes these hints. Run most ULW sessions entirely on **3.7 Flash (High)**. Switch to **3.1 Pro** only when you want a second-family review, and to **Opus** only when the design problem is still ambiguous after a Flash pass.
 
 ## Quick start
 

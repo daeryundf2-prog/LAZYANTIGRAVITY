@@ -113,7 +113,7 @@ Options:
         }
     }
     const platform = "Antigravity";
-    const selectedModel = "Claude Opus 4.6 (Thinking)";
+    const selectedModel = "Gemini 3.7 Flash (High)";
     const userResumeCommand = "/ulw resume";
     const internalResumeCommand = "omo ulw-loop resume";
     const wouldSwitchModel = false;
@@ -129,10 +129,10 @@ Options:
         if (!json) {
             process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: ${scenario})...\n`);
             process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
-            process.stdout.write(`  - Gemini 3.7 Flash (High) - default main coder\n`);
+            process.stdout.write(`  - Gemini 3.7 Flash (High) - session default (plan + code)\n`);
             process.stdout.write(`  - Gemini 3.7 Flash (Medium) - rapid iterative fixes\n`);
-            process.stdout.write(`  - Claude Opus 4.6 (Thinking) - deep planning (optional)\n`);
             process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
+            process.stdout.write(`  - Claude Opus 4.6 (Thinking) - escape hatch only\n`);
             process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner)\n`);
             process.stdout.write(`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher)\n`);
             process.stdout.write(`[Dry-Run] Running role: worker (would invoke: self / Hephaestus Worker)\n`);
@@ -149,10 +149,10 @@ Options:
         if (!json) {
             process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: ${scenario})...\n`);
             process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
-            process.stdout.write(`  - Gemini 3.7 Flash (High) - default main coder\n`);
+            process.stdout.write(`  - Gemini 3.7 Flash (High) - session default (plan + code)\n`);
             process.stdout.write(`  - Gemini 3.7 Flash (Medium) - rapid iterative fixes\n`);
-            process.stdout.write(`  - Claude Opus 4.6 (Thinking) - deep planning (optional)\n`);
             process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
+            process.stdout.write(`  - Claude Opus 4.6 (Thinking) - escape hatch only\n`);
             process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner) - SUCCESS\n`);
             process.stdout.write(`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher) - SUCCESS\n`);
             process.stdout.write(`[Dry-Run] Running role: worker (would invoke: self / Hephaestus Worker) - FAILED\n`);

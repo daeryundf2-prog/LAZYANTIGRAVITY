@@ -1,2 +1,2 @@
 export const name = "@oh-my-opencode/shared-skills";
-export const version = "0.3.0";
+export const version = "0.3.1";

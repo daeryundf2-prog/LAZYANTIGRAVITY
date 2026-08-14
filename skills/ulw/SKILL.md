@@ -29,12 +29,12 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocation, output this message **exactly once**:
 
 > 💡 **Antigravity Recommended Model Configuration Guide**
-> - **Default / main coder**: Gemini 3.7 Flash (High)
+> - **Session default (plan + code + research)**: Gemini 3.7 Flash (High)
 > - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium)
-> - **Deep planning / complex design** (Claude quota available): Claude Opus 4.6 (Thinking)
 > - **Cross-model verification**: Gemini 3.1 Pro (High)
+> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking)
 > 
-> *Note: Antigravity does not support automatic per-role model switching. All subagents (planner, researcher, worker, verifier) inherit the currently selected active model. Prefer Gemini 3.7 Flash (High) as the session default.*
+> *Note: Antigravity does not support automatic per-role model switching. All subagents inherit the selected model. Prefer Gemini 3.7 Flash (High) for the whole session unless you intentionally switch for verify or an escape-hatch redesign.*
 
 **Suppression**: If the user's message contains "quiet run", "skip model recommendation", "no model hint", or "quiet", skip this recommendation and proceed directly.
 

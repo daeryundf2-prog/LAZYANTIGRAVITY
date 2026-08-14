@@ -49,9 +49,10 @@ test("#given bundled model catalog #when antigravity roles inspected #then no ro
 	}
 });
 
-test("#given bundled model catalog #when antigravity coding roles inspected #then Gemini 3.7 Flash is the main coder (default/worker/current)", async () => {
+test("#given bundled model catalog #when antigravity roles inspected #then Gemini 3.7 Flash is plan+code default (planner/default/worker/current)", async () => {
 	const antigravity = await readAntigravityCatalog();
 	assert.equal(antigravity.current?.model, "gemini-3.7-flash-high");
+	assert.equal(antigravity.roles?.planner?.modelId, "gemini-3.7-flash-high");
 	assert.equal(antigravity.roles?.default?.modelId, "gemini-3.7-flash-high");
 	assert.equal(antigravity.roles?.worker?.modelId, "gemini-3.7-flash-high");
 	assert.equal(antigravity.roles?.researcher?.modelId, "gemini-3.7-flash-high");
@@ -59,6 +60,12 @@ test("#given bundled model catalog #when antigravity coding roles inspected #the
 	assert.equal(antigravity.roles?.verifier?.modelId, "gemini-3.1-pro-high");
 	assert.equal(antigravity.canAutoRoute, false);
 	assert.equal(antigravity.routingMode, "hint-only");
+});
+
+test("#given bundled model catalog #when antigravity planner inspected #then Claude Opus is fallback-only not primary", async () => {
+	const antigravity = await readAntigravityCatalog();
+	assert.notEqual(antigravity.roles?.planner?.modelId, "claude-opus-4.6");
+	assert.ok((antigravity.roles?.planner?.fallbackChain ?? []).includes("claude-opus-4.6"));
 });
 
 test("#given bundled model catalog #when antigravity fallback chains inspected #then every chain entry resolves to a known available model or a role modelId", async () => {

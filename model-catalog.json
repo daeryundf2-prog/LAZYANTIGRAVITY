@@ -144,18 +144,18 @@
 				"availabilitySource": "ui"
 			},
 			"planner": {
-				"modelId": "claude-opus-4.6",
-				"displayName": "Claude Opus 4.6 (Thinking)",
-				"reasoningLevel": "thinking",
-				"purpose": "고난도 설계/계획 — Claude 쿼터 있을 때 권장; 없으면 3.7 Flash High",
-				"fallbackChain": ["gemini-3.7-flash-high", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.7 Flash; 모호한 고비용 설계만 Claude Opus로 수동 전환",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-opus-4.6"],
 				"availabilitySource": "ui"
 			},
 			"verifier": {
 				"modelId": "gemini-3.1-pro-high",
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
-				"purpose": "교차 모델 검증 — 메인 코더(3.7 Flash)와 다른 패밀리로 편향 방지",
+				"purpose": "교차 모델 검증 — 메인(3.7 Flash)과 다른 패밀리로 편향 방지",
 				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
