@@ -122,6 +122,8 @@
 			"surveyor": "flash",
 			"ast-refactor": "flash",
 			"dual-verify": "pro",
+			"ui-loopback": "flash",
+			"adaptive-reasoning": "flash",
 			"verifier": "pro",
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
@@ -195,6 +197,22 @@
 				"reasoningLevel": "high",
 				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
 				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
+				"availabilitySource": "ui"
+			},
+			"ui-loopback": {
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "실시간 UI 렌더링 및 시각 자가 교정 — 네이티브 멀티모달 비전 루프백",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"availabilitySource": "ui"
+			},
+			"adaptive-reasoning": {
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "적응형 추론 조절 — 작업 난이도별 Thinking Budget 및 모델 티어 자동 산정",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-low"],
 				"availabilitySource": "ui"
 			},
 			"fast": {

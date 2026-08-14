@@ -9,9 +9,11 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 
 | Intent | Antigravity action |
 | --- | --- |
-| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
+| Explore / research / survey | `invoke_subagent` (`Model: "flash"`) + TASK/DELIVERABLE/SCOPE/VERIFY |
+| Core Implementation / Tests | `invoke_subagent` (`Model: "flash"`) + TDD / Clean Architecture |
+| Adversarial Verification / Audit | `invoke_subagent` (`Model: "pro"`) + Adversarial critique & Tiered blocking |
 | Wait / poll children | Stay in parent; re-invoke incomplete lanes |
-| Child model hint | Pass `Subagents[].Model`: `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
+| 3-Tier Escalation Protocol | Step 1 Explore (`flash`) → Step 2 Implement (`flash`) → Step 3 Verify (`pro`) |
 
 Use Antigravity tools only (`invoke_subagent`). Do **not** invent foreign spawn/wait/goal APIs or OpenCode kwargs.
 

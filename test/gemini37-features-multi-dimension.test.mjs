@@ -165,10 +165,12 @@ test("Dimension 7: Packaging & npm Pack Materialization Dry-Run", async () => {
 	const parsed = JSON.parse(output);
 	const files = parsed[0].files.map((f) => f.path);
 
+	assert.ok(files.includes("shared-skills/skills/adaptive-reasoning/SKILL.md"), "npm pack must include adaptive-reasoning");
 	assert.ok(files.includes("shared-skills/skills/ast-refactor/SKILL.md"), "npm pack must include ast-refactor");
 	assert.ok(files.includes("shared-skills/skills/dual-verify/SKILL.md"), "npm pack must include dual-verify");
 	assert.ok(files.includes("shared-skills/skills/repo-survey/SKILL.md"), "npm pack must include repo-survey");
 	assert.ok(files.includes("shared-skills/skills/review-work/SKILL.md"), "npm pack must include review-work");
+	assert.ok(files.includes("shared-skills/skills/ui-loopback/SKILL.md"), "npm pack must include ui-loopback");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/SKILL.md"), "npm pack must include visual-qa");
 	assert.ok(files.includes("shared-skills/skills/frontend-ui-ux/SKILL.md"), "npm pack must include frontend-ui-ux");
 });
@@ -191,4 +193,25 @@ test("Dimension 8: AST-Refactor & Dual-Verify Functional & Schema Integrity", as
 	assert.match(dualSkill, /Model:\s*"pro"/, "Pass 2 must route to pro");
 	assert.match(dualSkill, /Tiered Blocking & Self-Healing Policy/i, "Must specify Tiered Blocking & Self-Healing");
 });
+
+test("Dimension 9: Next-Gen UI-Loopback & Adaptive-Reasoning Integrity", async () => {
+	// ui-loopback check
+	const loopbackSkill = await readFile(join(root, "skills", "ui-loopback", "SKILL.md"), "utf8");
+	assert.match(loopbackSkill, /name:\s*ui-loopback/, "Must have name: ui-loopback");
+	assert.match(loopbackSkill, /Render & Capture/i, "Must have Render & Capture step");
+	assert.match(loopbackSkill, /Vision Inspection Oracle/i, "Must have Vision Inspection step");
+	assert.match(loopbackSkill, /Self-Remediation Loop/i, "Must have Self-Remediation loop");
+	assert.match(loopbackSkill, /Model:\s*"flash"/, "Vision inspection must route to Model: flash");
+
+	// adaptive-reasoning check
+	const reasoningSkill = await readFile(join(root, "skills", "adaptive-reasoning", "SKILL.md"), "utf8");
+	assert.match(reasoningSkill, /name:\s*adaptive-reasoning/, "Must have name: adaptive-reasoning");
+	assert.match(reasoningSkill, /Tier 1: Fast & Lean/i, "Must specify Tier 1");
+	assert.match(reasoningSkill, /Tier 2: Standard Workhorse/i, "Must specify Tier 2");
+	assert.match(reasoningSkill, /Tier 3: Deep Adversarial/i, "Must specify Tier 3");
+	assert.match(reasoningSkill, /Model:\s*"flash_lite"/, "Tier 1 must route to flash_lite");
+	assert.match(reasoningSkill, /Model:\s*"flash"/, "Tier 2 must route to flash");
+	assert.match(reasoningSkill, /Model:\s*"pro"/, "Tier 3 must route to pro");
+});
+
 

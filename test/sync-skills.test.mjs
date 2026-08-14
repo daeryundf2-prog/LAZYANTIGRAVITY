@@ -10,6 +10,7 @@ const repoRoot = join(root, "..", "..", "..");
 const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
+	"adaptive-reasoning",
 	"ast-refactor",
 	"comment-checker",
 	"debugging",
@@ -30,6 +31,7 @@ const expectedSkills = [
 	"rules",
 	"session-persistence",
 	"start-work",
+	"ui-loopback",
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
