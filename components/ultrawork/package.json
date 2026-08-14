@@ -1,21 +1,21 @@
 {
-	"name": "@code-yeongyu/codex-ultrawork",
+	"name": "@lazyantigravity/ultrawork",
 	"version": "0.1.0",
-	"description": "Codex plugin that injects the ultrawork orchestration directive and syncs the ultrawork reviewer agent role.",
+	"description": "Antigravity plugin that injects the ultrawork orchestration directive and syncs the ultrawork reviewer agent role.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/codex-ultrawork",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/codex-ultrawork.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/codex-ultrawork/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"ultrawork",
 		"agents",
 		"hooks",

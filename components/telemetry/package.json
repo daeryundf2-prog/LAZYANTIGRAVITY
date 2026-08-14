@@ -1,5 +1,5 @@
 {
-	"name": "@code-yeongyu/codex-telemetry",
+	"name": "@lazyantigravity/telemetry",
 	"version": "0.1.0",
 	"description": "Codex plugin component that emits omo-codex anonymous daily-active telemetry on SessionStart.",
 	"type": "module",
@@ -14,8 +14,8 @@
 		"url": "https://github.com/code-yeongyu/oh-my-openagent/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"omo",
 		"telemetry",
 		"posthog",

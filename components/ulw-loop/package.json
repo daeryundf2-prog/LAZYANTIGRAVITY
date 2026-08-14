@@ -1,21 +1,21 @@
 {
-	"name": "@code-yeongyu/codex-ulw-loop",
+	"name": "@lazyantigravity/ulw-loop",
 	"version": "0.1.0",
-	"description": "Codex plugin: durable repo-native multi-goal orchestration with embedded success criteria and observable evidence audit.",
+	"description": "Antigravity plugin: durable repo-native multi-goal orchestration with embedded success criteria and observable evidence audit.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/codex-ulw-loop",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/codex-ulw-loop.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/codex-ulw-loop/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"ulw-loop",
 		"goal-mode",
 		"orchestration",

@@ -1,21 +1,21 @@
 {
-	"name": "@code-yeongyu/codex-rules",
+	"name": "@lazyantigravity/rules",
 	"version": "0.1.0",
-	"description": "Codex plugin that injects project rule files into model context through lifecycle hooks.",
+	"description": "Antigravity plugin that injects project rule files into model context through lifecycle hooks.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/codex-rules",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/codex-rules.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/codex-rules/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"rules",
 		"hooks",
 		"agents-md",

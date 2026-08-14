@@ -1,21 +1,21 @@
 {
-	"name": "@code-yeongyu/codex-start-work-continuation",
+	"name": "@lazyantigravity/start-work-continuation",
 	"version": "0.1.0",
 	"description": "Codex Stop hook continuation injector for omo-codex start-work plans.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/codex-start-work-continuation",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/codex-start-work-continuation.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/codex-start-work-continuation/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"start-work",
 		"continuation",
 		"hooks",

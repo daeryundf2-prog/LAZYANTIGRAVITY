@@ -1,22 +1,21 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.3.6",
-	"description": "Aggregated Antigravity plugin root for OMO components.",
+	"version": "0.3.7",
+	"description": "Aggregated Antigravity plugin root for LazyAntigravity components.",
 	"author": {
-		"name": "Yeongyu Kim",
-		"email": "yeongyu@users.noreply.github.com",
-		"url": "https://github.com/code-yeongyu"
+		"name": "daeryundf2-prog",
+		"url": "https://github.com/daeryundf2-prog"
 	},
 	"license": "MIT",
-	"keywords": ["antigravity", "antigravity-plugin", "omo", "hooks", "mcp", "skills"],
+	"keywords": ["antigravity", "antigravity-plugin", "hooks", "mcp", "skills"],
 	"skills": "./skills/",
 	"hooks": "./hooks.json",
 	"mcpServers": "./mcp_config.json",
 	"interface": {
 		"displayName": "LazyAntigravity",
 		"shortDescription": "Unified local Antigravity components",
-		"longDescription": "LazyAntigravity exposes the local OMO Rules, Comment Checker, LSP, Ultrawork, and ulw-loop components as one plugin namespace.",
-		"developerName": "Yeongyu Kim",
+		"longDescription": "LazyAntigravity exposes local Rules, Comment Checker, LSP, Ultrawork, and ulw-loop as one plugin namespace. Default coding model hint: Gemini 3.7 Flash.",
+		"developerName": "daeryundf2-prog",
 		"category": "Developer Tools",
 		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection", "Telemetry"],
 		"brandColor": "#7C3AED"

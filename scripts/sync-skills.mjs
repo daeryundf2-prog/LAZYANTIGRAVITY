@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { syncSkills } from "@oh-my-opencode/sync-skills";
+import { syncSkills } from "@lazyantigravity/sync-skills";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 

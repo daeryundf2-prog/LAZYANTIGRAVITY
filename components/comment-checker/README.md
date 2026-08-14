@@ -1,6 +1,6 @@
 # codex-comment-checker
 
-[![ci](https://github.com/code-yeongyu/codex-comment-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/code-yeongyu/codex-comment-checker/actions/workflows/ci.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![ci](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/actions/workflows/ci.yml/badge.svg)](https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/actions/workflows/ci.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Codex plugin that runs [`@code-yeongyu/comment-checker`](https://github.com/code-yeongyu/go-claude-code-comment-checker) after successful edit-like `PostToolUse` hook calls.
 

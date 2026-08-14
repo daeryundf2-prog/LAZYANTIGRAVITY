@@ -1,5 +1,4 @@
 const PRODUCT_NAME = "LazyAntigravity";
-const LEGACY_PRODUCT_NAME = "LazyCodex";
 
 const WORD_OVERRIDES = new Map([
 	["lsp", "LSP"],
@@ -31,7 +30,7 @@ export function parseLazyAntigravityHookStatusMessage(message) {
 // Legacy compatibility exports: keep existing callers working while generated
 // hook status messages use the runtime product identity above.
 export function formatLazyCodexHookStatusMessage(version, label) {
-	return `${LEGACY_PRODUCT_NAME}(${normalizeVersion(version)}): ${normalizeLazyAntigravityHookStatusLabel(label)}`;
+	return formatLazyAntigravityHookStatusMessage(version, label);
 }
 export const normalizeLazyCodexHookStatusLabel = normalizeLazyAntigravityHookStatusLabel;
 export const parseLazyCodexHookStatusMessage = parseLazyAntigravityHookStatusMessage;

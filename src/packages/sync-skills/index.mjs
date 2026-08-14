@@ -2,7 +2,7 @@
 import { cp, mkdir, readdir, rm, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { sharedSkillsRootPath } from "@oh-my-opencode/shared-skills";
+import { sharedSkillsRootPath } from "@lazyantigravity/shared-skills";
 
 const componentSkillSources = [
 	["comment-checker", "components/comment-checker/skills/comment-checker"],

@@ -105,7 +105,7 @@ npm run build      # tsc -> dist/
 npm run check      # typecheck + biome + build
 ```
 
-The component shares its product identity constants with the `@oh-my-opencode/omo-codex` CLI installer. Drift between the two implementations is guarded by `packages/omo-codex/src/telemetry/cross-package-equivalence.test.ts`.
+The component reports as `lazyantigravity` when `GEMINI_HOME`, `ANTIGRAVITY_HOME`, or a `.gemini` PLUGIN_ROOT is present.
 
 ## Privacy
 

@@ -1,6 +1,6 @@
 {
-	"name": "@oh-my-opencode/sync-skills",
-	"version": "0.3.6",
+	"name": "@lazyantigravity/sync-skills",
+	"version": "0.3.7",
 	"type": "module",
 	"exports": {
 		".": "./index.mjs"
@@ -9,6 +9,6 @@
 		"index.mjs"
 	],
 	"dependencies": {
-		"@oh-my-opencode/shared-skills": "file:../../../shared-skills"
+		"@lazyantigravity/shared-skills": "file:../../../shared-skills"
 	}
 }

@@ -101,7 +101,7 @@ function collectCommandHooks(hooks, source, version) {
 	return commandHooks;
 }
 
-test("#given hook status label #when formatting #then prefixes LazyCodex with current version", async () => {
+test("#given hook status label #when formatting #then prefixes LazyAntigravity with current version", async () => {
 	// given
 	const version = (await readJson("package.json")).version;
 	const label = "Checking Comments";
@@ -110,10 +110,10 @@ test("#given hook status label #when formatting #then prefixes LazyCodex with cu
 	const message = formatLazyCodexHookStatusMessage(version, label);
 
 	// then
-	assert.equal(message, `LazyCodex(${version}): Checking Comments`);
+	assert.equal(message, `LazyAntigravity(${version}): Checking Comments`);
 });
 
-test("#given hook status label with blank version #when formatting #then prefixes LazyCodex with local version", () => {
+test("#given hook status label with blank version #when formatting #then prefixes LazyAntigravity with local version", () => {
 	// given
 	const version = "  ";
 	const label = "Checking Comments";
@@ -122,7 +122,7 @@ test("#given hook status label with blank version #when formatting #then prefixe
 	const message = formatLazyCodexHookStatusMessage(version, label);
 
 	// then
-	assert.equal(message, "LazyCodex(local): Checking Comments");
+	assert.equal(message, "LazyAntigravity(local): Checking Comments");
 });
 
 test("#given loose legacy status label #when normalizing #then removes OMO wording and title-cases label", async () => {
@@ -136,7 +136,7 @@ test("#given loose legacy status label #when normalizing #then removes OMO wordi
 
 	// then
 	assert.equal(normalized, "Checking Comments");
-	assert.equal(message, `LazyCodex(${version}): Checking Comments`);
+	assert.equal(message, `LazyAntigravity(${version}): Checking Comments`);
 });
 
 test("#given aggregate comment-checker hook #when status is inspected #then it uses LazyAntigravity comments label", async () => {

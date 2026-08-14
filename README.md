@@ -6,7 +6,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 [![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.3.6-black?style=for-the-badge)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.3.7-black?style=for-the-badge)](./package.json)
 
 ## Why this plugin
 

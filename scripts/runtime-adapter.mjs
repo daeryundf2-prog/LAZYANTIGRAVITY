@@ -1,5 +1,5 @@
 /**
- * Runtime Adapter — central platform detection for LazyCodex / LazyAntigravity.
+ * Runtime Adapter — platform detection for LazyAntigravity.
  *
  * Detects whether the plugin is running inside OpenAI Codex or Google Antigravity
  * and exposes a unified configuration object that other modules can consume.

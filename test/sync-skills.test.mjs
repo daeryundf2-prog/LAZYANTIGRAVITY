@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { sharedSkillsRootPath } from "@oh-my-opencode/shared-skills";
+import { sharedSkillsRootPath } from "@lazyantigravity/shared-skills";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = join(root, "..", "..", "..");
@@ -112,8 +112,8 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 	const syncSkillsModule = await readFile(join(root, "src", "packages", "sync-skills", "index.mjs"), "utf8");
 
 	// when
-	const sharedSkillDependency = pluginPackageJson.dependencies?.["@oh-my-opencode/shared-skills"];
-	const syncSkillsDependency = pluginPackageJson.dependencies?.["@oh-my-opencode/sync-skills"];
+	const sharedSkillDependency = pluginPackageJson.dependencies?.["@lazyantigravity/shared-skills"];
+	const syncSkillsDependency = pluginPackageJson.dependencies?.["@lazyantigravity/sync-skills"];
 	const rootPackageFiles = rootPackageJson.files ?? [];
 
 	// then
@@ -124,8 +124,8 @@ test("#given aggregate Codex skills #when source wiring is inspected #then share
 	assert.equal(rootPackageFiles.includes("shared-skills/skills"), true);
 	assert.equal(sharedSkillDependency, "file:./shared-skills");
 	assert.equal(syncSkillsDependency, "file:./src/packages/sync-skills");
-	assert.match(syncScript, /from "@oh-my-opencode\/sync-skills"/);
-	assert.match(syncSkillsModule, /from "@oh-my-opencode\/shared-skills"/);
+	assert.match(syncScript, /from "@lazyantigravity\/sync-skills"/);
+	assert.match(syncSkillsModule, /from "@lazyantigravity\/shared-skills"/);
 	assert.doesNotMatch(syncScript, /shared-skills",\s*"skills"/);
 });
 

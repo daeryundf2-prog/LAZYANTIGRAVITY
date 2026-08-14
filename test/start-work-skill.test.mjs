@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { sharedSkillsRootPath } from "@oh-my-opencode/shared-skills";
+import { sharedSkillsRootPath } from "@lazyantigravity/shared-skills";
 
 const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const startWorkSkillPaths = [

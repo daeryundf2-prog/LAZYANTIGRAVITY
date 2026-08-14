@@ -1,7 +1,7 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.3.6",
-	"description": "Aggregated Antigravity plugin root for OMO/LazyAntigravity components (Gemini 3.7 Flash default).",
+	"version": "0.3.7",
+	"description": "Aggregated Antigravity plugin root for LazyAntigravity components (Gemini 3.7 Flash default).",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"private": true,
@@ -25,8 +25,8 @@
 	],
 	"dependencies": {
 		"@iarna/toml": "^2.2.5",
-		"@oh-my-opencode/shared-skills": "file:./shared-skills",
-		"@oh-my-opencode/sync-skills": "file:./src/packages/sync-skills"
+		"@lazyantigravity/shared-skills": "file:./shared-skills",
+		"@lazyantigravity/sync-skills": "file:./src/packages/sync-skills"
 	},
 	"scripts": {
 		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",

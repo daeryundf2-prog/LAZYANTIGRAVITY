@@ -1,7 +1,7 @@
 {
-	"name": "@sisyphuslabs/codex-git-bash-hook",
+	"name": "@lazyantigravity/git-bash",
 	"version": "0.1.0",
-	"description": "Codex hook component that reminds Windows sessions to prefer the OMO git_bash MCP.",
+	"description": "Antigravity hook that reminds Windows sessions to prefer the git_bash MCP.",
 	"type": "module",
 	"private": true,
 	"bin": {

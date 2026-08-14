@@ -1,21 +1,21 @@
 {
-	"name": "@code-yeongyu/codex-lsp",
+	"name": "@lazyantigravity/lsp",
 	"version": "0.2.0",
-	"description": "Codex plugin that exposes Language Server Protocol tools and post-edit diagnostics.",
+	"description": "Antigravity plugin that exposes Language Server Protocol tools and post-edit diagnostics.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/codex-lsp",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/codex-lsp.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/codex-lsp/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"lsp",
 		"language-server-protocol",
 		"mcp",

@@ -1,21 +1,21 @@
 {
-	"name": "@code-yeongyu/codex-comment-checker",
+	"name": "@lazyantigravity/comment-checker",
 	"version": "0.1.1",
-	"description": "Codex plugin that runs comment-checker after edit-like PostToolUse hooks.",
+	"description": "Antigravity plugin that runs comment-checker after edit-like PostToolUse hooks.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/codex-comment-checker",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/codex-comment-checker.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/codex-comment-checker/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
-		"codex",
-		"codex-plugin",
+		"antigravity",
+		"antigravity-plugin",
 		"comment-checker",
 		"hooks",
 		"typescript"
