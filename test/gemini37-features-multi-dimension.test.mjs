@@ -165,8 +165,30 @@ test("Dimension 7: Packaging & npm Pack Materialization Dry-Run", async () => {
 	const parsed = JSON.parse(output);
 	const files = parsed[0].files.map((f) => f.path);
 
+	assert.ok(files.includes("shared-skills/skills/ast-refactor/SKILL.md"), "npm pack must include ast-refactor");
+	assert.ok(files.includes("shared-skills/skills/dual-verify/SKILL.md"), "npm pack must include dual-verify");
 	assert.ok(files.includes("shared-skills/skills/repo-survey/SKILL.md"), "npm pack must include repo-survey");
 	assert.ok(files.includes("shared-skills/skills/review-work/SKILL.md"), "npm pack must include review-work");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/SKILL.md"), "npm pack must include visual-qa");
 	assert.ok(files.includes("shared-skills/skills/frontend-ui-ux/SKILL.md"), "npm pack must include frontend-ui-ux");
 });
+
+test("Dimension 8: AST-Refactor & Dual-Verify Functional & Schema Integrity", async () => {
+	// ast-refactor check
+	const astSkill = await readFile(join(root, "skills", "ast-refactor", "SKILL.md"), "utf8");
+	assert.match(astSkill, /name:\s*ast-refactor/, "Must have name: ast-refactor");
+	assert.match(astSkill, /ast_grep_search/, "Must document ast_grep_search");
+	assert.match(astSkill, /ast_grep_replace/, "Must document ast_grep_replace");
+	assert.match(astSkill, /dryRun:\s*true/i, "Must require dryRun preview");
+	assert.match(astSkill, /lsp_diagnostics/, "Must gate with LSP diagnostics");
+
+	// dual-verify check
+	const dualSkill = await readFile(join(root, "skills", "dual-verify", "SKILL.md"), "utf8");
+	assert.match(dualSkill, /name:\s*dual-verify/, "Must have name: dual-verify");
+	assert.match(dualSkill, /Pass 1: Flash Fast Implementation/i, "Must have Pass 1 Flash implementation");
+	assert.match(dualSkill, /Pass 2: Pro Adversarial Critic/i, "Must have Pass 2 Pro critic");
+	assert.match(dualSkill, /Model:\s*"flash"/, "Pass 1 must route to flash");
+	assert.match(dualSkill, /Model:\s*"pro"/, "Pass 2 must route to pro");
+	assert.match(dualSkill, /Tiered Blocking & Self-Healing Policy/i, "Must specify Tiered Blocking & Self-Healing");
+});
+

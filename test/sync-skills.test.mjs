@@ -10,8 +10,10 @@ const repoRoot = join(root, "..", "..", "..");
 const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
+	"ast-refactor",
 	"comment-checker",
 	"debugging",
+	"dual-verify",
 	"frontend-ui-ux",
 	"git-master",
 	"image-prompt",

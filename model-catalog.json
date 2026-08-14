@@ -120,6 +120,8 @@
 			"worker": "flash",
 			"researcher": "flash",
 			"surveyor": "flash",
+			"ast-refactor": "flash",
+			"dual-verify": "pro",
 			"verifier": "pro",
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
@@ -177,6 +179,22 @@
 				"reasoningLevel": "high",
 				"purpose": "전수 레포지토리 서베이 / 블래스트 라디우스 분석 — 1M 컨텍스트 전수 분석",
 				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-medium"],
+				"availabilitySource": "ui"
+			},
+			"ast-refactor": {
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "구조적 AST 리팩토링 — Tree-sitter & AST-grep 패턴 매칭 및 치환",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"availabilitySource": "ui"
+			},
+			"dual-verify": {
+				"modelId": "gemini-3.1-pro-high",
+				"displayName": "Gemini 3.1 Pro (High)",
+				"reasoningLevel": "high",
+				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
+				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"fast": {
