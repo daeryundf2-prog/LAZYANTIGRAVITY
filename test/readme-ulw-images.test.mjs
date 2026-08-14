@@ -1,13 +1,22 @@
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import test from "node:test";
+import { existsSync, readFileSync } from "node:fs"
+import test from "node:test"
+import assert from "node:assert/strict"
 
-const readme = readFileSync("README.md", "utf8");
+const README = readFileSync("README.md", "utf8")
 
-test("[todo18.readme.truth] README replaces promotional screenshots with evidence-backed boundaries", () => {
-	assert.match(readme, /15 active skills/);
-	assert.match(readme, /19 experimental skills are currently unsupported/);
-	assert.match(readme, /evidence-backed scorecard/);
-	assert.match(readme, /not proven for live installation or production deployment/);
-	assert.doesNotMatch(readme, /ULW-Loop: Evidence-Audited Orchestration|assets\/readme\/lazyantigravity-ulw/);
-});
+test("README shows the ULW command screenshots from committed assets", () => {
+  const imagePaths = [
+    "assets/readme/lazyantigravity-ulw-command.png",
+    "assets/readme/lazyantigravity-ulw-running.png",
+  ]
+
+  assert.match(README, /## ULW in Antigravity/)
+
+  for (const imagePath of imagePaths) {
+    assert.match(
+      README,
+      new RegExp(`!\\[[^\\]]+\\]\\(${imagePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`),
+    )
+    assert.equal(existsSync(imagePath), true, `${imagePath} must exist`)
+  }
+})

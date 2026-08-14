@@ -2,49 +2,37 @@
 
 [![ci](https://img.shields.io/badge/ci-pending-lightgrey.svg)](#) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Codex plugin component for durable repo-native multi-goal orchestration with embedded success criteria and observable evidence audit. State lives under `.omo/ulw-loop/` and is mutated through the `omo ulw-loop` CLI.
+Codex plugin scaffold for durable repo-native multi-goal orchestration with embedded success criteria and observable evidence audit.
 
-## CLI
-
-Every subcommand below is implemented. Pass `--json` where supported for machine-readable output, and pass `--session-id <id>` or set `OMO_ULW_LOOP_SESSION_ID` to scope state to a parallel session.
+## Behavior
 
 | Subcommand | Purpose |
 |------------|---------|
-| `omo ulw-loop help` | Print CLI usage. |
-| `omo ulw-loop create-goals` | Create repo-native goals and seed success criteria from a brief. |
+| `omo ulw-loop create-goals` | Create repo-native goals from a brief and seed criteria. |
+| `omo ulw-loop record-evidence` | Record observable evidence for the active criterion. |
+| `omo ulw-loop criteria` | Inspect or revise goal success criteria. |
+| `omo ulw-loop complete-goals` | Complete eligible goals after criteria pass. |
+| `omo ulw-loop checkpoint` | Refuse completion until criteria and evidence gates pass. |
+| `omo ulw-loop steer` | Apply steering updates to the plan. |
 | `omo ulw-loop status` | Report active goal, criteria, and evidence state. |
-| `omo ulw-loop complete-goals` | Start or resume the next eligible goal, or report aggregate completion / blocked handoff. |
-| `omo ulw-loop checkpoint` | Gate a goal transition with evidence; final completion requires a complete Codex goal snapshot and a passing quality gate. |
-| `omo ulw-loop steer` | Apply a steering mutation proposal to the plan. |
-| `omo ulw-loop add-goal` | Append a goal to the active plan. |
-| `omo ulw-loop criteria` | Inspect one goal's success criteria. |
-| `omo ulw-loop capture-evidence` | Run a command and write a capture transcript manifest for pass evidence. |
-| `omo ulw-loop record-evidence` | Record observable evidence for one criterion. |
-| `omo ulw-loop record-review-blockers` | Mark a goal as review-blocked and add follow-up work from final-review findings. |
 
-For `record-evidence --status pass`, the `--evidence` value must include the `file://` URL of a trusted capture manifest under `.omo/ulw-loop/evidence/`. Create it with:
-
-```bash
-omo ulw-loop capture-evidence --output .omo/ulw-loop/evidence/<name>.log --json -- <verification command>
-```
-
-The manifest records command, cwd, exit code, artifact path, and SHA-256 hash. Raw logs written directly with shell redirection, stale `touch`ed artifacts, failed commands, path escapes, cwd mismatches, and tampered artifacts are rejected for passing criteria.
-
-This is a local freshness and integrity gate, not cryptographic attestation. A process with the same filesystem write permissions could still forge a fresh matching manifest and artifact; closing that malicious same-user case requires a separate trust boundary such as an external capture service, privileged verifier, or signed attestation layer. The workflow policy still forbids hand-authored, `touch`ed, or fabricated evidence.
-
-The final quality gate parsed by `checkpoint` validates `codeReview`, `manualQa`, `gateReview`, `iteration`, and `criteriaCoverage`. `criteriaCoverage` records the original intent, desired outcome, user-facing outcome review, pass counts, and covered adversarial classes.
+Wave 1 is scaffold only. Command behavior lands in later waves.
 
 ## Codex Plugin
 
-This directory is a component of the aggregate `@sisyphuslabs/omo-codex-plugin` root. Plugin discovery (`.codex-plugin/plugin.json`) is owned by that aggregate root, not by this component. The component ships:
+The plugin ships:
 
-- `hooks/hooks.json` registering two hooks:
-  - `UserPromptSubmit` -> `node "${PLUGIN_ROOT}/dist/cli.js" hook user-prompt-submit --with-ultrawork`
-  - `PreToolUse` matching `^create_goal$` -> `node "${PLUGIN_ROOT}/dist/cli.js" hook pre-tool-use`
-- `skills/ulw-loop/` for the bundled `ulw-loop` skill.
-- `bin.omo-ulw-loop` -> `dist/cli.js` for standalone CLI invocation.
+- `.codex-plugin/plugin.json` for Codex plugin discovery.
+- `hooks/hooks.json` for the `UserPromptSubmit` hook.
+- `skills/ulw-loop/` as the future skill directory.
 
-This component ships a CLI, a skill, and hooks. It does not expose an MCP server.
+The hook command is:
+
+```bash
+node "${PLUGIN_ROOT}/dist/cli.js" hook user-prompt-submit
+```
+
+No MCP server or Codex tool is exposed in this scaffold.
 
 ## Local Development
 
@@ -55,8 +43,6 @@ npm run typecheck
 npm run check
 npm pack --dry-run
 ```
-
-`npm test` runs Vitest, `npm run typecheck` runs `tsc --noEmit`, and `npm run check` runs typecheck, Biome, and the build.
 
 ## Local Codex Installation
 
@@ -77,7 +63,7 @@ enabled = true
 
 ## Privacy
 
-This component runs locally and does not call a network service by itself.
+This plugin runs locally. The scaffold does not call a network service by itself.
 
 ## License
 
@@ -86,4 +72,3 @@ This component runs locally and does not call a network service by itself.
 ## Related
 
 - [lazycodex](https://github.com/code-yeongyu/lazycodex) - Sisyphus Labs Codex marketplace repository.
-- [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) - the monorepo this component is developed in.

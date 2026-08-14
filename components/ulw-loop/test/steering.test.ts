@@ -159,37 +159,46 @@ describe("steerUlwLoop", () => {
 			});
 		}
 
-		for (const [name, proposal, goalIndex] of [
-			["add_subgoal: uses next numeric id + default success criteria", steering({ idempotencyKey: "slug-add" }), -1],
-			[
-				"split_subgoal: replacement goals use default success criteria",
+		it("add_subgoal: uses next numeric id + default success criteria", async () => {
+			const repoRoot = await repoWithPlan(sluggedPlan());
+			const result = await steerUlwLoop(repoRoot, steering({ idempotencyKey: "slug-add" }));
+			expect(result.plan.goals.at(-1)).toMatchObject({
+				id: "G003",
+				successCriteria: [{ id: "C001" }, { id: "C002" }, { id: "C003" }],
+			});
+		});
+
+		it("split_subgoal: replacement goals use default success criteria", async () => {
+			const repoRoot = await repoWithPlan(sluggedPlan());
+			const result = await steerUlwLoop(
+				repoRoot,
 				steering({
 					kind: "split_subgoal",
 					targetGoalId: "G001-goal-a",
 					childGoals: [{ title: "Child A", objective: "Do child A" }],
 				}),
-				1,
-			],
-			[
-				"mark_blocked_superseded: replacement goals use default success criteria",
+			);
+			expect(result.plan.goals[1]).toMatchObject({
+				id: "G003",
+				successCriteria: [{ id: "C001" }, { id: "C002" }, { id: "C003" }],
+			});
+		});
+
+		it("mark_blocked_superseded: replacement goals use default success criteria", async () => {
+			const repoRoot = await repoWithPlan(sluggedPlan());
+			const result = await steerUlwLoop(
+				repoRoot,
 				steering({
 					kind: "mark_blocked_superseded",
 					targetGoalId: "G001-goal-a",
 					childGoals: [{ title: "Replacement", objective: "Replace blocked path" }],
 				}),
-				1,
-			],
-		] as const) {
-			it(name, async () => {
-				const repoRoot = await repoWithPlan(sluggedPlan());
-				const result = await steerUlwLoop(repoRoot, proposal);
-				const createdGoal = goalIndex === -1 ? result.plan.goals.at(-1) : result.plan.goals[goalIndex];
-				expect(createdGoal).toMatchObject({
-					id: "G003",
-					successCriteria: [{ id: "C001" }, { id: "C002" }, { id: "C003" }],
-				});
+			);
+			expect(result.plan.goals[1]).toMatchObject({
+				id: "G003",
+				successCriteria: [{ id: "C001" }, { id: "C002" }, { id: "C003" }],
 			});
-		}
+		});
 	});
 
 	it("add_subgoal: appends goal + ledger entry", async () => {

@@ -1,5 +1,5 @@
 import { hasContextPressureMarker } from "./context-pressure.js";
-import type { PiRulesConfig } from "@oh-my-opencode/rules-engine/engine";
+import type { PiRulesConfig } from "./rules/types.js";
 import { readTranscriptSearchText } from "./transcript-search.js";
 
 export interface PostCompactBudgetContext {
@@ -28,6 +28,11 @@ const MODEL_CONTEXT_BUDGETS: readonly ModelContextBudget[] = [
 		contextWindowTokens: 272_000,
 		effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT,
 	},
+	{ slug: "gemini-3.7-flash", contextWindowTokens: 1_000_000, effectivePercent: 90 },
+	{ slug: "gemini-3.1-pro", contextWindowTokens: 1_000_000, effectivePercent: 90 },
+	{ slug: "claude-sonnet-4.6", contextWindowTokens: 200_000, effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT },
+	{ slug: "claude-opus-4.6", contextWindowTokens: 200_000, effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT },
+	{ slug: "gpt-oss-120b", contextWindowTokens: 128_000, effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT },
 ];
 
 export function withPostCompactBudget(config: PiRulesConfig, context?: PostCompactBudgetContext): PiRulesConfig {

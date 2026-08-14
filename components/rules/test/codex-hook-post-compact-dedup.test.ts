@@ -93,7 +93,7 @@ describe("codex rules PostCompact deduplication", () => {
 		expect(output).toBe("");
 	});
 
-	it("#given startup static context dropped by compaction #when UserPromptSubmit runs after PostCompact #then it emits a mandatory read directive without rule bodies", async () => {
+	it("#given startup already injected static context #when UserPromptSubmit runs after PostCompact #then it emits no duplicate static context", async () => {
 		// given
 		const { root, pluginData } = makeTempProject();
 		await runSessionStartHook(sessionStartInput(root), {
@@ -113,13 +113,10 @@ describe("codex rules PostCompact deduplication", () => {
 		});
 
 		// then
-		const context = readAdditionalContext(output);
-		expect(context).toContain("MUST READ");
-		expect(context).toContain("CONTEXT.md");
-		expect(context).not.toContain("Instructions from:");
+		expect(output).toBe("");
 	});
 
-	it("#given startup static context dropped by compaction #when compact SessionStart runs after PostCompact #then it emits a mandatory read directive without rule bodies", async () => {
+	it("#given startup already injected static context #when compact SessionStart runs after PostCompact #then it emits no duplicate static context", async () => {
 		// given
 		const { root, pluginData } = makeTempProject();
 		await runSessionStartHook(sessionStartInput(root), {
@@ -139,10 +136,7 @@ describe("codex rules PostCompact deduplication", () => {
 		});
 
 		// then
-		const context = readAdditionalContext(output);
-		expect(context).toContain("MUST READ");
-		expect(context).toContain("CONTEXT.md");
-		expect(context).not.toContain("Instructions from:");
+		expect(output).toBe("");
 	});
 });
 

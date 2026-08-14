@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
 	hasFlag,
-	parseCaptureEvidenceArgs,
 	parseGoalArg,
 	parseRecordEvidenceArgs,
 	positionalText,
@@ -198,29 +197,6 @@ describe("parseRecordEvidenceArgs", () => {
 	});
 });
 
-describe("parseCaptureEvidenceArgs", () => {
-	it("parses an optional output path and command after --", () => {
-		expect(
-			parseCaptureEvidenceArgs([
-				"capture-evidence",
-				"--output",
-				".omo/ulw-loop/evidence/run.log",
-				"--",
-				"npm",
-				"test",
-			]),
-		).toEqual({
-			output: ".omo/ulw-loop/evidence/run.log",
-			command: ["npm", "test"],
-		});
-	});
-
-	it("throws when command separator or command is missing", () => {
-		expect(() => parseCaptureEvidenceArgs(["capture-evidence", "--output", "x.log"])).toThrow(UlwLoopError);
-		expect(() => parseCaptureEvidenceArgs(["capture-evidence", "--"])).toThrow(UlwLoopError);
-	});
-});
-
 describe("ULW_LOOP_HELP", () => {
 	it("mentions omo ulw-loop + every subcommand", () => {
 		expect(ULW_LOOP_HELP).toContain("omo ulw-loop");
@@ -229,12 +205,16 @@ describe("ULW_LOOP_HELP", () => {
 		expect(ULW_LOOP_HELP).toContain("status");
 		expect(ULW_LOOP_HELP).toContain("checkpoint");
 		expect(ULW_LOOP_HELP).toContain("steer");
-		expect(ULW_LOOP_HELP).toContain("capture-evidence");
-		expect(ULW_LOOP_HELP).toContain("capture-evidence [--output <path>] [--json] -- <command...>");
 		expect(ULW_LOOP_HELP).toContain("record-evidence");
 		expect(ULW_LOOP_HELP).toContain("criteria");
 		expect(ULW_LOOP_HELP).toContain("add-goal");
 		expect(ULW_LOOP_HELP).toContain("record-review-blockers");
+	});
+
+	it("never mentions the legacy typo", () => {
+		const typo = ["o", "m", "x"].join("");
+
+		expect(ULW_LOOP_HELP).not.toMatch(new RegExp(typo, "i"));
 	});
 });
 

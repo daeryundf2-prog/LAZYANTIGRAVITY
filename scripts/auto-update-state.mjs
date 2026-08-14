@@ -5,20 +5,32 @@ import { dirname, join } from "node:path";
 export const DEFAULT_LOCK_STALE_MS = 10 * 60 * 1_000;
 
 export function resolveStatePath(env) {
+	if (env.ANTIGRAVITY_AUTO_UPDATE_STATE_PATH?.trim()) return env.ANTIGRAVITY_AUTO_UPDATE_STATE_PATH;
 	if (env.LAZYCODEX_AUTO_UPDATE_STATE_PATH?.trim()) return env.LAZYCODEX_AUTO_UPDATE_STATE_PATH;
-	const dataRoot = env.PLUGIN_DATA?.trim() || join(homedir(), ".local", "share", "lazycodex");
+	const dataRoot = resolveDataRoot(env);
 	return join(dataRoot, "auto-update.json");
 }
 
 export function resolveLogPath(env) {
+	if (env.ANTIGRAVITY_AUTO_UPDATE_LOG_PATH?.trim()) return env.ANTIGRAVITY_AUTO_UPDATE_LOG_PATH;
 	if (env.LAZYCODEX_AUTO_UPDATE_LOG_PATH?.trim()) return env.LAZYCODEX_AUTO_UPDATE_LOG_PATH;
-	const dataRoot = env.PLUGIN_DATA?.trim() || join(homedir(), ".local", "share", "lazycodex");
+	const dataRoot = resolveDataRoot(env);
 	return join(dataRoot, "auto-update.log");
 }
 
 export function resolveLockPath(env, statePath) {
+	if (env.ANTIGRAVITY_AUTO_UPDATE_LOCK_PATH?.trim()) return env.ANTIGRAVITY_AUTO_UPDATE_LOCK_PATH;
 	if (env.LAZYCODEX_AUTO_UPDATE_LOCK_PATH?.trim()) return env.LAZYCODEX_AUTO_UPDATE_LOCK_PATH;
 	return `${statePath}.lock`;
+}
+
+function resolveDataRoot(env) {
+	return (
+		env.ANTIGRAVITY_PLUGIN_DATA?.trim() ||
+		env.PLUGIN_DATA?.trim() ||
+		env.LAZYCODEX_PLUGIN_DATA?.trim() ||
+		join(homedir(), ".local", "share", "lazyantigravity")
+	);
 }
 
 export async function acquireLock(lockPath, now, staleMs = DEFAULT_LOCK_STALE_MS) {

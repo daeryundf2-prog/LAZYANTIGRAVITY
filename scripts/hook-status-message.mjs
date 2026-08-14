@@ -1,26 +1,19 @@
-const PRODUCT_PREFIX = "(OmO)";
+const PRODUCT_NAME = "LazyAntigravity";
+const LEGACY_PRODUCT_NAME = "LazyCodex";
 
 const WORD_OVERRIDES = new Map([
-	["codegraph", "CodeGraph"],
-	["lazycodex", "LazyCodex"],
 	["lsp", "LSP"],
-	["mcp", "MCP"],
 	["ulw-loop", "Ulw-Loop"],
 ]);
 
-export function formatLazyCodexHookStatusMessage(version, label) {
-	void version;
-	return `${PRODUCT_PREFIX} ${normalizeLazyCodexHookStatusLabel(label)}`;
+export function formatLazyAntigravityHookStatusMessage(version, label) {
+	return `${PRODUCT_NAME}(${normalizeVersion(version)}): ${normalizeLazyAntigravityHookStatusLabel(label)}`;
 }
 
-export function normalizeLazyCodexHookStatusLabel(label) {
-	const parsed = parseLazyCodexHookStatusMessage(label);
+export function normalizeLazyAntigravityHookStatusLabel(label) {
+	const parsed = parseLazyAntigravityHookStatusMessage(label);
 	const rawLabel = parsed === null ? label : parsed.label;
-	const normalized = rawLabel
-		.replace(/^\(OmO\)\s*/i, " ")
-		.replace(/\bOMO\b/gi, " ")
-		.replace(/\s+/g, " ")
-		.trim();
+	const normalized = rawLabel.replace(/\bOMO\b/gi, " ").replace(/\s+/g, " ").trim();
 	if (normalized.length === 0) return "";
 	return normalized
 		.split(" ")
@@ -28,14 +21,24 @@ export function normalizeLazyCodexHookStatusLabel(label) {
 		.join(" ");
 }
 
-export function parseLazyCodexHookStatusMessage(message) {
-	const trimmed = message.trim();
-	const current = /^\(OmO\)\s+(.+)$/.exec(trimmed);
-	if (current !== null) return { version: undefined, label: current[1] };
-	const legacy = /^(?:LazyCodex|LazyAntigravity)\(([^)]+)\):\s+(.+)$/.exec(trimmed);
-	if (legacy === null) return null;
-	const [, version, label] = legacy;
+export function parseLazyAntigravityHookStatusMessage(message) {
+	const match = /^(?:LazyCodex|LazyAntigravity)\(([^)]+)\):\s+(.+)$/.exec(message.trim());
+	if (match === null) return null;
+	const [, version, label] = match;
 	return { version, label };
+}
+
+// Legacy compatibility exports: keep existing callers working while generated
+// hook status messages use the runtime product identity above.
+export function formatLazyCodexHookStatusMessage(version, label) {
+	return `${LEGACY_PRODUCT_NAME}(${normalizeVersion(version)}): ${normalizeLazyAntigravityHookStatusLabel(label)}`;
+}
+export const normalizeLazyCodexHookStatusLabel = normalizeLazyAntigravityHookStatusLabel;
+export const parseLazyCodexHookStatusMessage = parseLazyAntigravityHookStatusMessage;
+
+function normalizeVersion(version) {
+	const normalized = version.trim();
+	return normalized.length === 0 ? "local" : normalized;
 }
 
 function formatWord(word) {

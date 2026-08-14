@@ -11,49 +11,91 @@ Use this skill when the user asks for `ulw-loop`, `ulw`, durable goal execution,
 
 This skill is intentionally compact. The full workflow lives in `references/full-workflow.md`. Read only the sections needed for the current phase, then execute them exactly.
 
+**Default host for LazyAntigravity:** Google Antigravity + Gemini 3.7 Flash (High).  
+Codex-only tool names live in `references/codex.md` — do not use them on Antigravity.
+
 ## Required First Steps
 
 1. Open `references/full-workflow.md`.
-2. Read through **Bootstrap** (including its tier triage), **Execution Loop**, and the **Manual-QA channels** table before running any ULW command or recording evidence.
-3. If the task has code edits, tests, QA, or commit work, follow the full workflow's delegation and evidence rules. Tests alone never prove done.
+2. Read **Runtime selection**, **Bootstrap**, **Execution Loop**, and **Manual-QA channels** before running any ULW command or recording evidence.
+3. Resolve the ULW CLI via Bootstrap (PLUGIN_ROOT / Windows PowerShell / `~/.gemini/config/plugins/lazyantigravity/.../cli.js`). If CLI is missing, stop and report — do not hand-edit goal JSON.
+4. If the task has code edits, tests, QA, or commit work, follow the full workflow's delegation and evidence rules. Tests alone never prove done.
 
 ## Non-Negotiables
 
 - Use the ulw-loop CLI state under `.omo/ulw-loop`; do not hand-edit goal state.
-- After any compaction or context loss, re-read brief + goals + ledger FIRST (`omo sparkshell cat .omo/ulw-loop/ledger.jsonl` or read directly) plus `omo ulw-loop status --json`, then resume; never re-plan from scratch.
-- If `omo ulw-loop create-goals` says the existing aggregate is already complete, start unrelated new work with a fresh `--session-id <new-id>` instead of steering or forcing the completed default state. Use `--force` only to intentionally overwrite completed evidence.
-- Every success criterion needs observable evidence from a real surface: a channel (tmux, HTTP, browser, computer-use) or, for CLI- or data-shaped criteria, an auxiliary surface (CLI stdout, DB diff, parsed config dump).
+- After any compaction or context loss, re-read brief + goals + ledger FIRST (read files directly) plus `omo ulw-loop status --json`, then resume; never re-plan from scratch.
+- Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
 - Record evidence through the CLI only after cleanup receipts are available.
-- Delegate code edits, test writes, fixes, and QA execution to right-sized Codex subagents when the workflow requires it.
-- Every `multi_agent_v1.spawn_agent` message starts with `TASK:`, then names `DELIVERABLE`, `SCOPE`, and `VERIFY`; put role and specialty instructions inside `message`; use `fork_context: false` unless full history is truly required.
-- Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short `multi_agent_v1.wait_agent` cycles. Never use a single long blocking wait for them.
-- For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long reading, testing, or review passes, and `BLOCKED: <reason>` only when it cannot progress.
-- Track spawned agent names locally. Use `multi_agent_v1.wait_agent` for mailbox signals, not proof of completion. A timeout only means no new mailbox update arrived. Treat a running child as alive.
-- While children run, surface the active subagent count, agent names, and latest `WORKING:` phase.
-- Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running. Then record inconclusive and respawn a smaller `fork_context: false` task with the missing deliverable.
-- Use `git-master` for git-tracked edits: inspect recent and touched-path commit history, then commit each verified work unit atomically in the repository's observed language, scope, and message style with only that unit's files staged.
+- On Antigravity, delegate via `invoke_subagent` (never `spawn_agent` / `wait_agent`).
+- When invoking a subagent, pass a role envelope:
+  - `mayFinalizeRun=false`
+  - `mayModifyGlobalRunState=false`
+  - `mustReturn=SubagentResultEnvelope`
+  - `requiresParentAck=true`
+  - Do not claim the whole /ulw task is complete.
+  - Do not mark run as completed or failed.
+- Optional `Model` tier on `invoke_subagent`: `pro` | `flash` | `flash_lite` | `inherit`. This is a **manual hint only** — Antigravity does not auto-route catalog roles (`canAutoRoute=false`).
+- Use `git-master` for git-tracked edits: inspect recent and touched-path commit history, then commit each verified work unit atomically.
 
-## Verified quality-gate policy
+## Antigravity Tool Mapping
 
-For each post-edit source-file verification step, call the local LSP diagnostics capability semantically with server id `lsp`, tool `diagnostics`, and arguments `{filePath:"<absolute changed file>",severity:"error"}`. The workflow maps the outcome to `test/fixtures/lsp/clean.json`, `test/fixtures/lsp/diagnostics.json`, or `test/fixtures/lsp/unavailable.json`.
+| Workflow intent | Antigravity action |
+| --- | --- |
+| Plan / research / implement / QA | `invoke_subagent` with role envelope + TASK/DELIVERABLE/SCOPE/VERIFY |
+| ULW state / evidence / checkpoint | `omo ulw-loop …` after Bootstrap resolves CLI to `node …/ulw-loop/dist/cli.js` |
+| Model choice | User UI dropdown (default: Gemini 3.7 Flash High); optional Model tier hint on subagent |
 
-- Clean output is exactly `LSP verification: clean (<file>)`.
-- Diagnostic output starts with `LSP verification: <N> error(s) (<file>)` and includes only bounded, sanitized locations.
-- Unavailable output is exactly `LSP verification unavailable: <reason>` and is never a clean result.
+Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 
-Only bounded context and bounded continuation are verified automatic gates. Comment-preservation feedback and file-targeted diagnostics outside the local LSP invocation are experimental.
+> 💡 **Antigravity Recommended Model Configuration Guide**
+> - **Session default (plan + code + research)**: Gemini 3.7 Flash (High)
+> - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium)
+> - **Cross-model verification**: Gemini 3.1 Pro (High)
+> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking)
+>
+> *Note: Antigravity does not support automatic per-role model switching. Prefer Gemini 3.7 Flash (High) for the whole session unless you intentionally switch for verify or an escape-hatch redesign.*
+
+Suppress if the user says "quiet run", "skip model recommendation", "no model hint", or "quiet".
+
+What NOT to say: auto model routing enabled; switching to Opus automatically; verifier will use Gemini without a UI switch.
 
 ## Codex Tool Mapping
 
-The full workflow may mention OpenCode-style orchestration examples. In Codex, translate them to native tools:
+See `references/codex.md`.
 
-| Workflow intent | Codex tool |
-| --- | --- |
-| Plan agent | `multi_agent_v1.spawn_agent({"message":"TASK: act as a planning agent. ...","fork_context":false})` |
-| Search/read-only worker | `multi_agent_v1.spawn_agent({"message":"TASK: act as an explorer. ...","fork_context":false})` |
-| Implementation or QA worker | `multi_agent_v1.spawn_agent({"message":"TASK: act as an implementation or QA worker. ...","fork_context":false})` |
-| Final verification reviewer | `multi_agent_v1.spawn_agent({"message":"TASK: act as a rigorous reviewer. ...","fork_context":false})` |
-| Wait for background result | `multi_agent_v1.wait_agent(...)` |
-| Clean up finished worker | `multi_agent_v1.close_agent(...)` |
+## Token & Quota Safety and Safe-Resume Design
 
-When translating `load_skills=[...]`, include the requested skill names in the spawned agent's `message`.
+### 1. Limit / Error Classification
+- `context_window_exceeded`, `output_token_limit`, `model_rate_limited`, `account_quota_exceeded`, `provider_unavailable`, `unknown_model_error`
+
+### 2. Checkpoint Storage
+`omo ulw-loop save-role-checkpoint ...`  
+Saved in: `.omo/ulw-loop/checkpoints/ulw-{timestamp}.json` (legacy `.lazycodex/checkpoints/` still readable).
+
+### 3. Antigravity Safety Flow (No Auto-Switching)
+If rate limit/quota is detected:
+- Stop immediately; save checkpoint; recommend fallback models (3.7 Medium → 3.1 Pro → Opus escape hatch → Sonnet); user switches UI model; `/ulw resume`.
+
+Fallback sequence (exact):
+- **When Gemini 3.7 Flash (High) is limited**: Medium → 3.1 Pro → Opus → Sonnet
+- **When Gemini 3.7 Flash (Medium) is limited**: High → 3.1 Pro → Sonnet
+- **When Gemini 3.1 Pro (High) is limited**: 3.7 High → 3.7 Medium → Opus
+- **When Claude Opus is limited** (escape hatch only): 3.7 High → 3.7 Medium → 3.1 Pro
+- **When Claude Sonnet is limited**: 3.7 High → 3.7 Medium → 3.1 Pro
+- **When all exhausted**: wait for refresh or suggest enabling AI Credit Overages manually
+
+### 4. Codex Safety Flow
+See `references/codex.md` (catalog `fallbackChain`).
+
+### 5. Compact Mode
+Switch UI to Gemini 3.7 Flash (High) for ~1M context (about 3.5x larger than typical GPT-5.5/Claude windows). Summarize logs; slice files; compress outputs; save artifacts to disk.
+
+### 6. Batch Mode
+Split patches; verify each batch; checkpoint often.
+
+### 7. Resume (`/ulw resume`)
+Load latest checkpoint; show completed/failed roles and next action. Does **not** auto-spawn workers or auto-switch models on Antigravity.
+
+### 8. AI Credit Overages
+Never auto-enable. Inform the user only.

@@ -1,32 +1,44 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.2.2",
-	"description": "Aggregated Antigravity plugin root for OMO components.",
-	"license": "MIT",
-	"author": {
-		"name": "shin"
-	},
-	"keywords": ["antigravity", "antigravity-plugin", "omo", "hooks", "mcp", "skills"],
-	"interface": {
-		"displayName": "LazyAntigravity",
-		"shortDescription": "Unified local Antigravity components",
-		"longDescription": "LazyAntigravity exposes the local OMO Rules, LSP, Ultrawork, and ulw-loop components as one plugin namespace.",
-		"developerName": "shin",
-		"category": "Developer Tools",
-		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection"],
-		"brandColor": "#7C3AED"
-	},
+	"version": "0.3.2",
+	"description": "Aggregated Antigravity plugin root for OMO/LazyAntigravity components (Gemini 3.7 Flash default).",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"private": true,
-	"engines": {
-		"node": ">=20.17"
+	"files": [
+		"shared-skills/package.json",
+		"shared-skills/index.mjs",
+		"shared-skills/skills"
+	],
+	"workspaces": [
+		"components/comment-checker",
+		"components/git-bash",
+		"components/rules",
+		"components/lsp",
+		"components/telemetry",
+		"components/start-work-continuation",
+		"components/ulw-loop",
+		"components/ultrawork"
+	],
+	"dependencies": {
+		"@iarna/toml": "^2.2.5",
+		"@oh-my-opencode/shared-skills": "file:./shared-skills",
+		"@oh-my-opencode/sync-skills": "file:./src/packages/sync-skills"
 	},
 	"scripts": {
-		"check": "node scripts/validate-root-toolchain.mjs",
-		"rebuild:maintainer": "node scripts/rebuild-components.mjs",
+		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",
+		"check": "npm run build && npm test",
+		"doctor": "node scripts/lazyantigravity-doctor.mjs",
+		"evidence:map": "node scripts/lazyantigravity-evidence-map.mjs",
+		"hooks:report": "node scripts/lazyantigravity-hooks-report.mjs",
+		"icons:report": "node scripts/lazyantigravity-oss-icons-report.mjs",
+		"mcp:status": "node scripts/lazyantigravity-mcp-status.mjs",
+		"prepack": "node scripts/materialize-shared-skills.mjs --pack",
+		"postpack": "node scripts/materialize-shared-skills.mjs --restore",
+		"provenance": "node scripts/lazyantigravity-provenance.mjs",
+		"sync:hooks": "node scripts/sync-hook-status-messages.mjs",
+		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
-		"test": "node scripts/run-tests.mjs",
-		"validate:distribution": "node scripts/validate-antigravity-distribution.mjs"
+		"test": "node --test test/*.test.mjs"
 	}
 }

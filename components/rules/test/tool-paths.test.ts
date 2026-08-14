@@ -30,34 +30,22 @@ function postToolUse(input: { toolName: string; toolInput?: unknown; toolRespons
 }
 
 describe("extractCodexToolPaths", () => {
-	for (const [name, toolName, toolInput] of [
-		[
-			"#given filesystem read payload #when extracting #then returns resolved path",
-			"mcp__filesystem__read_file",
-			{ path: "src/app.ts" },
-		],
-		[
-			"#given mcp write-file payload #when extracting #then returns resolved path",
-			"mcp__filesystem__write_file",
-			{ path: "src/app.ts", content: "export const app = true;\n" },
-		],
-		[
-			"#given mcp edit-file payload #when extracting #then returns resolved path",
-			"mcp__filesystem__edit_file",
-			{ path: "src/app.ts", edits: [] },
-		],
-	] as const) {
-		it(name, () => {
-			// given
-			const root = makeProject();
+	it("#given filesystem read payload #when extracting #then returns resolved path", () => {
+		// given
+		const root = makeProject();
 
-			// when
-			const paths = extractCodexToolPaths(postToolUse({ toolName, toolInput }), root);
+		// when
+		const paths = extractCodexToolPaths(
+			postToolUse({
+				toolName: "mcp__filesystem__read_file",
+				toolInput: { path: "src/app.ts" },
+			}),
+			root,
+		);
 
-			// then
-			expect(paths).toEqual([path.join(root, "src", "app.ts")]);
-		});
-	}
+		// then
+		expect(paths).toEqual([path.join(root, "src", "app.ts")]);
+	});
 
 	it("#given apply_patch payload #when extracting #then returns patched file paths", () => {
 		// given
@@ -119,6 +107,40 @@ describe("extractCodexToolPaths", () => {
 			path.join(root, "src", "app.ts"),
 			path.join(root, "src", "moved.ts"),
 		]);
+	});
+
+	it("#given mcp write-file payload #when extracting #then returns resolved path", () => {
+		// given
+		const root = makeProject();
+
+		// when
+		const paths = extractCodexToolPaths(
+			postToolUse({
+				toolName: "mcp__filesystem__write_file",
+				toolInput: { path: "src/app.ts", content: "export const app = true;\n" },
+			}),
+			root,
+		);
+
+		// then
+		expect(paths).toEqual([path.join(root, "src", "app.ts")]);
+	});
+
+	it("#given mcp edit-file payload #when extracting #then returns resolved path", () => {
+		// given
+		const root = makeProject();
+
+		// when
+		const paths = extractCodexToolPaths(
+			postToolUse({
+				toolName: "mcp__filesystem__edit_file",
+				toolInput: { path: "src/app.ts", edits: [] },
+			}),
+			root,
+		);
+
+		// then
+		expect(paths).toEqual([path.join(root, "src", "app.ts")]);
 	});
 
 	it("#given mcp read-multiple-files payload #when extracting #then returns all resolved paths", () => {

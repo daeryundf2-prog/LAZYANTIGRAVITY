@@ -1,17 +1,13 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { runStopHook } from "../src/codex-hook.js";
 import type { ReadonlyFileSystem, StopInput } from "../src/types.js";
 
-const DEFAULT_WORKSPACE = "/repo";
-const cleanupRoots: string[] = [];
-
-afterEach(() => {
-	for (const root of cleanupRoots.splice(0)) rmSync(root, { recursive: true, force: true });
-});
+const WORKSPACE = "/repo";
+const BOULDER_PATH = join(WORKSPACE, ".omo", "boulder.json");
+const PLAN_PATH = join(WORKSPACE, ".omo", "plans", "plan.md");
+const LEDGER_PATH = join(WORKSPACE, ".omo", "start-work", "ledger.jsonl");
 
 describe("start-work Stop hook", () => {
 	it("#given stop hook is already active #when hook runs #then returns empty output", () => {
@@ -41,149 +37,94 @@ describe("start-work Stop hook", () => {
 		expect(output).toBe("");
 	});
 
+	it("#given active antigravity work with remaining top-level tasks #when hook runs #then returns block JSON", () => {
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["antigravity:sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		});
+
+		const output = runStopHook(createStopInput(), fs);
+		const parsed = parseBlockOutput(output);
+		expect(parsed.decision).toBe("block");
+		expect(parsed.reason).toContain("antigravity:sess_abc");
+	});
+
+	it("#given active gemini-prefixed work #when hook runs #then returns block JSON", () => {
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["gemini:sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		});
+
+		const output = runStopHook(createStopInput(), fs);
+		expect(parseBlockOutput(output).decision).toBe("block");
+	});
+
 	it("#given active codex work with remaining top-level tasks #when hook runs #then returns block JSON", () => {
 		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
 				sessionIds: ["codex:sess_abc"],
 				status: "active",
 				worktreePath: "/tmp/worktree",
 			}),
-			planMarkdown: ["# Plan", "", "## TODOs", "- [ ] First", "- [x] Done", "- [ ] Second"].join("\n"),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First", "- [x] Done", "- [ ] Second"].join("\n"),
 		});
-		const fs = createMemoryFs();
 
 		// when
-		const output = runStopHook(createStopInput(workspace), fs);
+		const output = runStopHook(createStopInput(), fs);
 
 		// then
 		const parsed = parseBlockOutput(output);
 		expect(parsed.decision).toBe("block");
 		expect(parsed.reason).toContain("- Plan: `launch-plan`");
-		expect(parsed.reason).toContain(`- Plan file: \`${join(workspace, ".omo", "plans", "plan.md")}\``);
-		expect(parsed.reason).toContain(`- Boulder state: \`${join(workspace, ".omo", "boulder.json")}\``);
+		expect(parsed.reason).toContain(`- Plan file: \`${PLAN_PATH}\``);
+		expect(parsed.reason).toContain(`- Boulder state: \`${BOULDER_PATH}\``);
 		expect(parsed.reason).toContain("- Remaining top-level checkboxes: `2` of `3`");
 		expect(parsed.reason).toContain("- Next incomplete task: `First`");
 		expect(parsed.reason).toContain("- Worktree: `/tmp/worktree`");
-		expect(parsed.reason).toContain(`- Ledger: \`${join(workspace, ".omo", "start-work", "ledger.jsonl")}\``);
+		expect(parsed.reason).toContain(`- Ledger: \`${LEDGER_PATH}\``);
 		expect(parsed.reason).toContain("- Your session id in boulder.json: `codex:sess_abc`");
-	});
-
-	it("#given context-window pressure in transcript #when hook runs #then it does not inject continuation text", () => {
-		// given
-		const transcriptPath = "/repo/transcript.jsonl";
-		const fs = createMemoryFs({
-			[transcriptPath]: [
-				JSON.stringify({
-					type: "message",
-					payload: {
-						content: {
-							error: {
-								code: "context_too_large",
-							},
-						},
-					},
-				}),
-				"Your input exceeds the context window of this model.",
-				"",
-			].join("\n"),
-		});
-
-		// when
-		const output = runStopHook({ ...createStopInput(), transcript_path: transcriptPath }, fs);
-
-		// then
-		expect(output).toBe("");
 	});
 
 	it("#given active codex work #when continuation directive is emitted #then subagent guidance is reliable", () => {
 		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({ sessionIds: ["codex:sess_abc"], status: "active" }),
-			planMarkdown: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["codex:sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
 		});
-		const fs = createMemoryFs();
 
 		// when
-		const output = runStopHook(createStopInput(workspace), fs);
+		const output = runStopHook(createStopInput(), fs);
 
 		// then
 		const parsed = parseBlockOutput(output);
 		expect(parsed.reason).toMatch(/TASK:/);
-		expect(parsed.reason).toMatch(/fork_context:\s*false/);
+		expect(parsed.reason).toMatch(/fork_turns:\s*"none"/);
 		expect(parsed.reason).toMatch(/wait_agent.*mailbox signals/);
 		expect(parsed.reason).toMatch(/TASK STILL ACTIVE/);
 		expect(parsed.reason).toMatch(/respawn.*smaller/);
 		expect(parsed.reason).toMatch(/WORKING:/);
-	});
-
-	it("#given active codex work #when continuation directive is emitted #then QA weight is tier-scoped without echo bloat", () => {
-		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({ sessionIds: ["codex:sess_abc"], status: "active" }),
-			planMarkdown: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
-		});
-		const fs = createMemoryFs();
-
-		// when
-		const output = runStopHook(createStopInput(workspace), fs);
-
-		// then
-		const parsed = parseBlockOutput(output);
-		expect(parsed.reason).toMatch(/LIGHT/);
-		expect(parsed.reason).toMatch(/HEAVY/);
-		expect(parsed.reason).toMatch(/When unsure[^.]{0,30}HEAVY/);
-		expect(parsed.reason).toMatch(/mirrors its implementation/);
-		expect((parsed.reason.match(/malformed input, prompt injection/g) ?? []).length).toBe(1);
-		expect(parsed.reason.split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(1100);
-	});
-
-	it("#given active codex work #when continuation directive is emitted #then PR lifecycle stays worktree-bound", () => {
-		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({
-				sessionIds: ["codex:sess_abc"],
-				status: "active",
-				worktreePath: "/tmp/worktree",
-			}),
-			planMarkdown: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
-		});
-		const fs = createMemoryFs();
-
-		// when
-		const output = runStopHook(createStopInput(workspace), fs);
-
-		// then
-		const parsed = parseBlockOutput(output);
-		expect(parsed.reason).toContain("PR or branch implementation/review/merge work requires a task-owned git worktree");
-		expect(parsed.reason).toContain("Treat the main worktree as read-only context");
-		expect(parsed.reason).toContain("create/update the PR, wait for CI/review/Cubic gates, merge by default");
-		expect(parsed.reason).toContain("Do not create a PR, PR handoff, branch handoff, merge");
-	});
-
-	it("#given stop hook source #when inspected #then it remains Boulder-only without planning bootstrap logic", () => {
-		// given
-		const hook = readFileSync(new URL("../src/codex-hook.ts", import.meta.url), "utf8");
-
-		// then
-		expect(hook).toMatch(/readContinuationState/);
-		expect(hook).toMatch(/START_WORK_CONTINUATION_DIRECTIVE/);
-		expect(hook).toMatch(/decision:\s*"block"/);
-		expect(hook).not.toMatch(
-			/\bulw-plan\b|\bspawn_agent\b|\brequest_user_input\b|bootstrap|selectable plan|Phase 1|Create or update Boulder state/i,
-		);
+		expect(parsed.reason).toMatch(/single `list_agents`/);
 	});
 
 	it("#given active work belongs to another harness #when hook runs #then returns empty output", () => {
 		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({ sessionIds: ["opencode:sess_abc"], status: "active" }),
-			planMarkdown: "- [ ] First",
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({ sessionIds: ["opencode:sess_abc"], status: "active" }),
+			[PLAN_PATH]: "- [ ] First",
 		});
-		const fs = createMemoryFs();
 
 		// when
-		const output = runStopHook(createStopInput(workspace), fs);
+		const output = runStopHook(createStopInput(), fs);
 
 		// then
 		expect(output).toBe("");
@@ -191,14 +132,13 @@ describe("start-work Stop hook", () => {
 
 	it("#given bare legacy session id #when hook runs #then returns empty output", () => {
 		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({ sessionIds: ["sess_abc"], status: "active" }),
-			planMarkdown: "- [ ] First",
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({ sessionIds: ["sess_abc"], status: "active" }),
+			[PLAN_PATH]: "- [ ] First",
 		});
-		const fs = createMemoryFs();
 
 		// when
-		const output = runStopHook(createStopInput(workspace), fs);
+		const output = runStopHook(createStopInput(), fs);
 
 		// then
 		expect(output).toBe("");
@@ -206,14 +146,13 @@ describe("start-work Stop hook", () => {
 
 	it("#given completed boulder work #when hook runs #then returns empty output", () => {
 		// given
-		const workspace = createWorkspace({
-			boulderJson: createBoulderJson({ sessionIds: ["codex:sess_abc"], status: "completed" }),
-			planMarkdown: "- [ ] First",
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({ sessionIds: ["codex:sess_abc"], status: "completed" }),
+			[PLAN_PATH]: "- [ ] First",
 		});
-		const fs = createMemoryFs();
 
 		// when
-		const output = runStopHook(createStopInput(workspace), fs);
+		const output = runStopHook(createStopInput(), fs);
 
 		// then
 		expect(output).toBe("");
@@ -221,14 +160,12 @@ describe("start-work Stop hook", () => {
 
 	it("#given malformed boulder JSON #when hook runs #then returns empty output", () => {
 		// given
-		const workspace = createWorkspace({
-			boulderJson: "{",
-			planMarkdown: "- [ ] First",
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: "{",
 		});
-		const fs = createMemoryFs();
 
 		// when
-		const output = runStopHook(createStopInput(workspace), fs);
+		const output = runStopHook(createStopInput(), fs);
 
 		// then
 		expect(output).toBe("");
@@ -252,32 +189,18 @@ type BoulderInput = {
 	readonly worktreePath?: string;
 };
 
-type WorkspaceInput = {
-	readonly boulderJson: string;
-	readonly planMarkdown: string;
-};
-
-function createStopInput(cwd = DEFAULT_WORKSPACE): StopInput {
+function createStopInput(): StopInput {
 	return {
 		hook_event_name: "Stop",
 		session_id: "sess_abc",
 		turn_id: "turn_1",
 		transcript_path: "",
-		cwd,
+		cwd: WORKSPACE,
 		model: "gpt-5.5",
 		permission_mode: "default",
 		stop_hook_active: false,
 		last_assistant_message: "done",
 	};
-}
-
-function createWorkspace(input: WorkspaceInput): string {
-	const root = mkdtempSync(join(tmpdir(), "codex-continuation-hook-"));
-	cleanupRoots.push(root);
-	mkdirSync(join(root, ".omo", "plans"), { recursive: true });
-	writeFileSync(join(root, ".omo", "plans", "plan.md"), input.planMarkdown);
-	writeFileSync(join(root, ".omo", "boulder.json"), input.boulderJson);
-	return root;
 }
 
 function createBoulderJson(input: BoulderInput): string {
@@ -286,20 +209,10 @@ function createBoulderJson(input: BoulderInput): string {
 		active_plan: ".omo/plans/plan.md",
 		plan_name: "launch-plan",
 		status: input.status,
-		started_at: "2026-06-13T00:00:00.000Z",
 		session_ids: input.sessionIds,
 		...(input.worktreePath === undefined ? {} : { worktree_path: input.worktreePath }),
 	};
-	return JSON.stringify({
-		schema_version: 2,
-		active_work_id: "work_1",
-		works: { work_1: work },
-		active_plan: ".omo/plans/plan.md",
-		plan_name: "legacy-launch-plan",
-		started_at: "2026-06-13T00:00:00.000Z",
-		status: input.status,
-		session_ids: input.sessionIds,
-	});
+	return JSON.stringify({ schema_version: 2, active_work_id: "work_1", works: { work_1: work } });
 }
 
 function createMemoryFs(files: Record<string, string> = {}): ReadonlyFileSystem {

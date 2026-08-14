@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDynamicBlock, formatStaticBlock } from "@oh-my-opencode/rules-engine/engine";
-import type { LoadedRule, MatchReason, RuleSource } from "@oh-my-opencode/rules-engine/engine";
+import { formatDynamicBlock, formatStaticBlock } from "../src/rules/formatter.js";
+import type { LoadedRule, MatchReason, RuleSource } from "../src/rules/types.js";
 
 const FORMAT_OPTIONS = {
 	maxRuleChars: 10_000,
@@ -42,7 +42,7 @@ describe("rules formatter hook context", () => {
 		);
 	});
 
-	it("#given static rules #when formatting SessionStart context #then it injects rule bodies inline", () => {
+	it("#given static rules #when formatting SessionStart context #then it lists files to read without rule bodies", () => {
 		// given
 		const rule = loadedRule({
 			path: "/repo/CONTEXT.md",
@@ -55,14 +55,9 @@ describe("rules formatter hook context", () => {
 
 		// then
 		expect(block).toBe(
-			[
-				"## Project Instructions",
-				"",
-				"Instructions from: /repo/CONTEXT.md",
-				"",
-				"Keep generated hook context readable.",
-			].join("\n"),
+			["## Project Instructions", "", "must read project rules:", "- [CONTEXT.md]{/repo/CONTEXT.md}"].join("\n"),
 		);
+		expect(block).not.toContain("Keep generated hook context readable.");
 	});
 
 	it("#given CRLF and bare CR rule bodies #when formatting context #then it normalizes line endings", () => {
@@ -79,7 +74,7 @@ describe("rules formatter hook context", () => {
 		expect(block).not.toContain("\r");
 	});
 
-	it("#given duplicate static rules with different line endings #when formatting context #then it injects one copy", () => {
+	it("#given duplicate static rules with different line endings #when formatting context #then it lists one file to read", () => {
 		// given
 		const lfRule = loadedRule({
 			path: "/repo/CONTEXT.md",
@@ -96,12 +91,12 @@ describe("rules formatter hook context", () => {
 		const block = formatStaticBlock([lfRule, crlfRule], FORMAT_OPTIONS);
 
 		// then
-		expect(occurrenceCount(block, "Instructions from: /repo/CONTEXT.md")).toBe(1);
-		expect(occurrenceCount(block, "Shared rule\nKeep one copy.")).toBe(1);
+		expect(occurrenceCount(block, "- [CONTEXT.md]{/repo/CONTEXT.md}")).toBe(1);
+		expect(block).not.toContain("Shared rule\nKeep one copy.");
 		expect(block).not.toContain("/repo/packages/CONTEXT.md");
 	});
 
-	it("#given a Hephaestus static rule #when formatting SessionStart context #then it injects its body before other rule bodies", () => {
+	it("#given a Hephaestus static rule #when formatting SessionStart context #then it is listed before other rules", () => {
 		// given
 		const rules = [
 			loadedRule({ path: "/repo/alpha.md", relativePath: "alpha.md", body: "Alpha guidance." }),
@@ -117,52 +112,12 @@ describe("rules formatter hook context", () => {
 		const block = formatStaticBlock(rules, FORMAT_OPTIONS);
 
 		// then
-		expect(block).toContain("Instructions from: /repo/bundled-rules/hephaestus.md");
-		expect(block).toContain("Hephaestus guidance.");
-		expect(block).toContain("Alpha guidance.");
-		expect(block).toContain("Beta guidance.");
-		expect(block.indexOf("Hephaestus guidance.")).toBeLessThan(block.indexOf("Alpha guidance."));
-		expect(block.indexOf("Alpha guidance.")).toBeLessThan(block.indexOf("Beta guidance."));
-		expect(block).not.toContain("must read project rules:");
-		expect(block).not.toContain("- [hephaestus.md]");
-	});
-
-	it("#given only a Hephaestus static rule #when formatting SessionStart context #then it emits no project rule link section", () => {
-		// given
-		const rule = loadedRule({
-			path: "/repo/bundled-rules/hephaestus.md",
-			relativePath: "bundled-rules/hephaestus.md",
-			body: "Hephaestus guidance.",
-		});
-
-		// when
-		const block = formatStaticBlock([rule], FORMAT_OPTIONS);
-
-		// then
-		expect(block).toContain("Instructions from: /repo/bundled-rules/hephaestus.md");
-		expect(block).toContain("Hephaestus guidance.");
-		expect(block).not.toContain("- [hephaestus.md]");
-		expect(block).not.toContain("must read project rules:");
-	});
-
-	it("#given an oversized Hephaestus static rule #when formatting under a tight result budget #then its body is never truncated", () => {
-		// given
-		const tailMarker = "HEPHAESTUS_TAIL_SENTINEL";
-		const rule = loadedRule({
-			path: "/repo/bundled-rules/hephaestus.md",
-			relativePath: "bundled-rules/hephaestus.md",
-			body: `${"H".repeat(500)}\n\n${tailMarker}`,
-		});
-
-		// when
-		const block = formatStaticBlock([rule], {
-			maxRuleChars: 120,
-			maxResultChars: 200,
-		});
-
-		// then
-		expect(block).toContain(tailMarker);
-		expect(block).not.toContain("[Truncated. Full:");
+		const ruleLines = block.split("\n").filter((line) => line.startsWith("- "));
+		expect(ruleLines).toEqual([
+			"- [hephaestus.md]{/repo/bundled-rules/hephaestus.md}",
+			"- [alpha.md]{/repo/alpha.md}",
+			"- [beta.md]{/repo/beta.md}",
+		]);
 	});
 
 	it("#given multiple oversized rules #when formatting under a tight result budget #then every rule receives a fair truncated share with a read-full guide", () => {

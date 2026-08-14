@@ -1,0 +1,15 @@
+{
+	"name": "@code-yeongyu/ast-grep-mcp",
+	"version": "0.1.0",
+	"description": "Standalone ast-grep Model Context Protocol server for Antigravity.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"omo-ast-grep": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"package.json"
+	]
+}

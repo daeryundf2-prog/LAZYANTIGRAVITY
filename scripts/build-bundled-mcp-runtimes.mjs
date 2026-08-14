@@ -1,32 +1,26 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoPackagesRoot = pluginRoot;
 
-const packageJson = JSON.parse(readFileSync(join(pluginRoot, "package.json"), "utf8"));
-const isStandalone = packageJson.name === "lazyantigravity";
-const standaloneComponentsRoot = join(pluginRoot, "components");
-const runtimeRoot = isStandalone ? standaloneComponentsRoot : repoPackagesRoot;
-
 const runtimes = [
 	{
 		label: "lsp-tools-mcp",
-		packageRoot: join(runtimeRoot, "lsp-tools-mcp"),
+		packageRoot: join(repoPackagesRoot, "lsp-tools-mcp"),
 		requiredOutputs: ["dist/cli.js", "dist/tools.js"],
 	},
 	{
-		label: "lsp-daemon",
-		packageRoot: join(runtimeRoot, "lsp-daemon"),
-		requiredOutputs: ["dist/cli.js", "dist/index.js", "dist/index.d.ts"],
-		install: true,
+		label: "ast-grep-mcp",
+		packageRoot: join(repoPackagesRoot, "ast-grep-mcp"),
+		requiredOutputs: ["dist/cli.js"],
 	},
 	{
 		label: "git-bash-mcp",
-		packageRoot: join(runtimeRoot, "git-bash-mcp"),
+		packageRoot: join(repoPackagesRoot, "git-bash-mcp"),
 		requiredOutputs: ["dist/cli.js"],
 	},
 ];
@@ -45,16 +39,6 @@ function buildRuntime(runtime) {
 		assertBundledDist(runtime);
 		console.log(`Using bundled ${runtime.label} dist`);
 		return;
-	}
-
-	if (runtime.install === true && !existsSync(join(runtime.packageRoot, "node_modules"))) {
-		const install = spawnSync("npm", ["ci"], {
-			cwd: runtime.packageRoot,
-			shell: process.platform === "win32",
-			stdio: "inherit",
-		});
-		if (install.error !== undefined) throw install.error;
-		if (install.status !== 0) process.exit(install.status ?? 1);
 	}
 
 	const result = spawnSync("npm", ["run", "build"], {

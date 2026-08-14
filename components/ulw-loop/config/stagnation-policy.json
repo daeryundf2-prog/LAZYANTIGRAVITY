@@ -1,0 +1,15 @@
+{
+  "recentEventWindow": 10,
+  "repeatedErrorThreshold": 3,
+  "repeatedPatchThreshold": 3,
+  "oscillationWindow": 4,
+  "heartbeatOnlyThreshold": 5,
+  "noEvidenceProgressThreshold": 5,
+  "actionOnStagnation": "emit_event",
+  "minimumEventsForDetection": 5,
+  "cooldownEventsAfterDetection": 5,
+  "requireSameAgentForRepeatedError": true,
+  "requireSameRoleForOscillation": true,
+  "ignoreHeartbeatOnlyWhenRoleIsWaiting": true,
+  "defaultSeverity": "high"
+}

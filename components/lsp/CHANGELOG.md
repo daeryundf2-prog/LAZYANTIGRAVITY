@@ -7,10 +7,10 @@
 ## 0.2.0
 
 - Extracted the LSP runtime and MCP server into [`@code-yeongyu/lsp-tools-mcp`](https://github.com/code-yeongyu/lsp-tools-mcp).
-- codex-lsp now consumes that runtime from the repository-level `packages/lsp-tools-mcp` package.
+- codex-lsp now consumes that runtime as a git submodule at `packages/lsp-tools-mcp`.
 - Kept the Codex-specific PostToolUse hook in this package and routed MCP serving through the upstream CLI.
 
-- Extract LSP runtime to `lsp-tools-mcp` upstream and consume it via the repository-level `packages/lsp-tools-mcp` package.
+- Extract LSP runtime to `lsp-tools-mcp` upstream and consume it via git submodule at `packages/lsp-tools-mcp`.
 - Renamed the MCP server namespace to `lsp` and exposed shorter tool names such as `lsp.diagnostics`.
 - Use portable Codex hook interpolation and add package smoke coverage for hook/MCP entrypoints.
 - Spawn language servers without shell mode; Windows `.cmd` and `.bat` shims are routed through `cmd.exe` with explicit arguments.

@@ -1,5 +1,6 @@
+import { existsSync } from "node:fs";
+import { ulwLoopDir, ulwLoopGoalsPath, ulwLoopLedgerPath } from "./paths.js";
 import { parseUlwLoopSteeringDirective, steerUlwLoop } from "./steering.js";
-import { buildUltraworkDirectiveOutput } from "./ultrawork-directive.js";
 const CREATE_GOAL_TOOL_NAME = "create_goal";
 const CREATE_GOAL_PAYLOAD_WARNING = "Use create_goal with objective only. Omit token_budget so the goal stays unlimited, and put lifecycle status changes on update_goal.";
 export function parseUserPromptSubmitPayload(raw) {
@@ -28,16 +29,26 @@ export function parsePreToolUsePayload(raw) {
         return null;
     }
 }
-export async function applyUserPromptUlwLoopSteering(payload, options = {}) {
+export function parsePostCompactPayload(raw) {
+    if (raw.trim().length === 0)
+        return null;
+    try {
+        const parsed = JSON.parse(raw);
+        return isPostCompactPayload(parsed) ? parsed : null;
+    }
+    catch (error) {
+        if (error instanceof SyntaxError)
+            return null;
+        return null;
+    }
+}
+export async function applyUserPromptUlwLoopSteering(payload) {
     try {
         if (payload.hook_event_name !== "UserPromptSubmit")
             return "";
         const proposal = parseUlwLoopSteeringDirective(payload.prompt);
-        if (proposal === null) {
-            if (hasSteeringDirectiveMarker(payload.prompt))
-                return "";
-            return options.includeUltraworkDirective ? buildUltraworkDirectiveOutput(payload) : "";
-        }
+        if (proposal === null)
+            return "";
         const result = await steerUlwLoop(payload.cwd, proposal, payloadScope(payload));
         if (!result.accepted)
             return "";
@@ -53,9 +64,6 @@ export async function applyUserPromptUlwLoopSteering(payload, options = {}) {
             return "";
         return "";
     }
-}
-function hasSteeringDirectiveMarker(prompt) {
-    return /(?:^|\s)(?:OMO_ULW_LOOP_STEER|omo\.ulw-loop\.steer|omo ulw-loop steer):/u.test(prompt);
 }
 function payloadScope(payload) {
     return { sessionId: payload.session_id };
@@ -77,12 +85,48 @@ export function applyPreToolUseGoalBudgetGuard(payload) {
     };
     return `${JSON.stringify(output)}\n`;
 }
-export async function runUlwLoopHookCli(stdin, stdout, options = {}) {
+export async function applyPostCompactRecovery(payload) {
+    if (payload.hook_event_name !== "PostCompact")
+        return "";
+    const repoRoot = payload.cwd;
+    if (!existsSync(ulwLoopDir(repoRoot)))
+        return "";
+    const lines = [];
+    lines.push("ULW-LOOP CONTEXT RECOVERY (PostCompact):");
+    lines.push(`  ulw-loop directory found at ${ulwLoopDir(repoRoot)}`);
+    const goalsExists = existsSync(ulwLoopGoalsPath(repoRoot));
+    const ledgerExists = existsSync(ulwLoopLedgerPath(repoRoot));
+    if (goalsExists)
+        lines.push("  goals.json exists — re-read it to restore active goal state.");
+    if (ledgerExists)
+        lines.push("  ledger.jsonl exists — re-read it to restore evidence chain.");
+    if (!goalsExists && !ledgerExists)
+        return "";
+    lines.push("  ACTION REQUIRED: Run `omo ulw-loop status --json` before continuing any ulw-loop work.");
+    lines.push("  Do NOT re-plan from scratch. Re-read brief + goals + ledger FIRST, then resume.");
+    return `${JSON.stringify({ additionalContext: lines.join("\n") })}\n`;
+}
+export async function runUlwLoopHookCli(stdin, stdout) {
     try {
         const payload = parseUserPromptSubmitPayload(await readAll(stdin));
         if (payload === null)
             return;
-        const output = await applyUserPromptUlwLoopSteering(payload, options);
+        const output = await applyUserPromptUlwLoopSteering(payload);
+        if (output.length > 0)
+            stdout.write(output);
+    }
+    catch (error) {
+        if (error instanceof Error)
+            return;
+        return;
+    }
+}
+export async function runPostCompactHookCli(stdin, stdout) {
+    try {
+        const payload = parsePostCompactPayload(await readAll(stdin));
+        if (payload === null)
+            return;
+        const output = await applyPostCompactRecovery(payload);
         if (output.length > 0)
             stdout.write(output);
     }
@@ -114,10 +158,7 @@ function isUserPromptSubmitPayload(value) {
         typeof value["cwd"] === "string" &&
         typeof value["prompt"] === "string" &&
         typeof value["session_id"] === "string" &&
-        ["model", "permission_mode", "turn_id"].every((key) => optionalString(value[key])) &&
-        (value["transcript_path"] === undefined ||
-            value["transcript_path"] === null ||
-            typeof value["transcript_path"] === "string"));
+        ["model", "permission_mode", "transcript_path", "turn_id"].every((key) => optionalString(value[key])));
 }
 function isPreToolUsePayload(value) {
     if (!isRecord(value))
@@ -132,6 +173,14 @@ function isPreToolUsePayload(value) {
         (value["transcript_path"] === null || typeof value["transcript_path"] === "string") &&
         typeof value["turn_id"] === "string" &&
         Object.hasOwn(value, "tool_input"));
+}
+function isPostCompactPayload(value) {
+    if (!isRecord(value))
+        return false;
+    return (value["hook_event_name"] === "PostCompact" &&
+        typeof value["cwd"] === "string" &&
+        typeof value["session_id"] === "string" &&
+        ["model", "transcript_path", "turn_id"].every((key) => optionalString(value[key])));
 }
 function hasInvalidCreateGoalInput(value) {
     return isRecord(value) && Object.keys(value).some((key) => key !== "objective");

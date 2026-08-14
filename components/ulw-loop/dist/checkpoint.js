@@ -1,52 +1,12 @@
-import { existsSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
-import { buildTaskScopedAggregateReconciliationHint, canReconcileActiveFinalTaskScopedAggregateSnapshot, canReconcileCompletedTaskScopedAggregateSnapshot, } from "./checkpoint-reconciliation.js";
-import { formatCodexGoalReconciliation, readCodexGoalSnapshotInput, reconcileCodexGoalSnapshot, } from "./codex-goal-snapshot.js";
-import { requireAllCriteriaPass, requireAllPlanCriteriaPass, requireEssentialCriteriaPass } from "./evidence.js";
-import { codexGoalMode, compatibleCodexObjectives, expectedCodexObjective, isFinalRunCompletionCandidate, } from "./goal-status.js";
+// biome-ignore-all format: keep checkpoint orchestration below the pure LOC budget.
+import { runCheckpointQualityGate } from "./checkpoint-verification.js";
+import { requireAllCriteriaPass } from "./evidence.js";
 import { appendLedger, readUlwLoopPlan, withUlwLoopMutationLock, writePlan } from "./plan-io.js";
-import { classifyExternalAuthorizationBlocker, clearGoalBlockerFields, sameBlockerOccurrences, validateQualityGate, } from "./quality-gate.js";
+import { classifyExternalAuthorizationBlocker, clearGoalBlockerFields, sameBlockerOccurrences } from "./quality-gate.js";
 import { iso, UlwLoopError } from "./types.js";
-const QUALITY_GATE_FS = { existsSync, statSync };
-function ulwLoopFail(message, code) {
-    throw new UlwLoopError(message, code);
-}
-function normalizeObjective(value) {
-    return value.replace(/\s+/g, " ").trim();
-}
-function nonEmptyEvidence(value) {
-    const trimmed = value.trim();
-    return trimmed || ulwLoopFail("Evidence must be a non-empty string.", "ulw_loop_evidence_required");
-}
-function findGoal(plan, goalId) {
-    const goal = plan.goals.find((candidate) => candidate.id === goalId);
-    return goal ?? ulwLoopFail(`Unknown ulw-loop id: ${goalId}.`, "ulw_loop_goal_not_found");
-}
-async function readJsonInput(raw, repoRoot) {
-    if (raw === undefined || raw.trim() === "")
-        return undefined;
-    const trimmed = raw.trim();
-    try {
-        return JSON.parse(trimmed);
-    }
-    catch (error) {
-        if (!(error instanceof SyntaxError))
-            throw error;
-    }
-    const path = resolve(repoRoot, trimmed);
-    if (!existsSync(path))
-        return ulwLoopFail("Quality gate JSON is neither valid JSON nor a readable path.", "ulw_loop_json_input_invalid");
-    try {
-        return JSON.parse(await readFile(path, "utf8"));
-    }
-    catch (error) {
-        return ulwLoopFail(`Quality gate path does not contain valid JSON${error instanceof Error ? `: ${error.message}` : "."}`, "ulw_loop_json_input_invalid");
-    }
-}
-function makeAggregateCompletion(now, evidence, codexGoal) {
-    return { status: "complete", completedAt: now, evidence, codexGoal };
-}
+function ulwLoopFail(message, code) { throw new UlwLoopError(message, code); }
+function nonEmptyEvidence(value) { const trimmed = value.trim(); return trimmed || ulwLoopFail("Evidence must be a non-empty string.", "ulw_loop_evidence_required"); }
+function findGoal(plan, goalId) { const goal = plan.goals.find((candidate) => candidate.id === goalId); return goal ?? ulwLoopFail(`Unknown ulw-loop id: ${goalId}.`, "ulw_loop_goal_not_found"); }
 function applyBlockedOrFailed(goal, plan, status, evidence, now) {
     const signature = classifyExternalAuthorizationBlocker(evidence);
     const occurrences = signature === null ? 0 : sameBlockerOccurrences(plan, signature) + 1;
@@ -79,13 +39,7 @@ function ledgerKind(status, goal, aggregateCompletion) {
     return status === "blocked" ? "goal_blocked" : "goal_failed";
 }
 function buildLedger(now, args, goal, qualityGate, codexGoal, aggregateCompletion) {
-    const entry = {
-        at: now,
-        kind: ledgerKind(args.status, goal, aggregateCompletion),
-        goalId: goal.id,
-        status: goal.status,
-        evidence: args.evidence,
-    };
+    const entry = { at: now, kind: ledgerKind(args.status, goal, aggregateCompletion), goalId: goal.id, status: goal.status, evidence: args.evidence };
     if (codexGoal !== undefined)
         entry.codexGoal = codexGoal;
     if (qualityGate !== undefined)
@@ -102,64 +56,47 @@ export async function checkpointUlwLoop(repoRoot, args, scope) {
     return withUlwLoopMutationLock(repoRoot, scope, async () => {
         const plan = await readUlwLoopPlan(repoRoot, scope);
         const goal = findGoal(plan, args.goalId);
+        if (args.status === "complete")
+            requireAllCriteriaPass(goal);
         const evidence = nonEmptyEvidence(args.evidence);
         const now = iso();
         let aggregateCompletion;
         let qualityGate;
         let codexGoal;
         if (args.status === "complete") {
-            const aggregate = codexGoalMode(plan) === "aggregate";
-            const final = isFinalRunCompletionCandidate(plan, goal);
-            if (final) {
-                requireAllCriteriaPass(goal);
-                requireAllPlanCriteriaPass(plan);
+            const gateResult = await runCheckpointQualityGate(repoRoot, goal, plan, evidence, args, now, scope);
+            if (gateResult.finalizerAllowed) {
+                qualityGate = gateResult.qualityGate;
+                codexGoal = gateResult.codexGoal;
+                aggregateCompletion = gateResult.aggregateCompletion;
+                goal.status = "complete";
+                goal.completedAt = now;
+                goal.evidence = evidence;
+                delete goal.failedAt;
+                delete goal.failureReason;
+                clearGoalBlockerFields(goal);
+                if (plan.activeGoalId === goal.id)
+                    delete plan.activeGoalId;
             }
-            else if (aggregate)
-                requireEssentialCriteriaPass(goal);
-            else
-                requireAllCriteriaPass(goal);
-            const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
-            const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
-                expectedObjective: expectedCodexObjective(plan, goal),
-                ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
-                allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-                requireSnapshot: true,
-                requireComplete: !aggregate || final,
-            });
-            codexGoal = reconciliation.snapshot.raw;
-            if (!reconciliation.ok) {
-                const objective = snapshot?.objective;
-                const mismatchedTaskObjective = snapshot?.available === true &&
-                    objective !== undefined &&
-                    normalizeObjective(objective) !== normalizeObjective(expectedCodexObjective(plan, goal));
-                const completedTaskScoped = mismatchedTaskObjective &&
-                    snapshot.status === "complete" &&
-                    (await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
-                const activeFinalTaskScoped = mismatchedTaskObjective &&
-                    snapshot.status === "active" &&
-                    (await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
-                const taskScoped = completedTaskScoped || activeFinalTaskScoped;
-                if (!taskScoped)
-                    throw new UlwLoopError(`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`, "ulw_loop_codex_snapshot_mismatch");
+            else {
+                if (gateResult.goalStatusOverride) {
+                    goal.status = gateResult.goalStatusOverride;
+                }
+                if (gateResult.blockedReasonOverride) {
+                    goal.blockedReason = gateResult.blockedReasonOverride;
+                }
+                if (gateResult.failedReasonOverride) {
+                    goal.failedAt = now;
+                    goal.failureReason = gateResult.failedReasonOverride;
+                }
+                if (plan.activeGoalId === goal.id && goal.status !== "in_progress") {
+                    delete plan.activeGoalId;
+                }
             }
-            if (final)
-                aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
-            if (final || aggregateCompletion !== undefined)
-                qualityGate = validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot), {
-                    repoRoot,
-                    fs: QUALITY_GATE_FS,
-                });
-            goal.status = "complete";
-            goal.completedAt = now;
-            goal.evidence = evidence;
-            delete goal.failedAt;
-            delete goal.failureReason;
-            clearGoalBlockerFields(goal);
-            if (plan.activeGoalId === goal.id)
-                delete plan.activeGoalId;
         }
-        else
+        else {
             applyBlockedOrFailed(goal, plan, args.status, evidence, now);
+        }
         goal.updatedAt = now;
         if (aggregateCompletion !== undefined)
             plan.aggregateCompletion = aggregateCompletion;
@@ -167,8 +104,6 @@ export async function checkpointUlwLoop(repoRoot, args, scope) {
         await writePlan(repoRoot, plan, scope);
         const ledgerEntry = buildLedger(now, args, goal, qualityGate, codexGoal, aggregateCompletion);
         await appendLedger(repoRoot, ledgerEntry, scope);
-        return aggregateCompletion === undefined
-            ? { plan, goal, ledgerEntry }
-            : { plan, goal, ledgerEntry, aggregateCompletion };
+        return aggregateCompletion === undefined ? { plan, goal, ledgerEntry } : { plan, goal, ledgerEntry, aggregateCompletion };
     });
 }

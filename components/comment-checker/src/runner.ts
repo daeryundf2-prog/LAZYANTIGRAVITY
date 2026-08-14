@@ -96,7 +96,7 @@ export function resolveCommentCheckerBinary(): string | undefined {
 function resolvePackageApiBinary(): string | undefined {
 	try {
 		const require = createRequire(import.meta.url);
-		const packageExports: unknown = require(commentCheckerPackageName());
+		const packageExports: unknown = require("@code-yeongyu/comment-checker");
 		if (!isCommentCheckerPackage(packageExports)) return undefined;
 		const binaryPath = packageExports.getBinaryPath();
 		return existsSync(binaryPath) ? binaryPath : undefined;
@@ -108,16 +108,12 @@ function resolvePackageApiBinary(): string | undefined {
 function resolvePackageBinary(binaryName: string): string | undefined {
 	try {
 		const require = createRequire(import.meta.url);
-		const packagePath = require.resolve(`${commentCheckerPackageName()}/package.json`);
+		const packagePath = require.resolve("@code-yeongyu/comment-checker/package.json");
 		const binaryPath = join(dirname(packagePath), "bin", binaryName);
 		return existsSync(binaryPath) ? binaryPath : undefined;
 	} catch {
 		return undefined;
 	}
-}
-
-function commentCheckerPackageName(): string {
-	return ["@code-yeongyu", "comment-checker"].join("/");
 }
 
 function isCommentCheckerPackage(value: unknown): value is { getBinaryPath: () => string } {

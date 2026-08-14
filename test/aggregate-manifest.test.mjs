@@ -5,35 +5,29 @@ import test from "node:test";
 
 import { exists, readJson, root } from "./aggregate-plugin-fixture.mjs";
 
-test("#given aggregate plugin manifest #when inspected #then identity metadata follows the active package contract", async () => {
+test("#given aggregate plugin manifest #when inspected #then it owns the LazyAntigravity namespace", async () => {
 	// given
-	const manifest = await readJson(".codex-plugin/plugin.json");
-	const packageJson = await readJson("package.json");
+	const manifest = await readJson("plugin.json");
+
+	// when
+	const hookPath = manifest.hooks;
+	const skillsPath = manifest.skills;
+	const mcpPath = manifest.mcpServers;
 
 	// then
-	if (manifest.name === "lazyantigravity") {
-		assert.deepEqual(manifest, {
-			name: packageJson.name,
-			description: packageJson.description,
-		});
-	} else {
-		assert.equal(manifest.name, "omo");
-		assert.equal(manifest.hooks, "./hooks/hooks.json");
-		assert.equal(manifest.skills, "./skills/");
-		assert.equal(manifest.mcpServers, "./.mcp.json");
-	}
+	assert.equal(manifest.name, "lazyantigravity");
+	assert.equal(hookPath, "./hooks.json");
+	assert.equal(skillsPath, "./skills/");
+	assert.equal(mcpPath, "./mcp_config.json");
 });
 
 test("#given aggregate plugin metadata #when inspected #then ulw-loop is the public loop name", async () => {
 	// given
-	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
-	const metadataText = isStandalone
-		? await readFile(join(root, "package.json"), "utf8")
-		: await readFile(join(root, ".codex-plugin", "plugin.json"), "utf8");
-	const metadata = JSON.parse(metadataText);
+	const manifestText = await readFile(join(root, "plugin.json"), "utf8");
+	const manifest = JSON.parse(manifestText);
 
 	// when
-	const longDescription = String(metadata.interface?.longDescription ?? "");
+	const longDescription = String(manifest.interface?.longDescription ?? "");
 
 	// then
 	assert.match(longDescription, /ulw-loop/);
@@ -42,8 +36,7 @@ test("#given aggregate plugin metadata #when inspected #then ulw-loop is the pub
 test("#given component directories #when scanned #then only intentional resource roots declare plugin manifests", async () => {
 	// given
 	const components = await readdir(join(root, "components"), { withFileTypes: true });
-	const expectedComponentManifests = new Map([["rules", { hooks: "./hooks/hooks.json" }]]);
-	const isStandalone = (await readJson("package.json")).name === "lazyantigravity";
+	const expectedComponentManifests = new Map();
 
 	// when
 	const componentNames = [];
@@ -61,6 +54,7 @@ test("#given component directories #when scanned #then only intentional resource
 		"lsp",
 		"rules",
 		"start-work-continuation",
+		"telemetry",
 		"ultrawork",
 		"ulw-loop",
 	]);

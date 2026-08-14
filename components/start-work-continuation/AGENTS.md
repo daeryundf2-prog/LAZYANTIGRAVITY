@@ -40,4 +40,4 @@ Conventions for human contributors and AI agents working on this repository.
 - Never let the hook block a Codex turn because of malformed input.
 - Never make a network call from the hook.
 - Keep the directive in `directive.md`. Do not inline it into TypeScript files.
-- The hook only continues sessions listed in `.omo/boulder.json` as `codex:<session_id>`.
+- The hook continues sessions listed in `.omo/boulder.json` as `antigravity:<session_id>`, `gemini:<session_id>`, or `codex:<session_id>`.

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,17 +7,11 @@ import { fileURLToPath } from "node:url";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const workspaces = Array.isArray(packageJson.workspaces) ? packageJson.workspaces : [];
-const isStandalone = packageJson.name === "lazyantigravity";
 
 for (const workspace of workspaces) {
 	if (typeof workspace !== "string" || !workspace.startsWith("components/")) continue;
 	const workspacePackageJson = JSON.parse(await readFile(join(root, workspace, "package.json"), "utf8"));
 	if (typeof workspacePackageJson.scripts?.build !== "string") continue;
-
-	if (isStandalone && existsSync(join(root, workspace, "dist"))) {
-		console.log(`Skipping build for ${workspace} (standalone pre-built dist exists)`);
-		continue;
-	}
 
 	console.log(`Building ${workspace}`);
 	const result = spawnSync("npm", ["run", "--workspace", workspace, "build"], {

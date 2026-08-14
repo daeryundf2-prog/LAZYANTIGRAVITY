@@ -1,11 +1,11 @@
-import { createHash } from "node:crypto";
-import { access, mkdir, mkdtemp, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ulwLoopCommand } from "../src/cli-commands.ts";
+import { appendRunEvent } from "../src/control-plane.js";
+import { ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE } from "../src/goal-status.js";
 
 let testDir: string;
 let out: string[];
@@ -13,8 +13,6 @@ let err: string[];
 let originalCodexSessionId: string | undefined;
 let originalCodexThreadId: string | undefined;
 let originalOmoSessionId: string | undefined;
-let evidenceCounter = 0;
-const TRUSTED_MANIFEST_KIND = "ulw-loop.evidence-capture.v1";
 
 beforeEach(async () => {
 	testDir = await mkdtemp(join(tmpdir(), "ug-cli-"));
@@ -55,6 +53,9 @@ function resetOutput(): void {
 function stdoutJson(): Record<string, unknown> {
 	return JSON.parse(out.join(""));
 }
+function codexSnapshot(status: "active" | "complete" = "active"): string {
+	return JSON.stringify({ goal: { objective: ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE, status } });
+}
 
 async function createPlan(brief = "- Goal A\n- Goal B"): Promise<Record<string, unknown>> {
 	resetOutput();
@@ -64,44 +65,102 @@ async function createPlan(brief = "- Goal A\n- Goal B"): Promise<Record<string, 
 	return parsed;
 }
 
-async function passingEvidenceUrl(label: string): Promise<string> {
-	const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
-	await mkdir(evidenceDir, { recursive: true });
-	const evidencePath = join(evidenceDir, `${label}-${++evidenceCounter}.log`);
-	const manifestPath = `${evidencePath}.manifest.json`;
-	const content = `${label} passed\n`;
-	const hash = createHash("sha256").update(content).digest("hex");
-	await writeFile(evidencePath, `${label} passed\n`, "utf8");
-	await writeFile(
-		manifestPath,
-		`${JSON.stringify(
-			{
-				version: 1,
-				kind: TRUSTED_MANIFEST_KIND,
-				command: ["node", "--test"],
-				cwd: testDir,
-				exitCode: 0,
-				exitSignal: null,
-				startedAt: new Date().toISOString(),
-				endedAt: new Date().toISOString(),
-				durationMs: 1,
-				artifactPath: evidencePath,
-				artifactSha256: hash,
-				nonce: `${label}-${evidenceCounter}`,
-				captureTool: "omo-ulw-loop capture-evidence",
-			},
-			null,
-			2,
-		)}\n`,
-		"utf8",
-	);
-	return pathToFileURL(manifestPath).href;
+async function seedSubagentCompletion(): Promise<void> {
+	await appendRunEvent(testDir, "default-run", "agent.completed_reported", {
+		result: {
+			runId: "default-run",
+			agentId: "worker-1",
+			role: "worker",
+			status: "success",
+			summary: "implemented changes and ran tests",
+			filesChanged: ["src/auth.ts", "test/auth.test.ts"],
+			commandsRun: ["npm test", "npm run build"],
+			artifactsGenerated: [],
+			blockers: [],
+			nextRecommendedAction: "checkpoint",
+			requiresParentAck: true,
+		},
+		role: "worker",
+	});
+}
+
+async function passCriterion(goalId: string, criterionId: string): Promise<void> {
+	expect(
+		await ulwLoopCommand([
+			"record-evidence",
+			"--goal-id",
+			goalId,
+			"--criterion-id",
+			criterionId,
+			"--status",
+			"pass",
+			"--evidence",
+			`${criterionId} observable proof`,
+		]),
+	).toBe(0);
+	resetOutput();
 }
 
 describe("ulwLoopCommand help", () => {
 	it("prints usage when no subcommand", async () => {
 		expect(await ulwLoopCommand([])).toBe(0);
 		expect(out.join("")).toContain("omo ulw-loop");
+	});
+});
+
+describe("ulwLoopCommand create-goals", () => {
+	it("creates plan + writes 3 artifacts + seeds criteria per goal", async () => {
+		const code = await ulwLoopCommand(["create-goals", "--brief", "- Goal A\n- Goal B", "--json"]);
+
+		expect(code).toBe(0);
+		const parsed = stdoutJson();
+		expect(parsed).toMatchObject({ ok: true });
+		expect(parsed).toHaveProperty("plan.goals.0.successCriteria.0.id", "C001");
+		expect(await readFile(join(testDir, ".omo/ulw-loop/brief.md"), "utf8")).toContain("Goal A");
+		expect(await readFile(join(testDir, ".omo/ulw-loop/goals.json"), "utf8")).toContain("successCriteria");
+		expect(await readFile(join(testDir, ".omo/ulw-loop/ledger.jsonl"), "utf8")).toContain("plan_created");
+	});
+
+	it("#given two session ids #when creating goals #then writes isolated session-scoped plans", async () => {
+		expect(await ulwLoopCommand(["create-goals", "--session-id", "session-A", "--brief", "- Alpha", "--json"])).toBe(
+			0,
+		);
+		resetOutput();
+
+		expect(await ulwLoopCommand(["create-goals", "--session-id", "session-B", "--brief", "- Beta", "--json"])).toBe(
+			0,
+		);
+		resetOutput();
+
+		expect(await readFile(join(testDir, ".omo/ulw-loop/session-A/goals.json"), "utf8")).toContain("Alpha");
+		expect(await readFile(join(testDir, ".omo/ulw-loop/session-B/goals.json"), "utf8")).toContain("Beta");
+
+		expect(await ulwLoopCommand(["status", "--session-id", "session-A", "--json"])).toBe(0);
+		expect(stdoutJson()).toMatchObject({
+			plan: { goalsPath: ".omo/ulw-loop/session-A/goals.json", goals: [{ title: "Alpha" }] },
+		});
+		expect(out.join("")).not.toContain("Beta");
+	});
+
+	it("#given Codex thread env #when creating goals #then uses the thread as the session scope", async () => {
+		process.env["CODEX_THREAD_ID"] = "thread-123";
+
+		expect(await ulwLoopCommand(["create-goals", "--brief", "- Thread scoped", "--json"])).toBe(0);
+		resetOutput();
+
+		expect(await readFile(join(testDir, ".omo/ulw-loop/thread-123/goals.json"), "utf8")).toContain("Thread scoped");
+		expect(await ulwLoopCommand(["status", "--json"])).toBe(0);
+		expect(stdoutJson()).toHaveProperty("plan.goalsPath", ".omo/ulw-loop/thread-123/goals.json");
+	});
+
+	it("#given Codex thread env and explicit session id #when creating goals #then the explicit session wins", async () => {
+		process.env["CODEX_THREAD_ID"] = "thread-123";
+
+		expect(
+			await ulwLoopCommand(["create-goals", "--session-id", "manual-456", "--brief", "- Manual scoped", "--json"]),
+		).toBe(0);
+
+		expect(await readFile(join(testDir, ".omo/ulw-loop/manual-456/goals.json"), "utf8")).toContain("Manual scoped");
 	});
 });
 
@@ -117,7 +176,6 @@ describe("ulwLoopCommand status", () => {
 describe("ulwLoopCommand record-evidence", () => {
 	it("records evidence + returns updated criterion", async () => {
 		await createPlan();
-		const evidenceUrl = await passingEvidenceUrl("curl-passed");
 
 		expect(
 			await ulwLoopCommand([
@@ -129,13 +187,13 @@ describe("ulwLoopCommand record-evidence", () => {
 				"--status",
 				"pass",
 				"--evidence",
-				evidenceUrl,
+				"curl passed",
 				"--json",
 			]),
 		).toBe(0);
 		expect(stdoutJson()).toMatchObject({
 			ok: true,
-			criterion: { id: "C001", status: "pass", capturedEvidence: evidenceUrl },
+			criterion: { id: "C001", status: "pass", capturedEvidence: "curl passed" },
 		});
 	});
 
@@ -166,157 +224,6 @@ describe("ulwLoopCommand record-evidence", () => {
 	});
 });
 
-describe("ulwLoopCommand capture-evidence", () => {
-	it("runs a command and writes a trusted manifest for record-evidence", async () => {
-		await createPlan();
-		const scriptPath = join(testDir, "proof.mjs");
-		const outputPath = join(testDir, ".omo/ulw-loop/evidence/capture-proof.log");
-		await writeFile(scriptPath, "console.log('capture proof passed')\n", "utf8");
-
-		expect(
-			await ulwLoopCommand([
-				"capture-evidence",
-				"--output",
-				outputPath,
-				"--json",
-				"--",
-				process.execPath,
-				scriptPath,
-			]),
-		).toBe(0);
-		const captured = stdoutJson();
-		expect(captured).toMatchObject({ ok: true, exitCode: 0, artifactPath: await realpath(outputPath) });
-		const evidenceFiles = await readdir(join(testDir, ".omo/ulw-loop/evidence"));
-		expect(evidenceFiles.some((name) => name.endsWith(".tmp"))).toBe(false);
-		const evidenceUrl = captured["evidence"];
-		expect(typeof evidenceUrl).toBe("string");
-		resetOutput();
-
-		expect(
-			await ulwLoopCommand([
-				"record-evidence",
-				"--goal-id",
-				"G001-goal-a",
-				"--criterion-id",
-				"C001",
-				"--status",
-				"pass",
-				"--evidence",
-				String(evidenceUrl),
-				"--json",
-			]),
-		).toBe(0);
-		expect(stdoutJson()).toMatchObject({ ok: true, criterion: { id: "C001", status: "pass" } });
-	});
-
-	it("returns the command exit code while still writing failure evidence", async () => {
-		const scriptPath = join(testDir, "fail-proof.mjs");
-		const outputPath = join(testDir, ".omo/ulw-loop/evidence/fail-proof.log");
-		await writeFile(scriptPath, "console.log('will fail'); process.exit(7)\n", "utf8");
-
-		expect(
-			await ulwLoopCommand([
-				"capture-evidence",
-				"--output",
-				outputPath,
-				"--json",
-				"--",
-				process.execPath,
-				scriptPath,
-			]),
-		).toBe(7);
-		expect(stdoutJson()).toMatchObject({ ok: false, exitCode: 7, artifactPath: await realpath(outputPath) });
-	});
-
-	it("rejects existing capture outputs instead of overwriting evidence", async () => {
-		const scriptPath = join(testDir, "existing-proof.mjs");
-		const outputPath = join(testDir, ".omo/ulw-loop/evidence/existing-proof.log");
-		await mkdir(join(testDir, ".omo/ulw-loop/evidence"), { recursive: true });
-		await writeFile(scriptPath, "console.log('new proof')\n", "utf8");
-		await writeFile(outputPath, "old proof\n", "utf8");
-
-		expect(
-			await ulwLoopCommand([
-				"capture-evidence",
-				"--output",
-				outputPath,
-				"--json",
-				"--",
-				process.execPath,
-				scriptPath,
-			]),
-		).toBe(1);
-		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_EXISTS" } });
-	});
-
-	it("rejects output outside the evidence directory without creating parent directories", async () => {
-		const scriptPath = join(testDir, "outside-proof.mjs");
-		const outsideParent = join(testDir, "outside", "nested");
-		await writeFile(scriptPath, "console.log('outside proof')\n", "utf8");
-
-		expect(
-			await ulwLoopCommand([
-				"capture-evidence",
-				"--output",
-				join(outsideParent, "proof.log"),
-				"--json",
-				"--",
-				process.execPath,
-				scriptPath,
-			]),
-		).toBe(1);
-		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT" } });
-		await expect(access(outsideParent)).rejects.toMatchObject({ code: "ENOENT" });
-	});
-
-	it("rejects output through an evidence-directory symlink escape without creating nested directories", async () => {
-		const scriptPath = join(testDir, "symlink-proof.mjs");
-		const outsideDir = join(testDir, "outside-target");
-		const evidenceDir = join(testDir, ".omo/ulw-loop/evidence");
-		const linkPath = join(evidenceDir, "link-out");
-		await mkdir(outsideDir, { recursive: true });
-		await mkdir(evidenceDir, { recursive: true });
-		await symlink(outsideDir, linkPath, "dir");
-		await writeFile(scriptPath, "console.log('symlink proof')\n", "utf8");
-
-		expect(
-			await ulwLoopCommand([
-				"capture-evidence",
-				"--output",
-				join(linkPath, "nested", "proof.log"),
-				"--json",
-				"--",
-				process.execPath,
-				scriptPath,
-			]),
-		).toBe(1);
-		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT" } });
-		await expect(access(join(outsideDir, "nested"))).rejects.toMatchObject({ code: "ENOENT" });
-	});
-
-	it("rejects capture when the .omo directory is a symlink escape without creating evidence roots", async () => {
-		const scriptPath = join(testDir, "omo-symlink-proof.mjs");
-		const outsideDir = join(testDir, "outside-omo");
-		await mkdir(outsideDir, { recursive: true });
-		await symlink(outsideDir, join(testDir, ".omo"), "dir");
-		await writeFile(scriptPath, "console.log('omo symlink proof')\n", "utf8");
-
-		expect(
-			await ulwLoopCommand([
-				"capture-evidence",
-				"--output",
-				join(testDir, ".omo/ulw-loop/evidence/proof.log"),
-				"--json",
-				"--",
-				process.execPath,
-				scriptPath,
-			]),
-		).toBe(1);
-		expect(stdoutJson()).toMatchObject({ ok: false, error: { code: "ULW_LOOP_CAPTURE_OUTPUT_OUTSIDE_ROOT" } });
-		await expect(access(join(outsideDir, "ulw-loop"))).rejects.toMatchObject({ code: "ENOENT" });
-	});
-});
-
 describe("ulwLoopCommand criteria", () => {
 	it("lists criteria for a goal", async () => {
 		await createPlan();
@@ -332,6 +239,89 @@ describe("ulwLoopCommand criteria", () => {
 		expect(await ulwLoopCommand(["criteria", "--goal-id", "G001-goal-a", "--json"])).toBe(0);
 		expect(stdoutJson()).toMatchObject({ ok: true, goalId: "G001-goal-a" });
 		expect(stdoutJson()).toHaveProperty("criteria.0.id", "C001");
+	});
+});
+
+describe("ulwLoopCommand checkpoint", () => {
+	it("REJECTS status=complete when criteria pending", async () => {
+		await createPlan();
+
+		expect(
+			await ulwLoopCommand([
+				"checkpoint",
+				"--goal-id",
+				"G001-goal-a",
+				"--status",
+				"complete",
+				"--evidence",
+				"x",
+				"--codex-goal-json",
+				codexSnapshot(),
+			]),
+		).toBe(1);
+		expect(err.join("").toLowerCase()).toContain("criteria");
+	});
+
+	it("ACCEPTS when all criteria pass", async () => {
+		await createPlan();
+		await passCriterion("G001-goal-a", "C001");
+		await passCriterion("G001-goal-a", "C002");
+		await passCriterion("G001-goal-a", "C003");
+		await seedSubagentCompletion();
+
+		expect(
+			await ulwLoopCommand([
+				"checkpoint",
+				"--goal-id",
+				"G001-goal-a",
+				"--status",
+				"complete",
+				"--evidence",
+				"implementation done and validation passed",
+				"--codex-goal-json",
+				codexSnapshot(),
+				"--json",
+			]),
+		).toBe(0);
+		expect(stdoutJson()).toHaveProperty("goal.status", "complete");
+	});
+
+	it("#given failed checkpoint without codex goal json #when recorded through CLI #then marks the goal failed", async () => {
+		await createPlan();
+
+		expect(
+			await ulwLoopCommand([
+				"checkpoint",
+				"--goal-id",
+				"G001-goal-a",
+				"--status",
+				"failed",
+				"--evidence",
+				"implementation failed and validation captured",
+				"--json",
+			]),
+		).toBe(0);
+
+		expect(stdoutJson()).toMatchObject({ ok: true, goal: { id: "G001-goal-a", status: "failed" } });
+	});
+
+	it("#given blocked checkpoint without codex goal json #when recorded through CLI #then marks the goal blocked", async () => {
+		await createPlan();
+
+		expect(
+			await ulwLoopCommand([
+				"checkpoint",
+				"--goal-id",
+				"G002-goal-b",
+				"--status",
+				"blocked",
+				"--evidence",
+				"waiting for external approval",
+				"--json",
+			]),
+		).toBe(0);
+
+		expect(stdoutJson()).toMatchObject({ ok: true, goal: { id: "G002-goal-b", status: "blocked" } });
 	});
 });
 
@@ -388,12 +378,6 @@ describe("ulwLoopCommand unknown", () => {
 describe("ulwLoopCommand error handling", () => {
 	it("returns 1 + prints [ulw-loop] prefix on UlwLoopError", async () => {
 		expect(await ulwLoopCommand(["status"])).toBe(1);
-		expect(err.join("")).toContain("[ulw-loop]");
-	});
-
-	it("#given no --json #when an error occurs #then writes only to stderr and leaves stdout empty", async () => {
-		expect(await ulwLoopCommand(["status"])).toBe(1);
-		expect(out.join("")).toBe("");
 		expect(err.join("")).toContain("[ulw-loop]");
 	});
 });

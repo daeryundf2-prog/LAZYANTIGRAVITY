@@ -1,6 +1,6 @@
 {
 	"name": "@code-yeongyu/codex-rules",
-	"version": "4.13.0",
+	"version": "0.1.0",
 	"description": "Codex plugin that injects project rule files into model context through lifecycle hooks.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
@@ -37,8 +37,8 @@
 		"CHANGELOG.md"
 	],
 	"scripts": {
-		"build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && bun build src/cli.ts --target node --format esm --outfile dist/cli.js",
-		"test": "npm run build --silent && vitest --run --no-file-parallelism",
+		"build": "tsc -p tsconfig.build.json",
+		"test": "vitest --run",
 		"test:watch": "vitest",
 		"bench": "npm run build --silent && node scripts/bench-codex-rules.mjs",
 		"typecheck": "tsc --noEmit",
@@ -50,12 +50,11 @@
 		"picomatch": "^4.0.3"
 	},
 	"devDependencies": {
-		"@oh-my-opencode/rules-engine": "file:../../../../rules-engine",
-		"@biomejs/biome": "2.4.16",
-		"@types/node": "^25.9.3",
+		"@biomejs/biome": "2.4.15",
+		"@types/node": "^25.7.0",
 		"@types/picomatch": "^4.0.0",
 		"typescript": "^6.0.3",
-		"vitest": "^4.1.8"
+		"vitest": "^4.1.5"
 	},
 	"engines": {
 		"node": ">=20.0.0"

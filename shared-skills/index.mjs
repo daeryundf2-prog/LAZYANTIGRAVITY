@@ -1,5 +1,2 @@
-import { fileURLToPath } from "node:url";
-
-export function sharedSkillsRootPath() {
-	return fileURLToPath(new URL("./skills/", import.meta.url));
-}
+export const name = "@oh-my-opencode/shared-skills";
+export const version = "0.3.2";

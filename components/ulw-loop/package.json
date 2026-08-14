@@ -1,6 +1,6 @@
 {
 	"name": "@code-yeongyu/codex-ulw-loop",
-	"version": "4.13.0",
+	"version": "0.1.0",
 	"description": "Codex plugin: durable repo-native multi-goal orchestration with embedded success criteria and observable evidence audit.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
@@ -23,11 +23,10 @@
 		"typescript"
 	],
 	"bin": {
-		"omo-ulw-loop": "./dist/cli.js"
+		"omo": "./dist/cli.js"
 	},
 	"files": [
 		"dist",
-		"directive.md",
 		"hooks",
 		"skills",
 		"LICENSE",
@@ -45,10 +44,10 @@
 		"check": "tsc --noEmit && biome check . && npm run build"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.16",
-		"@types/node": "^25.9.3",
+		"@biomejs/biome": "2.4.15",
+		"@types/node": "^25.7.0",
 		"typescript": "^6.0.3",
-		"vitest": "^4.1.8"
+		"vitest": "^4.1.5"
 	},
 	"engines": {
 		"node": ">=20.0.0"

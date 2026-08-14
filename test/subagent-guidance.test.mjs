@@ -6,60 +6,78 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
-const orchestrationSkills = [
+const SKILLS = [
 	"review-work",
 	"start-work",
-	"ulw",
 	"ulw-loop",
 	"ulw-plan",
 ];
 
-test("[todo13.subagents.native-guidance] #given active orchestration skills #when inspected #then they use Antigravity native collaboration names", async () => {
-	for (const skillName of orchestrationSkills) {
-		const text = await readFile(join(root, "skills", skillName, "SKILL.md"), "utf8");
-		assert.doesNotMatch(text, /spawn_agent|wait_agent|call_omo_agent|background_output|multi_agent_v[0-9]+/);
-		assert.doesNotMatch(text, /Codex Harness Tool Compatibility/);
-		assert.match(text, /Verified quality-gate policy/);
+const AGENT_FILES = [
+	"components/ultrawork/agents/codex-ultrawork-reviewer.toml",
+	"components/ultrawork/agents/plan.toml",
+];
+
+test("#given orchestration skills #when inspected #then Codex subagent delegation is hardened", async () => {
+	// given / when / then
+	const skillPaths = SKILLS.map((skillName) => join("skills", skillName, "SKILL.md"));
+
+	for (const skillPath of skillPaths) {
+		const text = await readFile(join(root, skillPath), "utf8");
+		assert.match(text, /TASK:/);
+		assert.match(text, /fork_turns:\s*"none"/);
+		assert.match(text, /wait_agent.*mailbox signals/s);
+		assert.match(text, /Fallback only when/);
+		assert.match(text, /respawn.*smaller/s);
+		assert.match(text, /model.*reasoning_effort.*default agent/s);
+		assert.match(text, /Plan and reviewer agents may run for a long time/);
+		assert.match(text, /short wait_agent cycles/);
+		assert.match(text, /single long blocking wait/);
+		assert.match(text, /A timeout only means no new mailbox update arrived/i);
+		assert.match(text, /WORKING:/);
+		assert.match(text, /single `list_agents`/);
 	}
-
-	const ulw = await readFile(join(root, "skills", "ulw", "SKILL.md"), "utf8");
-	assert.match(ulw, /invoke_subagent/);
-	assert.match(ulw, /send_message/);
-	assert.match(ulw, /manage_subagents/);
 });
 
-test("[todo13.subagents.start-work-prefix] #given active start-work skill #when inspected #then continuation state is Antigravity-only", async () => {
-	const text = await readFile(join(root, "skills", "start-work", "SKILL.md"), "utf8");
-	assert.match(text, /antigravity:<conversationId>/);
-	assert.match(text, /Antigravity Stop continuation/);
-	assert.doesNotMatch(text, /codex:/i);
+test("#given ultrawork directive #when inspected #then reviewer fallback keeps an agent role", async () => {
+	// given
+	const directivePath = "components/ultrawork/directive.md";
+
+	// when
+	const text = await readFile(join(root, directivePath), "utf8");
+
+	// then
+	assert.doesNotMatch(text, /any `gpt-5\.2`\s+xhigh reviewer/);
+	assert.match(text, /codex-ultrawork-reviewer/);
+	assert.match(text, /agent_type.*worker/s);
+	assert.match(text, /model.*reasoning_effort.*default agent/s);
+	assert.match(text, /timeout only means no new mailbox update arrived/i);
+	assert.match(text, /WORKING:/);
+	assert.match(text, /single `list_agents`/);
 });
 
-test("[todo13.subagents.sources-retain-todo8-fixtures] #given publishing workflow sources #when inspected #then LSP fixture contract is present before sync", async () => {
-	const workflowFiles = [
-		"skill-aliases/ulw/SKILL.md",
-		"components/ulw-loop/skills/ulw-loop/SKILL.md",
-		"skill-aliases/start-work/SKILL.md",
-		"skill-aliases/review-work/SKILL.md",
+test("#given ulw-loop workflow #when inspected #then stale review refresh keeps policy changes narrow", async () => {
+	// given / when / then
+	const workflowPaths = [
+		"components/ulw-loop/skills/ulw-loop/references/full-workflow.md",
+		"skills/ulw-loop/references/full-workflow.md",
 	];
-	for (const workflowFile of workflowFiles) {
-		const text = await readFile(join(root, workflowFile), "utf8");
-		assert.match(text, /Verified quality-gate policy/);
-		assert.match(text, /server id `lsp`, tool `diagnostics`/);
-		assert.match(text, /test\/fixtures\/lsp\/clean\.json/);
-		assert.match(text, /test\/fixtures\/lsp\/diagnostics\.json/);
-		assert.match(text, /test\/fixtures\/lsp\/unavailable\.json/);
+
+	for (const workflowPath of workflowPaths) {
+		const text = await readFile(join(root, workflowPath), "utf8");
+		assert.match(text, /refresh current branch\/PR\/issue state/);
+		assert.match(text, /preserve existing ordering\/policy/);
+		assert.match(text, /separate compatibility detection from policy changes/);
 	}
 });
 
-test("[todo13.subagents.ulw-fresh-install] #given fresh install ulw skill and alias #when inspected #then no missing workflow reference is required", async () => {
-	const installedUlw = await readFile(join(root, "skills", "ulw", "SKILL.md"), "utf8");
-	const sourceAlias = await readFile(join(root, "skill-aliases", "ulw", "SKILL.md"), "utf8");
+test("#given ultrawork agents #when inspected #then inter-agent commentary is treated as assignments", async () => {
+	// given / when / then
+	const agentPaths = AGENT_FILES;
 
-	for (const text of [installedUlw, sourceAlias]) {
-		assert.match(text, /\bulw-loop\b/);
-		assert.match(text, /durable, evidence-backed execution loops/i);
-		assert.doesNotMatch(text, /\.\.\/ulw-loop\/references\/full-workflow\.md/);
-		assert.doesNotMatch(text, /references\/full-workflow\.md/);
+	for (const agentPath of agentPaths) {
+		const text = await readFile(join(root, agentPath), "utf8");
+		assert.match(text, /TASK:|active review assignment/);
+		assert.match(text, /context|commentary/);
 	}
 });

@@ -5,11 +5,8 @@ export interface UserPromptSubmitPayload {
     readonly permission_mode?: string;
     readonly prompt: string;
     readonly session_id: string;
-    readonly transcript_path?: string | null;
+    readonly transcript_path?: string;
     readonly turn_id?: string;
-}
-export interface UserPromptSubmitHookOptions {
-    readonly includeUltraworkDirective?: boolean;
 }
 export interface PreToolUsePayload {
     readonly cwd: string;
@@ -23,9 +20,20 @@ export interface PreToolUsePayload {
     readonly transcript_path: string | null;
     readonly turn_id: string;
 }
+export interface PostCompactPayload {
+    readonly cwd: string;
+    readonly hook_event_name: "PostCompact";
+    readonly model?: string;
+    readonly session_id: string;
+    readonly transcript_path?: string;
+    readonly turn_id?: string;
+}
 export declare function parseUserPromptSubmitPayload(raw: string): UserPromptSubmitPayload | null;
 export declare function parsePreToolUsePayload(raw: string): PreToolUsePayload | null;
-export declare function applyUserPromptUlwLoopSteering(payload: UserPromptSubmitPayload, options?: UserPromptSubmitHookOptions): Promise<string>;
+export declare function parsePostCompactPayload(raw: string): PostCompactPayload | null;
+export declare function applyUserPromptUlwLoopSteering(payload: UserPromptSubmitPayload): Promise<string>;
 export declare function applyPreToolUseGoalBudgetGuard(payload: PreToolUsePayload): string;
-export declare function runUlwLoopHookCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream, options?: UserPromptSubmitHookOptions): Promise<void>;
+export declare function applyPostCompactRecovery(payload: PostCompactPayload): Promise<string>;
+export declare function runUlwLoopHookCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Promise<void>;
+export declare function runPostCompactHookCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Promise<void>;
 export declare function runPreToolUseGoalBudgetGuardCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Promise<void>;

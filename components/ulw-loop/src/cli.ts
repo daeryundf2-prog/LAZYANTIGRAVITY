@@ -1,16 +1,9 @@
 #!/usr/bin/env node
-if (typeof (globalThis as Record<string, unknown>)["structuredClone"] !== "function") {
-	(globalThis as Record<string, unknown>)["structuredClone"] = <T>(val: T): T => {
-		if (val === undefined) return val;
-		return JSON.parse(JSON.stringify(val)) as T;
-	};
-}
-
-import { isUlwLoopSubcommand, ulwLoopCommand } from "./cli-commands.js";
-import { runPreToolUseGoalBudgetGuardCli, runUlwLoopHookCli } from "./codex-hook.js";
+import { ulwLoopCommand } from "./cli-commands.js";
+import { runPreToolUseGoalBudgetGuardCli, runPostCompactHookCli, runUlwLoopHookCli } from "./codex-hook.js";
 
 const TOP_LEVEL_HELP =
-	"Usage:\n  omo ulw-loop <subcommand> [args]\n  omo hook user-prompt-submit [--with-ultrawork]  (Codex UserPromptSubmit hook)\n  omo help | --help | -h                          (this message)\n\nRun `omo ulw-loop help` for ulw-loop subcommands.\n";
+	"Usage:\n  omo ulw-loop <subcommand> [args]\n  omo hook user-prompt-submit         (Codex UserPromptSubmit hook)\n  omo help | --help | -h              (this message)\n\nRun `omo ulw-loop help` for ulw-loop subcommands.\n";
 
 async function main(): Promise<number> {
 	const argv = process.argv.slice(2);
@@ -23,19 +16,20 @@ async function main(): Promise<number> {
 	if (command === "hook") {
 		const sub = argv[1];
 		if (sub === "user-prompt-submit") {
-			await runUlwLoopHookCli(process.stdin, process.stdout, {
-				includeUltraworkDirective: argv.includes("--with-ultrawork"),
-			});
+			await runUlwLoopHookCli(process.stdin, process.stdout);
 			return 0;
 		}
 		if (sub === "pre-tool-use") {
 			await runPreToolUseGoalBudgetGuardCli(process.stdin, process.stdout);
 			return 0;
 		}
+		if (sub === "post-compact") {
+			await runPostCompactHookCli(process.stdin, process.stdout);
+			return 0;
+		}
 		process.stderr.write(`[omo] unknown hook subcommand: ${sub ?? "(none)"}\n`);
 		return 1;
 	}
-	if (isUlwLoopSubcommand(command)) return ulwLoopCommand(argv);
 	process.stderr.write(`[omo] unknown command: ${command}\n${TOP_LEVEL_HELP}`);
 	return 1;
 }

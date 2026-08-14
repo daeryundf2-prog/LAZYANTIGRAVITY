@@ -3,6 +3,24 @@ name: visual-qa
 description: "Rigorous visual QA for any UI you built or changed, across BOTH web/page UIs and TUI/terminal UIs. MUST USE after building or changing any UI to verify it visually before declaring it done. Captures objective reference evidence with a bundled diff script (image-diff for screenshots, tui-check for terminal captures), then runs two parallel read-only oracle passes (design-system and functional integrity; visual fidelity and CJK precision) and synthesizes one good/bad verdict. Triggers: visual QA, visual regression, screenshot diff, pixel diff, image comparison, UI looks wrong, design system check, is this really a design system or just an image, alpha channel breakage, responsive check, CJK text, Korean/Japanese/Chinese text clipping, baseline drop, glyph drop, TUI alignment, terminal UI, tmux capture, box-drawing border misalignment, wide-character column drift. Use it even when the user does not say visual QA but asks whether a page, component, or terminal layout looks right."
 ---
 
+## Codex Harness Tool Compatibility
+
+This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
+
+| OpenCode example | Codex tool to use |
+| --- | --- |
+| `call_omo_agent(subagent_type="explore", ...)` | `spawn_agent(agent_type="explorer", task_name="...", message="...", fork_turns="none")` |
+| `call_omo_agent(subagent_type="librarian", ...)` | `spawn_agent(agent_type="librarian", task_name="...", message="...", fork_turns="none")` |
+| `task(subagent_type="plan", ...)` | `spawn_agent(agent_type="plan", task_name="...", message="...", fork_turns="none")` |
+| `task(subagent_type="oracle", ...)` for final verification | `spawn_agent(agent_type="codex-ultrawork-reviewer", task_name="...", message="...", fork_turns="none")` |
+| `task(category="...", ...)` for implementation or QA | `spawn_agent(agent_type="worker", task_name="...", message="...", fork_turns="none")` |
+| `background_output(task_id="...")` | `wait_agent(...)` for mailbox signals; after a timeout, run one `list_agents` check for the named child if reassurance is needed |
+| `team_*(...)` | `spawn_agent` + `send_message` + `followup_task` + `wait_agent` + `close_agent` |
+
+For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `wait_agent` timeout only means no new mailbox update arrived. Treat a running child or latest `WORKING:` message as alive. Do not use `list_agents` as a polling loop. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.
+
+Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns="none"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
+
 # Visual QA - Dual-Oracle Web and TUI Verification
 
 Verify a rendered UI against intent using objective script evidence plus two parallel read-only oracle passes, then synthesize one good/bad verdict. The script numbers focus the reviewers. They are not the verdict.
@@ -147,6 +165,44 @@ BLOCKING: items that must be fixed; empty if PASS
 """
 )
 ```
+
+### Pass C - Gemini 3.7 Flash vision pre-screen (fast, optional)
+
+When Gemini 3.7 Flash is available as a subagent model, dispatch a fast vision pre-screen before the oracle passes. This pass uses Flash's multimodal image input capability to directly analyze the screenshot pixels, complementing the text-based oracle passes.
+
+```
+task(subagent_type="oracle",
+  run_in_background=true,
+  model="flash",
+  load_skills=[],
+  description="Visual QA pass C: Gemini 3.7 Flash vision pre-screen",
+  prompt="""
+REVIEW TYPE: FAST VISION PRE-SCREEN (read-only, advisory)
+MODEL: Gemini 3.7 Flash — use your multimodal image input capability.
+
+INTENT:
+{What the user requested and the mock or baseline to match.}
+
+CAPTURES (attach images directly):
+{Web: attach actual and reference screenshot PNGs. TUI: paste capture.txt inline.}
+
+SCRIPT EVIDENCE:
+{Paste the image-diff or tui-check JSON for numeric reference.}
+
+CHECK QUICKLY (this is a pre-screen, not a deep review):
+1. Are there obvious visual regressions visible in the screenshot pixels? (layout shifts, color changes, missing elements, broken text)
+2. For CJK text: any clipping, tofu (missing glyphs), or broken wrapping visible in the image?
+3. Does the overall visual structure match the reference/baseline at a glance?
+
+OUTPUT (advisory — does not override Pass A/B verdicts):
+FLASH VERDICT: CLEAR | SUSPECT | FAIL
+FLASH SUMMARY: 1-2 sentences
+FLASH FLAGS: list each visual anomaly with approximate location (top-left, center, etc.)
+"""
+)
+```
+
+Flash results are advisory. If Flash flags SUSPECT or FAIL, prioritize those regions in Pass A and Pass B. If Flash says CLEAR but Pass A/B find issues, the Pass A/B verdict wins.
 
 ## Step 4 - Synthesize one verdict
 
