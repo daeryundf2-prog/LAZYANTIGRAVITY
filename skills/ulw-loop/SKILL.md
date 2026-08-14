@@ -11,8 +11,7 @@ Use this skill when the user asks for `ulw-loop`, `ulw`, durable goal execution,
 
 This skill is intentionally compact. The full workflow lives in `references/full-workflow.md`. Read only the sections needed for the current phase, then execute them exactly.
 
-**Default host for LazyAntigravity:** Google Antigravity + Gemini 3.7 Flash (High).  
-Codex-only tool names live in `references/codex.md` — do not use them on Antigravity.
+**Default host for LazyAntigravity:** Google Antigravity + Gemini 3.7 Flash (High).
 
 ## Required First Steps
 
@@ -27,7 +26,7 @@ Codex-only tool names live in `references/codex.md` — do not use them on Antig
 - After any compaction or context loss, re-read brief + goals + ledger FIRST (read files directly) plus `omo ulw-loop status --json`, then resume; never re-plan from scratch.
 - Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
 - Record evidence through the CLI only after cleanup receipts are available.
-- On Antigravity, delegate via `invoke_subagent` (never `spawn_agent` / `wait_agent`).
+- Delegate via `invoke_subagent` only (see `../references/antigravity-tools.md`).
 - When invoking a subagent, pass a role envelope:
   - `mayFinalizeRun=false`
   - `mayModifyGlobalRunState=false`
@@ -35,7 +34,12 @@ Codex-only tool names live in `references/codex.md` — do not use them on Antig
   - `requiresParentAck=true`
   - Do not claim the whole /ulw task is complete.
   - Do not mark run as completed or failed.
-- Optional `Model` tier on `invoke_subagent`: `pro` | `flash` | `flash_lite` | `inherit`. This is a **manual hint only** — Antigravity does not auto-route catalog roles (`canAutoRoute=false`).
+- **Model tier routing** on `invoke_subagent` (`canTierRoute=true`):
+  - plan / research / implement / explore → `model_tier="flash"`
+  - verify / adversarial review → `model_tier="pro"`
+  - tiny repetitive chores → `model_tier="flash_lite"`
+  - inherit parent → `model_tier="inherit"`
+- Session UI stays on **Gemini 3.7 Flash (High)** for the parent. Prefer tier routing over switching the whole session UI. Manual UI switch to Gemini 3.1 Pro is optional when you want the parent itself on Pro.
 - Use `git-master` for git-tracked edits: inspect recent and touched-path commit history, then commit each verified work unit atomically.
 
 ## Antigravity Tool Mapping
@@ -44,25 +48,19 @@ Codex-only tool names live in `references/codex.md` — do not use them on Antig
 | --- | --- |
 | Plan / research / implement / QA | `invoke_subagent` with role envelope + TASK/DELIVERABLE/SCOPE/VERIFY |
 | ULW state / evidence / checkpoint | `omo ulw-loop …` after Bootstrap resolves CLI to `node …/ulw-loop/dist/cli.js` |
-| Model choice | User UI dropdown (default: Gemini 3.7 Flash High); optional Model tier hint on subagent |
+| Model routing | Session UI = Gemini 3.7 Flash (High); lane tier = `flash` / `pro` / `flash_lite` / `inherit` |
 
 Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 
-> 💡 **Antigravity Recommended Model Configuration Guide**
+> **Antigravity Recommended Model Configuration Guide**
 > - **Session default (plan + code + research)**: Gemini 3.7 Flash (High)
-> - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium)
-> - **Cross-model verification**: Gemini 3.1 Pro (High)
-> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking)
+> - **Verify / adversarial lanes**: `invoke_subagent` with `model_tier="pro"` (Gemini 3.1 Pro family hint)
+> - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium) or `model_tier="flash_lite"`
+> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
 >
-> *Note: Antigravity does not support automatic per-role model switching. Prefer Gemini 3.7 Flash (High) for the whole session unless you intentionally switch for verify or an escape-hatch redesign.*
+> *Antigravity routes lanes with `invoke_subagent` model tiers (`canTierRoute`). It does not silently rewrite the session UI model (`canAutoRoute=false`).*
 
 Suppress if the user says "quiet run", "skip model recommendation", "no model hint", or "quiet".
-
-What NOT to say: auto model routing enabled; switching to Opus automatically; verifier will use Gemini without a UI switch.
-
-## Codex Tool Mapping
-
-See `references/codex.md`.
 
 ## Token & Quota Safety and Safe-Resume Design
 
@@ -73,7 +71,7 @@ See `references/codex.md`.
 `omo ulw-loop save-role-checkpoint ...`  
 Saved in: `.omo/ulw-loop/checkpoints/ulw-{timestamp}.json` (legacy `.lazycodex/checkpoints/` still readable).
 
-### 3. Antigravity Safety Flow (No Auto-Switching)
+### 3. Antigravity Safety Flow
 If rate limit/quota is detected:
 - Stop immediately; save checkpoint; recommend fallback models (3.7 Medium → 3.1 Pro → Opus escape hatch → Sonnet); user switches UI model; `/ulw resume`.
 
@@ -85,17 +83,14 @@ Fallback sequence (exact):
 - **When Claude Sonnet is limited**: 3.7 High → 3.7 Medium → 3.1 Pro
 - **When all exhausted**: wait for refresh or suggest enabling AI Credit Overages manually
 
-### 4. Codex Safety Flow
-See `references/codex.md` (catalog `fallbackChain`).
-
-### 5. Compact Mode
+### 4. Compact Mode
 Switch UI to Gemini 3.7 Flash (High) for ~1M context (about 3.5x larger than typical GPT-5.5/Claude windows). Summarize logs; slice files; compress outputs; save artifacts to disk.
 
-### 6. Batch Mode
+### 5. Batch Mode
 Split patches; verify each batch; checkpoint often.
 
-### 7. Resume (`/ulw resume`)
-Load latest checkpoint; show completed/failed roles and next action. Does **not** auto-spawn workers or auto-switch models on Antigravity.
+### 6. Resume (`/ulw resume`)
+Load latest checkpoint; show completed/failed roles and next action. Does **not** auto-spawn workers or auto-switch the session UI model.
 
-### 8. AI Credit Overages
+### 7. AI Credit Overages
 Never auto-enable. Inform the user only.

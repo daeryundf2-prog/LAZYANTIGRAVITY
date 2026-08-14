@@ -73,10 +73,10 @@ verification it specifies. Only a genuinely trivial single-step change
 may skip planning — justify that skip in the notepad.
 
 ## 1. Bind success criteria (Antigravity)
-Do **not** call Codex `create_goal` / `get_goal` / `update_goal`.
-On Antigravity, bind the objective in the notepad (and, when using ULW,
-via `node <plugin>/components/ulw-loop/dist/cli.js ulw-loop …` after
-Bootstrap). Goals are unlimited; never invent a numeric budget or limit.
+Bind the objective in the notepad (and, when using ULW, via
+`node <plugin>/components/ulw-loop/dist/cli.js ulw-loop …` after
+Bootstrap). Do **not** call Codex `create_goal` / `get_goal` / `update_goal`.
+Goals are unlimited; never invent a numeric budget or limit.
 The criteria MUST list, upfront:
 - The user-visible deliverable in one line.
 - 3+ realistic QA scenarios: happy path, edge cases (boundary / empty /

@@ -1,6 +1,6 @@
 {
 	"version": "2026-08-14.antigravity-gemini37-ag-first",
-	"_legacyFlatNote": "Top-level current/roles/managedProfiles remain Codex-oriented (gpt-5.5) for legacy readers. Antigravity must use the antigravity section via runtime-adapter modelCatalogKey.",
+	"_legacyFlatNote": "Top-level current/roles mirror Antigravity Gemini 3.7 Flash defaults. Legacy Codex readers should prefer the codex section. Antigravity adapters should prefer the antigravity section via modelCatalogKey.",
 	"current": {
 		"model": "gemini-3.7-flash-high",
 		"model_context_window": 1048576,
@@ -128,7 +128,17 @@
 	},
 	"antigravity": {
 		"canAutoRoute": false,
-		"routingMode": "hint-only",
+		"canTierRoute": true,
+		"routingMode": "model-tier",
+		"tierMap": {
+			"default": "flash",
+			"planner": "flash",
+			"worker": "flash",
+			"researcher": "flash",
+			"verifier": "pro",
+			"fast": "flash_lite",
+			"fallback": "flash_lite"
+		},
 		"current": {
 			"model": "gemini-3.7-flash-high",
 			"model_context_window": 1048576,
@@ -269,14 +279,14 @@
 			"note": "Codex는 config.toml에서 전역 모델을 설정하고, spawn_agent에서 역할별 모델을 지정 가능"
 		},
 		"antigravity": {
-			"supported": false,
-			"routingMode": "hint-only",
-			"mechanism": "UI dropdown + optional invoke_subagent Model tier ('pro' | 'flash' | 'flash_lite' | 'inherit')",
-			"note": "Antigravity는 카탈로그 역할별 자동 라우팅을 하지 않음 (canAutoRoute=false). Model 티어는 수동 힌트일 뿐이며, 세션 UI 모델이 기본 상속된다. planner/worker/researcher 기본 추천은 Gemini 3.7 Flash (High).",
+			"supported": true,
+			"routingMode": "model-tier",
+			"mechanism": "Session UI default (Gemini 3.7 Flash High) + invoke_subagent model_tier via antigravity.tierMap",
+			"note": "Antigravity does not rewrite the session UI model per role (canAutoRoute=false). Lane routing is first-class via invoke_subagent model_tier (canTierRoute=true): flash for plan/code/research, pro for verify.",
 			"limitations": [
-				"No automatic per-role model switching",
-				"Verifier Gemini 3.1 Pro requires a manual UI switch or separate session",
-				"Model tier on invoke_subagent does not override catalog role ids"
+				"Session UI model is not auto-switched per catalog role",
+				"model_tier is a host hint; keep parent session on Gemini 3.7 Flash (High) unless the user switches",
+				"Escape-hatch Claude Opus still requires a manual UI switch"
 			]
 		}
 	}

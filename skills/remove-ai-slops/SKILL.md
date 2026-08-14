@@ -5,19 +5,15 @@ description: "Remove AI-generated code smells (slop) from branch changes or an e
 
 ## Antigravity Tool Mapping (default)
 
-This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md`.
 
 | Intent | Antigravity action |
 | --- | --- |
 | Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
-| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
-| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
+| Wait / poll children | Stay in parent; re-invoke incomplete lanes |
+| Model tier routing | `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
 
-**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
-
-## Codex Tool Mapping
-
-Codex-only hosts: see `../ulw-loop/references/codex.md`.
+Use Antigravity tools only (`invoke_subagent`). Do **not** invent foreign spawn/wait/goal APIs or OpenCode kwargs.
 
 ## Inputs
 
@@ -204,7 +200,7 @@ For each skipped issue, give reason.
 )
 ```
 
-**Batch failure handling (Antigravity):** do **not** call `wait_agent` / `list_agents`. Stay in the parent, continue independent work, and re-`invoke_subagent` for any file whose deliverable is missing, ack-only, or explicitly `BLOCKED:`. Do NOT block the remaining files in a batch; collect successful results and retry the failed file once later. If retry also fails, escalate that file under "Issues Found & Fixed" in the final report.
+**Batch failure handling (Antigravity):** stay in the parent. Stay in the parent, continue independent work, and re-`invoke_subagent` for any file whose deliverable is missing, ack-only, or explicitly `BLOCKED:`. Do NOT block the remaining files in a batch; collect successful results and retry the failed file once later. If retry also fails, escalate that file under "Issues Found & Fixed" in the final report.
 
 ### Phase 5: Verify with quality gates + critical review
 

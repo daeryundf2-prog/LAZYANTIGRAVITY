@@ -59,14 +59,16 @@ test("#given bundled model catalog #when antigravity roles inspected #then Gemin
 	assert.equal(antigravity.roles?.fast?.modelId, "gemini-3.7-flash-medium");
 	assert.equal(antigravity.roles?.verifier?.modelId, "gemini-3.1-pro-high");
 	assert.equal(antigravity.canAutoRoute, false);
-	assert.equal(antigravity.routingMode, "hint-only");
+	assert.equal(antigravity.canTierRoute, true);
+	assert.equal(antigravity.routingMode, "model-tier");
+	assert.equal(antigravity.tierMap?.verifier, "pro");
 });
 
-test("#given bundled model catalog #when antigravity perRoleRouting inspected #then auto routing is unsupported hint-only", async () => {
+test("#given bundled model catalog #when antigravity perRoleRouting inspected #then model-tier routing is supported", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 	const routing = catalog.perRoleRouting?.antigravity;
-	assert.equal(routing?.supported, false);
-	assert.equal(routing?.routingMode, "hint-only");
+	assert.equal(routing?.supported, true);
+	assert.equal(routing?.routingMode, "model-tier");
 });
 
 test("#given antigravity plugin install #when ulw-loop CLI path resolved from PLUGIN_ROOT #then help exits zero", async () => {

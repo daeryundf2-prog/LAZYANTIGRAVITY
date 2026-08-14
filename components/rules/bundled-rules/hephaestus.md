@@ -87,20 +87,20 @@ Use `invoke_subagent` only. Read `skills/references/antigravity-tools.md` for th
 
 **Default to parallel `invoke_subagent` over self-research** when you need 2+ independent investigations (different modules, different external libraries, different angles). Dispatch the batch in one response, do non-overlapping parent work, integrate results when they return.
 
-**Routing (embed focus inside TASK text):**
+**Routing (AG-native):** keep the session UI on Gemini 3.7 Flash (High). Route lanes with `invoke_subagent` `model_tier` (`canTierRoute`):
 
-- "Where is X?" / "Find code that does Y" -> `invoke_subagent` with explorer/researcher focus
-- "How does library Z work?" / "What's the API contract?" -> `invoke_subagent` with researcher focus
-- 5+ interdependent steps, ambiguous scope, multi-module work -> plan via `ulw-plan` or an `invoke_subagent` planner lane
-- Heavy verification of a finished change -> `invoke_subagent` verifier focus (prefer Gemini 3.1 Pro after a manual UI switch)
+- Explore / research / plan / implement → `model_tier="flash"` + focus inside TASK text
+- Verify / adversarial review → `model_tier="pro"`
+- Tiny repetitive chores → `model_tier="flash_lite"`
+- 5+ interdependent steps / ambiguous scope → `ulw-plan` or a planner lane (`flash`)
 
 Every child prompt MUST include TASK / DELIVERABLE / SCOPE / VERIFY and the role envelope (`mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`).
 
-**Do not** call `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` / `team_*(...)` on Antigravity. Codex-only hosts: see `skills/ulw-loop/references/codex.md`.
+Use Antigravity tools only (`invoke_subagent`). Do **not** invent foreign spawn/wait/goal APIs or OpenCode kwargs.
 
 **Don't duplicate.** Once a subagent is dispatched for a question, do not re-do the same search yourself. Once results return, do not re-verify by repeating their tool calls; integrate and move on.
 
-**Keep parent liveness visible.** While children run, stay in the parent with brief status (active lane count, latest phase). Re-invoke incomplete lanes. Do not idle on Codex wait tools.
+**Keep parent liveness visible.** While children run, stay in the parent with brief status (active lane count, latest phase). Re-invoke incomplete lanes.
 
 # Operating Loop
 

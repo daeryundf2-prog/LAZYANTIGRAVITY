@@ -13,17 +13,15 @@ const AGENT_FILES = [
 	"components/ultrawork/agents/plan.toml",
 ];
 
-test("#given Antigravity orchestration skills #when inspected #then they teach invoke_subagent and forbid Codex wait loops", async () => {
+test("#given Antigravity orchestration skills #when inspected #then they teach invoke_subagent and model_tier routing", async () => {
 	for (const skillName of AG_SKILLS) {
 		const text = await readFile(join(root, "skills", skillName, "SKILL.md"), "utf8");
 		assert.match(text, /invoke_subagent|TASK:/);
-		assert.match(text, /wait_agent/);
-		assert.match(
-			text,
-			/(?:do \*\*not\*\*|Do \*\*not\*\*|Do not use|\bnever\b)[\s\S]{0,120}`wait_agent`/i,
-		);
+		assert.match(text, /model_tier|Model tier|canTierRoute/i);
+		assert.doesNotMatch(text, /## Codex Tool Mapping/);
 		assert.doesNotMatch(text, /fork_turns:\s*"none"/);
 		assert.doesNotMatch(text, /short wait_agent cycles/);
+		assert.doesNotMatch(text, /As each completes, collect via the Codex mapping above/);
 	}
 });
 

@@ -4,19 +4,15 @@ description: "(builtin) Initialize hierarchical AGENTS.md knowledge base"
 ---
 ## Antigravity Tool Mapping (default)
 
-This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md`.
 
 | Intent | Antigravity action |
 | --- | --- |
 | Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
-| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
-| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
+| Wait / poll children | Stay in parent; re-invoke incomplete lanes |
+| Model tier routing | `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
 
-**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
-
-## Codex Tool Mapping
-
-Codex-only hosts: see `../ulw-loop/references/codex.md`.
+Use Antigravity tools only (`invoke_subagent`). Do **not** invent foreign spawn/wait/goal APIs or OpenCode kwargs.
 
 ## Usage
 
@@ -275,7 +271,6 @@ DELIVERABLE: AGENTS.md content
 SCOPE: target directory only
 VERIFY: parent writes/edits file and re-reads
 ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-
 
     Generate AGENTS.md for: ${loc.path}
     - Reason: ${loc.reason}

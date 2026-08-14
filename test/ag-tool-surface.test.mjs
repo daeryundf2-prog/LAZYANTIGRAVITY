@@ -65,6 +65,9 @@ test("#given model catalog #when top-level current is read #then Gemini 3.7 Flas
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 	assert.equal(catalog.current.model, "gemini-3.7-flash-high");
 	assert.equal(catalog.antigravity.canAutoRoute, false);
+	assert.equal(catalog.antigravity.canTierRoute, true);
+	assert.equal(catalog.antigravity.routingMode, "model-tier");
+	assert.equal(catalog.antigravity.tierMap.verifier, "pro");
 	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
-	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
+	assert.equal(catalog.perRoleRouting.antigravity.supported, true);
 });

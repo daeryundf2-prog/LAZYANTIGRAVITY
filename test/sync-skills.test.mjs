@@ -292,7 +292,8 @@ test("#given synced ulw-loop skill #when worker guidance is inspected #then Anti
 	}
 	assert.match(syncedSkill, /references\/full-workflow\.md/);
 	assert.match(syncedSkill, /invoke_subagent/);
-	assert.match(syncedSkill, /wait_agent/);
+	assert.match(syncedSkill, /canTierRoute|model_tier/);
+	assert.doesNotMatch(syncedSkill, /## Codex Tool Mapping/);
 });
 
 test("#given packaged start-work skill #when inspected #then no-plan bootstrap and adversarial verification contracts are shipped", async () => {
