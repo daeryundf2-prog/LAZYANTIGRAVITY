@@ -86,6 +86,16 @@ test("Dimension 3: Subagent Invocation Schema & Tier Routing Contracts", async (
 					/invoke_subagent\([^)]*run_in_background\s*=/s,
 					`invoke_subagent with legacy run_in_background parameter found in ${fullPath}`,
 				);
+				assert.doesNotMatch(
+					content,
+					/invoke_subagent\(\s*prompt\s*=/s,
+					`invoke_subagent with legacy prompt= parameter found in ${fullPath}. Must use Subagents array schema.`,
+				);
+				assert.doesNotMatch(
+					content,
+					/background_output\(/s,
+					`Legacy background_output found in ${fullPath}. Antigravity uses reactive message wakeup.`,
+				);
 
 				// If invoke_subagent with Model is used, verify Model is valid enum
 				const modelMatches = content.matchAll(/Model:\s*"([^"]+)"/g);

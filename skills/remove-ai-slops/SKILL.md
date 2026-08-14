@@ -161,11 +161,11 @@ Files are processed by `deep` category agents with the `$omo:remove-ai-slops` sk
 **Batching protocol** (strict):
 
 1. Slice the in-scope file list into chunks of up to 5 files.
-2. For each chunk, launch all `invoke_subagent` calls **in a single message**.
-3. End your turn. Wait for the system to send `<system-reminder>` notifications as each task finishes.
-4. Once all 5 in the batch complete, collect each result via `background_output(task_id=...)`.
-5. Launch the next batch of 5. Repeat until every file is processed.
-6. If total files —5, launch all in one batch.
+2. For each chunk, launch `invoke_subagent` with the Subagents array containing the entries.
+3. End your turn. The system automatically resumes execution when subagent messages arrive.
+4. Process deliverables from the subagents and synthesize results.
+5. Launch the next batch of 5 if more files remain. Repeat until every file is processed.
+6. If total files <= 5, launch all in one batch.
 
 **Never** launch all files at once when there are more than 5; **never** launch them serially when more than one remains in the current batch.
 
@@ -173,9 +173,11 @@ Files are processed by `deep` category agents with the `$omo:remove-ai-slops` sk
 
 ```
 invoke_subagent(
-
-  prompt="""
-Remove AI slops from: {file_path}
+  Subagents=[{
+    TypeName: "self",
+    Role: "Slop Cleanup Worker",
+    Model: "flash",
+    Prompt: """Remove AI slops from: {file_path}
 
 In addition to your default categories (obvious comments, over-defensive code, spaghetti nesting), also evaluate these categories:
 - Excessive complexity: god functions, long parameter lists, complex booleans, nested ternaries
@@ -195,8 +197,10 @@ Hard constraints:
 - Diff stays minimal and scoped to slop removal.
 
 Report changes grouped by category. For each change, give before/after, why-slop, why-safe.
-For each skipped issue, give reason.
-"""
+For each skipped issue, give reason."""
+  }],
+  toolAction: "Removing AI slop from " + file_path,
+  toolSummary: "AI slop cleanup"
 )
 ```
 

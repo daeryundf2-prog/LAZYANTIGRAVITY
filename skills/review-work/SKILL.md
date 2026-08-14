@@ -103,9 +103,11 @@ This agent answers: "Did we build exactly what was asked, within the rules we we
 
 ```
 invoke_subagent(
-
-  prompt="""
-<review_type>GOAL & CONSTRAINT VERIFICATION</review_type>
+  Subagents=[{
+    TypeName: "self",
+    Role: "Goal & Constraint Oracle",
+    Model: "pro",
+    Prompt: """<review_type>GOAL & CONSTRAINT VERIFICATION</review_type>
 
 <original_goal>
 {GOAL - paste the user's original request and any clarifications}
@@ -165,8 +167,11 @@ OUTPUT FORMAT:
   - File: path (line range if applicable)
   - Evidence: specific code or logic reference
 </findings>
-<blocking_issues>Issues that MUST be fixed. Empty if PASS.</blocking_issues>
-""")
+<blocking_issues>Issues that MUST be fixed. Empty if PASS.</blocking_issues>"""
+  }],
+  toolAction: "Verifying goal and constraints compliance",
+  toolSummary: "Goal verification oracle pass"
+)
 ```
 
 ---
@@ -179,9 +184,11 @@ The QA agent follows a structured process: brainstorm scenarios exhaustively fir
 
 ```
 invoke_subagent(
-
-  prompt="""
-<review_type>QA - HANDS-ON APP EXECUTION</review_type>
+  Subagents=[{
+    TypeName: "self",
+    Role: "Hands-on QA Tester",
+    Model: "flash",
+    Prompt: """<review_type>QA - HANDS-ON APP EXECUTION</review_type>
 
 <original_goal>
 {GOAL}
@@ -274,8 +281,11 @@ OUTPUT FORMAT:
   - Actual: What actually happened
   - Evidence: Screenshot path or terminal output snippet (if FAIL)
 </test_results>
-<blocking_issues>P0 or P1 failures only. Empty if PASS.</blocking_issues>
-""")
+<blocking_issues>P0 or P1 failures only. Empty if PASS.</blocking_issues>"""
+  }],
+  toolAction: "Executing hands-on QA testing",
+  toolSummary: "Hands-on QA execution"
+)
 ```
 
 ---
@@ -286,9 +296,11 @@ This agent answers: "Is the code well-written, maintainable, and consistent with
 
 ```
 invoke_subagent(
-
-  prompt="""
-<review_type>CODE QUALITY REVIEW</review_type>
+  Subagents=[{
+    TypeName: "self",
+    Role: "Code Quality & Logic Oracle",
+    Model: "pro",
+    Prompt: """<review_type>CODE QUALITY REVIEW</review_type>
 
 <changed_files>
 {CHANGED_FILES}
@@ -346,8 +358,11 @@ OUTPUT FORMAT:
   - Current: what the code does now
   - Suggestion: how to improve
 </findings>
-<blocking_issues>CRITICAL and MAJOR items only. Empty if PASS.</blocking_issues>
-""")
+<blocking_issues>CRITICAL and MAJOR items only. Empty if PASS.</blocking_issues>"""
+  }],
+  toolAction: "Reviewing code quality and maintainability",
+  toolSummary: "Code quality review pass"
+)
 ```
 
 ---
@@ -360,9 +375,11 @@ This is supplementary - it focuses exclusively on security. It does NOT comment 
 
 ```
 invoke_subagent(
-
-  prompt="""
-<review_type>SECURITY REVIEW (supplementary)</review_type>
+  Subagents=[{
+    TypeName: "self",
+    Role: "Security & Vulnerability Oracle",
+    Model: "pro",
+    Prompt: """<review_type>SECURITY REVIEW (supplementary)</review_type>
 
 <changed_files>
 {CHANGED_FILES}
@@ -401,8 +418,11 @@ OUTPUT FORMAT:
   - Risk: What could an attacker do?
   - Remediation: Specific fix
 </findings>
-<blocking_issues>CRITICAL and HIGH items only. Empty if PASS.</blocking_issues>
-""")
+<blocking_issues>CRITICAL and HIGH items only. Empty if PASS.</blocking_issues>"""
+  }],
+  toolAction: "Reviewing security posture and vulnerabilities",
+  toolSummary: "Security audit review pass"
+)
 ```
 
 ---
@@ -413,9 +433,11 @@ This agent answers: "Did we miss any context that should have informed this impl
 
 ```
 invoke_subagent(
-
-  prompt="""
-<review_type>CONTEXT MINING - MISSED REQUIREMENTS & BACKGROUND</review_type>
+  Subagents=[{
+    TypeName: "self",
+    Role: "Context & Requirements Investigator",
+    Model: "flash",
+    Prompt: """<review_type>CONTEXT MINING - MISSED REQUIREMENTS & BACKGROUND</review_type>
 
 <original_goal>
 {GOAL}
@@ -449,15 +471,6 @@ SOURCES TO SEARCH (use every available tool):
    - Check if any issue is specifically linked to this work
    - Look at review comments on past PRs touching these files
 
-3. **Communication Channels** (if MCP tools available):
-   - Slack: search for messages mentioning the feature, file names, or related keywords
-   - Notion: search for design docs, RFCs, ADRs related to this feature
-   - Discord: relevant discussions
-
-4. **Codebase Cross-References** (ALWAYS search):
-   - Files that import or reference the changed modules
-   - Tests that might need updating due to behavior changes
-   - Documentation (README, docs/, comments) that references changed behavior
    - Config files that might need corresponding updates
    - Related features in the same domain
 
@@ -485,8 +498,11 @@ OUTPUT FORMAT:
   - Impact: [BLOCKING / IMPORTANT / FYI]
 </discovered_context>
 <missed_requirements>Requirements the implementation should address but doesn't. Empty if none.</missed_requirements>
-<blocking_issues>BLOCKING items only. Empty if PASS.</blocking_issues>
-""")
+<blocking_issues>BLOCKING items only. Empty if PASS.</blocking_issues>"""
+  }],
+  toolAction: "Mining historical context and requirements",
+  toolSummary: "Context mining review pass"
+)
 ```
 
 ---

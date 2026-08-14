@@ -56,48 +56,72 @@ TodoWrite([
 Don't wait-these run async while main session works. Dispatch ALL in one response via `invoke_subagent` (see `../references/antigravity-tools.md`).
 
 ```
-invoke_subagent(prompt="""
-TASK: Explore project structure. PREDICT standard patterns for detected language; REPORT deviations only.
+invoke_subagent(
+  Subagents=[
+    {
+      TypeName: "self",
+      Role: "Project Structure Scout",
+      Model: "flash",
+      Prompt: """TASK: Explore project structure. PREDICT standard patterns for detected language; REPORT deviations only.
 DELIVERABLE: structure findings with paths
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
-invoke_subagent(prompt="""
-TASK: Find entry points. FIND main files; REPORT non-standard organization.
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    },
+    {
+      TypeName: "self",
+      Role: "Entry Points Scout",
+      Model: "flash",
+      Prompt: """TASK: Find entry points. FIND main files; REPORT non-standard organization.
 DELIVERABLE: entry-point list with paths
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
-invoke_subagent(prompt="""
-TASK: Find conventions. FIND config files (.eslintrc, pyproject.toml, .editorconfig); REPORT project-specific rules.
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    },
+    {
+      TypeName: "self",
+      Role: "Conventions Scout",
+      Model: "flash",
+      Prompt: """TASK: Find conventions. FIND config files (.eslintrc, pyproject.toml, .editorconfig); REPORT project-specific rules.
 DELIVERABLE: convention findings
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
-invoke_subagent(prompt="""
-TASK: Find anti-patterns. FIND 'DO NOT', 'NEVER', 'ALWAYS', 'DEPRECATED' comments; LIST forbidden patterns.
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    },
+    {
+      TypeName: "self",
+      Role: "Anti-Patterns Scout",
+      Model: "flash",
+      Prompt: """TASK: Find anti-patterns. FIND 'DO NOT', 'NEVER', 'ALWAYS', 'DEPRECATED' comments; LIST forbidden patterns.
 DELIVERABLE: anti-pattern list with file:line
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
-invoke_subagent(prompt="""
-TASK: Explore build/CI. FIND .github/workflows, Makefile; REPORT non-standard patterns.
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    },
+    {
+      TypeName: "self",
+      Role: "Build & CI Scout",
+      Model: "flash",
+      Prompt: """TASK: Explore build/CI. FIND .github/workflows, Makefile; REPORT non-standard patterns.
 DELIVERABLE: build/CI findings
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
-invoke_subagent(prompt="""
-TASK: Find test patterns. FIND test configs and structure; REPORT unique conventions.
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    },
+    {
+      TypeName: "self",
+      Role: "Test Patterns Scout",
+      Model: "flash",
+      Prompt: """TASK: Find test patterns. FIND test configs and structure; REPORT unique conventions.
 DELIVERABLE: test-pattern findings
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    }
+  ],
+  toolAction: "Exploring codebase structure and conventions",
+  toolSummary: "Parallel discovery scouts"
+)
 ```
 
 <dynamic-agents>
@@ -154,10 +178,7 @@ LspFindReferences(filePath="...", line=X, character=Y)
 
 ### Collect Background Results
 
-```
-// After main session analysis done, collect all task results
-for each background task ID (`bg_...`): background_output(task_id="bg_...")
-```
+Wait for subagent completion messages (Antigravity automatically delivers subagent responses to your context).
 
 **Merge: bash + LSP + existing + explore findings. Mark "discovery" as completed.**
 
@@ -266,18 +287,26 @@ Launch writing tasks for each location:
 
 ```
 for loc in AGENTS_LOCATIONS (except root):
-  invoke_subagent(prompt=`TASK: Generate AGENTS.md
+  invoke_subagent(
+    Subagents=[{
+      TypeName: "self",
+      Role: "AGENTS.md Generator",
+      Model: "flash",
+      Prompt: `TASK: Generate AGENTS.md
 DELIVERABLE: AGENTS.md content
 SCOPE: target directory only
 VERIFY: parent writes/edits file and re-reads
 ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
 
-    Generate AGENTS.md for: ${loc.path}
-    - Reason: ${loc.reason}
-    - 30-80 lines max
-    - NEVER repeat parent content
-    - Sections: OVERVIEW (1 line), STRUCTURE (if >5 subdirs), WHERE TO LOOK, CONVENTIONS (if different), ANTI-PATTERNS
-  `)
+Generate AGENTS.md for: ${loc.path}
+- Reason: ${loc.reason}
+- 30-80 lines max
+- NEVER repeat parent content
+- Sections: OVERVIEW (1 line), STRUCTURE (if >5 subdirs), WHERE TO LOOK, CONVENTIONS (if different), ANTI-PATTERNS`
+    }],
+    toolAction: "Generating AGENTS.md for " + loc.path,
+    toolSummary: "Generate child AGENTS.md"
+  )
 ```
 
 **Wait for all. Mark "generate" as completed.**

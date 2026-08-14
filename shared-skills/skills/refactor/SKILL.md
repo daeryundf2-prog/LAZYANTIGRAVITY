@@ -114,44 +114,52 @@ TodoWrite([
 
 Fire ALL of these simultaneously using `invoke_subagent`:
 
-\`\`\`
-// Agent 1: Find the refactoring target
-invoke_subagent(prompt="""
-TASK: Find all occurrences and definitions of [TARGET].
+```
+invoke_subagent(
+  Subagents=[
+    {
+      TypeName: "self",
+      Role: "Refactoring Target Finder",
+      Model: "flash",
+      Prompt: """TASK: Find all occurrences and definitions of [TARGET].
 DELIVERABLE: file paths, line numbers, usage patterns
 SCOPE: repository read-only
 VERIFY: parent re-reads cited paths
-ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
-""")
-
-// Agent 2: Find related code
-invoke_subagent(
-
-  prompt="Find all code that imports, uses, or depends on [TARGET].
-  Report: dependency chains, import graphs."
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true"""
+    },
+    {
+      TypeName: "self",
+      Role: "Dependency Graph Scout",
+      Model: "flash",
+      Prompt: """Find all code that imports, uses, or depends on [TARGET].
+Report: dependency chains, import graphs."""
+    },
+    {
+      TypeName: "self",
+      Role: "Pattern Similarity Scout",
+      Model: "flash",
+      Prompt: """Find similar code patterns to [TARGET] in the codebase.
+Report: analogous implementations, established conventions."""
+    },
+    {
+      TypeName: "self",
+      Role: "Test Coverage Scout",
+      Model: "flash",
+      Prompt: """Find all test files related to [TARGET].
+Report: test file paths, test case names, coverage indicators."""
+    },
+    {
+      TypeName: "self",
+      Role: "Architecture Context Scout",
+      Model: "flash",
+      Prompt: """Find architectural patterns and module organization around [TARGET].
+Report: module boundaries, layer structure, design patterns in use."""
+    }
+  ],
+  toolAction: "Exploring refactoring scope and impact",
+  toolSummary: "Parallel refactoring scouts"
 )
-
-// Agent 3: Find similar patterns
-invoke_subagent(
-
-  prompt="Find similar code patterns to [TARGET] in the codebase.
-  Report: analogous implementations, established conventions."
-)
-
-// Agent 4: Find tests
-invoke_subagent(
-
-  prompt="Find all test files related to [TARGET].
-  Report: test file paths, test case names, coverage indicators."
-)
-
-// Agent 5: Architecture context
-invoke_subagent(
-
-  prompt="Find architectural patterns and module organization around [TARGET].
-  Report: module boundaries, layer structure, design patterns in use."
-)
-\`\`\`
+```
 
 ## 1.2: Direct Tool Exploration (WHILE AGENTS RUN)
 
@@ -159,7 +167,7 @@ While background agents are running, use direct tools:
 
 ### LSP Tools for Precise Analysis:
 
-\`\`\`typescript
+```typescript
 // Find definition(s)
 LspGotoDefinition(filePath, line, character)  // Where is it defined?
 
@@ -172,11 +180,11 @@ LspWorkspaceSymbols(filePath, query="[target_symbol]")  // Search by name
 
 // Get current diagnostics
 lsp_diagnostics(filePath)  // Errors, warnings before we start
-\`\`\`
+```
 
 ### AST-Grep for Pattern Analysis:
 
-\`\`\`typescript
+```typescript
 // Find structural patterns
 ast_grep_search(
   pattern="function $NAME($$$) { $$$ }",  // or relevant pattern
@@ -191,21 +199,17 @@ ast_grep_replace(
   lang="[language]",
   dryRun=true  // ALWAYS preview first
 )
-\`\`\`
+```
 
 ### Grep for Text Patterns:
 
-\`\`\`
+```
 grep(pattern="[search_term]", path="src/", include="*.ts")
-\`\`\`
+```
 
 ## 1.3: Collect Background Results
 
-\`\`\`
-background_output(task_id="[agent_1_id]")
-background_output(task_id="[agent_2_id]")
-...
-\`\`\`
+Wait for subagent completion messages (Antigravity resumes automatically upon receiving subagent results).
 
 **Mark phase-1 as completed after all results collected.**
 
@@ -219,15 +223,14 @@ background_output(task_id="[agent_2_id]")
 
 Based on Phase 1 results, build:
 
-\`\`\`
+```
 ## CODEMAP: [TARGET]
 
 ### Core Files (Direct Impact)
-- \`path/to/file.ts:L10-L50\` - Primary definition
-- \`path/to/file2.ts:L25\` - Key usage
+- `path/to/file.ts:L10-L50` - Primary definition
+- `path/to/file2.ts:L25` - Key usage
 
 ### Dependency Graph
-\`\`\`
 [TARGET]
 ?———— imports from:
 —  ?———— module-a (types)
@@ -239,7 +242,6 @@ Based on Phase 1 results, build:
 ?———— used by:
     ?———— handler.ts (direct call)
     ?———— service.ts (dependency injection)
-\`\`\`
 
 ### Impact Zones
 | Zone | Risk Level | Files Affected | Test Coverage |
@@ -251,7 +253,7 @@ Based on Phase 1 results, build:
 ### Established Patterns
 - Pattern A: [description] - used in N places
 - Pattern B: [description] - established convention
-\`\`\`
+```
 
 ## 2.2: Identify Refactoring Constraints
 
@@ -271,7 +273,7 @@ Based on codemap:
 
 ## 3.1: Detect Test Infrastructure
 
-\`\`\`bash
+```bash
 # Check for test commands
 cat package.json | jq '.scripts | keys[] | select(test("test"))'
 
@@ -280,22 +282,27 @@ ls -la pytest.ini pyproject.toml setup.cfg
 
 # Or for Go
 ls -la *_test.go
-\`\`\`
+```
 
 ## 3.2: Analyze Test Coverage
 
-\`\`\`
-// Find all tests related to target
+```
 invoke_subagent(
-
-  prompt="Analyze test coverage for [TARGET]:
-  1. Which test files cover this code?
-  2. What test cases exist?
-  3. Are there integration tests?
-  4. What edge cases are tested?
-  5. Estimated coverage percentage?"
+  Subagents=[{
+    TypeName: "self",
+    Role: "Test Coverage Analyzer",
+    Model: "flash",
+    Prompt: """Analyze test coverage for [TARGET]:
+1. Which test files cover this code?
+2. What test cases exist?
+3. Are there integration tests?
+4. What edge cases are tested?
+5. Estimated coverage percentage?"""
+  }],
+  toolAction: "Analyzing test coverage for refactoring target",
+  toolSummary: "Test coverage analysis"
 )
-\`\`\`
+```
 
 ## 3.3: Determine Verification Strategy
 
