@@ -27,10 +27,7 @@ test("#given Codex compatibility reference #when spawn_agent roles are listed #t
 });
 
 test('#given Codex reference prompts #when role-specific agents are spawned #then they set fork_turns="none"', async () => {
-	const promptFiles = [
-		join(root, "skills", "ulw-loop", "references", "codex.md"),
-		join(root, "components", "rules", "bundled-rules", "hephaestus.md"),
-	];
+	const promptFiles = [join(root, "skills", "ulw-loop", "references", "codex.md")];
 
 	const missingForkTurns = [];
 	for (const promptPath of promptFiles) {
@@ -41,6 +38,13 @@ test('#given Codex reference prompts #when role-specific agents are spawned #the
 	}
 
 	assert.deepEqual(missingForkTurns, []);
+});
+
+test("#given Hephaestus session rule #when inspected #then it is Antigravity-first", async () => {
+	const content = await readFile(join(root, "components", "rules", "bundled-rules", "hephaestus.md"), "utf8");
+	assert.match(content, /invoke_subagent/);
+	assert.match(content, /Google Antigravity/);
+	assert.doesNotMatch(content, /spawn_agent\(agent_type=/);
 });
 
 test("#given Antigravity-default orchestration skills #when inspected #then they teach invoke_subagent and forbid Codex wait loops", async () => {

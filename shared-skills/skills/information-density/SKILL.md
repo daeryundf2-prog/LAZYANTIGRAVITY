@@ -34,4 +34,4 @@ Score all generated paragraphs and code comments against calibrated density anch
 - **Low Density (< 40)**:
   > "In this task, we will look into the codebase and analyze how the models are routed, and then we will update the catalog to make sure everything works smoothly."
 - **High Density (80–100)**:
-  > "Updated `model-catalog.json` `perRoleRouting.antigravity` to `supported: true`. Exposed tier parameters (`pro`, `flash`, `flash_lite`, `inherit`) via `invoke_subagent`. Verified 110 unit tests pass."
+  > "Updated `model-catalog.json` `antigravity.current.model` to `gemini-3.7-flash-high` with `canAutoRoute: false`. Documented optional `invoke_subagent` tier hints (`pro`, `flash`, `flash_lite`, `inherit`). Verified 119 unit tests pass."

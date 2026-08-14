@@ -11,7 +11,7 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 
 ## Instructions
 
-1. Read the `ulw-loop` skill by opening `../ulw-loop/SKILL.md` with `view_file`. Follow all instructions there exactly.
+1. Read the `ulw-loop` skill by opening `../ulw-loop/SKILL.md` with `Read`. Follow all instructions there exactly.
 2. Read `../ulw-loop/references/full-workflow.md` as the `ulw-loop` skill instructs (Antigravity-first Bootstrap).
 3. Execute the full `ulw-loop` procedure. Do NOT stop at the alias — run the entire workflow.
 

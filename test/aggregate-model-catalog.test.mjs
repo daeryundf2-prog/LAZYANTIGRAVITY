@@ -5,22 +5,25 @@ import test from "node:test";
 
 import { root } from "./aggregate-plugin-fixture.mjs";
 
-test("#given bundled model catalog #when inspected #then default verifier and worker roles are pinned", async () => {
+test("#given bundled model catalog #when inspected #then Antigravity Flash defaults are pinned at top-level and antigravity section", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 
-	assert.equal(catalog.current.model, "gpt-5.5");
-	assert.equal(catalog.current.model_context_window, 400000);
+	assert.equal(catalog.current.model, "gemini-3.7-flash-high");
+	assert.equal(catalog.current.model_context_window, 1048576);
 	assert.equal(catalog.current.model_reasoning_effort, "high");
-	assert.equal(catalog.current.plan_mode_reasoning_effort, "xhigh");
+	assert.equal(catalog.current.plan_mode_reasoning_effort, "high");
 	assert.deepEqual(catalog.roles.default, catalog.current);
 	assert.deepEqual(catalog.roles.verifier, {
-		model: "gpt-5.5",
-		model_reasoning_effort: "xhigh",
-	});
-	assert.deepEqual(catalog.roles.worker, {
-		model: "gpt-5.5",
+		model: "gemini-3.1-pro-high",
 		model_reasoning_effort: "high",
 	});
+	assert.deepEqual(catalog.roles.worker, {
+		model: "gemini-3.7-flash-high",
+		model_reasoning_effort: "high",
+	});
+	assert.equal(catalog.antigravity.canAutoRoute, false);
+	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
+	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
 });
 
 test("#given bundled model catalog #when inspected #then no role or managed preset uses pure GPT-5.4", async () => {

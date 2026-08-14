@@ -19,7 +19,6 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 
 Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-
 ## Inputs
 
 - **Default scope**: branch diff vs `merge-base main` (no arguments needed)
@@ -166,7 +165,7 @@ Files are processed by `deep` category agents with the `$omo:remove-ai-slops` sk
 **Batching protocol** (strict):
 
 1. Slice the in-scope file list into chunks of up to 5 files.
-2. For each chunk, launch all `task` calls **in a single message**, every one with `run_in_background=true`.
+2. For each chunk, launch all `invoke_subagent` calls **in a single message**.
 3. End your turn. Wait for the system to send `<system-reminder>` notifications as each task finishes.
 4. Once all 5 in the batch complete, collect each result via `background_output(task_id=...)`.
 5. Launch the next batch of 5. Repeat until every file is processed.
@@ -178,10 +177,7 @@ Files are processed by `deep` category agents with the `$omo:remove-ai-slops` sk
 
 ```
 invoke_subagent(
-  category="deep",
-  load_skills=["remove-ai-slops"],
-  run_in_background=true,
-  description="Slop removal: {filename}",
+
   prompt="""
 Remove AI slops from: {file_path}
 

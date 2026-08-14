@@ -6,14 +6,14 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 [![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.3.3-black?style=for-the-badge)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.3.4-black?style=for-the-badge)](./package.json)
 
 ## Why this plugin
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
 | Single agent, single task | **20 skills** (+ aliases) for ULW, review, refactor, visual QA, and more |
-| No quality gates | **7 hook events / 17 command hooks** (rules, comments, LSP, ULW steering, readiness) |
+| No quality gates | **7 hook events / 16 command hooks** (rules, comments, LSP, ULW steering, readiness) |
 | Manual model guessing | **Model catalog hints** — Gemini 3.7 Flash for plan + code (`canAutoRoute: false`) |
 | Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
 | Weak evidence discipline | **Evidence-bound ULW loop** — claims need local proof |

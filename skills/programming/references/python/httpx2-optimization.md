@@ -102,7 +102,6 @@ _SOCKET_OPTIONS: list[tuple[int, int, int]] = [
     (socket.IPPROTO_TCP, socket.TCP_NODELAY, 1),
 ]
 
-
 def create_async_client(
     *,
     base_url: str = "",
@@ -129,7 +128,6 @@ def create_async_client(
         follow_redirects=True,
         **kwargs,
     )
-
 
 def create_client(
     *,
@@ -256,10 +254,8 @@ import time
 import anyio
 import httpx2
 
-
 TARGET_URL = "https://api.example.com/health"
 ITERATIONS = 30
-
 
 async def bench(label: str, client: httpx2.AsyncClient, url: str, n: int) -> float:
     for _ in range(3):  # warmup
@@ -272,7 +268,6 @@ async def bench(label: str, client: httpx2.AsyncClient, url: str, n: int) -> flo
     avg_ms = (elapsed / n) * 1000
     print(f"  {label}: {avg_ms:.1f}ms avg ({n} reqs in {elapsed:.2f}s)")
     return avg_ms
-
 
 async def main() -> None:
     results: dict[str, float] = {}
@@ -296,7 +291,6 @@ async def main() -> None:
     for label, avg in results.items():
         delta = ((avg - baseline) / baseline) * 100
         print(f"  {label}: {avg:.1f}ms ({delta:+.1f}% vs bare)")
-
 
 if __name__ == "__main__":
     anyio.run(main)

@@ -43,14 +43,12 @@ from functools import lru_cache
 from pydantic import Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="MYAPI_")
 
     database_url: PostgresDsn
     debug: bool = False
     cors_origins: list[str] = Field(default_factory=list)
-
 
 @lru_cache
 def get_settings() -> Settings:
@@ -85,7 +83,6 @@ from sqlalchemy.ext.asyncio import (
 
 from myapi.config import get_settings
 
-
 def make_engine() -> AsyncEngine:
     settings = get_settings()
     return create_async_engine(
@@ -94,15 +91,12 @@ def make_engine() -> AsyncEngine:
         pool_pre_ping=True,
     )
 
-
 _engine = make_engine()
 _SessionFactory = async_sessionmaker(_engine, expire_on_commit=False)
-
 
 async def get_session() -> AsyncIterator[AsyncSession]:
     async with _SessionFactory() as session:
         yield session
-
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 ```
@@ -121,10 +115,8 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 
-
 class Base(MappedAsDataclass, DeclarativeBase):
     pass
-
 
 class User(Base):
     __tablename__ = "users"
@@ -147,11 +139,9 @@ class User(Base):
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-
 class UserCreate(BaseModel):
     email: EmailStr
     name: str
-
 
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)  # SQLAlchemy → Pydantic
@@ -176,7 +166,6 @@ from myapi.schemas import UserCreate, UserRead
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-
 @router.post("", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(payload: UserCreate, session: SessionDep) -> User:
     user = User(email=payload.email, name=payload.name)
@@ -185,7 +174,6 @@ async def create_user(payload: UserCreate, session: SessionDep) -> User:
     await session.refresh(user)
     return user
 
-
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(user_id: int, session: SessionDep) -> User:
     result = await session.execute(select(User).where(User.id == user_id))
@@ -193,7 +181,6 @@ async def get_user(user_id: int, session: SessionDep) -> User:
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
     return user
-
 
 @router.get("", response_model=list[UserRead])
 async def list_users(session: SessionDep, limit: int = 100) -> list[User]:
@@ -212,7 +199,6 @@ from fastapi import FastAPI
 from myapi.config import get_settings
 from myapi.routers import users
 
-
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Startup: warm up engine pool, run migrations check, etc.
@@ -220,7 +206,6 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Shutdown: close engine
     from myapi.db import _engine
     await _engine.dispose()
-
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -231,7 +216,6 @@ def create_app() -> FastAPI:
     )
     app.include_router(users.router)
     return app
-
 
 app = create_app()
 ```
@@ -276,7 +260,6 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from myapi.main import app
-
 
 @pytest.mark.anyio
 async def test_create_and_get_user() -> None:

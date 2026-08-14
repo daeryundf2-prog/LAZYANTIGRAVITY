@@ -25,7 +25,7 @@ uv add --dev basedpyright ruff pytest
 [project]
 name = "myproject"
 version = "0.1.0"
-description = "..."
+
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []

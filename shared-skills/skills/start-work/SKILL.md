@@ -19,7 +19,6 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 
 Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-
 ## Usage
 
 ```text
@@ -94,7 +93,7 @@ Each sub-task message must include:
    - tmux: a `tmux` session driven with `send-keys`, dumped via `capture-pane`.
    - Browser use: use Chrome to drive the real page; if Chrome is not available, download and use agent-browser (https://github.com/vercel-labs/agent-browser).
    - Computer use: OS-level GUI automation against the running desktop app when the surface is not a page.
-6. The adversarial classes that apply to this sub-invoke_subagent(from the 9 ultraqa classes) and how each is probed.
+6. The adversarial classes that apply to this work item — from the 9 ultraqa classes — and how each is probed.
 7. Required artifact path and cleanup receipt.
 
 Apply ultraqa's 9 adversarial classes where relevant to each checkbox: malformed input, prompt injection, cancel/resume, stale state, dirty worktree, hung or long commands, flaky tests, misleading success output, repeated interruptions. A checkbox whose behavior is user-visible MUST probe every class that plausibly applies; record which classes were exercised and which were ruled not-applicable with a one-line reason.

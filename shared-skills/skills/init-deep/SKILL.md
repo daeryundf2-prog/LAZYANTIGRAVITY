@@ -18,7 +18,6 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 
 Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-
 ## Usage
 
 ```
@@ -58,46 +57,55 @@ TodoWrite([
 
 ### Fire Background Explore Agents IMMEDIATELY
 
-Don't wait-these run async while main session works.
+Don't wait-these run async while main session works. Dispatch ALL in one response via `invoke_subagent` (see `../references/antigravity-tools.md`).
 
 ```
-// Fire all at once, collect results later
-invoke_subagent(subagent_type="explore", load_skills=[], description="Explore project structure", run_in_background=true, prompt="Project structure: PREDICT standard patterns for detected language —REPORT deviations only")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Find entry points", run_in_background=true, prompt="Entry points: FIND main files —REPORT non-standard organization")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Find conventions", run_in_background=true, prompt="Conventions: FIND config files (.eslintrc, pyproject.toml, .editorconfig) —REPORT project-specific rules")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Find anti-patterns", run_in_background=true, prompt="Anti-patterns: FIND 'DO NOT', 'NEVER', 'ALWAYS', 'DEPRECATED' comments —LIST forbidden patterns")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Explore build/CI", run_in_background=true, prompt="Build/CI: FIND .github/workflows, Makefile —REPORT non-standard patterns")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Find test patterns", run_in_background=true, prompt="Test patterns: FIND test configs, test structure —REPORT unique conventions")
+invoke_subagent(prompt="""
+TASK: Explore project structure. PREDICT standard patterns for detected language; REPORT deviations only.
+DELIVERABLE: structure findings with paths
+SCOPE: repository read-only
+VERIFY: parent re-reads cited paths
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+""")
+invoke_subagent(prompt="""
+TASK: Find entry points. FIND main files; REPORT non-standard organization.
+DELIVERABLE: entry-point list with paths
+SCOPE: repository read-only
+VERIFY: parent re-reads cited paths
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+""")
+invoke_subagent(prompt="""
+TASK: Find conventions. FIND config files (.eslintrc, pyproject.toml, .editorconfig); REPORT project-specific rules.
+DELIVERABLE: convention findings
+SCOPE: repository read-only
+VERIFY: parent re-reads cited paths
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+""")
+invoke_subagent(prompt="""
+TASK: Find anti-patterns. FIND 'DO NOT', 'NEVER', 'ALWAYS', 'DEPRECATED' comments; LIST forbidden patterns.
+DELIVERABLE: anti-pattern list with file:line
+SCOPE: repository read-only
+VERIFY: parent re-reads cited paths
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+""")
+invoke_subagent(prompt="""
+TASK: Explore build/CI. FIND .github/workflows, Makefile; REPORT non-standard patterns.
+DELIVERABLE: build/CI findings
+SCOPE: repository read-only
+VERIFY: parent re-reads cited paths
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+""")
+invoke_subagent(prompt="""
+TASK: Find test patterns. FIND test configs and structure; REPORT unique conventions.
+DELIVERABLE: test-pattern findings
+SCOPE: repository read-only
+VERIFY: parent re-reads cited paths
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+""")
 ```
 
 <dynamic-agents>
-**DYNAMIC AGENT SPAWNING**: After bash analysis, spawn ADDITIONAL explore agents based on project scale:
-
-| Factor | Threshold | Additional Agents |
-|--------|-----------|-------------------|
-| **Total files** | >100 | +1 per 100 files |
-| **Total lines** | >10k | +1 per 10k lines |
-| **Directory depth** | — | +2 for deep exploration |
-| **Large files (>500 lines)** | >10 files | +1 for complexity hotspots |
-| **Monorepo** | detected | +1 per package/workspace |
-| **Multiple languages** | >1 | +1 per language |
-
-```bash
-# Measure project scale first
-total_files=$(find . -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | wc -l)
-total_lines=$(find . -type f \\( -name "*.ts" -o -name "*.py" -o -name "*.go" \\) -not -path '*/node_modules/*' -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print $1}')
-large_files=$(find . -type f \\( -name "*.ts" -o -name "*.py" \\) -not -path '*/node_modules/*' -exec wc -l {} + 2>/dev/null | awk '$1 > 500 {count++} END {print count+0}')
-max_depth=$(find . -type d -not -path '*/node_modules/*' -not -path '*/.git/*' | awk -F/ '{print NF}' | sort -rn | head -1)
-```
-
-Example spawning:
-```
-// 500 files, 50k lines, depth 6, 15 large files —spawn 5+5+2+1 = 13 additional agents
-invoke_subagent(subagent_type="explore", load_skills=[], description="Analyze large files", run_in_background=true, prompt="Large file analysis: FIND files >500 lines, REPORT complexity hotspots")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Explore deep modules", run_in_background=true, prompt="Deep modules at depth 4+: FIND hidden patterns, internal conventions")
-invoke_subagent(subagent_type="explore", load_skills=[], description="Find shared utilities", run_in_background=true, prompt="Cross-cutting concerns: FIND shared utilities across directories")
-// ... more based on calculation
-```
+**DYNAMIC AGENT SPAWNING**: After shell analysis, dispatch ADDITIONAL explore subagents based on project scale using the same `invoke_subagent` shape (large files, deep modules, shared utilities, monorepo packages, extra languages). Cap additional lanes sensibly; stay in the parent and continue concurrent analysis.
 </dynamic-agents>
 
 ### Main Session: Concurrent Analysis
@@ -262,7 +270,13 @@ Launch writing tasks for each location:
 
 ```
 for loc in AGENTS_LOCATIONS (except root):
-  invoke_subagent(category="writing", load_skills=[], run_in_background=false, description="Generate AGENTS.md", prompt=`
+  invoke_subagent(prompt=`TASK: Generate AGENTS.md
+DELIVERABLE: AGENTS.md content
+SCOPE: target directory only
+VERIFY: parent writes/edits file and re-reads
+ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=SubagentResultEnvelope; requiresParentAck=true
+
+
     Generate AGENTS.md for: ${loc.path}
     - Reason: ${loc.reason}
     - 30-80 lines max

@@ -131,11 +131,11 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 	assert.match(text, /hook post-compact/);
 	assert.match(text, /Resetting Git Bash Mcp Reminder/);
 	assert.match(text, /components\/ulw-loop\/dist\/cli\.js/);
-	assert.match(text, /hook pre-tool-use/);
+	assert.match(text, /Checking Ulw-Loop Steering/);
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), [
 		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute)$",
-		"^(create_goal|CreateGoal|create-goal)$",
 	]);
+	assert.doesNotMatch(text, /create_goal/);
 });
 
 test("#given aggregate SessionStart hooks #when inspected #then LazyAntigravity auto-update hook is NOT registered (antigravity-only)", async () => {

@@ -16,7 +16,6 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Button, Label
 from textual.containers import Vertical
 
-
 class CounterApp(App[None]):
     """A trivial counter app."""
 
@@ -46,7 +45,6 @@ class CounterApp(App[None]):
             self.count = 0
         self.query_one("#count", Label).update(str(self.count))
 
-
 if __name__ == "__main__":
     CounterApp().run()
 ```
@@ -72,13 +70,11 @@ from textual.app import App, ComposeResult
 from textual.reactive import reactive
 from textual.widgets import Label
 
-
 class CountWidget(Label):
     count: reactive[int] = reactive(0)
 
     def render(self) -> str:
         return f"Count: {self.count}"
-
 
 class CounterApp(App[None]):
     def compose(self) -> ComposeResult:
@@ -100,7 +96,6 @@ import httpx
 from textual.app import App, ComposeResult
 from textual.widgets import Input, Static
 from textual.work import work
-
 
 class FetchApp(App[None]):
     def compose(self) -> ComposeResult:
@@ -170,7 +165,6 @@ Reload with `r` in dev mode (`textual run --dev`).
 ```python
 import pytest
 from myapp import CounterApp
-
 
 @pytest.mark.anyio
 async def test_counter_increments() -> None:

@@ -46,13 +46,11 @@ from __future__ import annotations
 import httpx2
 from rich import print as rprint
 
-
 def main() -> None:
     with httpx2.Client(http2=True, follow_redirects=True) as client:
         resp = client.get("https://api.github.com")
         resp.raise_for_status()
         rprint(resp.json())
-
 
 if __name__ == "__main__":
     main()
@@ -138,14 +136,12 @@ import sys
 import httpx2
 from rich import print as rprint
 
-
 def main() -> None:
     url = sys.argv[1] if len(sys.argv) > 1 else "https://api.github.com"
     with httpx2.Client(http2=True, follow_redirects=True) as client:
         resp = client.get(url)
         resp.raise_for_status()
         rprint(resp.json())
-
 
 if __name__ == "__main__":
     main()
@@ -177,14 +173,12 @@ import polars as pl
 import typer
 from rich import print as rprint
 
-
 def main(input_path: Path, output_path: Path | None = None) -> None:
     """Convert CSV to Parquet."""
     out = output_path or input_path.with_suffix(".parquet")
     df = pl.read_csv(input_path)
     df.write_parquet(out)
     rprint(f"[green]✓[/green] {input_path} → {out} ({len(df)} rows)")
-
 
 if __name__ == "__main__":
     typer.run(main)
@@ -218,7 +212,6 @@ import anyio
 import httpx2
 from rich import print as rprint
 
-
 async def main() -> None:
     url = sys.argv[1] if len(sys.argv) > 1 else "https://api.github.com"
     n = int(sys.argv[2]) if len(sys.argv) > 2 else 20
@@ -243,7 +236,6 @@ async def main() -> None:
 
     avg_ms = (elapsed / n) * 1000
     rprint(f"[bold]{url}[/bold]: {avg_ms:.1f}ms avg over {n} requests ({elapsed:.2f}s total, {r.http_version})")
-
 
 if __name__ == "__main__":
     anyio.run(main)

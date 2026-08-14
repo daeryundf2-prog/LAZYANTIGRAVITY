@@ -19,7 +19,6 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 
 Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-
 ## Purpose and when to use
 
 - Use after you build or change any UI, before calling it done. Covers web/page UIs and TUI/terminal UIs.
@@ -77,10 +76,7 @@ Paste evidence directly into each prompt, because the oracle works only from the
 ### Pass A - Design-system and functional integrity (deeper, strict)
 
 ```
-invoke_subagent(subagent_type="oracle",
-  run_in_background=true,
-  load_skills=[],
-  description="Visual QA pass A: design-system and functional integrity",
+invoke_subagent(
   prompt="""
 REVIEW TYPE: DESIGN-SYSTEM AND FUNCTIONAL INTEGRITY (read-only)
 TIER INTENT: Treat this as the deeper, stricter pass. Reason exhaustively before concluding. Assume a plausible-looking surface may be faked until the source proves otherwise.
@@ -121,10 +117,7 @@ BLOCKING: items that must be fixed; empty if PASS
 ### Pass B - Visual fidelity and CJK precision (focused)
 
 ```
-invoke_subagent(subagent_type="oracle",
-  run_in_background=true,
-  load_skills=[],
-  description="Visual QA pass B: visual fidelity and CJK precision",
+invoke_subagent(
   prompt="""
 REVIEW TYPE: VISUAL FIDELITY AND CJK PRECISION (read-only)
 TIER INTENT: Treat this as the focused visual pass. Anchor every claim to the script evidence and the captures.
@@ -166,11 +159,7 @@ BLOCKING: items that must be fixed; empty if PASS
 When Gemini 3.7 Flash is available as a subagent model, dispatch a fast vision pre-screen before the oracle passes. This pass uses Flash's multimodal image input capability to directly analyze the screenshot pixels, complementing the text-based oracle passes.
 
 ```
-invoke_subagent(subagent_type="oracle",
-  run_in_background=true,
-  model="flash",
-  load_skills=[],
-  description="Visual QA pass C: Gemini 3.7 Flash vision pre-screen",
+invoke_subagent(
   prompt="""
 REVIEW TYPE: FAST VISION PRE-SCREEN (read-only, advisory)
 MODEL: Gemini 3.7 Flash —use your multimodal image input capability.

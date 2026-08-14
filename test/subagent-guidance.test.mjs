@@ -36,17 +36,16 @@ test("#given Codex ULW reference #when inspected #then Codex subagent delegation
 	assert.match(text, /list_agents/);
 });
 
-test("#given ultrawork directive #when inspected #then reviewer fallback keeps an agent role", async () => {
+test("#given ultrawork directive #when inspected #then Antigravity verifier lane replaces Codex reviewer spawn", async () => {
 	const directivePath = "components/ultrawork/directive.md";
 	const text = await readFile(join(root, directivePath), "utf8");
 
 	assert.doesNotMatch(text, /any `gpt-5\.2`\s+xhigh reviewer/);
-	assert.match(text, /codex-ultrawork-reviewer/);
-	assert.match(text, /agent_type.*worker/s);
-	assert.match(text, /model.*reasoning_effort.*default agent/s);
-	assert.match(text, /timeout only means no new mailbox update arrived/i);
-	assert.match(text, /WORKING:/);
-	assert.match(text, /single `list_agents`/);
+	assert.match(text, /invoke_subagent/);
+	assert.match(text, /Gemini 3\.7 Flash/);
+	assert.doesNotMatch(text, /spawn_agent\(agent_type=/);
+	assert.doesNotMatch(text, /Call `create_goal`/);
+	assert.match(text, /Do \*\*not\*\* call Codex `create_goal`/);
 });
 
 test("#given ulw-loop workflow #when inspected #then stale review refresh keeps policy changes narrow", async () => {

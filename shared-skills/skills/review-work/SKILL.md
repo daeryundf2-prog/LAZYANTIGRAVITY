@@ -18,7 +18,6 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 
 Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-
 ## Phase 0: Gather Review Context
 
 Before launching agents, collect these inputs. Extract from conversation history first - the user's original request, constraints discussed, and decisions made are usually already in the thread. Only ask if truly missing.
@@ -34,7 +33,6 @@ Before launching agents, collect these inputs. Extract from conversation history
 - **RUN_COMMAND**: How to start/run the application. Check `package.json` scripts, `Makefile`, `docker-compose.yml`, or ask the user.
 
 </required_inputs>
-
 
 **NEVER CHECKOUT A PR BRANCH IN THE MAIN WORKTREE. ALWAYS CREATE A NEW GIT WORKTREE (`git worktree add`) AND WORK THERE. THIS PREVENTS CONTAMINATING THE USER'S WORKING DIRECTORY WITH UNRELATED BRANCH STATE.**
 
@@ -59,7 +57,7 @@ For GOAL, CONSTRAINTS, BACKGROUND - review the full conversation history. The us
 
 ## Phase 1: Launch 5 Agents
 
-Launch ALL 5 in a single turn. Every agent uses `run_in_background=true`. No sequential launches. No waiting between them.
+Launch ALL 5 in a single turn via parallel `invoke_subagent` calls. No sequential launches.
 
 **Oracle agents receive everything in the prompt** (they cannot read files or run commands). Include DIFF + FILE_CONTENTS + all context directly in the prompt text.
 
@@ -73,10 +71,7 @@ This agent answers: "Did we build exactly what was asked, within the rules we we
 
 ```
 invoke_subagent(
-  subagent_type="oracle",
-  run_in_background=true,
-  load_skills=[],
-  description="Verify implementation against original goal and constraints",
+
   prompt="""
 <review_type>GOAL & CONSTRAINT VERIFICATION</review_type>
 
@@ -152,10 +147,7 @@ The QA agent follows a structured process: brainstorm scenarios exhaustively fir
 
 ```
 invoke_subagent(
-  category="unspecified-high",
-  run_in_background=true,
-  load_skills=["playwright", "dev-browser"],
-  description="QA by actually running and using the application",
+
   prompt="""
 <review_type>QA - HANDS-ON APP EXECUTION</review_type>
 
@@ -262,10 +254,7 @@ This agent answers: "Is the code well-written, maintainable, and consistent with
 
 ```
 invoke_subagent(
-  subagent_type="oracle",
-  run_in_background=true,
-  load_skills=[],
-  description="Review overall code quality, patterns, and architecture",
+
   prompt="""
 <review_type>CODE QUALITY REVIEW</review_type>
 
@@ -339,10 +328,7 @@ This is supplementary - it focuses exclusively on security. It does NOT comment 
 
 ```
 invoke_subagent(
-  subagent_type="oracle",
-  run_in_background=true,
-  load_skills=[],
-  description="Security-focused review of implementation changes",
+
   prompt="""
 <review_type>SECURITY REVIEW (supplementary)</review_type>
 
@@ -395,10 +381,7 @@ This agent answers: "Did we miss any context that should have informed this impl
 
 ```
 invoke_subagent(
-  category="unspecified-high",
-  run_in_background=true,
-  load_skills=["git-master"],
-  description="Mine all accessible contexts for missed requirements or background knowledge",
+
   prompt="""
 <review_type>CONTEXT MINING - MISSED REQUIREMENTS & BACKGROUND</review_type>
 
