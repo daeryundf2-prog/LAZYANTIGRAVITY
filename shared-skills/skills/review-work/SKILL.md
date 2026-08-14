@@ -2,17 +2,19 @@
 name: review-work
 description: "Post-implementation review orchestrator. Launches 5 parallel background sub-agents: Oracle (goal/constraint verification), Oracle (code quality), Oracle (security), unspecified-high (hands-on QA execution), unspecified-high (context mining from GitHub/git/Slack/Notion). All must pass for review to pass. MUST USE after completing any significant implementation work. Triggers: 'review work', 'review my work', 'review changes', 'QA my work', 'verify implementation', 'check my work', 'validate changes', 'post-implementation review'."
 ---
-## Antigravity Tool Mapping (default)
+## Antigravity Multi-Tier Oracle Mapping (default)
 
-This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md`.
+This plugin defaults to **Google Antigravity** with **Gemini 3.7 Flash (High)** as parent orchestrator.
 
-| Intent | Antigravity action |
-| --- | --- |
-| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
-| Wait / poll children | Stay in parent; re-invoke incomplete lanes |
-| Child model hint | Pass `Subagents[].Model`: `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
+| Oracle / Lane | Tier | Model | Policy |
+| --- | --- | --- | --- |
+| 🛡️ Security Review | Deep | `Model: "pro"` | **Blocking** (Fail stops release) |
+| 🧠 Code Quality & Logic | Deep | `Model: "pro"` | **Blocking** (Fail stops release) |
+| 👁️ Visual & CJK Fidelity | Multimodal | `Model: "flash"` | **Advisory** (Warning / auto-remediation) |
+| ⚡ Performance & Efficiency | Fast | `Model: "flash"` | **Advisory** (Warning / optimization) |
+| 🧪 Hands-on QA Execution | Tool-Using | `Model: "flash"` | **Blocking** (Broken flows stop release) |
 
-Use Antigravity tools only (`invoke_subagent`). Do **not** invent foreign spawn/wait/goal APIs or OpenCode kwargs.
+---
 
 ## Phase 0: Gather Review Context
 
@@ -32,32 +34,66 @@ Before launching agents, collect these inputs. Extract from conversation history
 
 **NEVER CHECKOUT A PR BRANCH IN THE MAIN WORKTREE. ALWAYS CREATE A NEW GIT WORKTREE (`git worktree add`) AND WORK THERE. THIS PREVENTS CONTAMINATING THE USER'S WORKING DIRECTORY WITH UNRELATED BRANCH STATE.**
 
-**Auto-collection sequence:**
-
-```bash
-# 1. Get changed files
-git diff --name-only HEAD~1  # or: git diff --name-only main...HEAD
-
-# 2. Get diff
-git diff HEAD~1  # or: git diff main...HEAD
-
-# 3. Detect run command
-# Check package.json -> "scripts.dev" or "scripts.start"
-# Check Makefile -> default target
-# Check docker-compose.yml -> services
-```
-
-For GOAL, CONSTRAINTS, BACKGROUND - review the full conversation history. The user's original message almost always contains the goal. Constraints often emerge during discussion. If anything critical is ambiguous, ask ONE focused question - not a checklist.
-
 ---
 
-## Phase 1: Launch 5 Agents
+## Phase 1: Launch Multi-Tier Oracles in Parallel
 
-Launch ALL 5 in a single turn via parallel `invoke_subagent` calls. No sequential launches.
+Launch the specialized review oracles in a SINGLE `invoke_subagent` turn with their respective `Model` parameters:
 
-**Oracle agents receive everything in the prompt** (they cannot read files or run commands). Include DIFF + FILE_CONTENTS + all context directly in the prompt text.
-
-**unspecified-high agents are autonomous** - they can read files, run commands, and use tools. Give them goals and pointers, not raw content dumps.
+```
+invoke_subagent(
+  Subagents=[
+    {
+      TypeName: "self",
+      Role: "Security Oracle (Pro)",
+      Model: "pro",
+      Prompt: """<review_type>SECURITY REVIEW (Blocking)</review_type>
+DIFF:
+{DIFF}
+FILE CONTENTS:
+{FILE_CONTENTS}
+Verify trust boundaries, authn/authz, input validation, secret hygiene, path traversal, injection vectors.
+OUTPUT: <verdict>PASS or FAIL</verdict>, <findings>severity and remediation</findings>, <blocking_issues>"""
+    },
+    {
+      TypeName: "self",
+      Role: "Code Quality & Logic Oracle (Pro)",
+      Model: "pro",
+      Prompt: """<review_type>CODE QUALITY & LOGIC REVIEW (Blocking)</review_type>
+GOAL: {GOAL}
+CONSTRAINTS: {CONSTRAINTS}
+DIFF:
+{DIFF}
+FILE CONTENTS:
+{FILE_CONTENTS}
+Verify behavioral correctness, off-by-one, race conditions, type safety, unhandled rejections, boundary contracts.
+OUTPUT: <verdict>PASS or FAIL</verdict>, <findings>dimension, severity, suggestion</findings>, <blocking_issues>"""
+    },
+    {
+      TypeName: "self",
+      Role: "Visual & CJK Fidelity Oracle (Flash)",
+      Model: "flash",
+      Prompt: """<review_type>VISUAL & CJK FIDELITY REVIEW (Advisory)</review_type>
+DIFF:
+{DIFF}
+Check for CJK typography wrapping, baseline clipping, tofu glyphs, grid/flex alignment, and UI design consistency.
+OUTPUT: <verdict>PASS or WARN</verdict>, <findings>location and aesthetic remediation</findings>"""
+    },
+    {
+      TypeName: "self",
+      Role: "Performance & Efficiency Oracle (Flash)",
+      Model: "flash",
+      Prompt: """<review_type>PERFORMANCE & EFFICIENCY REVIEW (Advisory)</review_type>
+DIFF:
+{DIFF}
+Check for N+1 queries, unindexed lookups, memory/listener leaks, hot path blocking, and token/context overhead.
+OUTPUT: <verdict>PASS or WARN</verdict>, <findings>hotspots and optimization guidance</findings>"""
+    }
+  ],
+  toolAction: "Dispatching multi-tier review oracles",
+  toolSummary: "Parallel 4-oracle review"
+)
+```
 
 ---
 
@@ -482,37 +518,43 @@ inconclusive and respawn a smaller reviewer/worker for that exact lane.
 
 <verdict_logic>
 
-ALL 5 agents returned PASS —**REVIEW PASSED**
-ANY agent returned FAIL —**REVIEW FAILED - criteria not met**
+### Tiered Blocking Policy
+1. **Core Blocking Gates (Must PASS)**:
+   - 🛡️ **Security Oracle (Pro)**: Any CRITICAL or HIGH vulnerability = **REVIEW FAILED** (Blocking).
+   - 🧠 **Code Quality & Logic Oracle (Pro)**: Any CRITICAL or MAJOR defect = **REVIEW FAILED** (Blocking).
+   - 🧪 **Hands-on QA Execution**: Any P0 or broken primary user flow = **REVIEW FAILED** (Blocking).
+2. **Advisory Gates (Warnings allowed)**:
+   - 👁️ **Visual & CJK Fidelity Oracle (Flash)**: WARN/FAIL triggers actionable layout/typography remediation notes, but does not block if core logic passed.
+   - ⚡ **Performance & Efficiency Oracle (Flash)**: WARN triggers optimization backlog items.
+
+**Overall Status**:
+- All Blocking Gates PASS -> **REVIEW PASSED** (with Advisory Notes if any)
+- Any Blocking Gate FAILS -> **REVIEW FAILED** (criteria not met)
 
 </verdict_logic>
 
 Compile the final report in this format:
 
 ```markdown
-# Review Work - Final Report
+# Review Work - Multi-Tier Final Report
 
 ## Overall Verdict: PASSED / FAILED
 
-| # | Review Area | Agent Type | Verdict | Confidence |
-|---|------------|------------|---------|------------|
-| 1 | Goal & Constraint Verification | Oracle | PASS/FAIL | HIGH/MED/LOW |
-| 2 | QA Execution | unspecified-high | PASS/FAIL | HIGH/MED/LOW |
-| 3 | Code Quality | Oracle | PASS/FAIL | HIGH/MED/LOW |
-| 4 | Security (supplementary) | Oracle | PASS/FAIL | Severity |
-| 5 | Context Mining | unspecified-high | PASS/FAIL | HIGH/MED/LOW |
+| # | Review Area | Tier / Model | Policy | Verdict | Notes |
+|---|------------|--------------|--------|---------|-------|
+| 1 | 🛡️ Security Review | Pro | Blocking | PASS / FAIL | - |
+| 2 | 🧠 Code Quality & Logic | Pro | Blocking | PASS / FAIL | - |
+| 3 | 🧪 Hands-on QA Execution | Flash | Blocking | PASS / FAIL | - |
+| 4 | 👁️ Visual & CJK Fidelity | Flash | Advisory | PASS / WARN | - |
+| 5 | ⚡ Performance & Efficiency | Flash | Advisory | PASS / WARN | - |
 
-## Blocking Issues
-[Aggregated from all agents - deduplicated, prioritized]
+## Blocking Issues (Must Fix)
+[Aggregated from Security, Logic, and QA failures]
 
-## Key Findings
-[Top 5-10 most important findings across all agents, grouped by theme]
+## Advisory & Optimization Notes
+[Visual/CJK alignments, performance optimizations, naming nits]
 
 ## Recommendations
 [If FAILED: exactly what to fix, in priority order]
-[If PASSED: non-blocking suggestions worth considering]
+[If PASSED: immediate release readiness confirmation]
 ```
-
-If FAILED - be specific. The user should know exactly what to fix and in what order. No vague "consider improving X" - state the problem, the file, and the fix.
-
-If PASSED - keep it short. Highlight any non-blocking suggestions, but don't turn a passing review into a lecture.

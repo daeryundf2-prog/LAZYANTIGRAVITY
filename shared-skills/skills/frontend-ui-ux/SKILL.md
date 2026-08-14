@@ -68,10 +68,22 @@ Create atmosphere and depth-gradient meshes, noise textures, geometric patterns,
 
 ---
 
-# Execution
+# Execution & Visual Verification
 
 Match implementation complexity to aesthetic vision:
 - **Maximalist** → Elaborate code with extensive animations and effects
 - **Minimalist** → Restraint, precision, careful spacing and typography
 
 Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. You are capable of extraordinary creative work-don't hold back.
+
+---
+
+# Verification Protocol (Multimodal Vision QA)
+
+After modifying any frontend/UI file (HTML, CSS, templates, React/Vue components):
+1. **Render & Capture**: Capture the live rendered view or screenshot of the component/page using browser tooling (Playwright, Puppeteer, or local browser render).
+2. **Vision Pre-Screen (Pass C)**: Dispatch Gemini 3.7 Flash with the screenshot artifact to check:
+   - CJK typography wrapping, baseline drops, or glyph clipping
+   - Grid and flexbox alignment anomalies, overflow, or awkward whitespace
+   - Contrast ratio and aesthetic coherence
+3. **Iterate**: Fix any visual defects before declaring completion. Follow `$visual-qa` for full 3-pass verification when needed.

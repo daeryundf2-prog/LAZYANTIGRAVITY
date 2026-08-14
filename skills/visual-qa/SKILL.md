@@ -195,13 +195,12 @@ CHECK QUICKLY (this is a pre-screen, not a deep review):
 OUTPUT (advisory — does not override Pass A/B verdicts):
 FLASH VERDICT: CLEAR | SUSPECT | FAIL
 FLASH SUMMARY: 1-2 sentences
-FLASH FLAGS: list each visual anomaly with approximate location (top-left, center, etc.)
+FLASH FLAGS: list each visual anomaly with approximate location/bounding grid (e.g. top-left, center, bottom-right nav) and CJK glyph state
 """
   }],
   toolAction: "Running vision pre-screen",
   toolSummary: "Pass C fast vision check"
 )
-```
 ```
 
 Flash results are advisory. If Flash flags SUSPECT or FAIL, prioritize those regions in Pass A and Pass B. If Flash says CLEAR but Pass A/B find issues, the Pass A/B verdict wins.

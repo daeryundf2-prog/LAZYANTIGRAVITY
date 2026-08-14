@@ -119,6 +119,7 @@
 			"planner": "flash",
 			"worker": "flash",
 			"researcher": "flash",
+			"surveyor": "flash",
 			"verifier": "pro",
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
@@ -168,6 +169,14 @@
 				"reasoningLevel": "high",
 				"purpose": "코드베이스 탐색/조사 — 1M 컨텍스트 + 속도",
 				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-low"],
+				"availabilitySource": "ui"
+			},
+			"surveyor": {
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "전수 레포지토리 서베이 / 블래스트 라디우스 분석 — 1M 컨텍스트 전수 분석",
+				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-medium"],
 				"availabilitySource": "ui"
 			},
 			"fast": {

@@ -91,13 +91,30 @@ When the `team_*` tools are present, create a **debug-squad** team and split inv
 Fan out async explore/deep subagents instead. Same rule: one hypothesis per subagent.
 
 ```
-invoke_subagent(load_skills=[], run_in_background=true,
-     prompt="[CONTEXT: bug summary + which hypothesis you own + what state to look at]
-     Runtime state investigation for hypothesis 1: ...")
-invoke_subagent(load_skills=[], run_in_background=true,
-     prompt="Log/timing investigation for hypothesis 2: ...")
-invoke_subagent(category="deep", load_skills=[], run_in_background=true,
-     prompt="Reproduction minimizer for hypothesis 3: ...")
+invoke_subagent(
+  Subagents=[
+    {
+      TypeName: "self",
+      Role: "Runtime State Scout",
+      Model: "flash",
+      Prompt: "[CONTEXT: bug summary + which hypothesis you own + what state to look at]\nRuntime state investigation for hypothesis 1: ..."
+    },
+    {
+      TypeName: "self",
+      Role: "Log & Timing Scout",
+      Model: "flash",
+      Prompt: "Log/timing investigation for hypothesis 2: ..."
+    },
+    {
+      TypeName: "self",
+      Role: "Reproduction Minimizer",
+      Model: "flash",
+      Prompt: "Reproduction minimizer for hypothesis 3: ..."
+    }
+  ],
+  toolAction: "Investigating hypotheses in parallel",
+  toolSummary: "Parallel hypothesis investigation"
+)
 ```
 
 End your response, wait for completion notifications, then synthesize.

@@ -22,6 +22,7 @@ const expectedSkills = [
 	"programming",
 	"refactor",
 	"remove-ai-slops",
+	"repo-survey",
 	"report-bug",
 	"review-work",
 	"rules",

@@ -158,9 +158,13 @@ For tasks where the deliverable is an **artifact, not a bug fix** (reverse engin
 ### Pattern
 
 ```
-invoke_subagent(load_skills=[], run_in_background=false,
-     prompt="""
-SKEPTICAL FINAL VERIFICATION — be critical, look for reasons the task is incomplete or wrong.
+invoke_subagent(
+  Subagents=[
+    {
+      TypeName: "self",
+      Role: "Skeptical Final Verifier",
+      Model: "pro",
+      Prompt: """SKEPTICAL FINAL VERIFICATION — be critical, look for reasons the task is incomplete or wrong.
 
 ## Original task
 <verbatim user request>
@@ -172,15 +176,19 @@ SKEPTICAL FINAL VERIFICATION — be critical, look for reasons the task is incom
 <bullet list of every concrete claim in the deliverable>
 
 ## Where to look
-<paths the Oracle should Read / Bash to verify>
+<paths the Oracle should Read / Run Command to verify>
 
 ## Your job
 1. Read the deliverables.
 2. Spot-check each claim against the source/evidence the deliverable cites.
 3. Identify any unsubstantiated claims, missing pieces, or factual errors.
 4. End with PASS / FAIL / PARTIAL with specific gaps.
-Be skeptical. Don't rubber-stamp.
-""")
+Be skeptical. Don't rubber-stamp."""
+    }
+  ],
+  toolAction: "Executing skeptical final verification",
+  toolSummary: "Final verification oracle"
+)
 ```
 
 ### Why this differs from the Oracle Triple

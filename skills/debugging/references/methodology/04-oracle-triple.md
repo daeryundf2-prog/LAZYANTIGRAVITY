@@ -37,46 +37,62 @@ Spawn all three in parallel.
 ## The three prompts
 
 ```
-invoke_subagent(load_skills=[], run_in_background=true,
-     prompt="[CONTEXT: bug description + evidence captured so far, verbatim, with file:line refs]
+invoke_subagent(
+  Subagents=[
+    {
+      TypeName: "self",
+      Role: "Oracle A - Obvious But Missed",
+      Model: "pro",
+      Prompt: """[CONTEXT: bug description + evidence captured so far, verbatim, with file:line refs]
 
-     Framing A — OBVIOUS-BUT-MISSED.
-     What is the most embarrassing, most obvious cause that a senior engineer would spot in 30 seconds and we've overlooked? Consider:
-     - typos, off-by-one
-     - wrong variable name / wrong constant / wrong import
-     - stale cache, wrong file edited, wrong process inspected
-     - attached to the wrong instance of the service
-     - test harness running different code than the app
-     - editing src/ while running dist/
+Framing A — OBVIOUS-BUT-MISSED.
+What is the most embarrassing, most obvious cause that a senior engineer would spot in 30 seconds and we've overlooked? Consider:
+- typos, off-by-one
+- wrong variable name / wrong constant / wrong import
+- stale cache, wrong file edited, wrong process inspected
+- attached to the wrong instance of the service
+- test harness running different code than the app
+- editing src/ while running dist/
 
-     Give me exactly three candidate causes ranked by likelihood, with one sentence each explaining why our evidence is consistent with each.")
+Give me exactly three candidate causes ranked by likelihood, with one sentence each explaining why our evidence is consistent with each."""
+    },
+    {
+      TypeName: "self",
+      Role: "Oracle B - System Boundary",
+      Model: "pro",
+      Prompt: """[CONTEXT: bug description + evidence captured so far]
 
-invoke_subagent(load_skills=[], run_in_background=true,
-     prompt="[CONTEXT: bug description + evidence captured so far]
+Framing B — SYSTEM-BOUNDARY.
+What if the bug is NOT in the code we've been reading, but at a boundary? Consider:
+- third-party SDK behavior that contradicts its docs
+- middleware that mutates the request or response
+- a proxy/gateway/load balancer that rewrites headers or bodies
+- build-time vs runtime env-var resolution
+- module-load-order issue
+- shared-library version mismatch (system lib vs bundled lib)
+- ABI difference (native addons, glibc versions, musl vs glibc)
+- wrong transport (HTTP/1.1 vs HTTP/2, TLS version negotiation)
 
-     Framing B — SYSTEM-BOUNDARY.
-     What if the bug is NOT in the code we've been reading, but at a boundary? Consider:
-     - third-party SDK behavior that contradicts its docs
-     - middleware that mutates the request or response
-     - a proxy/gateway/load balancer that rewrites headers or bodies
-     - build-time vs runtime env-var resolution
-     - module-load-order issue
-     - shared-library version mismatch (system lib vs bundled lib)
-     - ABI difference (native addons, glibc versions, musl vs glibc)
-     - wrong transport (HTTP/1.1 vs HTTP/2, TLS version negotiation)
+Give me three candidate causes, each naming the specific boundary and the specific contract assumption that might be violated."""
+    },
+    {
+      TypeName: "self",
+      Role: "Oracle C - Invariant Violation",
+      Model: "pro",
+      Prompt: """[CONTEXT: bug description + evidence captured so far]
 
-     Give me three candidate causes, each naming the specific boundary and the specific contract assumption that might be violated.")
+Framing C — INVARIANT-VIOLATION.
+Which invariants that we've been ASSUMING TRUE might actually be false?
+Enumerate the five assumptions most load-bearing to our current hypotheses, then for each:
+- describe the smallest runtime query that would falsify it
+- predict what the observable would be if the invariant holds vs if it fails
 
-invoke_subagent(load_skills=[], run_in_background=true,
-     prompt="[CONTEXT: bug description + evidence captured so far]
-
-     Framing C — INVARIANT-VIOLATION.
-     Which invariants that we've been ASSUMING TRUE might actually be false?
-     Enumerate the five assumptions most load-bearing to our current hypotheses, then for each:
-     - describe the smallest runtime query that would falsify it
-     - predict what the observable would be if the invariant holds vs if it fails
-
-     We want at least one of these queries to be decisive.")
+We want at least one of these queries to be decisive."""
+    }
+  ],
+  toolAction: "Dispatching Oracle Triple consultation",
+  toolSummary: "Oracle Triple parallel consult"
+)
 ```
 
 ---
