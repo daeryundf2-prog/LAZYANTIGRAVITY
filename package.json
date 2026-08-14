@@ -1,7 +1,7 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.3.1",
-	"description": "Aggregate Codex plugin root for OMO components.",
+	"version": "0.3.2",
+	"description": "Aggregated Antigravity plugin root for OMO/LazyAntigravity components (Gemini 3.7 Flash default).",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"private": true,
@@ -26,7 +26,7 @@
 		"@oh-my-opencode/sync-skills": "file:./src/packages/sync-skills"
 	},
 	"scripts": {
-		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack",
+		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",
 		"check": "npm run build && npm test",
 		"doctor": "node scripts/lazyantigravity-doctor.mjs",
 		"evidence:map": "node scripts/lazyantigravity-evidence-map.mjs",
@@ -37,6 +37,7 @@
 		"postpack": "node scripts/materialize-shared-skills.mjs --restore",
 		"provenance": "node scripts/lazyantigravity-provenance.mjs",
 		"sync:hooks": "node scripts/sync-hook-status-messages.mjs",
+		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
 		"test": "node --test test/*.test.mjs"
 	}

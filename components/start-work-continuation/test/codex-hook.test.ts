@@ -37,6 +37,34 @@ describe("start-work Stop hook", () => {
 		expect(output).toBe("");
 	});
 
+	it("#given active antigravity work with remaining top-level tasks #when hook runs #then returns block JSON", () => {
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["antigravity:sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		});
+
+		const output = runStopHook(createStopInput(), fs);
+		const parsed = parseBlockOutput(output);
+		expect(parsed.decision).toBe("block");
+		expect(parsed.reason).toContain("antigravity:sess_abc");
+	});
+
+	it("#given active gemini-prefixed work #when hook runs #then returns block JSON", () => {
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["gemini:sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		});
+
+		const output = runStopHook(createStopInput(), fs);
+		expect(parseBlockOutput(output).decision).toBe("block");
+	});
+
 	it("#given active codex work with remaining top-level tasks #when hook runs #then returns block JSON", () => {
 		// given
 		const fs = createMemoryFs({

@@ -67,7 +67,7 @@ export function readContinuationState(
 	if (boulderText === null) return null;
 	const parsed = parseJsonObject(boulderText);
 	if (parsed === null) return null;
-	const work = findMatchingWork(parsed, `codex:${sessionId}`);
+	const work = findMatchingWorkForSession(parsed, sessionId);
 	if (work === null) return null;
 	const planPath = resolvePlanPath(cwd, work.activePlan);
 	const planText = readTextFile(fs, planPath);
@@ -82,6 +82,19 @@ export function readContinuationState(
 		worktreePath: work.worktreePath,
 		checklist,
 	};
+}
+
+const SESSION_PREFIXES = ["antigravity:", "gemini:", "codex:"] as const;
+
+function findMatchingWorkForSession(
+	state: Record<string, unknown>,
+	sessionId: string,
+): BoulderWork | null {
+	for (const prefix of SESSION_PREFIXES) {
+		const work = findMatchingWork(state, `${prefix}${sessionId}`);
+		if (work !== null) return work;
+	}
+	return null;
 }
 
 function findMatchingWork(state: Record<string, unknown>, prefixedSessionId: string): BoulderWork | null {

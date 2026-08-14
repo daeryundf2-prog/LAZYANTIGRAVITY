@@ -62,6 +62,35 @@ test("#given bundled model catalog #when antigravity roles inspected #then Gemin
 	assert.equal(antigravity.routingMode, "hint-only");
 });
 
+test("#given bundled model catalog #when antigravity perRoleRouting inspected #then auto routing is unsupported hint-only", async () => {
+	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
+	const routing = catalog.perRoleRouting?.antigravity;
+	assert.equal(routing?.supported, false);
+	assert.equal(routing?.routingMode, "hint-only");
+});
+
+test("#given antigravity plugin install #when ulw-loop CLI path resolved from PLUGIN_ROOT #then help exits zero", async () => {
+	const { spawnSync } = await import("node:child_process");
+	const cli = join(root, "components", "ulw-loop", "dist", "cli.js");
+	const result = spawnSync(process.execPath, [cli, "ulw-loop", "help"], {
+		encoding: "utf8",
+		env: { ...process.env, PLUGIN_ROOT: root },
+	});
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
+test("#given ulw-loop skill pack #when antigravity workflow inspected #then spawn_agent is not the AG default path", async () => {
+	const skill = await readFile(join(root, "skills", "ulw-loop", "SKILL.md"), "utf8");
+	const workflow = await readFile(join(root, "skills", "ulw-loop", "references", "full-workflow.md"), "utf8");
+	assert.match(skill, /invoke_subagent/);
+	assert.match(skill, /PLUGIN_ROOT|Windows PowerShell|Antigravity Tool Mapping/);
+	assert.doesNotMatch(skill, /## Codex Tool Mapping\n\n\| Workflow intent \| Codex tool \|/);
+	assert.match(workflow, /PLUGIN_ROOT/);
+	assert.match(workflow, /Windows PowerShell/);
+	assert.match(workflow, /gemini-3\.7|Gemini 3\.7 Flash/);
+	assert.ok((await readFile(join(root, "skills", "ulw-loop", "references", "codex.md"), "utf8")).includes("spawn_agent"));
+});
+
 test("#given bundled model catalog #when antigravity planner inspected #then Claude Opus is fallback-only not primary", async () => {
 	const antigravity = await readAntigravityCatalog();
 	assert.notEqual(antigravity.roles?.planner?.modelId, "claude-opus-4.6");

@@ -1,5 +1,6 @@
 {
-	"version": "2026-08-13.antigravity-gemini37",
+	"version": "2026-08-14.antigravity-gemini37-ag-first",
+	"_legacyFlatNote": "Top-level current/roles/managedProfiles remain Codex-oriented (gpt-5.5) for legacy readers. Antigravity must use the antigravity section via runtime-adapter modelCatalogKey.",
 	"current": {
 		"model": "gpt-5.5",
 		"model_context_window": 400000,
@@ -268,10 +269,15 @@
 			"note": "Codex는 config.toml에서 전역 모델을 설정하고, spawn_agent에서 역할별 모델을 지정 가능"
 		},
 		"antigravity": {
-			"supported": true,
-			"mechanism": "invoke_subagent Model 파라미터 ('pro' | 'flash' | 'flash_lite' | 'inherit')",
-			"note": "Antigravity 서브에이전트 호출 시 invoke_subagent의 Model 파라미터를 통해 티어별 모델을 직접 지정 가능 ('pro': 고난도 추론/기획/검증, 'flash': 탐색/조사, 'flash_lite': 경량 작업, 'inherit': 부모 모델 상속).",
-			"limitations": []
+			"supported": false,
+			"routingMode": "hint-only",
+			"mechanism": "UI dropdown + optional invoke_subagent Model tier ('pro' | 'flash' | 'flash_lite' | 'inherit')",
+			"note": "Antigravity는 카탈로그 역할별 자동 라우팅을 하지 않음 (canAutoRoute=false). Model 티어는 수동 힌트일 뿐이며, 세션 UI 모델이 기본 상속된다. planner/worker/researcher 기본 추천은 Gemini 3.7 Flash (High).",
+			"limitations": [
+				"No automatic per-role model switching",
+				"Verifier Gemini 3.1 Pro requires a manual UI switch or separate session",
+				"Model tier on invoke_subagent does not override catalog role ids"
+			]
 		}
 	}
 }

@@ -93,7 +93,7 @@ The diagnostics file keeps JSONL rows for recent telemetry failures, prunes stal
 | Variable | Default |
 |----------|---------|
 | `POSTHOG_HOST` | `https://us.i.posthog.com` |
-| `POSTHOG_API_KEY` | shared `omo-codex` project key |
+Telemetry is **opt-in**. No events are sent unless an explicit opt-in env/marker is present, and `DEFAULT_POSTHOG_API_KEY` is empty in source — set `POSTHOG_API_KEY` yourself when opted in.
 
 ## Development
 

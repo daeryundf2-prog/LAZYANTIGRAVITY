@@ -12,17 +12,17 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 ## Instructions
 
 1. Read the `ulw-loop` skill by opening `../ulw-loop/SKILL.md` with `view_file`. Follow all instructions there exactly.
-2. Read `../ulw-loop/references/full-workflow.md` as the `ulw-loop` skill instructs.
+2. Read `../ulw-loop/references/full-workflow.md` as the `ulw-loop` skill instructs (Antigravity-first Bootstrap).
 3. Execute the full `ulw-loop` procedure. Do NOT stop at the alias — run the entire workflow.
 
 ## Antigravity Routing Semantics (inherited from ulw-loop)
 
-- **Role routing**: Automatic. Work is decomposed into planner ➡️ researcher ➡️ worker ➡️ verifier ➡️ finalizer.
-- **Model auto-routing**: NOT available on Antigravity. `canAutoRoute = false`.
-- **Subagent model inheritance**: All subagents inherit the user's currently selected Antigravity model.
-- **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, you must construct and pass a role envelope with `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, and `requiresParentAck=true`. Do not claim the whole `/ulw` task is complete, and do not mark run as completed or failed.
-- **Model recommendation**: Display once per session, then never repeat.
-- **Resume Guidance**: If execution is interrupted due to quota limits, switch the model manually in the Antigravity UI dropdown and type `/ulw resume` to safely resume progress from where it was paused.
+- **Role routing**: Automatic. Work is decomposed into planner → researcher → worker → verifier → finalizer.
+- **Model auto-routing**: NOT available on Antigravity. `canAutoRoute = false`. Routing mode is hint-only.
+- **Subagent model inheritance**: All subagents inherit the user's currently selected Antigravity model unless you pass an optional Model tier (`pro` | `flash` | `flash_lite` | `inherit`).
+- **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, pass `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`.
+- **Do not use** Codex tools (`spawn_agent`, `wait_agent`, `list_agents`, `close_agent`) on Antigravity.
+- **Resume Guidance**: If execution is interrupted due to quota limits, switch the model manually in the Antigravity UI dropdown and type `/ulw resume`.
 
 ### Session-once model recommendation
 

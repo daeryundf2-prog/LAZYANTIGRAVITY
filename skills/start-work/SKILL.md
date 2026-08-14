@@ -53,7 +53,7 @@ deliverable.
 
 # start-work
 
-Execute a Prometheus work plan until every top-level checkbox is complete. This skill pairs with the Codex `Stop` / `SubagentStop` continuation hook in `components/start-work-continuation`, which re-injects the next turn while `.omo/boulder.json` says the current `codex:<session_id>` still has unchecked plan work.
+Execute a Prometheus work plan until every top-level checkbox is complete. This skill pairs with the `Stop` / `SubagentStop` continuation hook in `components/start-work-continuation`, which re-injects the next turn while `.omo/boulder.json` says the current session still has unchecked plan work. Session ids may be prefixed `antigravity:`, `gemini:`, or `codex:`.
 
 ## Usage
 
@@ -89,7 +89,7 @@ Execution requires an approved plan before implementation; bootstrap mode create
 
 ## Phase 2: Create or update Boulder state
 
-Write `.omo/boulder.json` before implementation starts. Session ids must be prefixed with `codex:` so the continuation hook can identify its own session.
+Write `.omo/boulder.json` before implementation starts. Session ids must be prefixed for the host so the continuation hook can identify its own session (`antigravity:`, `gemini:`, or `codex:`).
 
 ```json
 {
@@ -100,7 +100,7 @@ Write `.omo/boulder.json` before implementation starts. Session ids must be pref
       "work_id": "<work-id>",
       "active_plan": ".omo/plans/<plan-name>.md",
       "plan_name": "<plan-name>",
-      "session_ids": ["codex:<session_id>"],
+      "session_ids": ["antigravity:<session_id>"],
       "status": "active",
       "worktree_path": null
     }
@@ -202,5 +202,5 @@ When all top-level checkboxes in `## TODOs` and `## Final Verification Wave` are
 - No `--dry-run` as completion evidence.
 - No tests-only completion claim. A Manual-QA artifact is required.
 - No completion claim while an applicable ultraqa adversarial class was never probed. Each applicable class needs a captured observable result; each skipped class needs a one-line not-applicable reason in the ledger.
-- No unprefixed session ids in Boulder state. Codex sessions are always `codex:<session_id>`.
+- No unprefixed session ids in Boulder state when writing new work. Use `antigravity:<session_id>`, `gemini:<session_id>`, or `codex:<session_id>`.
 - No stale-memory execution. The plan and ledger are the durable source of truth.

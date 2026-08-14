@@ -16,5 +16,7 @@ export interface UlwRoleCheckpoint {
     readonly timestamp: string;
     readonly dryRun?: boolean;
 }
+export declare function getPrimaryCheckpointsDir(repoRoot: string): string;
+export declare function listCheckpointDirs(repoRoot: string): string[];
 export declare function saveRoleCheckpoint(repoRoot: string, data: Omit<UlwRoleCheckpoint, "timestamp">): Promise<string>;
 export declare function findLatestRoleCheckpoint(repoRoot: string): Promise<UlwRoleCheckpoint | null>;

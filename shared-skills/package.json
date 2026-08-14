@@ -1,6 +1,6 @@
 {
 	"name": "@oh-my-opencode/shared-skills",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"description": "Shared skills bundle for LazyAntigravity.",
 	"type": "module",
 	"main": "index.mjs",

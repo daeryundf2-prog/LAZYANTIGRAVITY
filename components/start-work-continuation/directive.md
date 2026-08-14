@@ -11,14 +11,14 @@ You are mid-flight on a Prometheus work plan. The turn just ended without finish
 - Next incomplete task: `{{NEXT_TASK_LABEL}}`
 {{WORKTREE_BLOCK}}
 - Ledger: `{{LEDGER_PATH}}`
-- Your session id in boulder.json: `codex:{{SESSION_ID}}`
+- Your session id in boulder.json: one of `antigravity:{{SESSION_ID}}`, `gemini:{{SESSION_ID}}`, or `codex:{{SESSION_ID}}`
 
 # What to do this turn
 
 1. Read `{{PLAN_PATH}}` AND `{{LEDGER_PATH}}` first — ground truth for what remains and what evidence has already been recorded. The plan checkbox and the ledger are the only sources of truth; do not trust your own memory of prior turns.
 2. Pick the FIRST unchecked top-level checkbox in `## TODOs` or `## Final Verification Wave`. Ignore nested checkboxes under Acceptance Criteria / Evidence / Definition of Done.
 3. Follow the `start-work` skill in full. The skill is already loaded from your earlier turn — re-read its file at `packages/omo-codex/plugin/skills/start-work/SKILL.md` if you have lost context.
-4. Decompose the checkbox into atomic sub-tasks. Dispatch them in PARALLEL via `spawn_agent` calls in this same response unless a sub-task has a NAMED blocking dependency (input from another sub-task or shared file). Prefer `fork_turns: "none"` unless full history is truly required. Every dispatch sets `agent_type`; `model` + `reasoning_effort` alone creates a default agent, not the requested role.
+4. Decompose the checkbox into atomic sub-tasks. On Antigravity, dispatch them in PARALLEL via `invoke_subagent` in this same response unless a sub-task has a NAMED blocking dependency. On Codex, use `spawn_agent` (see ulw-loop `references/codex.md`). Every dispatch must include TASK / DELIVERABLE / SCOPE / VERIFY.
 5. Every sub-task message MUST be self-contained and start with `TASK: <imperative assignment>`, then name `DELIVERABLE`, `SCOPE`, and `VERIFY`. State that it is an executable assignment, not a context handoff. It must include all 7 sections and name one Manual-QA channel with its exact tool and exact invocation (the literal `curl` / `send-keys` / `page.click` with concrete inputs and the binary PASS/FAIL observable), plus the applicable ultraqa adversarial classes, a captured artifact, and a cleanup receipt. Channels: HTTP call (`curl -i`); tmux (`send-keys` + `capture-pane`); browser use — use Chrome to drive the page, else download and use agent-browser (https://github.com/vercel-labs/agent-browser); computer use — OS-level GUI automation for a desktop app. Tests are the floor; the channel artifact plus probed adversarial classes are the ceiling. All are required.
 6. Treat every worker DoneClaim as untrusted input. Run independent AdversarialVerify before any checkbox can become FullyDone; `confirmed` is the only pass verdict, while `false-positive`, `needs-fix`, and `needs-human-review` loop back to the executor with exact feedback.
 7. Use `wait_agent` for mailbox signals, not proof of completion. For sub-tasks likely to exceed one wait cycle, require `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A timeout only means no new mailbox update arrived; after a timeout, run a single `list_agents` check for the named child when you need reassurance. If it is running or its latest message is `WORKING:`, treat it as alive. Do not use `list_agents` as a polling loop. Send `TASK STILL ACTIVE: return <deliverable> or BLOCKED: <reason>` only when the child is completed without the deliverable, ack-only, or no longer running. If that followup is still silent or ack-only, record inconclusive, do not count it as pass/review approval, close if safe, and respawn a smaller `fork_turns: "none"` task with the missing deliverable.
@@ -33,7 +33,7 @@ You are mid-flight on a Prometheus work plan. The turn just ended without finish
 - Probe every applicable ultraqa adversarial class (malformed input, prompt injection, cancel/resume, stale state, dirty worktree, hung or long commands, flaky tests, misleading success output, repeated interruptions) and capture the observable for each. A clean happy-path artifact alone is NOT a PASS when an applicable class went unprobed; record skipped classes with a one-line not-applicable reason.
 - Cleanup receipt is mandatory. Register each QA resource teardown (scripts, tmux assets, browser / agent-browser sessions, PIDs, ports, containers, temp dirs) as its own todo the moment it spawns, then execute it. Leftover PIDs / `tmux` sessions / browser contexts / bound ports / containers / temp dirs = BLOCKED, not PASS.
 - The worktree path (if set in boulder.json) governs every file edit and command. Do not stray into the main repo.
-- session_ids you write to boulder.json MUST be prefixed `codex:`. Bare ids on read are legacy `opencode:`.
+- session_ids you write to boulder.json MUST be prefixed for the host: `antigravity:`, `gemini:`, or `codex:`. Bare ids on read are legacy unprefixed matches.
 
 # Stop conditions for THIS turn
 
