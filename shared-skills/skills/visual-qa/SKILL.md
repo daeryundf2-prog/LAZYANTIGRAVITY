@@ -38,8 +38,8 @@ If the change touches both, run both capture tracks and feed both into the passe
 2. Capture the ACTUAL rendered screenshot at the same viewport size using the project's browser tooling (the playwright, agent-browser, or dev-browser skill). Save as PNG.
 3. Run the diff and keep the JSON:
 
-```
-bun "$SKILL_DIR/scripts/cli.ts" image-diff <reference.png> <actual.png>
+```bash
+npx -y tsx "$SKILL_DIR/scripts/cli.ts" image-diff <reference.png> <actual.png>
 ```
 
 Key fields: `dimensionsMatch`, `diffRatio` (0..1), `similarityScore` (0..100), `alphaChannelIntact`, `hotspots[]` (grid regions ranked by `diffRatio`).
@@ -48,15 +48,15 @@ Key fields: `dimensionsMatch`, `diffRatio` (0..1), `similarityScore` (0..100), `
 
 1. Capture plain text and an ANSI-preserving copy:
 
-```
+```bash
 tmux capture-pane -p > capture.txt
 tmux capture-pane -e -p > capture-ansi.txt
 ```
 
 2. Run the check with the REAL terminal width and keep the JSON:
 
-```
-bun "$SKILL_DIR/scripts/cli.ts" tui-check capture.txt --cols <N>
+```bash
+npx -y tsx "$SKILL_DIR/scripts/cli.ts" tui-check capture.txt --cols <N>
 ```
 
 Key fields: `maxWidth`, `overflowLines[]`, `borderMisaligned`, `wideCharColumns[]`, `hasAnsi`.
@@ -67,13 +67,17 @@ This JSON (diff ratio, similarity score, hotspots or overflow lines, border alig
 
 Send BOTH task calls in a single message so they run concurrently. Each oracle is read-only: it reviews and reports, it cannot modify files. Each returns PASS, REVISE, or FAIL with concrete, located findings.
 
-Paste evidence directly into each prompt, because the oracle works only from the prompt text: source code, the plain-text TUI captures, the script JSON, and the screenshot paths plus your described observations for web. The two passes differ in depth by charter, not by any model or effort setting, which cannot be pinned per call.
+Paste evidence directly into each prompt, because the oracle works only from the prompt text: source code, the plain-text TUI captures, the script JSON, and the screenshot paths plus your described observations for web.
 
 ### Pass A - Design-system and functional integrity (deeper, strict)
 
 ```
 invoke_subagent(
-  prompt="""
+  Subagents=[{
+    TypeName: "self",
+    Role: "Design System & Functional Integrity Reviewer",
+    Model: "pro",
+    Prompt: """
 REVIEW TYPE: DESIGN-SYSTEM AND FUNCTIONAL INTEGRITY (read-only)
 TIER INTENT: Treat this as the deeper, stricter pass. Reason exhaustively before concluding. Assume a plausible-looking surface may be faked until the source proves otherwise.
 
@@ -107,6 +111,9 @@ FINDINGS: for each, [dimension] [severity] what is wrong, where (file/line or ca
 WHAT IS GOOD: correct aspects that must not regress
 BLOCKING: items that must be fixed; empty if PASS
 """
+  }],
+  toolAction: "Reviewing design system and functional integrity",
+  toolSummary: "Pass A visual review"
 )
 ```
 
@@ -114,7 +121,11 @@ BLOCKING: items that must be fixed; empty if PASS
 
 ```
 invoke_subagent(
-  prompt="""
+  Subagents=[{
+    TypeName: "self",
+    Role: "Visual Fidelity & CJK Precision Reviewer",
+    Model: "pro",
+    Prompt: """
 REVIEW TYPE: VISUAL FIDELITY AND CJK PRECISION (read-only)
 TIER INTENT: Treat this as the focused visual pass. Anchor every claim to the script evidence and the captures.
 
@@ -147,6 +158,9 @@ EVIDENCE TRACE: each hotspot or overflow line mapped to its visual cause
 FINDINGS: for each, [severity] what is wrong, where (hotspot grid or capture line:col), and the concrete fix
 BLOCKING: items that must be fixed; empty if PASS
 """
+  }],
+  toolAction: "Reviewing visual fidelity and CJK precision",
+  toolSummary: "Pass B visual review"
 )
 ```
 
@@ -156,9 +170,13 @@ When Gemini 3.7 Flash is available as a subagent model, dispatch a fast vision p
 
 ```
 invoke_subagent(
-  prompt="""
+  Subagents=[{
+    TypeName: "self",
+    Role: "Vision Pre-Screen Reviewer",
+    Model: "flash",
+    Prompt: """
 REVIEW TYPE: FAST VISION PRE-SCREEN (read-only, advisory)
-MODEL: Gemini 3.7 Flash —use your multimodal image input capability.
+MODEL: Gemini 3.7 Flash — use your multimodal image input capability.
 
 INTENT:
 {What the user requested and the mock or baseline to match.}
@@ -174,12 +192,16 @@ CHECK QUICKLY (this is a pre-screen, not a deep review):
 2. For CJK text: any clipping, tofu (missing glyphs), or broken wrapping visible in the image?
 3. Does the overall visual structure match the reference/baseline at a glance?
 
-OUTPUT (advisory —does not override Pass A/B verdicts):
+OUTPUT (advisory — does not override Pass A/B verdicts):
 FLASH VERDICT: CLEAR | SUSPECT | FAIL
 FLASH SUMMARY: 1-2 sentences
 FLASH FLAGS: list each visual anomaly with approximate location (top-left, center, etc.)
 """
+  }],
+  toolAction: "Running vision pre-screen",
+  toolSummary: "Pass C fast vision check"
 )
+```
 ```
 
 Flash results are advisory. If Flash flags SUSPECT or FAIL, prioritize those regions in Pass A and Pass B. If Flash says CLEAR but Pass A/B find issues, the Pass A/B verdict wins.

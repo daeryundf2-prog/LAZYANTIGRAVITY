@@ -29,7 +29,7 @@ export type CodexHookOptions = {
 	run?: CommentCheckerRunner;
 };
 
-const DEFAULT_MAX_HOOK_FEEDBACK_CHARS = 8000;
+const DEFAULT_MAX_HOOK_FEEDBACK_CHARS = 3500;
 const CONTEXT_PRESSURE_MAX_HOOK_FEEDBACK_CHARS = 1200;
 const CONTEXT_PRESSURE_MARKERS = [
 	"context compacted",

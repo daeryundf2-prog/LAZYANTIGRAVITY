@@ -45,7 +45,7 @@ const CLEAN_DIAGNOSTICS_TEXT = "No diagnostics found";
 const UNSUPPORTED_EXTENSION_TEXT = "No LSP server configured for extension:";
 const DIAGNOSTIC_START_PATTERN = /(?:error|warning|information|hint)\[[^\]\r\n]+\] \(\d+\) at \d+:\d+:/g;
 const DIAGNOSTIC_CHUNK_PATTERN = /^(?:error|warning|information|hint)\[[^\]\r\n]+\] \(\d+\) at \d+:\d+:/;
-const DEFAULT_MAX_HOOK_FEEDBACK_CHARS = 8000;
+const DEFAULT_MAX_HOOK_FEEDBACK_CHARS = 3500;
 const CONTEXT_PRESSURE_MAX_HOOK_FEEDBACK_CHARS = 1200;
 const MAX_CONCURRENT_DIAGNOSTICS = 4;
 const CONTEXT_PRESSURE_MARKERS = [
@@ -60,7 +60,7 @@ const CONTEXT_PRESSURE_MARKERS = [
 
 export async function runLspDiagnosticsText(filePath: string): Promise<string> {
 	const result = await executeLspDiagnostics({ filePath, severity: "error" });
-	return result.content.map((block) => block.text).join("\n");
+	return result.content.map((block: { text: string }) => block.text).join("\n");
 }
 
 export async function runLspPostToolUseHook(

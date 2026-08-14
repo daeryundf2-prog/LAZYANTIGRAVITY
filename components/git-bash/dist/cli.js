@@ -8,6 +8,9 @@ async function main() {
         process.stdout.write(TOP_LEVEL_HELP);
         return 0;
     }
+    if (process.platform !== "win32" && !process.env["OS"]?.includes("Windows") && !process.env["ComSpec"]) {
+        return 0;
+    }
     if (command === "hook" && argv[1] === "pre-tool-use") {
         await runGitBashHookCli(process.stdin, process.stdout, "pre-tool-use");
         return 0;

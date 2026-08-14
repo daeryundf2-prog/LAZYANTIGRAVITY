@@ -75,13 +75,13 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/comment-checker/dist/cli.js\" hook post-tool-use",
-						"timeout": 30,
+						"timeout": 10,
 						"statusMessage": "LazyAntigravity(0.3.9): Checking Comments"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-tool-use",
-						"timeout": 25,
+						"timeout": 10,
 						"statusMessage": "LazyAntigravity(0.3.9): Checking LSP Diagnostics"
 					}
 				]
@@ -92,7 +92,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-tool-use",
-						"timeout": 10,
+						"timeout": 5,
 						"statusMessage": "LazyAntigravity(0.3.9): Matching Project Rules"
 					}
 				]

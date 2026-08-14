@@ -5,6 +5,8 @@ export function runStopHook(input, fs) {
         return "";
     if (input.stop_hook_active)
         return "";
+    if (isExplicitCancellation(input.last_assistant_message))
+        return "";
     const state = readContinuationState(input.cwd, input.session_id, fs);
     if (state === null)
         return "";
@@ -12,6 +14,16 @@ export function runStopHook(input, fs) {
         decision: "block",
         reason: renderDirective(state, input.session_id),
     });
+}
+function isExplicitCancellation(message) {
+    if (!message)
+        return false;
+    const lower = message.toLowerCase();
+    return (lower.includes("cancel") ||
+        lower.includes("aborted") ||
+        lower.includes("중단") ||
+        lower.includes("취소") ||
+        lower.includes("stopped by user"));
 }
 function renderDirective(state, sessionId) {
     const lineBreak = String.fromCharCode(10);

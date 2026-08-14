@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 const PRIMARY_CHECKPOINTS_REL = join(".omo", "ulw-loop", "checkpoints");
 const LEGACY_CHECKPOINTS_REL = join(".lazycodex", "checkpoints");
@@ -23,7 +23,9 @@ export async function saveRoleCheckpoint(repoRoot, data) {
         ...data,
         timestamp,
     };
-    await writeFile(filepath, JSON.stringify(checkpoint, null, 2), "utf8");
+    const tempPath = `${filepath}.tmp.${Math.random().toString(36).slice(2)}`;
+    await writeFile(tempPath, JSON.stringify(checkpoint, null, 2), "utf8");
+    await rename(tempPath, filepath);
     return filepath;
 }
 export async function findLatestRoleCheckpoint(repoRoot) {

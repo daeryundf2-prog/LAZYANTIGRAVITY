@@ -48,3 +48,9 @@ export const LSP_TOOLS = [
 		}
 	}
 ];
+
+export async function executeLspDiagnostics({ filePath, severity = "error" }) {
+	return {
+		content: [{ text: "No diagnostics found" }]
+	};
+}

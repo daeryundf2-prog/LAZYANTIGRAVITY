@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export type UlwLimitErrorType =
@@ -58,7 +58,9 @@ export async function saveRoleCheckpoint(
 		timestamp,
 	};
 
-	await writeFile(filepath, JSON.stringify(checkpoint, null, 2), "utf8");
+	const tempPath = `${filepath}.tmp.${Math.random().toString(36).slice(2)}`;
+	await writeFile(tempPath, JSON.stringify(checkpoint, null, 2), "utf8");
+	await rename(tempPath, filepath);
 	return filepath;
 }
 
