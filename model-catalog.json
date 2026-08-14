@@ -129,66 +129,66 @@
 		"canAutoRoute": false,
 		"routingMode": "hint-only",
 		"current": {
-			"model": "claude-opus-4.6",
-			"model_context_window": 200000,
+			"model": "gemini-3.7-flash-high",
+			"model_context_window": 1048576,
 			"model_reasoning_effort": "high",
-			"plan_mode_reasoning_effort": "xhigh"
+			"plan_mode_reasoning_effort": "high"
 		},
 		"roles": {
 			"default": {
-				"modelId": "claude-sonnet-4.6",
-				"displayName": "Claude Sonnet 4.6 (Thinking)",
-				"reasoningLevel": "thinking",
-				"purpose": "매일 쓰기 좋은 균형 모델 — 빠르면서 충분한 품질",
-				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-high"],
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "메인 코더 — 코딩/에이전트 워크호스 (기본 추천)",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
 				"availabilitySource": "ui"
 			},
 			"planner": {
 				"modelId": "claude-opus-4.6",
 				"displayName": "Claude Opus 4.6 (Thinking)",
 				"reasoningLevel": "thinking",
-				"purpose": "계획 수립 — 가장 강한 추론 모델",
-				"fallbackChain": ["claude-sonnet-4.6", "gemini-3.1-pro-high"],
+				"purpose": "고난도 설계/계획 — Claude 쿼터 있을 때 권장; 없으면 3.7 Flash High",
+				"fallbackChain": ["gemini-3.7-flash-high", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
 				"availabilitySource": "ui"
 			},
 			"verifier": {
 				"modelId": "gemini-3.1-pro-high",
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
-				"purpose": "교차 모델 검증 — default가 Claude이므로 Gemini로 편향 방지",
+				"purpose": "교차 모델 검증 — 메인 코더(3.7 Flash)와 다른 패밀리로 편향 방지",
 				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"worker": {
-				"modelId": "claude-sonnet-4.6",
-				"displayName": "Claude Sonnet 4.6 (Thinking)",
-				"reasoningLevel": "thinking",
-				"purpose": "서브에이전트 코드 작업 — Sonnet의 속도+품질 균형",
-				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-medium"],
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "구현/수정 메인 코더 — 에이전트 루프 기본 엔진",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
 				"availabilitySource": "ui"
 			},
 			"researcher": {
 				"modelId": "gemini-3.7-flash-high",
 				"displayName": "Gemini 3.7 Flash (High)",
 				"reasoningLevel": "high",
-				"purpose": "코드베이스 탐색/조사 — 빠른 속도 우선",
-				"fallbackChain": ["gemini-3.1-pro-low", "gemini-3.7-flash-medium"],
+				"purpose": "코드베이스 탐색/조사 — 1M 컨텍스트 + 속도",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-low"],
 				"availabilitySource": "ui"
 			},
 			"fast": {
 				"modelId": "gemini-3.7-flash-medium",
 				"displayName": "Gemini 3.7 Flash (Medium)",
 				"reasoningLevel": "medium",
-				"purpose": "빠른 단순 작업 — 최고 속도",
-				"fallbackChain": ["gemini-3.7-flash-low"],
+				"purpose": "빠른 단순 작업 / 반복 버그픽스",
+				"fallbackChain": ["gemini-3.7-flash-low", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"fallback": {
-				"modelId": "gpt-oss-120b",
-				"displayName": "GPT-OSS 120B (Medium)",
-				"reasoningLevel": "medium",
+				"modelId": "gemini-3.7-flash-low",
+				"displayName": "Gemini 3.7 Flash (Low)",
+				"reasoningLevel": "low",
 				"purpose": "최종 폴백 — 쿼터/비용 절약용",
-				"fallbackChain": [],
+				"fallbackChain": ["gpt-oss-120b"],
 				"availabilitySource": "ui"
 			}
 		},

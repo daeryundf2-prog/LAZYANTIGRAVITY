@@ -38,7 +38,7 @@ test("#given package and plugin version drift #when building doctor report #then
 	await writeFile(join(mockRoot, "package.json"), JSON.stringify({ name: "lazyantigravity", version: "0.1.0" }));
 	await writeFile(join(mockRoot, "plugin.json"), JSON.stringify({
 		name: "lazyantigravity",
-		version: "0.2.2",
+		version: "0.3.0",
 		hooks: "./hooks.json",
 		mcpServers: "./mcp_config.json",
 		skills: "./skills/",

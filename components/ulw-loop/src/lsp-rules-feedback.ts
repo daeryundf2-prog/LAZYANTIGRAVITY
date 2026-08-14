@@ -1,10 +1,21 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+function resolveBundledModule(repoRoot: string, relativeCandidates: string[]): string | null {
+	for (const relative of relativeCandidates) {
+		const absolute = join(repoRoot, relative);
+		if (existsSync(absolute)) return absolute;
+	}
+	return null;
+}
+
 export async function collectLspDiagnostics(repoRoot: string, filesChanged: string[]): Promise<string[]> {
 	try {
-		const lspPath = join(repoRoot, "plugins/omo/components/lsp/dist/codex-hook.js");
-		if (!existsSync(lspPath)) return [];
+		const lspPath = resolveBundledModule(repoRoot, [
+			"components/lsp/dist/codex-hook.js",
+			"plugins/omo/components/lsp/dist/codex-hook.js",
+		]);
+		if (!lspPath) return [];
 		const { runLspDiagnosticsText } = await import(new URL(`file://${lspPath}`).href);
 
 		const results: string[] = [];
@@ -25,8 +36,11 @@ export async function collectLspDiagnostics(repoRoot: string, filesChanged: stri
 
 export async function collectRulesViolations(repoRoot: string, filesChanged: string[]): Promise<string[]> {
 	try {
-		const rulesPath = join(repoRoot, "plugins/omo/components/rules/dist/rules-engine-factory.js");
-		if (!existsSync(rulesPath)) return [];
+		const rulesPath = resolveBundledModule(repoRoot, [
+			"components/rules/dist/rules-engine-factory.js",
+			"plugins/omo/components/rules/dist/rules-engine-factory.js",
+		]);
+		if (!rulesPath) return [];
 		const { createRulesEngine } = await import(new URL(`file://${rulesPath}`).href);
 
 		const engine = createRulesEngine({ platform: process.platform });

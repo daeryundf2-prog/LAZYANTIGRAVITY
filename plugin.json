@@ -1,6 +1,6 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.2.2",
+	"version": "0.3.0",
 	"description": "Aggregated Antigravity plugin root for OMO components.",
 	"author": {
 		"name": "Yeongyu Kim",
@@ -15,7 +15,7 @@
 	"interface": {
 		"displayName": "LazyAntigravity",
 		"shortDescription": "Unified local Antigravity components",
-		"longDescription": "LazyAntigravity exposes the local OMO Rules, Comment Checker, LSP, Ultrawork, and ulw-loop components as one plugin namespace.",
+		"longDescription": "LazyAntigravity exposes local OMO Rules, Comment Checker, LSP, Ultrawork, and ulw-loop as one Antigravity plugin. Default coding model hint: Gemini 3.7 Flash.",
 		"developerName": "Yeongyu Kim",
 		"category": "Developer Tools",
 		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection", "Telemetry"],

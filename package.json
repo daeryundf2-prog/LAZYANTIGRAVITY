@@ -1,6 +1,6 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.2.2",
+	"version": "0.3.0",
 	"description": "Aggregate Codex plugin root for OMO components.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",

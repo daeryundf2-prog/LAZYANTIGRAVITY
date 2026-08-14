@@ -7,7 +7,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook session-start",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Loading Project Rules"
+						"statusMessage": "LazyAntigravity(0.3.0): Loading Project Rules"
 					}
 				]
 			},
@@ -17,7 +17,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.2.2): Recording Session Telemetry",
+						"statusMessage": "LazyAntigravity(0.3.0): Recording Session Telemetry",
 						"failurePolicy": "FAIL_OPEN"
 					}
 				]
@@ -30,7 +30,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook user-prompt-submit",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Loading Project Rules"
+						"statusMessage": "LazyAntigravity(0.3.0): Loading Project Rules"
 					}
 				]
 			},
@@ -40,7 +40,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ultrawork/dist/cli.js\" hook user-prompt-submit",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.2.2): Checking Ultrawork Trigger"
+						"statusMessage": "LazyAntigravity(0.3.0): Checking Ultrawork Trigger"
 					}
 				]
 			},
@@ -50,7 +50,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook user-prompt-submit",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Checking Ulw-Loop Steering"
+						"statusMessage": "LazyAntigravity(0.3.0): Checking Ulw-Loop Steering"
 					}
 				]
 			}
@@ -63,7 +63,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook pre-tool-use",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.2.2): Recommending Git Bash Mcp"
+						"statusMessage": "LazyAntigravity(0.3.0): Recommending Git Bash Mcp"
 					}
 				]
 			},
@@ -74,7 +74,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_SAFE eyJob29rU3BlY2lmaWNPdXRwdXQiOnsiaG9va0V2ZW50TmFtZSI6IlByZVRvb2xVc2UiLCJwZXJtaXNzaW9uRGVjaXNpb24iOiJkZW55IiwicGVybWlzc2lvbkRlY2lzaW9uUmVhc29uIjoiRkFJTF9TQUZFIGRlZmF1bHQgYmxvY2siLCJhZGRpdGlvbmFsQ29udGV4dCI6Ikhvb2sgcnVubmVyIGNyYXNoZWQsIHVzaW5nIHNhZmUgZmFsbGJhY2suIn19 none node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook pre-tool-use",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.2.2): Enforcing Unlimited Goal Budget",
+						"statusMessage": "LazyAntigravity(0.3.0): Enforcing Unlimited Goal Budget",
 						"failurePolicy": "FAIL_SAFE",
 						"fallbackPayload": {
 							"hookSpecificOutput": {
@@ -96,13 +96,13 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/comment-checker/dist/cli.js\" hook post-tool-use",
 						"timeout": 30,
-						"statusMessage": "LazyAntigravity(0.2.2): Checking Comments"
+						"statusMessage": "LazyAntigravity(0.3.0): Checking Comments"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-tool-use",
 						"timeout": 60,
-						"statusMessage": "LazyAntigravity(0.2.2): Checking LSP Diagnostics"
+						"statusMessage": "LazyAntigravity(0.3.0): Checking LSP Diagnostics"
 					}
 				]
 			},
@@ -113,7 +113,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-tool-use",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Matching Project Rules"
+						"statusMessage": "LazyAntigravity(0.3.0): Matching Project Rules"
 					}
 				]
 			}
@@ -126,7 +126,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook post-compact",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.2.2): Resetting Git Bash Mcp Reminder"
+						"statusMessage": "LazyAntigravity(0.3.0): Resetting Git Bash Mcp Reminder"
 					}
 				]
 			},
@@ -137,7 +137,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-compact",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Resetting Project Rule Cache"
+						"statusMessage": "LazyAntigravity(0.3.0): Resetting Project Rule Cache"
 					}
 				]
 			},
@@ -148,7 +148,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-compact",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.2.2): Resetting LSP Diagnostics Cache"
+						"statusMessage": "LazyAntigravity(0.3.0): Resetting LSP Diagnostics Cache"
 					}
 				]
 			},
@@ -159,7 +159,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook post-compact",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Restoring Ulw-Loop Context"
+						"statusMessage": "LazyAntigravity(0.3.0): Restoring Ulw-Loop Context"
 					}
 				]
 			}
@@ -171,7 +171,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook stop",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Checking Start-Work Continuation"
+						"statusMessage": "LazyAntigravity(0.3.0): Checking Start-Work Continuation"
 					}
 				]
 			}
@@ -183,7 +183,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook subagent-stop",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.2.2): Checking Start-Work Continuation"
+						"statusMessage": "LazyAntigravity(0.3.0): Checking Start-Work Continuation"
 					}
 				]
 			}

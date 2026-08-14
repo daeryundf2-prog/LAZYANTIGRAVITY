@@ -144,10 +144,10 @@ Options:
 		if (!json) {
 			process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: ${scenario})...\n`);
 			process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
-			process.stdout.write(`  - Claude Opus 4.6 (Thinking)\n`);
-			process.stdout.write(`  - Gemini 3.1 Pro (High)\n`);
-			process.stdout.write(`  - Gemini 3.7 Flash (High)\n`);
-			process.stdout.write(`  - Gemini 3.7 Flash (Medium)\n`);
+			process.stdout.write(`  - Gemini 3.7 Flash (High) - default main coder\n`);
+			process.stdout.write(`  - Gemini 3.7 Flash (Medium) - rapid iterative fixes\n`);
+			process.stdout.write(`  - Claude Opus 4.6 (Thinking) - deep planning (optional)\n`);
+			process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
 			process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner)\n`);
 			process.stdout.write(`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher)\n`);
 			process.stdout.write(`[Dry-Run] Running role: worker (would invoke: self / Hephaestus Worker)\n`);
@@ -159,15 +159,15 @@ Options:
 		completedRoles = ["planner", "researcher"];
 		failedRole = "worker";
 		errorType = "model_rate_limited";
-		nextRecommendedAction = "Switch to Gemini 3.1 Pro (High) in Antigravity UI and run /ulw resume";
+		nextRecommendedAction = "Switch to Gemini 3.7 Flash (High) in Antigravity UI and run /ulw resume";
 
 		if (!json) {
 			process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: ${scenario})...\n`);
 			process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
-			process.stdout.write(`  - Claude Opus 4.6 (Thinking)\n`);
-			process.stdout.write(`  - Gemini 3.1 Pro (High)\n`);
-			process.stdout.write(`  - Gemini 3.7 Flash (High)\n`);
-			process.stdout.write(`  - Gemini 3.7 Flash (Medium)\n`);
+			process.stdout.write(`  - Gemini 3.7 Flash (High) - default main coder\n`);
+			process.stdout.write(`  - Gemini 3.7 Flash (Medium) - rapid iterative fixes\n`);
+			process.stdout.write(`  - Claude Opus 4.6 (Thinking) - deep planning (optional)\n`);
+			process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
 			process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner) - SUCCESS\n`);
 			process.stdout.write(
 				`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher) - SUCCESS\n`,
@@ -176,7 +176,7 @@ Options:
 			process.stdout.write(`[Dry-Run] Error: model_rate_limited (Claude Opus 4.6 Thinking quota exhausted)\n`);
 			process.stdout.write(`[Dry-Run] Quota/Rate limit detected in Antigravity: Immediately stopping loop.\n`);
 			process.stdout.write(
-				`[Dry-Run] Fallback Recommendation: Switch to Gemini 3.1 Pro (High) in Antigravity UI and run /ulw resume.\n`,
+				`[Dry-Run] Fallback Recommendation: Switch to Gemini 3.7 Flash (High) in Antigravity UI and run /ulw resume.\n`,
 			);
 			process.stdout.write(`[Dry-Run] Automatic model switching: Disabled (wouldSwitchModel: false)\n`);
 		}

@@ -17,7 +17,7 @@
 - **장점**: 모델 API 호출 비용 없이 기계적으로 잡아낼 수 있는 에러를 조기에 차단.
 
 ### Stage 2: Semantic Verification (표준 리뷰 단계)
-- **주체**: 일반 `Verifier` 모델 (예: Gemini 3.1 Pro).
+- **주체**: 일반 `Verifier` 모델 (예: Gemini 3.1 Pro). 메인 코더는 Gemini 3.7 Flash.
 - **작업**: Mechanical 검증을 통과한 코드에 대해 기능적 요구사항(Success Criteria)을 충족하는지 의미론적으로 리뷰.
 - **로직**:
   - 코드가 `objective`를 어떻게 달성했는지, `evidence`가 유효한지 평가.

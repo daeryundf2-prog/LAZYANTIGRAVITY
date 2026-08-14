@@ -1,101 +1,135 @@
-# LazyAntigravity Plugin Root (`omo`)
+# LAZYANTIGRAVITY
 
-This directory is the aggregate **LazyAntigravity** plugin root. It packages the local `components/` harnesses, skills, hooks, MCP configuration, and report scripts for use from Google Antigravity.
+AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).
 
-## ULW in Antigravity
+Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.7 Flash** as the default coding workhorse.
 
-![LazyAntigravity ULW command picker](assets/readme/lazyantigravity-ulw-command.png)
+[![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
+[![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Main%20Coder-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
+[![Version](https://img.shields.io/badge/version-0.3.0-black?style=for-the-badge)](./package.json)
 
-The command picker exposes `ulw` and `ulw-loop` skills.
+## Why this plugin
 
-![LazyAntigravity ULW run in progress](assets/readme/lazyantigravity-ulw-running.png)
+| Without lazyantigravity | With lazyantigravity |
+| :--- | :--- |
+| Single agent, single task | **20 skills** (+ aliases) for ULW, review, refactor, visual QA, and more |
+| No quality gates | **7 hook events / 15 command hooks** (rules, comments, LSP, ULW steering) |
+| Manual model guessing | **Model catalog hints** — Gemini 3.7 Flash as default main coder |
+| Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
+| Weak evidence discipline | **Evidence-bound ULW loop** — claims need local proof |
 
-When ULW is active, local evidence should be captured through report commands and artifacts rather than a bare completion claim.
+## Recommended models (Antigravity)
 
-## Installation
+Antigravity does **not** auto-switch models per role (`canAutoRoute: false`). Pick one model in the UI; subagents inherit it.
 
-Clone this repository into the Antigravity plugin directory:
+| Role | Recommendation |
+| :--- | :--- |
+| **Default / main coder / worker** | **Gemini 3.7 Flash (High)** |
+| Rapid iterative bug fixes | Gemini 3.7 Flash (Medium) |
+| Deep planning (optional) | Claude Opus 4.6 (Thinking) |
+| Cross-model verification | Gemini 3.1 Pro (High) |
 
-```bash
-cd C:\Users\<user>\.gemini\config\plugins
+`model-catalog.json` encodes these hints. Prefer **3.7 Flash** for day-to-day coding loops; keep **3.1 Pro** for verifier diversity, not as the primary coder.
+
+## Quick start
+
+### Windows PowerShell
+
+```powershell
+mkdir $env:USERPROFILE\.gemini\config\plugins -Force
+cd $env:USERPROFILE\.gemini\config\plugins
 git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 ```
 
-Restart Antigravity or start a new session after cloning. The aggregate plugin exposes `/ulw` and `/ulw-loop` through the plugin skills directory.
+### macOS / Linux
 
-## Components
+```bash
+mkdir -p ~/.gemini/config/plugins
+cd ~/.gemini/config/plugins
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
+```
 
-The aggregate plugin is composed from local component packages:
+Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 
-1. `comment-checker`: checks generated comments after edit-like tool calls.
-2. `rules`: injects project rules from AGENTS and rule files.
-3. `lsp`: provides local LSP-backed MCP tools.
-4. `ultrawork`: injects the ultrawork directive when a prompt asks for ULW/ultrawork.
-5. `ulw-loop`: manages evidence-bound goals and local ULW state.
-6. `telemetry`: handles the optional daily active telemetry hook.
+![LazyAntigravity ULW command picker](assets/readme/lazyantigravity-ulw-command.png)
 
-## Local Evidence Commands
+![LazyAntigravity ULW run in progress](assets/readme/lazyantigravity-ulw-running.png)
 
-These commands are the supported local surfaces for checking LazyAntigravity readiness and claims:
+## Core commands
+
+| Command | Purpose |
+| :--- | :--- |
+| `/ulw` / `ultrawork` | Evidence-bound implement → test → fix loop |
+| `/ulw-loop` | Multi-goal orchestration with checkpoints |
+| `/ulw resume` | Resume after quota/model interruption |
+| `/init-deep` | Generate hierarchical `AGENTS.md` context |
+
+## What ships in this tree
+
+### Components
+
+1. `comment-checker` — comment preservation after edits
+2. `rules` — project rule injection
+3. `lsp` — local LSP-backed MCP tools
+4. `ultrawork` — ULW keyword / directive injection
+5. `ulw-loop` — goals, evidence, checkpoints
+6. `telemetry` — **opt-in** daily-active telemetry
+7. `start-work-continuation` — resume helpers
+8. `git-bash` — Git Bash MCP recommendation hooks
+
+### Skills (20)
+
+`comment-checker`, `debugging`, `frontend-ui-ux`, `git-master`, `image-prompt`, `information-density`, `init-deep`, `lcx-report-bug`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `review-work`, `rules`, `session-persistence`, `start-work`, `ulw`, `ulw-loop`, `ulw-plan`, `visual-qa`
+
+Aliases: `ulw`, `information-density`, `session-persistence`
+
+### MCP
+
+Bundled/local: `ast_grep`, `git_bash`, `lsp`  
+Remote helpers (as configured): `grep_app`, `context7`
+
+## Local evidence commands
 
 ```bash
 npm run doctor -- --json
 npm run hooks:report -- --json
-npm run icons:report -- --json
 npm run mcp:status -- --json
 npm run provenance -- --json
-node scripts/auto-update.mjs --status --json
 npm run evidence:map -- --json
+npm test
 ```
 
-`doctor` checks aggregate readiness: manifests, hooks, MCP, skills, bundles, versions, and warnings.
+Claims in docs should map to local files/scripts. Prefer these commands over marketing checklists.
 
-`hooks:report` inventories aggregate and component hooks with status messages, timeout, fallback, and failure-policy fields.
+## Telemetry (opt-in)
 
-`icons:report` records reviewed OSS icon-library candidates for LazyAntigravity. It currently tracks Reicon as an MIT-normalized candidate, recommends keeping it in the report/docs surface, and defers runtime dependency adoption until a concrete UI call site and icon provenance plan exist.
-
-`mcp:status` reads `.mcp.json` and `mcp_config.json`, classifies local and remote MCP entries, and checks local targets.
-
-`provenance` maps generated, vendored, symlinked, source-root, and build-owned surfaces without modifying them.
-
-`auto-update --status --json` reports a non-mutating status/dry-run plan. It does not install packages or run an update command.
-
-`evidence:map` parses README and skill text as inert local files, checks local script/config evidence, and marks each mapped claim as `verified`, `deferred`, or `removed`.
-
-## Telemetry And Privacy Controls
-
-Telemetry is **opt-in**. The bundled telemetry hook does not send anything to PostHog unless an explicit opt-in signal is present. To enable it, set any of these environment variables before launching the host process:
+Nothing is sent unless you opt in.
 
 ```bash
-export LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1   # Antigravity-native (recommended)
-export OMO_SEND_ANONYMOUS_TELEMETRY=1        # Shared OMO flag
-export OMO_CODEX_SEND_ANONYMOUS_TELEMETRY=1  # Legacy Codex-compat flag
+# env (any one)
+export LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1
+export OMO_SEND_ANONYMOUS_TELEMETRY=1
 ```
 
-Alternatively, create an opt-in marker file (preferred for persistent opt-in across sessions):
+Marker file:
 
 ```bash
+# macOS / Linux
 mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}/lazyantigravity"
 touch "${XDG_DATA_HOME:-$HOME/.local/share}/lazyantigravity/.telemetry-opt-in"
 ```
 
-When telemetry is enabled and you want to suppress it again, set any of these (the first one wins):
-
-```bash
-export LAZYANTIGRAVITY_TELEMETRY_DISABLE=1   # Antigravity-native (recommended)
-export OMO_DISABLE_POSTHOG=1                  # Shared OMO flag
-export OMO_CODEX_DISABLE_POSTHOG=1            # Legacy Codex-compat flag
+```powershell
+# Windows
+$dir = Join-Path $env:LOCALAPPDATA "lazyantigravity"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+New-Item -ItemType File -Force -Path (Join-Path $dir ".telemetry-opt-in") | Out-Null
 ```
 
-The implementation of these flags is in `components/telemetry/src/env-flags.ts`, and the component tests exercise both the opt-in and disable paths. `plugin.json` declares `Telemetry` in its `capabilities` array so marketplace consumers can see before install that network calls may occur.
+Disable again with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1` (or `OMO_DISABLE_POSTHOG=1`).  
+`POSTHOG_API_KEY` must be provided by you when opted in; the bundle does not ship a default key.
 
-Telemetry diagnostics are local JSONL rows written under the component data directory as `telemetry-diagnostics.jsonl`. The diagnostics writer is `components/telemetry/src/diagnostics.ts`; it records telemetry failure metadata locally and prunes old or oversized diagnostics. The evidence map verifies this local diagnostics surface by reading the source files, not by making a network call.
-
-The README limits its scope to the local files and commands above, including the telemetry controls and diagnostics surfaces they verify.
-
-## Build And Test
-
-Use the aggregate commands when changing this plugin root:
+## Build
 
 ```bash
 npm test
@@ -103,4 +137,12 @@ npm run build
 npm run check
 ```
 
-`npm run check` runs the aggregate build and test scripts. If a full check is not practical in a local environment, keep the targeted command output with the evidence artifact for the specific task.
+## Notes on routing
+
+- Codex: config-driven routing (`canAutoRoute: true` in catalog)
+- Antigravity: **hint-only** recommendations via skills + `model-catalog.json`
+- Do not claim automatic per-role model switching on Antigravity
+
+## License
+
+MIT (see component `LICENSE` files where present).

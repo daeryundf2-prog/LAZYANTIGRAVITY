@@ -49,6 +49,18 @@ test("#given bundled model catalog #when antigravity roles inspected #then no ro
 	}
 });
 
+test("#given bundled model catalog #when antigravity coding roles inspected #then Gemini 3.7 Flash is the main coder (default/worker/current)", async () => {
+	const antigravity = await readAntigravityCatalog();
+	assert.equal(antigravity.current?.model, "gemini-3.7-flash-high");
+	assert.equal(antigravity.roles?.default?.modelId, "gemini-3.7-flash-high");
+	assert.equal(antigravity.roles?.worker?.modelId, "gemini-3.7-flash-high");
+	assert.equal(antigravity.roles?.researcher?.modelId, "gemini-3.7-flash-high");
+	assert.equal(antigravity.roles?.fast?.modelId, "gemini-3.7-flash-medium");
+	assert.equal(antigravity.roles?.verifier?.modelId, "gemini-3.1-pro-high");
+	assert.equal(antigravity.canAutoRoute, false);
+	assert.equal(antigravity.routingMode, "hint-only");
+});
+
 test("#given bundled model catalog #when antigravity fallback chains inspected #then every chain entry resolves to a known available model or a role modelId", async () => {
 	const antigravity = await readAntigravityCatalog();
 	const available = antigravity.availableModels ?? [];

@@ -35,8 +35,19 @@ function resolveWritableDirectory(preferredDir: string, fallbackSuffix: string):
 }
 
 export function getDataDir(): string {
-  const preferredDataDir =
-    process.env["XDG_DATA_HOME"] ?? path.join(getOsProvider().homedir(), ".local", "share")
+  const xdgDataHome = process.env["XDG_DATA_HOME"]?.trim()
+  if (xdgDataHome) {
+    return resolveWritableDirectory(xdgDataHome, "omo-codex-data")
+  }
+
+  if (process.platform === "win32") {
+    const localAppData = process.env["LOCALAPPDATA"]?.trim()
+    if (localAppData) {
+      return resolveWritableDirectory(localAppData, "omo-codex-data")
+    }
+  }
+
+  const preferredDataDir = path.join(getOsProvider().homedir(), ".local", "share")
   return resolveWritableDirectory(preferredDataDir, "omo-codex-data")
 }
 

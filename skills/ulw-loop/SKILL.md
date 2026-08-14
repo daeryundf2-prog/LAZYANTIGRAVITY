@@ -76,12 +76,18 @@ If rate limit/quota is detected in Antigravity:
 - **Save Checkpoint**: Call `omo ulw-loop save-role-checkpoint` to save the failed/current role, completed roles, error type, files changed, etc.
 - **Recommend Only (Fallback Sequence)**: Present a fallback model recommendation according to this exact sequence:
   - **When Claude Opus 4.6 (Thinking) is limited**:
-    1. Gemini 3.1 Pro (High)
-    2. Claude Sonnet 4.6 (Thinking) (if Sonnet quota is available)
-    3. Gemini 3.7 Flash (High)
+    1. Gemini 3.7 Flash (High) — default main coder
+    2. Gemini 3.7 Flash (Medium)
+    3. Gemini 3.1 Pro (High)
+    4. Claude Sonnet 4.6 (Thinking) (if Sonnet quota is available)
   - **When Claude Sonnet 4.6 (Thinking) is limited**:
-    1. Gemini 3.1 Pro (High)
-    2. Gemini 3.7 Flash (High)
+    1. Gemini 3.7 Flash (High)
+    2. Gemini 3.7 Flash (Medium)
+    3. Gemini 3.1 Pro (High)
+  - **When Gemini 3.7 Flash (High) is limited**:
+    1. Gemini 3.7 Flash (Medium)
+    2. Gemini 3.1 Pro (High)
+    3. Claude Sonnet 4.6 (Thinking)
   - **When Gemini 3.1 Pro (High) is limited**:
     1. Gemini 3.7 Flash (High)
     2. Gemini 3.7 Flash (Medium)
