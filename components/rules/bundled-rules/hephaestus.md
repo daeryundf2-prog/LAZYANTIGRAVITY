@@ -87,7 +87,7 @@ Use `invoke_subagent` only. Read `skills/references/antigravity-tools.md` for th
 
 **Default to parallel `invoke_subagent` over self-research** when you need 2+ independent investigations (different modules, different external libraries, different angles). Dispatch the batch in one response, do non-overlapping parent work, integrate results when they return.
 
-**Routing (AG-native):** keep the session UI on Gemini 3.7 Flash (High). Route lanes with `invoke_subagent` `model_tier` (`canTierRoute`):
+**Routing (AG-native):** keep the session UI on Gemini 3.7 Flash (High). Pass `invoke_subagent` `model_tier` as an agent hint (`canTierRoute`; host does not switch the session model):
 
 - Explore / research / plan / implement → `model_tier="flash"` + focus inside TASK text
 - Verify / adversarial review → `model_tier="pro"`

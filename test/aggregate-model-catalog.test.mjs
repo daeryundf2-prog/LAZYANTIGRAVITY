@@ -21,13 +21,13 @@ test("#given bundled model catalog #when inspected #then Antigravity Flash defau
 		model: "gemini-3.7-flash-high",
 		model_reasoning_effort: "high",
 	});
-	assert.equal(catalog.antigravity.canAutoRoute, false);
 	assert.equal(catalog.antigravity.canTierRoute, true);
-	assert.equal(catalog.antigravity.routingMode, "model-tier");
+	assert.equal(catalog.antigravity.hostEnforced, false);
+	assert.equal(catalog.antigravity.routingMode, "agent-tier-hint");
 	assert.equal(catalog.antigravity.tierMap.verifier, "pro");
 	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
-	assert.equal(catalog.perRoleRouting.antigravity.supported, true);
-	assert.equal(catalog.perRoleRouting.antigravity.routingMode, "model-tier");
+	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
+	assert.equal(catalog.perRoleRouting.antigravity.routingMode, "agent-tier-hint");
 });
 
 test("#given bundled model catalog #when inspected #then no role or managed preset uses pure GPT-5.4", async () => {

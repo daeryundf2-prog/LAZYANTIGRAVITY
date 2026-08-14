@@ -11,12 +11,7 @@ Prefer Gemini 3.7 Flash style: outcome-first, evidence-bound, atomic decisions, 
 
 ## Runtime selection (READ FIRST)
 
-| Host | Primary tools | Full Codex details |
-| --- | --- | --- |
-| **Google Antigravity (default for this plugin)** | `invoke_subagent` + `node <ulw-loop-cli>` (see Bootstrap) | Ignore Codex-only tool names |
-| OpenAI Codex | `spawn_agent` / `wait_agent` / `omo` on PATH | See `references/codex.md` |
-
-On Antigravity: **do not call `spawn_agent`, `wait_agent`, `list_agents`, or `close_agent`**. Use Antigravity's native subagent API (`invoke_subagent`) and the resolved ULW CLI below.
+This plugin defaults to **Google Antigravity**. Use `invoke_subagent` plus the ULW CLI in Bootstrap. Do **not** invent foreign spawn/wait/goal APIs.
 
 ## Goal
 Deliver every goal in `.omo/ulw-loop/goals.json` end-to-end.
@@ -43,7 +38,7 @@ Use `invoke_subagent` with a role envelope:
 - `mayModifyGlobalRunState=false`
 - `mustReturn=SubagentResultEnvelope`
 - `requiresParentAck=true`
-- Optional Model tier hint only: `pro` | `flash` | `flash_lite` | `inherit` (does **not** auto-pick catalog roles; session UI model still dominates unless you pass a tier)
+- Pass `model_tier` on `invoke_subagent`: `pro` | `flash` | `flash_lite` | `inherit`. This is an **agent hint**. The host does not rewrite the session UI model (`canAutoRoute=false`).
 
 | Task shape | Subagent focus | Model tier hint | Session model recommendation |
 |---|---|---|---|
@@ -56,9 +51,6 @@ Use `invoke_subagent` with a role envelope:
 | Final verification audit | verifier | `pro` if available else `inherit` | Prefer Gemini 3.1 Pro (High) in a manual switch |
 
 Every worker message MUST carry: goal + exact files in scope; baseline characterization when touching existing code; constraints; verification commands; ONE Manual-QA channel + evidence path; for git-tracked edits require `git-master` style history inspection before commit.
-
-### Codex
-See `references/codex.md` for `spawn_agent` mapping and gpt-5.x tables.
 
 ## Artifacts
 - `.omo/ulw-loop/brief.md`: original brief and durable constraints.
@@ -165,22 +157,14 @@ Loop per goal. Cap at 5 cycles per goal. Cap identical same-criterion failures a
 
 ### Acquire Next Goal
 1. Run `omo ulw-loop complete-goals --json` and read the handoff, including criteria.
-2. On **Antigravity**, treat ULW CLI state (`.omo/ulw-loop/goals.json` + `status --json`) as ground truth. Do **not** call Codex `get_goal` / `create_goal` / `update_goal`.
-3. On **Codex only**, also sync the Codex goal tools — see `references/codex.md` and the Codex goal table below.
-4. If retrying failed work, run `omo ulw-loop complete-goals --retry-failed --json`.
-5. Never invent a second aggregate objective for the same story.
-
-#### Codex-only goal table (skip on Antigravity)
-| get_goal result | action |
-|-----------------|--------|
-| no active goal | Call `create_goal` with objective only from `instruction.json.objective` |
-| same aggregate objective active | Continue the current ulw-loop story |
-| different goal active | STOP. Checkpoint blocked and surface the conflict |
+2. Treat ULW CLI state (`.omo/ulw-loop/goals.json` + `status --json`) as ground truth. Do not invent foreign goal APIs.
+3. If retrying failed work, run `omo ulw-loop complete-goals --retry-failed --json`.
+4. Never invent a second aggregate objective for the same story.
 
 ### Per-Criterion Cycle
 1. PLAN: read `criterion.scenario`, `criterion.expectedEvidence`, prior ledger entries, and safety bounds. Identify which tasks in the current wave are independent.
 2. Register atomic todos via `update_plan` — one ultra-granular step per action, `path: <action> for <criterion> - verify by <check>`. Call `update_plan` on every transition (start → `in_progress`, finish → `completed`); exactly one `in_progress`, mark completed immediately, never batch, never let the rendered plan lag behind reality.
-3. DELEGATE-IN-PARALLEL: dispatch every independent task in the wave at once via right-sized subagents (`invoke_subagent` on Antigravity; see `references/codex.md` on Codex). Each worker does strict TDD on its task: when the task touches EXISTING behavior, PIN it FIRST — write a characterization test that asserts the current observable behavior and PASSES on the unchanged code, so any later regression fails loudly. Then RED (the new failing assertion must fail for the RIGHT reason — no syntax/import error), then the SMALLEST GREEN change; before GREEN work that depends on external review, PR, issue, or branch state, refresh current branch/PR/issue state, preserve existing ordering/policy, and separate compatibility detection from policy changes unless the goal explicitly asks to change policy. A GREEN needing >~20 lines means the test was too coarse — instruct a split. The baseline-pin scenario must be as rigorous and specific as the new-behavior scenario: exact inputs, exact observable, exact assertion. Serialize only on a NAMED dependency.
+3. DELEGATE-IN-PARALLEL: dispatch every independent task in the wave at once via `invoke_subagent`. Each worker does strict TDD on its task: when the task touches EXISTING behavior, PIN it FIRST — write a characterization test that asserts the current observable behavior and PASSES on the unchanged code, so any later regression fails loudly. Then RED (the new failing assertion must fail for the RIGHT reason — no syntax/import error), then the SMALLEST GREEN change; before GREEN work that depends on external review, PR, issue, or branch state, refresh current branch/PR/issue state, preserve existing ordering/policy, and separate compatibility detection from policy changes unless the goal explicitly asks to change policy. A GREEN needing >~20 lines means the test was too coarse — instruct a split. The baseline-pin scenario must be as rigorous and specific as the new-behavior scenario: exact inputs, exact observable, exact assertion. Serialize only on a NAMED dependency.
 4. INTEGRATE + CRITICAL SELF-QA + GIT CHECKPOINT (EVERY WORKER RETURN): do NOT trust the worker's report. Read the diff yourself, re-run its tests, and run LSP diagnostics on the changed files. Treat "done" as a claim to disprove. If the diff drifts, the test is hollow, or evidence is missing, RESPAWN the worker with the specific failure context. Once the work unit is verified, use `git-master` before staging: inspect recent repository commits and touched-path history to infer commit language, Conventional Commit scope, message shape, and unit size. Stage only that unit's files and commit in the observed style; do not carry verified work forward into a later omnibus commit. If no git-tracked files changed or committing is unsafe, record the no-commit reason as evidence. Forward every finding/learning to subsequent workers.
 5. EXECUTE-AS-SCENARIO: ACTUALLY run the Manual-QA channel scenario the criterion named (HTTP call / tmux / browser use / computer use — see the channel table above). Run it yourself for the orchestrator check; for heavier flows dispatch a dedicated QA worker (Gemini 3.7 Flash High / Medium) whose ONLY job is to drive the channel and write the artifact to the named evidence path. The unit suite being green is NEVER substitute. If the scenario FAILS, respawn the implementing worker with the captured failure — do not hand-patch around it.
 6. CAPTURE: collect the observable artifact path: transcript, stdout, screenshot, assertion, status+body, diff, or parsed dump. No artifact written at the evidence path — not done; record BLOCKED and respawn QA.
@@ -196,7 +180,7 @@ Loop per goal. Cap at 5 cycles per goal. Cap identical same-criterion failures a
 
 ### Goal Completion
 1. Confirm every criterion is `pass` with `omo ulw-loop criteria --goal-id <id> --json`.
-2. On Antigravity, skip Codex `get_goal`. On Codex only, call `get_goal` for a fresh snapshot.
+2. Confirm ULW CLI status is consistent. Do not invent foreign goal APIs.
 3. Run `omo ulw-loop checkpoint --goal-id <id> --status complete --evidence "<criteria evidence summary>" [--codex-goal-json <snapshot>] --json`.
 4. If blocked or failed, checkpoint with `--status blocked` or `--status failed` and include diagnosis evidence.
 5. If this is the final goal, run the final quality gate first and pass `--quality-gate-json`.
@@ -206,7 +190,7 @@ Trigger only when one goal remains and all its criteria are passing.
 1. Run targeted verification for changed behavior.
 2. Run `ai-slop-cleaner` on changed files. If no relevant edits exist, record a passed no-op cleaner report.
 3. Rerun verification after cleanup.
-4. Judge the change size. On Antigravity, invoke a verifier subagent via `invoke_subagent` (prefer Gemini 3.1 Pro after a manual model switch for large/risky work). On Codex, see `references/codex.md` for `codex-ultrawork-reviewer`. For a small, local, low-risk change, do the review yourself and record `codeReview` with `evidence` starting `UNCONDITIONAL APPROVAL` plus a one-line justification of why the change was small enough to self-review.
+4. Judge the change size. Invoke a verifier subagent via `invoke_subagent` with `model_tier="pro"`. For a small, local, low-risk change, do the review yourself and record `codeReview` with `evidence` starting `UNCONDITIONAL APPROVAL` plus a one-line justification of why the change was small enough to self-review.
 5. Clean review means `codeReview.recommendation == "APPROVE"` and `codeReview.architectStatus == "CLEAR"`.
 6. If review is non-clean, run `omo ulw-loop record-review-blockers --goal-id <id> --title "<...>" --objective "<...>" --evidence "<review findings>" --codex-goal-json <snapshot> --json`.
 7. If clean, checkpoint final completion:
@@ -240,27 +224,25 @@ Command form: `omo ulw-loop steer --kind <kind> [<kind-specific-fields>] --evide
 Structured prompt directives accepted: `OMO_ULW_LOOP_STEER: { ... }`, `omo.ulw-loop.steer: {...}`, `omo ulw-loop steer: {...}`.
 
 ## Constraints
-1. On Codex only: NEVER call `update_goal` mid-aggregate; only on final story after the quality gate passes. On Antigravity, ignore Codex goal tools entirely.
-2. On Codex only: NEVER call `create_goal` when `get_goal` shows a different active goal.
-3. NEVER mark `criterion.status == "pass"` without captured observable evidence in `record-evidence`.
-4. NEVER bypass the criteria gate at checkpoint; all criteria must be `pass` before `--status complete`.
-5. Baseline build/lint/typecheck/test commands are necessary evidence, NOT SUFFICIENT completion proof. Criteria coverage with observable evidence is the gate.
-6. Treat `.omo/ulw-loop/ledger.jsonl` as the durable audit trail; checkpoint after every success or failure.
-7. Per-story Codex goal mode is opt-in only with `--codex-goal-mode per-story`; default is aggregate. Antigravity uses ULW CLI state only.
-8. Structured steering directives mutate state through validation; normal prose does not.
-9. Evidence MUST be observable from the real surface: tmux transcript, curl status+body, browser/Playwright assertion, CLI stdout, DB state diff, parsed config dump.
-10. Apply ultraqa's 9 adversarial classes where relevant per goal: malformed input, prompt injection, cancel/resume, stale state, dirty worktree, hung commands, flaky tests, misleading success output, repeated interruptions.
-11. After completing an aggregate ulw-loop run on Codex, clear the Codex goal manually with `/goal clear` before starting another in the same session. On Antigravity, confirm `omo ulw-loop status --json` shows no open goals.
-12. The shell command emits a model-facing handoff; only the Codex agent calls `get_goal`, `create_goal`, or `update_goal` tools — never on Antigravity.
-13. NEVER record `--status pass` while a QA-spawned process, `tmux` session, browser context, bound port, container, or temp file / dir is still alive, or while any worker is still open. The evidence string MUST include the cleanup receipt. Leftover runtime state = BLOCKED, not PASS.
-14. DELEGATE all code edits, test writes, fixes, and QA execution to right-sized subagents (Antigravity: `invoke_subagent`; Codex: see `references/codex.md`); you read, search, plan, integrate, and QA. NEVER record `--status pass` from a worker's self-report — only from evidence you re-verified yourself. Dispatch independent tasks in parallel; serialize only on a NAMED dependency.
-15. Every verified work unit that touched git-tracked files must leave either an atomic `git-master`-style commit hash or explicit no-commit blocker evidence before the next unit starts.
+1. Ignore foreign goal APIs. ULW CLI state under `.omo/ulw-loop` is ground truth.
+2. NEVER mark `criterion.status == "pass"` without captured observable evidence in `record-evidence`.
+3. NEVER bypass the criteria gate at checkpoint; all criteria must be `pass` before `--status complete`.
+4. Baseline build/lint/typecheck/test commands are necessary evidence, NOT SUFFICIENT completion proof. Criteria coverage with observable evidence is the gate.
+5. Treat `.omo/ulw-loop/ledger.jsonl` as the durable audit trail; checkpoint after every success or failure.
+6. Antigravity uses ULW CLI state only.
+7. Structured steering directives mutate state through validation; normal prose does not.
+8. Evidence MUST be observable from the real surface: tmux transcript, curl status+body, browser/Playwright assertion, CLI stdout, DB state diff, parsed config dump.
+9. Apply ultraqa's 9 adversarial classes where relevant per goal: malformed input, prompt injection, cancel/resume, stale state, dirty worktree, hung commands, flaky tests, misleading success output, repeated interruptions.
+10. After completing an aggregate ulw-loop run, confirm `omo ulw-loop status --json` shows no open goals.
+11. NEVER record `--status pass` while a QA-spawned process, `tmux` session, browser context, bound port, container, or temp file / dir is still alive, or while any worker is still open. The evidence string MUST include the cleanup receipt. Leftover runtime state = BLOCKED, not PASS.
+12. DELEGATE all code edits, test writes, fixes, and QA execution to right-sized `invoke_subagent` workers; you read, search, plan, integrate, and QA. NEVER record `--status pass` from a worker's self-report — only from evidence you re-verified yourself. Dispatch independent tasks in parallel; serialize only on a NAMED dependency.
+13. Every verified work unit that touched git-tracked files must leave either an atomic `git-master`-style commit hash or explicit no-commit blocker evidence before the next unit starts.
 
 ## Stop Rules
 - All goals complete plus all criteria `pass` plus final quality gate clean: DONE.
 - 3x same criterion failure: checkpoint failed, surface diagnosis.
 - 5 cycles on one goal without all-pass: checkpoint failed, surface.
 - Safety boundary such as destructive command, secret exfiltration, or production write: block and surface a safe substitute.
-- On Codex, `get_goal` reports a different active goal: checkpoint blocker, stop, surface. On Antigravity, conflicting ULW status/goals.json is the equivalent stop condition.
+- Conflicting ULW status/goals.json: checkpoint blocker, stop, surface.
 - Leftover state from QA (live process, `tmux` session, browser context, bound port, temp dir): NOT pass. Clean up, append the receipt, then continue.
 - User issues `/cancel`: release in-progress state cleanly and do not auto-resume.

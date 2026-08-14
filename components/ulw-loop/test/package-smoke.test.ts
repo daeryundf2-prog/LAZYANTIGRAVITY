@@ -107,12 +107,12 @@ describe("hooks/hooks.json", () => {
 		expect(command).toContain("hook user-prompt-submit");
 	});
 
-	it("#given ulw-loop component is enabled #when hooks are inspected #then create_goal PreToolUse guard is registered", async () => {
+	it("#given ulw-loop component is enabled #when hooks are inspected #then create_goal PreToolUse is absent", async () => {
 		const text = await readText("hooks/hooks.json");
 
-		expect(text).toContain('"PreToolUse"');
-		expect(text).toContain('"matcher": "^create_goal$"');
-		expect(text).toContain("hook pre-tool-use");
+		expect(text).toContain("UserPromptSubmit");
+		expect(text).not.toContain('"matcher": "^create_goal$"');
+		expect(text).not.toContain("PreToolUse");
 	});
 });
 
@@ -159,12 +159,13 @@ describe("skills/ulw-loop/SKILL.md", () => {
 		expect(text.toLowerCase()).toContain("record-evidence");
 	});
 
-	it("#given workflow Acquire Next Goal text #when inspected #then create_goal uses objective-only payload wording", async () => {
+	it("#given workflow Acquire Next Goal text #when inspected #then Antigravity uses ULW CLI state not foreign goal APIs", async () => {
 		const text = await readText("skills/ulw-loop/references/full-workflow.md");
 
-		expect(text).toContain("instruction.json.objective");
-		expect(text).toContain("objective only");
-		expect(text).not.toContain("Call `create_goal` with the handoff payload.");
+		expect(text).toContain("goals.json");
+		expect(text).toContain("Do not invent foreign goal APIs");
+		expect(text).not.toContain("Call `create_goal`");
+		expect(text).not.toContain("Codex-only goal table");
 	});
 
 	it("#given omo is absent from PATH #when bootstrap instructions are read #then local cached CLI fallback is documented", async () => {

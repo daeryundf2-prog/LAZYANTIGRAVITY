@@ -39,6 +39,7 @@ test("#given ulw-plan full workflow reference #when inspected #then it documents
 	assert.match(workflow, /\.omo\/plans\/<slug>\.md/);
 	assert.match(workflow, /[Aa]pproval gate/);
 	assert.match(workflow, /invoke_subagent/);
+	assert.doesNotMatch(workflow, /Codex-native/);
 	assert.doesNotMatch(workflow, /spawn_agent\([^)]*fork_turns="none"/);
 	assert.doesNotMatch(workflow, opencodeOnlyToolPattern);
 	assert.doesNotMatch(workflow, /Proceeding to plan generation/);

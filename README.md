@@ -6,7 +6,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 [![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.3.5-black?style=for-the-badge)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.3.6-black?style=for-the-badge)](./package.json)
 
 ## Why this plugin
 
@@ -14,13 +14,13 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 | :--- | :--- |
 | Single agent, single task | **20 skills** (+ aliases) for ULW, review, refactor, visual QA, and more |
 | No quality gates | **7 hook events / 16 command hooks** (rules, comments, LSP, ULW steering, readiness) |
-| Manual model guessing | **Model tier routing** ??session Flash + `invoke_subagent` `flash`/`pro` (`canTierRoute`) |
+| Manual model guessing | **Pass `model_tier` on `invoke_subagent`** (session Flash; `flash`/`pro` hints; host does not auto-switch) |
 | Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
-| Weak evidence discipline | **Evidence-bound ULW loop** ??claims need local proof |
+| Weak evidence discipline | **Evidence-bound ULW loop** - claims need local proof |
 
 ## Recommended models (Antigravity)
 
-Keep the **session UI** on **Gemini 3.7 Flash (High)**. Route lanes with `invoke_subagent` `model_tier` (`canTierRoute=true`). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
+Keep the **session UI** on **Gemini 3.7 Flash (High)**. Pass `invoke_subagent` `model_tier` (`flash` / `pro` / `flash_lite`). That is an agent hint (`canTierRoute=true`, `hostEnforced=false`). Antigravity does not rewrite the session UI model (`canAutoRoute=false`).
 
 | Role | Recommendation |
 | :--- | :--- |
@@ -154,9 +154,9 @@ npm run check
 
 ## Notes on routing
 
-- Antigravity: **model-tier routing** via `invoke_subagent` (`canTierRoute=true`, `routingMode=model-tier`)
+- Antigravity: pass `model_tier` on `invoke_subagent` (`canTierRoute=true`, `hostEnforced=false`, `routingMode=agent-tier-hint`)
 - Session UI model is not auto-rewritten per role (`canAutoRoute=false`)
-- Codex compatibility docs (if present under `skills/ulw-loop/references/codex.md`) are host-specific and out of the AG default path
+- Do not claim the host switched models just because a skill passed `model_tier`
 
 ## License
 

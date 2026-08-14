@@ -8,7 +8,7 @@ LazyAntigravity defaults to **Google Antigravity** + **Gemini 3.7 Flash (High)**
 | --- | --- |
 | Explore / research / plan / implement / QA / review | `invoke_subagent` with TASK / DELIVERABLE / SCOPE / VERIFY |
 | Role envelope | `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true` |
-| Model tier routing (`canTierRoute`) | `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
+| Model tier hint (`canTierRoute`, not host-enforced) | `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
 | ULW state / evidence | `node <plugin>/components/ulw-loop/dist/cli.js ulw-loop …` after Bootstrap |
 | Read / edit files | host Read / Write / Edit (or equivalent); do not invent `view_file` / `apply_patch` |
 | LSP | MCP `lsp.*` tools when the `lsp` server is configured |

@@ -129,7 +129,8 @@
 	"antigravity": {
 		"canAutoRoute": false,
 		"canTierRoute": true,
-		"routingMode": "model-tier",
+		"hostEnforced": false,
+		"routingMode": "agent-tier-hint",
 		"tierMap": {
 			"default": "flash",
 			"planner": "flash",
@@ -279,13 +280,14 @@
 			"note": "Codex는 config.toml에서 전역 모델을 설정하고, spawn_agent에서 역할별 모델을 지정 가능"
 		},
 		"antigravity": {
-			"supported": true,
-			"routingMode": "model-tier",
-			"mechanism": "Session UI default (Gemini 3.7 Flash High) + invoke_subagent model_tier via antigravity.tierMap",
-			"note": "Antigravity does not rewrite the session UI model per role (canAutoRoute=false). Lane routing is first-class via invoke_subagent model_tier (canTierRoute=true): flash for plan/code/research, pro for verify.",
+			"supported": false,
+			"hostEnforced": false,
+			"routingMode": "agent-tier-hint",
+			"mechanism": "Agents pass invoke_subagent model_tier (flash | pro | flash_lite | inherit). The host does not switch the session UI model.",
+			"note": "canAutoRoute=false: session UI stays on whatever the user picked. canTierRoute=true means skills MUST pass model_tier; it is not a guarantee the child model changed.",
 			"limitations": [
 				"Session UI model is not auto-switched per catalog role",
-				"model_tier is a host hint; keep parent session on Gemini 3.7 Flash (High) unless the user switches",
+				"model_tier is an agent hint, not host-enforced routing",
 				"Escape-hatch Claude Opus still requires a manual UI switch"
 			]
 		}

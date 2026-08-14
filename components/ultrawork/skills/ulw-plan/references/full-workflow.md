@@ -1,6 +1,6 @@
 ---
 name: ulw-plan
-description: Codex-native planning workflow. Explore-first, ask only genuine unknowns, wait for explicit approval, then produce one decision-complete plan.
+description: Antigravity planning workflow. Explore-first, ask only genuine unknowns, wait for explicit approval, then produce one decision-complete plan.
 metadata:
   short-description: Full ulw-plan planning workflow
 ---
@@ -24,7 +24,7 @@ Eliminate unknowns by discovering facts, not by asking the user. Before your fir
 
 - `invoke_subagent` per internal aspect: existing patterns, conventions, similar implementations, naming/registration, test infrastructure. One subagent per aspect.
 - `invoke_subagent` per external aspect: official docs, API contracts, recommended patterns, pitfalls.
-- While they run, use direct read-only tools for immediate context. Do not idle. Do **not** call `spawn_agent` / `wait_agent` on Antigravity.
+- While they run, use direct read-only tools for immediate context. Do not idle. Re-invoke incomplete lanes; do not invent foreign wait APIs.
 
 ### Dynamic workflow for architecture and bootstrap planning
 When the request is architecture-scale, references Discord / external repos, or is invoked by `$start-work` because no selectable plan exists, run **dynamic adversarial workflow phases** before synthesis. For broad requests, self-orchestrates 5 host subagents so the plan has maximum safe parallelism without losing evidence quality.
@@ -116,13 +116,12 @@ Critical path: ...
 ```
 
 ## Phase 4 - High-accuracy review (optional)
-If the user wants maximum rigor, `invoke_subagent` with the plan path only (prefer Gemini 3.1 Pro after a manual UI switch). Fix every cited issue and resubmit until it approves.
+If the user wants maximum rigor, `invoke_subagent` with `model_tier="pro"` and the plan path only. Fix every cited issue and resubmit until it approves. `model_tier` is an agent hint; the host does not switch the session UI model.
 
 ## Delegation discipline (Antigravity)
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, `VERIFY`, plus the role envelope.
-- Prefer Gemini 3.7 Flash (High) as the session model.
-- Do **not** use `spawn_agent`, `wait_agent`, `list_agents`, or `close_agent`.
-- Codex-only hosts: see `../ulw-loop/references/codex.md`.
+- Keep the session UI on Gemini 3.7 Flash (High). Pass `model_tier="flash"` for research and `model_tier="pro"` for plan review.
+- Use `invoke_subagent` only. Do **not** invent foreign spawn/wait/goal APIs.
 
 ## Stop rules
 - Plan file exists, template filled, every todo has references + acceptance + QA + commit, dependency matrix consistent: DONE.

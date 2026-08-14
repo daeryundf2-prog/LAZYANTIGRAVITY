@@ -60,15 +60,17 @@ test("#given bundled model catalog #when antigravity roles inspected #then Gemin
 	assert.equal(antigravity.roles?.verifier?.modelId, "gemini-3.1-pro-high");
 	assert.equal(antigravity.canAutoRoute, false);
 	assert.equal(antigravity.canTierRoute, true);
-	assert.equal(antigravity.routingMode, "model-tier");
+	assert.equal(antigravity.hostEnforced, false);
+	assert.equal(antigravity.routingMode, "agent-tier-hint");
 	assert.equal(antigravity.tierMap?.verifier, "pro");
 });
 
-test("#given bundled model catalog #when antigravity perRoleRouting inspected #then model-tier routing is supported", async () => {
+test("#given bundled model catalog #when antigravity perRoleRouting inspected #then host auto-routing is unsupported and model_tier is an agent hint", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 	const routing = catalog.perRoleRouting?.antigravity;
-	assert.equal(routing?.supported, true);
-	assert.equal(routing?.routingMode, "model-tier");
+	assert.equal(routing?.supported, false);
+	assert.equal(routing?.hostEnforced, false);
+	assert.equal(routing?.routingMode, "agent-tier-hint");
 });
 
 test("#given antigravity plugin install #when ulw-loop CLI path resolved from PLUGIN_ROOT #then help exits zero", async () => {
@@ -90,7 +92,9 @@ test("#given ulw-loop skill pack #when antigravity workflow inspected #then spaw
 	assert.match(workflow, /PLUGIN_ROOT/);
 	assert.match(workflow, /Windows PowerShell/);
 	assert.match(workflow, /gemini-3\.7|Gemini 3\.7 Flash/);
-	assert.ok((await readFile(join(root, "skills", "ulw-loop", "references", "codex.md"), "utf8")).includes("spawn_agent"));
+	assert.match(workflow, /invoke_subagent/);
+	assert.doesNotMatch(workflow, /Codex-only goal table/);
+	assert.doesNotMatch(workflow, /spawn_agent\/wait_agent/);
 });
 
 test("#given bundled model catalog #when antigravity planner inspected #then Claude Opus is fallback-only not primary", async () => {

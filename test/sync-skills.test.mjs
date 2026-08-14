@@ -271,7 +271,6 @@ test("#given synced ulw-loop skill #when worker guidance is inspected #then Anti
 	const syncedCodex = await readFile(join(root, "skills", "ulw-loop", "references", "codex.md"), "utf8");
 	const agPatterns = [
 		["Antigravity invoke_subagent", /invoke_subagent/],
-		["forbid Codex spawn wait on AG", /do not call `spawn_agent`/i],
 		["ULW CLI bootstrap", /ulw-loop\/dist\/cli\.js|PLUGIN_ROOT/],
 		["git-master checkpointing", /git-master/],
 	];

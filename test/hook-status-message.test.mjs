@@ -43,7 +43,6 @@ const COMPONENT_EXPECTED_LABELS = new Map([
 	["components/telemetry/hooks/hooks.json:SessionStart:0:0", "Recording Session Telemetry"],
 	["components/ultrawork/hooks/hooks.json:UserPromptSubmit:0:0", "Checking Ultrawork Trigger"],
 	["components/ulw-loop/hooks/hooks.json:UserPromptSubmit:0:0", "Checking Ulw-Loop Steering"],
-	["components/ulw-loop/hooks/hooks.json:PreToolUse:0:0", "Enforcing Unlimited Ulw-Loop Budget"],
 	["components/start-work-continuation/hooks/hooks.json:Stop:0:0", "Checking Start-Work Continuation"],
 	["components/start-work-continuation/hooks/hooks.json:SubagentStop:0:0", "Checking Start-Work Continuation"],
 ]);

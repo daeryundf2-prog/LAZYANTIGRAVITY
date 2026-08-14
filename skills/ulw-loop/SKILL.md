@@ -34,7 +34,7 @@ This skill is intentionally compact. The full workflow lives in `references/full
   - `requiresParentAck=true`
   - Do not claim the whole /ulw task is complete.
   - Do not mark run as completed or failed.
-- **Model tier routing** on `invoke_subagent` (`canTierRoute=true`):
+- **Pass `model_tier`** on `invoke_subagent` (`canTierRoute=true`, `hostEnforced=false`):
   - plan / research / implement / explore → `model_tier="flash"`
   - verify / adversarial review → `model_tier="pro"`
   - tiny repetitive chores → `model_tier="flash_lite"`
@@ -58,7 +58,7 @@ Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 > - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium) or `model_tier="flash_lite"`
 > - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
 >
-> *Antigravity routes lanes with `invoke_subagent` model tiers (`canTierRoute`). It does not silently rewrite the session UI model (`canAutoRoute=false`).*
+> *Pass `model_tier` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`).*
 
 Suppress if the user says "quiet run", "skip model recommendation", "no model hint", or "quiet".
 

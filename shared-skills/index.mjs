@@ -2,7 +2,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const name = "@oh-my-opencode/shared-skills";
-export const version = "0.3.5";
+export const version = "0.3.6";
 
 export function sharedSkillsRootPath() {
 	return join(dirname(fileURLToPath(import.meta.url)), "skills");

@@ -17,7 +17,7 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 
 ## Antigravity Routing Semantics (inherited from ulw-loop)
 
-- **Lane routing**: `invoke_subagent` with `model_tier` (`canTierRoute=true`) — `flash` for plan/code/research, `pro` for verify, `flash_lite` for tiny chores.
+- **Lane hints**: pass `invoke_subagent` `model_tier` (`canTierRoute=true`, `hostEnforced=false`) - `flash` for plan/code/research, `pro` for verify, `flash_lite` for tiny chores.
 - **Session UI**: stay on Gemini 3.7 Flash (High). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
 - **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, pass `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`.
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.

@@ -43,7 +43,7 @@ test("#given ultrawork directive #when inspected #then Antigravity verifier lane
 	assert.match(text, /Gemini 3\.7 Flash/);
 	assert.doesNotMatch(text, /spawn_agent\(agent_type=/);
 	assert.doesNotMatch(text, /Call `create_goal`/);
-	assert.match(text, /Do \*\*not\*\* call Codex `create_goal`/);
+	assert.match(text, /Do not invent foreign goal APIs/);
 });
 
 test("#given ulw-loop workflow #when inspected #then stale review refresh keeps policy changes narrow", async () => {

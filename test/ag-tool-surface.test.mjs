@@ -66,8 +66,9 @@ test("#given model catalog #when top-level current is read #then Gemini 3.7 Flas
 	assert.equal(catalog.current.model, "gemini-3.7-flash-high");
 	assert.equal(catalog.antigravity.canAutoRoute, false);
 	assert.equal(catalog.antigravity.canTierRoute, true);
-	assert.equal(catalog.antigravity.routingMode, "model-tier");
+	assert.equal(catalog.antigravity.hostEnforced, false);
+	assert.equal(catalog.antigravity.routingMode, "agent-tier-hint");
 	assert.equal(catalog.antigravity.tierMap.verifier, "pro");
 	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
-	assert.equal(catalog.perRoleRouting.antigravity.supported, true);
+	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
 });

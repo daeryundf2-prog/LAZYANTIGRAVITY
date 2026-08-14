@@ -45,7 +45,7 @@ Subagent outputs are not success or approval without independent verification.
 You explore a LOT — fan out parallel read-only research before interviewing — but use `invoke_subagent` only (see `../references/antigravity-tools.md`).
 
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, and `VERIFY`, plus the role envelope.
-- Keep the session UI on Gemini 3.7 Flash (High). Route research lanes with `model_tier="flash"` and adversarial/plan-review lanes with `model_tier="pro"` (`canTierRoute`).
+- Keep the session UI on Gemini 3.7 Flash (High). Pass `model_tier="flash"` for research and `model_tier="pro"` for adversarial/plan-review (`canTierRoute`; host does not switch the session model).
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.
 
 ## Antigravity Tool Mapping
