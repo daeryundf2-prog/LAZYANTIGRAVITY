@@ -168,8 +168,10 @@ test("Dimension 7: Packaging & npm Pack Materialization Dry-Run", async () => {
 	assert.ok(files.includes("shared-skills/skills/adaptive-reasoning/SKILL.md"), "npm pack must include adaptive-reasoning");
 	assert.ok(files.includes("shared-skills/skills/ast-refactor/SKILL.md"), "npm pack must include ast-refactor");
 	assert.ok(files.includes("shared-skills/skills/dual-verify/SKILL.md"), "npm pack must include dual-verify");
+	assert.ok(files.includes("shared-skills/skills/hypothesis-tree/SKILL.md"), "npm pack must include hypothesis-tree");
 	assert.ok(files.includes("shared-skills/skills/repo-survey/SKILL.md"), "npm pack must include repo-survey");
 	assert.ok(files.includes("shared-skills/skills/review-work/SKILL.md"), "npm pack must include review-work");
+	assert.ok(files.includes("shared-skills/skills/swarm-sync/SKILL.md"), "npm pack must include swarm-sync");
 	assert.ok(files.includes("shared-skills/skills/ui-loopback/SKILL.md"), "npm pack must include ui-loopback");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/SKILL.md"), "npm pack must include visual-qa");
 	assert.ok(files.includes("shared-skills/skills/frontend-ui-ux/SKILL.md"), "npm pack must include frontend-ui-ux");
@@ -213,5 +215,25 @@ test("Dimension 9: Next-Gen UI-Loopback & Adaptive-Reasoning Integrity", async (
 	assert.match(reasoningSkill, /Model:\s*"flash"/, "Tier 2 must route to flash");
 	assert.match(reasoningSkill, /Model:\s*"pro"/, "Tier 3 must route to pro");
 });
+
+test("Dimension 10: Ultra-Advanced Hypothesis-Tree & Swarm-Sync Integrity", async () => {
+	// hypothesis-tree check
+	const hypSkill = await readFile(join(root, "skills", "hypothesis-tree", "SKILL.md"), "utf8");
+	assert.match(hypSkill, /name:\s*hypothesis-tree/, "Must have name: hypothesis-tree");
+	assert.match(hypSkill, /Orthogonal Hypothesis Generation/i, "Must have Orthogonal Hypothesis Generation");
+	assert.match(hypSkill, /Parallel Falsification/i, "Must have Parallel Falsification");
+	assert.match(hypSkill, /Pro Oracle Verdict/i, "Must have Pro Oracle Verdict");
+	assert.match(hypSkill, /Model:\s*"flash"/, "Falsifiers must route to Model: flash");
+	assert.match(hypSkill, /Model:\s*"pro"/, "Verdict must route to Model: pro");
+
+	// swarm-sync check
+	const swarmSkill = await readFile(join(root, "skills", "swarm-sync", "SKILL.md"), "utf8");
+	assert.match(swarmSkill, /name:\s*swarm-sync/, "Must have name: swarm-sync");
+	assert.match(swarmSkill, /File Ownership Partitioning/i, "Must specify File Ownership Partitioning");
+	assert.match(swarmSkill, /Atomic Merge/i, "Must specify Atomic Merge");
+	assert.match(swarmSkill, /lsp_diagnostics_directory/, "Must gate with lsp_diagnostics_directory");
+	assert.match(swarmSkill, /Model:\s*"flash"/, "Swarm workers must route to Model: flash");
+});
+
 
 

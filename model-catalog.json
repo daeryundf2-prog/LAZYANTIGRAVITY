@@ -124,6 +124,8 @@
 			"dual-verify": "pro",
 			"ui-loopback": "flash",
 			"adaptive-reasoning": "flash",
+			"hypothesis-tree": "pro",
+			"swarm-sync": "flash",
 			"verifier": "pro",
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
@@ -213,6 +215,22 @@
 				"reasoningLevel": "high",
 				"purpose": "적응형 추론 조절 — 작업 난이도별 Thinking Budget 및 모델 티어 자동 산정",
 				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-low"],
+				"availabilitySource": "ui"
+			},
+			"hypothesis-tree": {
+				"modelId": "gemini-3.1-pro-high",
+				"displayName": "Gemini 3.1 Pro (High)",
+				"reasoningLevel": "high",
+				"purpose": "직교 3대 가설 동시 반증 디버깅 — 논리 분기 및 불변식 락킹",
+				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
+				"availabilitySource": "ui"
+			},
+			"swarm-sync": {
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "분산 서브에이전트 파일 소유권 분할 및 원자적 머지 — 병렬 충돌 방지",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
 				"availabilitySource": "ui"
 			},
 			"fast": {
