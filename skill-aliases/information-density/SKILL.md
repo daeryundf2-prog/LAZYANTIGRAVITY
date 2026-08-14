@@ -34,4 +34,4 @@ Score all generated paragraphs and code comments against calibrated density anch
 - **Low Density (< 40)**:
   > "In this task, we will look into the codebase and analyze how the models are routed, and then we will update the catalog to make sure everything works smoothly."
 - **High Density (80–100)**:
-  > "Updated `model-catalog.json` `antigravity.current.model` to `gemini-3.7-flash-high` with `canTierRoute: true`, `hostEnforced: false`. Documented `invoke_subagent` model_tier as an agent hint. Verified 124 unit tests pass."
+  > "Updated `model-catalog.json` `antigravity.current.model` to `gemini-3.7-flash-high` with `canTierRoute: true`, `hostEnforced: false`. Documented `invoke_subagent` `Subagents[].Model` as an agent hint. Verified 124 unit tests pass."

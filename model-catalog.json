@@ -266,11 +266,11 @@
 			"supported": false,
 			"hostEnforced": false,
 			"routingMode": "agent-tier-hint",
-			"mechanism": "Agents pass invoke_subagent model_tier (flash | pro | flash_lite | inherit). The host does not switch the session UI model.",
-			"note": "canAutoRoute=false: session UI stays on whatever the user picked. canTierRoute=true means skills MUST pass model_tier; it is not a guarantee the child model changed.",
+			"mechanism": "Agents pass invoke_subagent Subagents[].Model (flash | pro | flash_lite | inherit). The host does not switch the session UI model. There is no model_tier field.",
+			"note": "canAutoRoute=false: session UI stays on whatever the user picked. canTierRoute=true means skills MUST pass Subagents[].Model; it is not a guarantee the child model changed.",
 			"limitations": [
 				"Session UI model is not auto-switched per catalog role",
-				"model_tier is an agent hint, not host-enforced routing",
+				"Subagents[].Model is an agent hint, not host-enforced routing",
 				"Escape-hatch Claude Opus still requires a manual UI switch"
 			]
 		}

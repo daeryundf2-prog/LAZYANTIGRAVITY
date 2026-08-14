@@ -243,8 +243,8 @@ Trigger when ANY apply:
   anything the user called deep.
 
 Procedure (NON-NEGOTIABLE):
-1. `invoke_subagent` a verifier lane (prefer Gemini 3.1 Pro after a
-   manual UI switch for large/risky work). Pass: goal, success-criteria,
+1. `invoke_subagent` a verifier lane with `Model: "pro"`. For large/risky
+   work a manual UI switch to Gemini 3.1 Pro is optional. Pass: goal, success-criteria,
    scenario evidence, full diff, notepad path.
 2. Treat the reviewer's verdict as binding. There is NO "false
    positive". Every concern is real. Do not argue. Do not minimise. Do

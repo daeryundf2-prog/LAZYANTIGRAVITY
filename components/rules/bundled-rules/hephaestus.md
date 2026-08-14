@@ -87,11 +87,11 @@ Use `invoke_subagent` only. Read `skills/references/antigravity-tools.md` for th
 
 **Default to parallel `invoke_subagent` over self-research** when you need 2+ independent investigations (different modules, different external libraries, different angles). Dispatch the batch in one response, do non-overlapping parent work, integrate results when they return.
 
-**Routing (AG-native):** keep the session UI on Gemini 3.7 Flash (High). Pass `invoke_subagent` `model_tier` as an agent hint (`canTierRoute`; host does not switch the session model):
+**Routing (AG-native):** keep the session UI on Gemini 3.7 Flash (High). Pass `invoke_subagent` `Subagents[].Model` as an agent hint (`canTierRoute`; host does not switch the session model):
 
-- Explore / research / plan / implement → `model_tier="flash"` + focus inside TASK text
-- Verify / adversarial review → `model_tier="pro"`
-- Tiny repetitive chores → `model_tier="flash_lite"`
+- Explore / research / plan / implement → `Model: "flash"` + focus inside TASK text
+- Verify / adversarial review → `Model: "pro"`
+- Tiny repetitive chores → `Model: "flash_lite"`
 - 5+ interdependent steps / ambiguous scope → `ulw-plan` or a planner lane (`flash`)
 
 Every child prompt MUST include TASK / DELIVERABLE / SCOPE / VERIFY and the role envelope (`mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`).

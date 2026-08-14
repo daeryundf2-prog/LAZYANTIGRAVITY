@@ -34,11 +34,11 @@ This skill is intentionally compact. The full workflow lives in `references/full
   - `requiresParentAck=true`
   - Do not claim the whole /ulw task is complete.
   - Do not mark run as completed or failed.
-- **Pass `model_tier`** on `invoke_subagent` (`canTierRoute=true`, `hostEnforced=false`):
-  - plan / research / implement / explore → `model_tier="flash"`
-  - verify / adversarial review → `model_tier="pro"`
-  - tiny repetitive chores → `model_tier="flash_lite"`
-  - inherit parent → `model_tier="inherit"`
+- **Pass `Subagents[].Model`** on `invoke_subagent` (`canTierRoute=true`, `hostEnforced=false`):
+  - plan / research / implement / explore → `Model: "flash"`
+  - verify / adversarial review → `Model: "pro"`
+  - tiny repetitive chores → `Model: "flash_lite"`
+  - inherit parent → `Model: "inherit"`
 - Session UI stays on **Gemini 3.7 Flash (High)** for the parent. Prefer tier routing over switching the whole session UI. Manual UI switch to Gemini 3.1 Pro is optional when you want the parent itself on Pro.
 - Use `git-master` for git-tracked edits: inspect recent and touched-path commit history, then commit each verified work unit atomically.
 
@@ -54,11 +54,11 @@ Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 
 > **Antigravity Recommended Model Configuration Guide**
 > - **Session default (plan + code + research)**: Gemini 3.7 Flash (High)
-> - **Verify / adversarial lanes**: `invoke_subagent` with `model_tier="pro"` (Gemini 3.1 Pro family hint)
-> - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium) or `model_tier="flash_lite"`
+> - **Verify / adversarial lanes**: `invoke_subagent` with `Model: "pro"` (Gemini 3.1 Pro family hint)
+> - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium) or `Model: "flash_lite"`
 > - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
 >
-> *Pass `model_tier` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`).*
+> *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`).*
 
 Suppress if the user says "quiet run", "skip model recommendation", "no model hint", or "quiet".
 

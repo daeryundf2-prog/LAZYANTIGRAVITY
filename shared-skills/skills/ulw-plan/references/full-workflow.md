@@ -116,11 +116,11 @@ Critical path: ...
 ```
 
 ## Phase 4 - High-accuracy review (optional)
-If the user wants maximum rigor, `invoke_subagent` with `model_tier="pro"` and the plan path only. Fix every cited issue and resubmit until it approves. `model_tier` is an agent hint; the host does not switch the session UI model.
+If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the plan path only. Fix every cited issue and resubmit until it approves. `Model` is an agent hint; the host does not switch the session UI model.
 
 ## Delegation discipline (Antigravity)
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, `VERIFY`, plus the role envelope.
-- Keep the session UI on Gemini 3.7 Flash (High). Pass `model_tier="flash"` for research and `model_tier="pro"` for plan review.
+- Keep the session UI on Gemini 3.7 Flash (High). Pass `Model: "flash"` for research and `Model: "pro"` for plan review.
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait/goal APIs.
 
 ## Stop rules

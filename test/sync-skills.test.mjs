@@ -308,7 +308,7 @@ test("#given synced ulw-loop skill #when worker guidance is inspected #then Anti
 	}
 	assert.match(syncedSkill, /references\/full-workflow\.md/);
 	assert.match(syncedSkill, /invoke_subagent/);
-	assert.match(syncedSkill, /canTierRoute|model_tier/);
+	assert.match(syncedSkill, /canTierRoute|Subagents\[\]\.Model/);
 	assert.doesNotMatch(syncedSkill, /## Codex Tool Mapping/);
 });
 

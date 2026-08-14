@@ -2,7 +2,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const name = "@lazyantigravity/shared-skills";
-export const version = "0.3.8";
+export const version = "0.3.9";
 
 export function sharedSkillsRootPath() {
 	return join(dirname(fileURLToPath(import.meta.url)), "skills");

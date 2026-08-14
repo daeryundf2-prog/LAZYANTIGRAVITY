@@ -38,7 +38,7 @@ Use `invoke_subagent` with a role envelope:
 - `mayModifyGlobalRunState=false`
 - `mustReturn=SubagentResultEnvelope`
 - `requiresParentAck=true`
-- Pass `model_tier` on `invoke_subagent`: `pro` | `flash` | `flash_lite` | `inherit`. This is an **agent hint**. The host does not rewrite the session UI model (`canAutoRoute=false`).
+- Pass `Subagents[].Model` on `invoke_subagent`: `pro` | `flash` | `flash_lite` | `inherit`. This is an **agent hint**. The host does not rewrite the session UI model (`canAutoRoute=false`).
 
 | Task shape | Subagent focus | Model tier hint | Session model recommendation |
 |---|---|---|---|
@@ -198,7 +198,7 @@ Trigger only when one goal remains and all its criteria are passing.
 1. Run targeted verification for changed behavior.
 2. Run `ai-slop-cleaner` on changed files. If no relevant edits exist, record a passed no-op cleaner report.
 3. Rerun verification after cleanup.
-4. Judge the change size. Invoke a verifier subagent via `invoke_subagent` with `model_tier="pro"`. For a small, local, low-risk change, do the review yourself and record `codeReview` with `evidence` starting `UNCONDITIONAL APPROVAL` plus a one-line justification of why the change was small enough to self-review.
+4. Judge the change size. Invoke a verifier subagent via `invoke_subagent` with `Model: "pro"`. For a small, local, low-risk change, do the review yourself and record `codeReview` with `evidence` starting `UNCONDITIONAL APPROVAL` plus a one-line justification of why the change was small enough to self-review.
 5. Clean review means `codeReview.recommendation == "APPROVE"` and `codeReview.architectStatus == "CLEAR"`.
 6. If review is non-clean, run `lazyantigravity ulw-loop record-review-blockers --goal-id <id> --title "<...>" --objective "<...>" --evidence "<review findings>" --json`.
 7. If clean, checkpoint final completion:

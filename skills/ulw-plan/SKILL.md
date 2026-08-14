@@ -45,16 +45,16 @@ Subagent outputs are not success or approval without independent verification.
 You explore a LOT — fan out parallel read-only research before interviewing — but use `invoke_subagent` only (see `../references/antigravity-tools.md`).
 
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, and `VERIFY`, plus the role envelope.
-- Keep the session UI on Gemini 3.7 Flash (High). Pass `model_tier="flash"` for research and `model_tier="pro"` for adversarial/plan-review (`canTierRoute`; host does not switch the session model).
+- Keep the session UI on Gemini 3.7 Flash (High). Pass `Model: "flash"` for research and `Model: "pro"` for adversarial/plan-review (`canTierRoute`; host does not switch the session model).
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.
 
 ## Antigravity Tool Mapping
 
 | Planning intent | Antigravity action |
 | --- | --- |
-| Internal codebase research | `invoke_subagent` `model_tier="flash"` (researcher / explorer focus) |
-| External docs / library research | `invoke_subagent` `model_tier="flash"` (researcher focus) |
-| Pre-plan gap analysis (after approval) | `invoke_subagent` `model_tier="flash"` (planner focus) |
-| High-accuracy plan review | `invoke_subagent` `model_tier="pro"` (verifier focus) |
+| Internal codebase research | `invoke_subagent` `Model: "flash"` (researcher / explorer focus) |
+| External docs / library research | `invoke_subagent` `Model: "flash"` (researcher focus) |
+| Pre-plan gap analysis (after approval) | `invoke_subagent` `Model: "flash"` (planner focus) |
+| High-accuracy plan review | `invoke_subagent` `Model: "pro"` (verifier focus) |
 
 Name any skills the child needs directly inside its TASK text. Your plan goes to `.omo/plans/<slug>.md`; never split one request into multiple plans.

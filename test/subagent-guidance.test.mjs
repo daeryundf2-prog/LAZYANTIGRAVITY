@@ -13,11 +13,12 @@ const AGENT_FILES = [
 	"components/ultrawork/agents/plan.toml",
 ];
 
-test("#given Antigravity orchestration skills #when inspected #then they teach invoke_subagent and model_tier routing", async () => {
+test("#given Antigravity orchestration skills #when inspected #then they teach invoke_subagent and Subagents.Model routing", async () => {
 	for (const skillName of AG_SKILLS) {
 		const text = await readFile(join(root, "skills", skillName, "SKILL.md"), "utf8");
 		assert.match(text, /invoke_subagent|TASK:/);
-		assert.match(text, /model_tier|Model tier|canTierRoute/i);
+		assert.match(text, /Subagents\[\]\.Model|Model:\s*"flash"|canTierRoute/);
+		assert.doesNotMatch(text, /model_tier="/);
 		assert.doesNotMatch(text, /## Codex Tool Mapping/);
 		assert.doesNotMatch(text, /fork_turns:\s*"none"/);
 		assert.doesNotMatch(text, /short wait_agent cycles/);

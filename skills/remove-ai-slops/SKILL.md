@@ -11,7 +11,7 @@ This plugin defaults to **Google Antigravity**. Read `../references/antigravity-
 | --- | --- |
 | Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
 | Wait / poll children | Stay in parent; re-invoke incomplete lanes |
-| Model tier routing | `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
+| Child model hint | Pass `Subagents[].Model`: `flash` (plan/code/research), `pro` (verify), `flash_lite` (tiny chores), `inherit` |
 
 Use Antigravity tools only (`invoke_subagent`). Do **not** invent foreign spawn/wait/goal APIs or OpenCode kwargs.
 

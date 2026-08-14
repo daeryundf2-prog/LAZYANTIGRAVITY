@@ -71,4 +71,35 @@ test("#given model catalog #when top-level current is read #then Gemini 3.7 Flas
 	assert.equal(catalog.antigravity.tierMap.verifier, "pro");
 	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
 	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
+	assert.match(catalog.perRoleRouting.antigravity.mechanism, /Subagents\[\]\.Model/);
+	assert.doesNotMatch(catalog.perRoleRouting.antigravity.mechanism, /model_tier \(flash/);
+});
+
+test("#given AG invoke mapping #when inspected #then it teaches Subagents.Model and not model_tier=", async () => {
+	const mapping = await readFile(join(root, "skills", "references", "antigravity-tools.md"), "utf8");
+	assert.match(mapping, /Subagents/);
+	assert.match(mapping, /Model:\s*"flash"/);
+	assert.doesNotMatch(mapping, /model_tier="/);
+});
+
+test("#given AG default skill surfaces #when scanned #then they do not teach model_tier= as an invoke argument", async () => {
+	const files = [
+		join(root, "components", "rules", "bundled-rules", "hephaestus.md"),
+		join(root, "components", "ultrawork", "directive.md"),
+		join(root, "README.md"),
+	];
+	const skillsDir = join(root, "skills");
+	const skillEntries = await readdir(skillsDir, { withFileTypes: true });
+	for (const entry of skillEntries) {
+		if (!entry.isDirectory() || entry.name === "references") continue;
+		files.push(join(skillsDir, entry.name, "SKILL.md"));
+	}
+	const offenders = [];
+	for (const file of files) {
+		const content = await readFile(file, "utf8");
+		if (/model_tier="/.test(content) || /Pass `model_tier`/.test(content)) {
+			offenders.push(file.slice(root.length + 1));
+		}
+	}
+	assert.deepEqual(offenders, []);
 });

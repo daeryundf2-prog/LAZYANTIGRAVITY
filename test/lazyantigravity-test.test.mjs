@@ -65,7 +65,7 @@ test("#given bundled model catalog #when antigravity roles inspected #then Gemin
 	assert.equal(antigravity.tierMap?.verifier, "pro");
 });
 
-test("#given bundled model catalog #when antigravity perRoleRouting inspected #then host auto-routing is unsupported and model_tier is an agent hint", async () => {
+test("#given bundled model catalog #when antigravity perRoleRouting inspected #then host auto-routing is unsupported and Model is an agent hint", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 	const routing = catalog.perRoleRouting?.antigravity;
 	assert.equal(routing?.supported, false);
