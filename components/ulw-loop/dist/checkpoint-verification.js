@@ -142,8 +142,8 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
             expectedObjective: expectedCodexObjective(plan, goal),
             ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
             allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-            requireSnapshot: true,
-            requireComplete: !aggregate || final,
+            requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+            requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
         });
         const codexGoal = reconciliation.snapshot.raw;
         let aggregateCompletion;
@@ -352,8 +352,8 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         expectedObjective: expectedCodexObjective(plan, goal),
         ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
         allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-        requireSnapshot: true,
-        requireComplete: !aggregate || final,
+        requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+        requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
     });
     const codexGoal = reconciliation.snapshot.raw;
     let aggregateCompletion;

@@ -95,6 +95,7 @@ test("#given ulw-loop skill pack #when antigravity workflow inspected #then spaw
 	assert.match(workflow, /invoke_subagent/);
 	assert.doesNotMatch(workflow, /Codex-only goal table/);
 	assert.doesNotMatch(workflow, /spawn_agent\/wait_agent/);
+	assert.doesNotMatch(workflow, /--codex-goal-json <snapshot>/);
 });
 
 test("#given bundled model catalog #when antigravity planner inspected #then Claude Opus is fallback-only not primary", async () => {

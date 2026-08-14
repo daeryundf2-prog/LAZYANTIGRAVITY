@@ -49,6 +49,7 @@ describe("plugin package metadata", () => {
 		expect(packageJson.packageManager).toBe("npm@11.12.1");
 		expect(packageJson.dependencies ?? {}).not.toHaveProperty("@code-yeongyu/comment-checker");
 		expect(packageJson.optionalDependencies).toHaveProperty("@code-yeongyu/comment-checker");
+		expect(packageJson.bin["lazyantigravity-comment-checker"]).toBe("./dist/cli.js");
 		expect(packageJson.bin["omo-comment-checker"]).toBe("./dist/cli.js");
 		expect(cliSource.startsWith("#!/usr/bin/env node")).toBe(true);
 		expect(command).toBe(`node "${pluginRoot}/dist/cli.js" hook post-tool-use`);

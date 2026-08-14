@@ -34,7 +34,8 @@ test("#given bundled model catalog #when inspected #then no role or managed pres
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 
 	const roleModels = Object.values(catalog.roles).map((role) => role.model);
-	const managedModels = catalog.managedProfiles.map((profile) => profile.match.model);
+	assert.deepEqual(catalog.managedProfiles, []);
+	const managedModels = (catalog.codex?.managedProfiles ?? []).map((profile) => profile.match.model);
 
 	assert.equal([...roleModels, ...managedModels].includes("gpt-5.4"), false);
 });

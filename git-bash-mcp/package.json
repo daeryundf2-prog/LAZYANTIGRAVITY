@@ -6,6 +6,7 @@
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
 	"bin": {
+		"lazyantigravity-git-bash": "./dist/cli.js",
 		"omo-git-bash": "./dist/cli.js"
 	},
 	"files": [

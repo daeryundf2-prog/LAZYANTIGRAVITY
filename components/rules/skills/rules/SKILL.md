@@ -21,12 +21,12 @@ Supported project sources:
 - `.github/instructions/**/*.md`
 - `.github/copilot-instructions.md`
 
-Supported environment knobs (legacy names kept for compatibility):
+Supported environment knobs (checked in this order):
 
-- `CODEX_RULES_DISABLED=1`
-- `CODEX_RULES_MODE=both|static|dynamic|off`
-- `CODEX_RULES_MAX_RULE_CHARS=<number>`
-- `CODEX_RULES_MAX_RESULT_CHARS=<number>`
-- `CODEX_RULES_ENABLED_SOURCES=CONTEXT.md,.omo/rules`
+- `LAZYANTIGRAVITY_RULES_DISABLED=1`
+- `LAZYANTIGRAVITY_RULES_MODE=both|static|dynamic|off`
+- `LAZYANTIGRAVITY_RULES_MAX_RULE_CHARS=<number>`
+- `LAZYANTIGRAVITY_RULES_MAX_RESULT_CHARS=<number>`
+- `LAZYANTIGRAVITY_RULES_ENABLED_SOURCES=CONTEXT.md,.omo/rules`
 
-The legacy `PI_RULES_*` variables are accepted as fallbacks.
+Legacy fallbacks: `CODEX_RULES_*`, then `PI_RULES_*`.

@@ -5,6 +5,7 @@
 	"type": "module",
 	"private": true,
 	"bin": {
+		"lazyantigravity-git-bash-hook": "./dist/cli.js",
 		"omo-git-bash-hook": "./dist/cli.js"
 	},
 	"files": ["dist", "hooks"],

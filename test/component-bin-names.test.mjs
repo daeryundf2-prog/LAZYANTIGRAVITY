@@ -7,13 +7,13 @@ import { fileURLToPath } from "node:url";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 const EXPECTED_COMPONENT_BINS = new Map([
-	["comment-checker", "omo-comment-checker"],
-	["lsp", "omo-lsp"],
-	["rules", "omo-rules"],
-	["start-work-continuation", "omo-start-work-continuation"],
-	["telemetry", "omo-telemetry"],
-	["ultrawork", "omo-ultrawork"],
-	["ulw-loop", "omo"],
+	["comment-checker", ["lazyantigravity-comment-checker", "omo-comment-checker"]],
+	["lsp", ["lazyantigravity-lsp", "omo-lsp"]],
+	["rules", ["lazyantigravity-rules", "omo-rules"]],
+	["start-work-continuation", ["lazyantigravity-start-work-continuation", "omo-start-work-continuation"]],
+	["telemetry", ["lazyantigravity-telemetry", "omo-telemetry"]],
+	["ultrawork", ["lazyantigravity-ultrawork", "omo-ultrawork"]],
+	["ulw-loop", ["lazyantigravity", "omo"]],
 ]);
 
 const EXPECTED_USAGE_PREFIXES = new Map([
@@ -29,18 +29,19 @@ async function readJson(relativePath) {
 	return JSON.parse(await readFile(join(root, relativePath), "utf8"));
 }
 
-test("#given aggregate component package metadata #when bin names are inspected #then local component CLIs use the OMO prefix", async () => {
+test("#given aggregate component package metadata #when bin names are inspected #then local component CLIs use the LazyAntigravity prefix with OMO aliases", async () => {
 	// given
 	const components = [...EXPECTED_COMPONENT_BINS.entries()];
 
 	// when
 	const mismatches = [];
-	for (const [component, expectedName] of components) {
+	for (const [component, expectedNames] of components) {
 		const packageJson = await readJson(join("components", component, "package.json"));
 		const bin = packageJson.bin ?? {};
 		const binNames = Object.keys(bin).sort();
-		if (bin[expectedName] !== "./dist/cli.js" || binNames.some((name) => name.startsWith("codex-"))) {
-			mismatches.push({ component, expectedName, bin });
+		const missing = expectedNames.filter((name) => bin[name] !== "./dist/cli.js");
+		if (missing.length > 0 || binNames.some((name) => name.startsWith("codex-"))) {
+			mismatches.push({ component, expectedNames, missing, bin });
 		}
 	}
 

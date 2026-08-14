@@ -65,15 +65,15 @@ enabled = true
 
 ## Configuration
 
-Use `CODEX_RULES_*` environment variables:
+Use `LAZYANTIGRAVITY_RULES_*` environment variables (`CODEX_RULES_*` and `PI_RULES_*` are fallbacks):
 
 | Variable | Values | Default |
 | --- | --- | --- |
-| `CODEX_RULES_DISABLED` | `1`, `true`, `yes`, `on` | unset |
-| `CODEX_RULES_MODE` | `both`, `static`, `dynamic`, `off` | `both` |
-| `CODEX_RULES_MAX_RULE_CHARS` | positive integer | `12000` |
-| `CODEX_RULES_MAX_RESULT_CHARS` | positive integer | `40000` |
-| `CODEX_RULES_ENABLED_SOURCES` | comma-separated source names or `auto` | `auto` (excludes `AGENTS.md`, `~/.claude/rules`, `~/.claude/CLAUDE.md`) |
+| `LAZYANTIGRAVITY_RULES_DISABLED` | `1`, `true`, `yes`, `on` | unset |
+| `LAZYANTIGRAVITY_RULES_MODE` | `both`, `static`, `dynamic`, `off` | `both` |
+| `LAZYANTIGRAVITY_RULES_MAX_RULE_CHARS` | positive integer | `12000` |
+| `LAZYANTIGRAVITY_RULES_MAX_RESULT_CHARS` | positive integer | `40000` |
+| `LAZYANTIGRAVITY_RULES_ENABLED_SOURCES` | comma-separated source names or `auto` | `auto` (excludes `AGENTS.md`, `~/.claude/rules`, `~/.claude/CLAUDE.md`) |
 
 For migration from `pi-rules`, equivalent `PI_RULES_*` variables are accepted as fallbacks.
 

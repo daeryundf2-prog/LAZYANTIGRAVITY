@@ -68,6 +68,7 @@ describe("plugin package metadata", () => {
 		expect(packageJson.type).toBe("module");
 		expect(packageJson.packageManager).toBe("npm@11.12.1");
 		expect(packageJson.dependencies ?? {}).toEqual({ picomatch: "^4.0.3" });
+		expect(packageJson.bin["lazyantigravity-rules"]).toBe("./dist/cli.js");
 		expect(packageJson.bin["omo-rules"]).toBe("./dist/cli.js");
 		expect(packageJson.files).toContain("bundled-rules");
 		expect(bundledRules).toContain("windows-git-bash.md");

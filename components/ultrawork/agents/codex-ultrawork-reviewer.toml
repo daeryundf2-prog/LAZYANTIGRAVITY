@@ -1,3 +1,6 @@
+# Codex-only agent role. Antigravity does not load this file; do not copy
+# these model pins into invoke_subagent prompts. Codex install copies this
+# into CODEX_HOME/agents/.
 name = "codex-ultrawork-reviewer"
 description = "Strict ultrawork verification reviewer. Use after full QA evidence to audit the diff, goal, and scenario evidence before declaring done."
 nickname_candidates = ["Verifier"]

@@ -23,7 +23,7 @@ This skill is intentionally compact. The full workflow lives in `references/full
 ## Non-Negotiables
 
 - Use the ulw-loop CLI state under `.omo/ulw-loop`; do not hand-edit goal state.
-- After any compaction or context loss, re-read brief + goals + ledger FIRST (read files directly) plus `omo ulw-loop status --json`, then resume; never re-plan from scratch.
+- After any compaction or context loss, re-read brief + goals + ledger FIRST (read files directly) plus `lazyantigravity ulw-loop status --json`, then resume; never re-plan from scratch.
 - Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
 - Record evidence through the CLI only after cleanup receipts are available.
 - Delegate via `invoke_subagent` only (see `../references/antigravity-tools.md`).
@@ -47,7 +47,7 @@ This skill is intentionally compact. The full workflow lives in `references/full
 | Workflow intent | Antigravity action |
 | --- | --- |
 | Plan / research / implement / QA | `invoke_subagent` with role envelope + TASK/DELIVERABLE/SCOPE/VERIFY |
-| ULW state / evidence / checkpoint | `omo ulw-loop …` after Bootstrap resolves CLI to `node …/ulw-loop/dist/cli.js` |
+| ULW state / evidence / checkpoint | `lazyantigravity ulw-loop …` after Bootstrap resolves CLI to `node …/ulw-loop/dist/cli.js` |
 | Model routing | Session UI = Gemini 3.7 Flash (High); lane tier = `flash` / `pro` / `flash_lite` / `inherit` |
 
 Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
@@ -68,7 +68,7 @@ Suppress if the user says "quiet run", "skip model recommendation", "no model hi
 - `context_window_exceeded`, `output_token_limit`, `model_rate_limited`, `account_quota_exceeded`, `provider_unavailable`, `unknown_model_error`
 
 ### 2. Checkpoint Storage
-`omo ulw-loop save-role-checkpoint ...`  
+`lazyantigravity ulw-loop save-role-checkpoint ...`  
 Saved in: `.omo/ulw-loop/checkpoints/ulw-{timestamp}.json` (legacy `.lazycodex/checkpoints/` still readable).
 
 ### 3. Antigravity Safety Flow

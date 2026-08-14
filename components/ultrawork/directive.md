@@ -177,8 +177,8 @@ When discovery needs multiple angles or the module layout is
 unfamiliar, delegate via `invoke_subagent` (explorer/researcher focus).
 For research that leaves the repo — library/API/docs/web — another
 `invoke_subagent` researcher lane. Stay in the parent while they run.
-Do **not** call `spawn_agent` / `wait_agent` / `list_agents` /
-`close_agent`. Canonical prompt shape: `skills/references/antigravity-tools.md`.
+Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.
+Canonical prompt shape: `skills/references/antigravity-tools.md`.
 
 # Execution loop (strict TDD — RED → GREEN → SURFACE → CLEAN)
 Until every success-criteria scenario PASSES with BOTH evidence pieces:
@@ -229,8 +229,8 @@ Every `invoke_subagent` message is self-contained and starts with
 `TASK: <imperative assignment>`, then names `DELIVERABLE`, `SCOPE`, and
 `VERIFY`, plus the role envelope. Prefer Gemini 3.7 Flash (High) as the
 session model. Do **not** use OpenCode kwargs (`subagent_type`,
-`run_in_background`, `load_skills`, `category`) or Codex
-`spawn_agent` / `wait_agent` / `list_agents` / `close_agent`.
+`run_in_background`, `load_skills`, `category`) or invent foreign
+spawn/wait APIs. Use `invoke_subagent` only.
 Re-invoke incomplete lanes from the parent. Child DoneClaims are
 untrusted until you re-verify.
 

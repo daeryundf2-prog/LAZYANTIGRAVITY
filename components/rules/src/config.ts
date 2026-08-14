@@ -4,25 +4,47 @@ import type { PiRulesConfig, RuleSource } from "./rules/types.js";
 
 export function configFromEnvironment(env: NodeJS.ProcessEnv = process.env): PiRulesConfig {
 	const config = defaultConfig();
-	const disableBundledRules = isTruthy(firstEnv(env, "CODEX_RULES_DISABLE_BUNDLED", "PI_RULES_DISABLE_BUNDLED"));
-	config.disabled = isTruthy(firstEnv(env, "CODEX_RULES_DISABLED", "PI_RULES_DISABLED"));
-	config.mode = parseMode(firstEnv(env, "CODEX_RULES_MODE", "PI_RULES_MODE")) ?? config.mode;
+	const disableBundledRules = isTruthy(
+		firstEnv(env, "LAZYANTIGRAVITY_RULES_DISABLE_BUNDLED", "CODEX_RULES_DISABLE_BUNDLED", "PI_RULES_DISABLE_BUNDLED"),
+	);
+	config.disabled = isTruthy(
+		firstEnv(env, "LAZYANTIGRAVITY_RULES_DISABLED", "CODEX_RULES_DISABLED", "PI_RULES_DISABLED"),
+	);
+	config.mode =
+		parseMode(firstEnv(env, "LAZYANTIGRAVITY_RULES_MODE", "CODEX_RULES_MODE", "PI_RULES_MODE")) ?? config.mode;
 	config.maxRuleChars =
-		parsePositiveInteger(firstEnv(env, "CODEX_RULES_MAX_RULE_CHARS", "PI_RULES_MAX_RULE_CHARS")) ??
-		config.maxRuleChars;
+		parsePositiveInteger(
+			firstEnv(env, "LAZYANTIGRAVITY_RULES_MAX_RULE_CHARS", "CODEX_RULES_MAX_RULE_CHARS", "PI_RULES_MAX_RULE_CHARS"),
+		) ?? config.maxRuleChars;
 	config.maxResultChars =
-		parsePositiveInteger(firstEnv(env, "CODEX_RULES_MAX_RESULT_CHARS", "PI_RULES_MAX_RESULT_CHARS")) ??
-		config.maxResultChars;
+		parsePositiveInteger(
+			firstEnv(
+				env,
+				"LAZYANTIGRAVITY_RULES_MAX_RESULT_CHARS",
+				"CODEX_RULES_MAX_RESULT_CHARS",
+				"PI_RULES_MAX_RESULT_CHARS",
+			),
+		) ?? config.maxResultChars;
 	config.postCompactMaxRuleChars =
 		parsePositiveInteger(
-			firstEnv(env, "CODEX_RULES_POST_COMPACT_MAX_RULE_CHARS", "PI_RULES_POST_COMPACT_MAX_RULE_CHARS"),
+			firstEnv(
+				env,
+				"LAZYANTIGRAVITY_RULES_POST_COMPACT_MAX_RULE_CHARS",
+				"CODEX_RULES_POST_COMPACT_MAX_RULE_CHARS",
+				"PI_RULES_POST_COMPACT_MAX_RULE_CHARS",
+			),
 		) ?? config.postCompactMaxRuleChars;
 	config.postCompactMaxResultChars =
 		parsePositiveInteger(
-			firstEnv(env, "CODEX_RULES_POST_COMPACT_MAX_RESULT_CHARS", "PI_RULES_POST_COMPACT_MAX_RESULT_CHARS"),
+			firstEnv(
+				env,
+				"LAZYANTIGRAVITY_RULES_POST_COMPACT_MAX_RESULT_CHARS",
+				"CODEX_RULES_POST_COMPACT_MAX_RESULT_CHARS",
+				"PI_RULES_POST_COMPACT_MAX_RESULT_CHARS",
+			),
 		) ?? config.postCompactMaxResultChars;
 	config.enabledSources = parseEnabledSources(
-		firstEnv(env, "CODEX_RULES_ENABLED_SOURCES", "PI_RULES_ENABLED_SOURCES"),
+		firstEnv(env, "LAZYANTIGRAVITY_RULES_ENABLED_SOURCES", "CODEX_RULES_ENABLED_SOURCES", "PI_RULES_ENABLED_SOURCES"),
 		disableBundledRules,
 	);
 	return config;

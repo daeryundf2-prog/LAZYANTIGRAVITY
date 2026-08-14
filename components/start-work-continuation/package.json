@@ -22,6 +22,7 @@
 		"boulder"
 	],
 	"bin": {
+		"lazyantigravity-start-work-continuation": "./dist/cli.js",
 		"omo-start-work-continuation": "./dist/cli.js"
 	},
 	"scripts": {

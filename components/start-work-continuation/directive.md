@@ -21,7 +21,7 @@ You are mid-flight on a Prometheus work plan. The turn just ended without finish
 4. Decompose the checkbox into atomic sub-tasks. On Antigravity, dispatch them in PARALLEL via `invoke_subagent` in this same response unless a sub-task has a NAMED blocking dependency. Every dispatch must include TASK / DELIVERABLE / SCOPE / VERIFY and the role envelope (`mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`).
 5. Every sub-task message MUST be self-contained. It must include verification commands, one Manual-QA channel with exact tool + invocation, adversarial classes where applicable, a captured artifact path, and a cleanup receipt. Channels: HTTP (`curl -i`); tmux (`send-keys` + `capture-pane`); browser; computer-use. Tests are the floor; the channel artifact is the ceiling.
 6. Treat every worker DoneClaim as untrusted. Independently verify before flipping any checkbox to FullyDone.
-7. Do **not** call `wait_agent`, `list_agents`, `close_agent`, or `spawn_agent` on Antigravity. Stay in the parent, continue independent work, and re-invoke subagents as needed.
+7. Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs. Stay in the parent, continue independent work, and re-invoke subagents as needed.
 8. After verification of ALL sub-tasks under this checkbox: edit the plan to change `- [ ]` → `- [x]`, re-read the plan to confirm the count decreased, append a `task-completed` line to the ledger, then continue.
 9. Do not start fresh on a sub-agent failure. Re-dispatch the same task with `FAILED: <exact error>` + `Diagnosis:` + `Fix:`.
 

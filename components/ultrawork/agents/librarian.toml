@@ -1,3 +1,6 @@
+# Codex-only agent role. Antigravity does not load this file; do not copy
+# these model pins into invoke_subagent prompts. Codex install copies this
+# into CODEX_HOME/agents/.
 name = "librarian"
 description = "External open-source codebase and documentation researcher. Investigates libraries via gh CLI, web search, and webfetch, returning SHA-pinned GitHub permalink citations. Read-only."
 nickname_candidates = ["Librarian"]

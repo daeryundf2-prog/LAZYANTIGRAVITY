@@ -72,6 +72,7 @@ describe("plugin package metadata", () => {
 		expect(packageJson.dependencies).toEqual({
 			"@code-yeongyu/lsp-tools-mcp": "file:../../../../lsp-tools-mcp",
 		});
+		expect(packageJson.bin["lazyantigravity-lsp"]).toBe("./dist/cli.js");
 		expect(packageJson.bin["omo-lsp"]).toBe("./dist/cli.js");
 		expect(packageJson.bin["codex-lsp"]).toBeUndefined();
 		expect(packageJson.scripts["build"]).toBe("node scripts/clean-dist.mjs && tsc -p tsconfig.build.json");

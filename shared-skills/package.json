@@ -1,6 +1,6 @@
 {
 	"name": "@lazyantigravity/shared-skills",
-	"version": "0.3.7",
+	"version": "0.3.8",
 	"description": "Shared skills bundle for LazyAntigravity.",
 	"type": "module",
 	"exports": {

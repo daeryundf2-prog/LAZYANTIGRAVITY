@@ -1,3 +1,6 @@
+# Codex-only agent role. Antigravity does not load this file; do not copy
+# these model pins into invoke_subagent prompts. Codex install copies this
+# into CODEX_HOME/agents/.
 name = "plan"
 description = "Strategic planning consultant. Produces a single executable work plan from a vague or large request. Planner only - never implements. Writes the plan to .omo/plans/<slug>.md."
 nickname_candidates = ["Planner"]

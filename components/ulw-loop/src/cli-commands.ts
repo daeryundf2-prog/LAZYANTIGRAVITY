@@ -106,8 +106,7 @@ async function checkpoint(repoRoot: string, argv: readonly string[], json: boole
 	const goalId = required(argv, "--goal-id");
 	const statusValue = checkpointStatus(required(argv, "--status"));
 	const evidence = required(argv, "--evidence");
-	const codexGoalJson = await parseCodexGoalJson(statusValue === "complete" ? required(argv, "--codex-goal-json") : readValue(argv, "--codex-goal-json"));
-	if (statusValue === "complete" && codexGoalJson === undefined) throw new UlwLoopError("Missing --codex-goal-json.", "ULW_LOOP_CODEX_GOAL_JSON_REQUIRED");
+	const codexGoalJson = await parseCodexGoalJson(readValue(argv, "--codex-goal-json"));
 	const qualityGateJson = readValue(argv, "--quality-gate-json");
 	const args: CheckpointUlwLoopArgs = {
 		goalId,
@@ -152,9 +151,14 @@ async function captureEvidence(repoRoot: string, argv: readonly string[], json: 
 }
 
 async function reviewBlockers(repoRoot: string, argv: readonly string[], json: boolean, scope?: UlwLoopScope): Promise<number> {
-	const codexGoalJson = await parseCodexGoalJson(required(argv, "--codex-goal-json"));
-	if (codexGoalJson === undefined) throw new UlwLoopError("Missing --codex-goal-json.", "ULW_LOOP_CODEX_GOAL_JSON_REQUIRED");
-	const result = await recordFinalReviewBlockers(repoRoot, { goalId: required(argv, "--goal-id"), title: required(argv, "--title"), objective: required(argv, "--objective"), evidence: required(argv, "--evidence"), codexGoalJson }, scope);
+	const codexGoalJson = await parseCodexGoalJson(readValue(argv, "--codex-goal-json"));
+	const result = await recordFinalReviewBlockers(repoRoot, {
+		goalId: required(argv, "--goal-id"),
+		title: required(argv, "--title"),
+		objective: required(argv, "--objective"),
+		evidence: required(argv, "--evidence"),
+		...(codexGoalJson === undefined ? {} : { codexGoalJson }),
+	}, scope);
 	if (json) printJson({ ok: true, plan: result.plan, blockedGoal: result.blockedGoal, goal: result.newGoal, ledgerEntries: result.ledgerEntries, summary: summarizeUlwLoopPlan(result.plan) });
 	else process.stdout.write(`ulw-loop final review blockers recorded: ${result.blockedGoal.id} -> review_blocked; added ${result.newGoal.id}\n`);
 	return 0;

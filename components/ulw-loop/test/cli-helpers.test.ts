@@ -198,7 +198,8 @@ describe("parseRecordEvidenceArgs", () => {
 });
 
 describe("ULW_LOOP_HELP", () => {
-	it("mentions omo ulw-loop + every subcommand", () => {
+	it("mentions lazyantigravity ulw-loop + every subcommand", () => {
+		expect(ULW_LOOP_HELP).toContain("lazyantigravity ulw-loop");
 		expect(ULW_LOOP_HELP).toContain("omo ulw-loop");
 		expect(ULW_LOOP_HELP).toContain("create-goals");
 		expect(ULW_LOOP_HELP).toContain("complete-goals");

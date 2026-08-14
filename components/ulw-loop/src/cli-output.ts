@@ -2,19 +2,20 @@ import type { UlwLoopCodexGoalMode, UlwLoopItem, UlwLoopPlan } from "./types.js"
 import { UlwLoopError } from "./types.js";
 
 export const ULW_LOOP_HELP = `Usage:
-  omo ulw-loop create-goals --brief "..." [--brief-file <path>] [--from-stdin] [--codex-goal-mode aggregate|per_story] [--force] [--json]
-  omo ulw-loop status [--json]
-  omo ulw-loop complete-goals [--retry-failed] [--json]
-  omo ulw-loop criteria --goal-id <id> [--json]
-  omo ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status pass|fail|blocked --evidence "..." [--notes "..."] [--json]
-  omo ulw-loop checkpoint --goal-id <id> --status complete|failed|blocked --evidence "..." --codex-goal-json <...> [--quality-gate-json <...>] [--json]
-  omo ulw-loop steer --kind <kind> ... --evidence "..." --rationale "..." [--json]
-  omo ulw-loop add-goal --title "..." --objective "..." [--json]
-  omo ulw-loop record-review-blockers --goal-id <id> --title "..." --objective "..." --evidence "..." --codex-goal-json <...> [--json]
-  omo ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>] [--json]
-  omo ulw-loop resume [--json]
-  omo ulw-loop dry-run [--scenario <scenario>] [--json]
+  lazyantigravity ulw-loop create-goals --brief "..." [--brief-file <path>] [--from-stdin] [--codex-goal-mode aggregate|per_story] [--force] [--json]
+  lazyantigravity ulw-loop status [--json]
+  lazyantigravity ulw-loop complete-goals [--retry-failed] [--json]
+  lazyantigravity ulw-loop criteria --goal-id <id> [--json]
+  lazyantigravity ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status pass|fail|blocked --evidence "..." [--notes "..."] [--json]
+  lazyantigravity ulw-loop checkpoint --goal-id <id> --status complete|failed|blocked --evidence "..." [--codex-goal-json <...>] [--quality-gate-json <...>] [--json]
+  lazyantigravity ulw-loop steer --kind <kind> ... --evidence "..." --rationale "..." [--json]
+  lazyantigravity ulw-loop add-goal --title "..." --objective "..." [--json]
+  lazyantigravity ulw-loop record-review-blockers --goal-id <id> --title "..." --objective "..." --evidence "..." [--codex-goal-json <...>] [--json]
+  lazyantigravity ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>] [--json]
+  lazyantigravity ulw-loop resume [--json]
+  lazyantigravity ulw-loop dry-run [--scenario <scenario>] [--json]
 
+Alias: \`omo ulw-loop\` is accepted. --codex-goal-json is optional (Codex snapshots only).
 All subcommands accept [--session-id <id>] to isolate state under .omo/ulw-loop/<id>/; without it, Codex session env is used when present.`;
 
 type CriteriaCounts = { readonly pass: number; readonly total: number };

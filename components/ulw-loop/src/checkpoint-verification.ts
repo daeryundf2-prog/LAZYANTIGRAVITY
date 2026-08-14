@@ -160,8 +160,8 @@ export async function runCheckpointQualityGate(
 			expectedObjective: expectedCodexObjective(plan, goal),
 			...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
 			allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-			requireSnapshot: true,
-			requireComplete: !aggregate || final,
+			requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+			requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
 		});
 		const codexGoal = reconciliation.snapshot.raw;
 		let aggregateCompletion: UlwLoopAggregateCompletion | undefined;
@@ -396,8 +396,8 @@ export async function runCheckpointQualityGate(
 		expectedObjective: expectedCodexObjective(plan, goal),
 		...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
 		allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-		requireSnapshot: true,
-		requireComplete: !aggregate || final,
+		requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+		requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
 	});
 	const codexGoal = reconciliation.snapshot.raw;
 	let aggregateCompletion: UlwLoopAggregateCompletion | undefined;

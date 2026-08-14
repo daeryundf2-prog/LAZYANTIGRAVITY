@@ -42,7 +42,7 @@ export async function recordFinalReviewBlockers(repoRoot, args, scope) {
             ulwLoopError(`${goal.id} is not final.`, "ulw_loop_not_final_story");
         const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
         const aggregate = codexGoalMode(plan) === "aggregate";
-        const reconciliation = reconcileCodexGoalSnapshot(snapshot, { expectedObjective: expectedCodexObjective(plan, goal), ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}), allowedStatuses: ["active"], requireSnapshot: true, requireComplete: false });
+        const reconciliation = reconcileCodexGoalSnapshot(snapshot, { expectedObjective: expectedCodexObjective(plan, goal), ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}), allowedStatuses: ["active"], requireSnapshot: Boolean(args.codexGoalJson?.trim()), requireComplete: false });
         if (!reconciliation.ok)
             ulwLoopError(reconciliation.errors.join(" "), "ulw_loop_codex_snapshot_mismatch");
         const now = iso();

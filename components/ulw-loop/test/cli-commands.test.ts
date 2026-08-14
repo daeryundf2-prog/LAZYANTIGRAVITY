@@ -104,7 +104,7 @@ async function passCriterion(goalId: string, criterionId: string): Promise<void>
 describe("ulwLoopCommand help", () => {
 	it("prints usage when no subcommand", async () => {
 		expect(await ulwLoopCommand([])).toBe(0);
-		expect(out.join("")).toContain("omo ulw-loop");
+		expect(out.join("")).toContain("lazyantigravity ulw-loop");
 	});
 });
 
@@ -371,7 +371,7 @@ describe("ulwLoopCommand add-goal", () => {
 describe("ulwLoopCommand unknown", () => {
 	it("returns 1 + prints help on unknown subcommand", async () => {
 		expect(await ulwLoopCommand(["wat"])).toBe(1);
-		expect(out.join("")).toContain("omo ulw-loop");
+		expect(out.join("")).toContain("lazyantigravity ulw-loop");
 	});
 });
 

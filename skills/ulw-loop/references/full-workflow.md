@@ -58,8 +58,8 @@ Every worker message MUST carry: goal + exact files in scope; baseline character
 - `.omo/ulw-loop/ledger.jsonl`: append-only audit trail.
 - `.omo/ulw-loop/checkpoints/`: role/resume checkpoints (legacy `.lazycodex/checkpoints/` is still read).
 - Read artifacts before resuming, steering, or checkpointing.
-- After any compaction or context loss, re-read brief + goals + ledger FIRST (read the paths directly), then `omo ulw-loop status --json`, before any further action. Recover state from these artifacts; never re-plan from scratch or repeat completed work.
-- Never invent state outside `.omo/ulw-loop` artifacts or `omo ulw-loop status --json`.
+- After any compaction or context loss, re-read brief + goals + ledger FIRST (read the paths directly), then `lazyantigravity ulw-loop status --json`, before any further action. Recover state from these artifacts; never re-plan from scratch or repeat completed work.
+- Never invent state outside `.omo/ulw-loop` artifacts or `lazyantigravity ulw-loop status --json`.
 
 ## Bootstrap
 Do all three steps before execution. No edits, goal tools, or checkpointing before bootstrap completes.
@@ -83,31 +83,36 @@ if [ -z "$ULW_LOOP_NODE" ]; then
 fi
 
 ULW_LOOP_CLI=
-if command -v omo >/dev/null 2>&1 && omo ulw-loop help >/dev/null 2>&1; then
+if command -v lazyantigravity >/dev/null 2>&1 && lazyantigravity ulw-loop help >/dev/null 2>&1; then
+  ULW_LOOP_CLI=lazyantigravity
+elif command -v omo >/dev/null 2>&1 && omo ulw-loop help >/dev/null 2>&1; then
   ULW_LOOP_CLI=omo
 elif [ -n "$ULW_LOOP_NODE" ]; then
   for candidate in \
     ${PLUGIN_ROOT:+"$PLUGIN_ROOT/components/ulw-loop/dist/cli.js"} \
     "$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.js" \
+    "$HOME/.local/bin/lazyantigravity" \
     "$HOME/.local/bin/omo" \
+    "$CODEX_HOME/bin/lazyantigravity" \
     "$CODEX_HOME/bin/omo" \
     "$CODEX_HOME"/plugins/cache/sisyphuslabs/omo/*/components/ulw-loop/dist/cli.js
   do
     [ -f "$candidate" ] || [ -x "$candidate" ] || continue
-    if [ "$candidate" = "omo" ] || "$ULW_LOOP_NODE" "$candidate" ulw-loop help >/dev/null 2>&1; then
+    if [ "$candidate" = "lazyantigravity" ] || [ "$candidate" = "omo" ] || "$ULW_LOOP_NODE" "$candidate" ulw-loop help >/dev/null 2>&1; then
       ULW_LOOP_CLI="$candidate"
       break
     fi
   done
-  if [ -n "$ULW_LOOP_CLI" ] && [ "$ULW_LOOP_CLI" != "omo" ] && [ -n "$ULW_LOOP_NODE" ]; then
-    omo() { "$ULW_LOOP_NODE" "$ULW_LOOP_CLI" "$@"; }
+  if [ -n "$ULW_LOOP_CLI" ] && [ "$ULW_LOOP_CLI" != "lazyantigravity" ] && [ "$ULW_LOOP_CLI" != "omo" ] && [ -n "$ULW_LOOP_NODE" ]; then
+    lazyantigravity() { "$ULW_LOOP_NODE" "$ULW_LOOP_CLI" "$@"; }
+    omo() { lazyantigravity "$@"; }
   fi
 fi
 
 if [ -z "${ULW_LOOP_CLI:-}" ]; then
   mkdir -p .omo/ulw-loop 2>/dev/null || true
   NOTE=".omo/ulw-loop/bootstrap-notepad.md"
-  printf '%s\n' "No ulw-loop CLI found. Tried PLUGIN_ROOT, ~/.gemini/config/plugins/lazyantigravity, PATH omo, and CODEX_HOME cache." >> "$NOTE" 2>/dev/null || true
+  printf '%s\n' "No ulw-loop CLI found. Tried PLUGIN_ROOT, ~/.gemini/config/plugins/lazyantigravity, PATH lazyantigravity/omo, and CODEX_HOME cache." >> "$NOTE" 2>/dev/null || true
   printf '%s\n' "Fix: set PLUGIN_ROOT to the lazyantigravity plugin root, or run: node \"\$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.js\" ulw-loop help" >&2
 fi
 ```
@@ -119,17 +124,20 @@ $cli = Join-Path $pluginRoot "components\ulw-loop\dist\cli.js"
 $node = (Get-Command node -ErrorAction SilentlyContinue)?.Source
 if (-not $node) { throw "node.exe not found on PATH" }
 if (-not (Test-Path $cli)) { throw "ULW CLI missing: $cli" }
-function omo { & $node $cli @args }
-omo ulw-loop help | Out-Null
+function lazyantigravity { & $node $cli @args }
+function omo { lazyantigravity @args }
+lazyantigravity ulw-loop help | Out-Null
 ```
+
+If `lazyantigravity` and `omo` are absent from PATH, fall back to PLUGIN_ROOT / CODEX_HOME cached `components/ulw-loop/dist/cli.js`. If PATH is empty, still resolve `ULW_LOOP_NODE` from well-known node paths and write `.omo/ulw-loop/bootstrap-notepad.md` when the CLI is missing.
 
 If CLI resolution fails, open `.omo/ulw-loop/bootstrap-notepad.md`, record the missing CLI evidence, then surface the installer/path issue. Do **not** invent goal state by hand-editing JSON.
 
-Run one form after `omo` is resolved:
+Run one form after `lazyantigravity` (or the `omo` alias) is resolved:
 ```sh
-omo ulw-loop create-goals --brief "<brief>" --json
-omo ulw-loop create-goals --brief-file <path> --json
-cat <brief> | omo ulw-loop create-goals --from-stdin --json
+lazyantigravity ulw-loop create-goals --brief "<brief>" --json
+lazyantigravity ulw-loop create-goals --brief-file <path> --json
+cat <brief> | lazyantigravity ulw-loop create-goals --from-stdin --json
 ```
 Write state through the CLI path. Do not hand-edit state files.
 
@@ -149,16 +157,16 @@ Record manual QA notes when behavior is user-visible.
 Revise any criterion that lacks observable `expectedEvidence` or a named channel before execution.
 
 ### 3. Inspect state
-Run `omo ulw-loop status --json`.
+Run `lazyantigravity ulw-loop status --json`.
 Read pending goals, criteria IDs, current ledger head, and blockers.
 
 ## Execution Loop
 Loop per goal. Cap at 5 cycles per goal. Cap identical same-criterion failures at 3.
 
 ### Acquire Next Goal
-1. Run `omo ulw-loop complete-goals --json` and read the handoff, including criteria.
+1. Run `lazyantigravity ulw-loop complete-goals --json` and read the handoff, including criteria.
 2. Treat ULW CLI state (`.omo/ulw-loop/goals.json` + `status --json`) as ground truth. Do not invent foreign goal APIs.
-3. If retrying failed work, run `omo ulw-loop complete-goals --retry-failed --json`.
+3. If retrying failed work, run `lazyantigravity ulw-loop complete-goals --retry-failed --json`.
 4. Never invent a second aggregate objective for the same story.
 
 ### Per-Criterion Cycle
@@ -170,18 +178,18 @@ Loop per goal. Cap at 5 cycles per goal. Cap identical same-criterion failures a
 6. CAPTURE: collect the observable artifact path: transcript, stdout, screenshot, assertion, status+body, diff, or parsed dump. No artifact written at the evidence path — not done; record BLOCKED and respawn QA.
 7. CLEAN (PAIRED, NEVER SKIP): tear down every runtime artifact step 5 spawned BEFORE recording — server PIDs (`kill`, verify `kill -0` fails), `tmux` sessions (`tmux kill-session -t ulw-qa-<criterion>`; confirm `tmux ls`), browser / Playwright contexts (`.close()`), containers (`docker rm -f`), bound ports (`lsof -i :<port>` empty), temp sockets / files / dirs (`rm -rf` the `mktemp` paths), QA-only env vars, AND close every finished subagent. Register each teardown as its own todo the moment the QA spawns the resource so none is forgotten. Embed a one-line cleanup receipt in the evidence string. Missing receipt → record BLOCKED, not PASS.
 8. RECORD exactly one result:
-   - PASS: `omo ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status pass --evidence "<observable> | <cleanup receipt>" --json`
-   - FAIL: `omo ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status fail --evidence "<observable> | <cleanup receipt>" --notes "<diagnosis>" --json`
-   - BLOCKED: `omo ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status blocked --evidence "<observable>" --notes "<safety/blocker/leftover-state>" --json`
+   - PASS: `lazyantigravity ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status pass --evidence "<observable> | <cleanup receipt>" --json`
+   - FAIL: `lazyantigravity ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status fail --evidence "<observable> | <cleanup receipt>" --notes "<diagnosis>" --json`
+   - BLOCKED: `lazyantigravity ulw-loop record-evidence --goal-id <id> --criterion-id <id> --status blocked --evidence "<observable>" --notes "<safety/blocker/leftover-state>" --json`
 9. If actual does not match expected, diagnose, respawn the right-sized worker with the failure context to fix minimally, and rerun the SAME criterion (including a fresh cleanup).
 10. After 3 same-criterion failures, exit the goal with diagnosis.
 11. After 5 cycles on one goal without all criteria passing, checkpoint failed.
 12. Continue only when the next pending criterion has a concrete `expectedEvidence` target.
 
 ### Goal Completion
-1. Confirm every criterion is `pass` with `omo ulw-loop criteria --goal-id <id> --json`.
+1. Confirm every criterion is `pass` with `lazyantigravity ulw-loop criteria --goal-id <id> --json`.
 2. Confirm ULW CLI status is consistent. Do not invent foreign goal APIs.
-3. Run `omo ulw-loop checkpoint --goal-id <id> --status complete --evidence "<criteria evidence summary>" [--codex-goal-json <snapshot>] --json`.
+3. Run `lazyantigravity ulw-loop checkpoint --goal-id <id> --status complete --evidence "<criteria evidence summary>" --json`.
 4. If blocked or failed, checkpoint with `--status blocked` or `--status failed` and include diagnosis evidence.
 5. If this is the final goal, run the final quality gate first and pass `--quality-gate-json`.
 
@@ -192,10 +200,10 @@ Trigger only when one goal remains and all its criteria are passing.
 3. Rerun verification after cleanup.
 4. Judge the change size. Invoke a verifier subagent via `invoke_subagent` with `model_tier="pro"`. For a small, local, low-risk change, do the review yourself and record `codeReview` with `evidence` starting `UNCONDITIONAL APPROVAL` plus a one-line justification of why the change was small enough to self-review.
 5. Clean review means `codeReview.recommendation == "APPROVE"` and `codeReview.architectStatus == "CLEAR"`.
-6. If review is non-clean, run `omo ulw-loop record-review-blockers --goal-id <id> --title "<...>" --objective "<...>" --evidence "<review findings>" --codex-goal-json <snapshot> --json`.
+6. If review is non-clean, run `lazyantigravity ulw-loop record-review-blockers --goal-id <id> --title "<...>" --objective "<...>" --evidence "<review findings>" --json`.
 7. If clean, checkpoint final completion:
 ```sh
-omo ulw-loop checkpoint --goal-id <id> --status complete --evidence "<e2e evidence + manual QA notes>" --codex-goal-json <snapshot> --quality-gate-json <json-or-path> --json
+lazyantigravity ulw-loop checkpoint --goal-id <id> --status complete --evidence "<e2e evidence + manual QA notes>" --quality-gate-json <json-or-path> --json
 ```
 `--quality-gate-json` shape:
 ```json
@@ -220,8 +228,8 @@ Use steering only for structured evidence-backed mutation. Reject natural-langua
 | annotate_ledger | Audit-only note | `--evidence`, `--rationale` |
 | mark_blocked_superseded | Old story replaced by new evidence | `--goal-id`, `--replacements?`, `--evidence`, `--rationale` |
 
-Command form: `omo ulw-loop steer --kind <kind> [<kind-specific-fields>] --evidence "<...>" --rationale "<...>" --json`.
-Structured prompt directives accepted: `OMO_ULW_LOOP_STEER: { ... }`, `omo.ulw-loop.steer: {...}`, `omo ulw-loop steer: {...}`.
+Command form: `lazyantigravity ulw-loop steer --kind <kind> [<kind-specific-fields>] --evidence "<...>" --rationale "<...>" --json`.
+Structured prompt directives accepted: `LAZYANTIGRAVITY_ULW_LOOP_STEER: { ... }`, `OMO_ULW_LOOP_STEER: { ... }`, `lazyantigravity.ulw-loop.steer: {...}`, `omo.ulw-loop.steer: {...}`, `lazyantigravity ulw-loop steer: {...}`, `omo ulw-loop steer: {...}`.
 
 ## Constraints
 1. Ignore foreign goal APIs. ULW CLI state under `.omo/ulw-loop` is ground truth.
@@ -233,7 +241,7 @@ Structured prompt directives accepted: `OMO_ULW_LOOP_STEER: { ... }`, `omo.ulw-l
 7. Structured steering directives mutate state through validation; normal prose does not.
 8. Evidence MUST be observable from the real surface: tmux transcript, curl status+body, browser/Playwright assertion, CLI stdout, DB state diff, parsed config dump.
 9. Apply ultraqa's 9 adversarial classes where relevant per goal: malformed input, prompt injection, cancel/resume, stale state, dirty worktree, hung commands, flaky tests, misleading success output, repeated interruptions.
-10. After completing an aggregate ulw-loop run, confirm `omo ulw-loop status --json` shows no open goals.
+10. After completing an aggregate ulw-loop run, confirm `lazyantigravity ulw-loop status --json` shows no open goals.
 11. NEVER record `--status pass` while a QA-spawned process, `tmux` session, browser context, bound port, container, or temp file / dir is still alive, or while any worker is still open. The evidence string MUST include the cleanup receipt. Leftover runtime state = BLOCKED, not PASS.
 12. DELEGATE all code edits, test writes, fixes, and QA execution to right-sized `invoke_subagent` workers; you read, search, plan, integrate, and QA. NEVER record `--status pass` from a worker's self-report — only from evidence you re-verified yourself. Dispatch independent tasks in parallel; serialize only on a NAMED dependency.
 13. Every verified work unit that touched git-tracked files must leave either an atomic `git-master`-style commit hash or explicit no-commit blocker evidence before the next unit starts.

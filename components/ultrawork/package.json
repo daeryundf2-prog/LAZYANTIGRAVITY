@@ -22,6 +22,7 @@
 		"orchestration"
 	],
 	"bin": {
+		"lazyantigravity-ultrawork": "./dist/cli.js",
 		"omo-ultrawork": "./dist/cli.js"
 	},
 	"scripts": {

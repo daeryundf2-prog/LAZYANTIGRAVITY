@@ -1,3 +1,6 @@
+# Codex-only agent role. Antigravity does not load this file; do not copy
+# these model pins into invoke_subagent prompts. Codex install copies this
+# into CODEX_HOME/agents/.
 name = "momus"
 description = "Plan reviewer. Verifies a work plan is executable: references exist, tasks are startable, QA scenarios are concrete. Issues OKAY, ITERATE, or REJECT. Read-only."
 nickname_candidates = ["Reviewer"]

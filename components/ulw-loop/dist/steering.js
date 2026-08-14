@@ -243,7 +243,7 @@ function isProposal(value) {
     return isPlain(value) && isKind(read(value, "kind")) && isSource(read(value, "source")) && isText(read(value, "evidence")) && isText(read(value, "rationale"));
 }
 export function parseUlwLoopSteeringDirective(text) {
-    const match = /(?:^|\s)(?:OMO_ULW_LOOP_STEER|omo\.ulw-loop\.steer|omo ulw-loop steer):\s*([\s\S]+)$/u.exec(text);
+    const match = /(?:^|\s)(?:LAZYANTIGRAVITY_ULW_LOOP_STEER|OMO_ULW_LOOP_STEER|lazyantigravity\.ulw-loop\.steer|omo\.ulw-loop\.steer|lazyantigravity ulw-loop steer|omo ulw-loop steer):\s*([\s\S]+)$/u.exec(text);
     if (match?.[1] === undefined)
         return null;
     try {

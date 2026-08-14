@@ -8,7 +8,7 @@ import { appendLedger, readUlwLoopPlan, withUlwLoopMutationLock, writePlan } fro
 import type { UlwLoopItem, UlwLoopLedgerEntry, UlwLoopPlan } from "./types.js";
 import { iso, UlwLoopError } from "./types.js";
 
-export interface RecordFinalReviewBlockersArgs { readonly goalId: string; readonly title: string; readonly objective: string; readonly evidence: string; readonly codexGoalJson: string }
+export interface RecordFinalReviewBlockersArgs { readonly goalId: string; readonly title: string; readonly objective: string; readonly evidence: string; readonly codexGoalJson?: string }
 export interface RecordFinalReviewBlockersResult { readonly plan: UlwLoopPlan; readonly blockedGoal: UlwLoopItem; readonly newGoal: UlwLoopItem; readonly ledgerEntries: UlwLoopLedgerEntry[] }
 
 const BLOCKER_FIELDS = "blockedReason blockerSignature blockerOccurrenceCount requiredExternalDecision nonRetriable failedAt failureReason completedAt blocker blockerEvidence blockerOccurrences blockedAt".split(" ");
@@ -55,7 +55,7 @@ export async function recordFinalReviewBlockers(
 
 		const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
 		const aggregate = codexGoalMode(plan) === "aggregate";
-		const reconciliation = reconcileCodexGoalSnapshot(snapshot, { expectedObjective: expectedCodexObjective(plan, goal), ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}), allowedStatuses: ["active"], requireSnapshot: true, requireComplete: false });
+		const reconciliation = reconcileCodexGoalSnapshot(snapshot, { expectedObjective: expectedCodexObjective(plan, goal), ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}), allowedStatuses: ["active"], requireSnapshot: Boolean(args.codexGoalJson?.trim()), requireComplete: false });
 		if (!reconciliation.ok) ulwLoopError(reconciliation.errors.join(" "), "ulw_loop_codex_snapshot_mismatch");
 
 		const now = iso();

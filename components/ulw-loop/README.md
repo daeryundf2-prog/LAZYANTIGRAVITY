@@ -8,13 +8,15 @@ Codex plugin scaffold for durable repo-native multi-goal orchestration with embe
 
 | Subcommand | Purpose |
 |------------|---------|
-| `omo ulw-loop create-goals` | Create repo-native goals from a brief and seed criteria. |
-| `omo ulw-loop record-evidence` | Record observable evidence for the active criterion. |
-| `omo ulw-loop criteria` | Inspect or revise goal success criteria. |
-| `omo ulw-loop complete-goals` | Complete eligible goals after criteria pass. |
-| `omo ulw-loop checkpoint` | Refuse completion until criteria and evidence gates pass. |
-| `omo ulw-loop steer` | Apply steering updates to the plan. |
-| `omo ulw-loop status` | Report active goal, criteria, and evidence state. |
+| `lazyantigravity ulw-loop create-goals` | Create repo-native goals from a brief and seed criteria. |
+| `lazyantigravity ulw-loop record-evidence` | Record observable evidence for the active criterion. |
+| `lazyantigravity ulw-loop criteria` | Inspect or revise goal success criteria. |
+| `lazyantigravity ulw-loop complete-goals` | Complete eligible goals after criteria pass. |
+| `lazyantigravity ulw-loop checkpoint` | Refuse completion until criteria and evidence gates pass. |
+| `lazyantigravity ulw-loop steer` | Apply steering updates to the plan. |
+| `lazyantigravity ulw-loop status` | Report active goal, criteria, and evidence state. |
+
+`omo ulw-loop` is a compatibility alias for the same CLI.
 
 Wave 1 is scaffold only. Command behavior lands in later waves.
 

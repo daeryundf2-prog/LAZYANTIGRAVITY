@@ -24,7 +24,7 @@ type ShellResult = {
 };
 
 function bootstrapScriptFrom(text: string): string {
-	const heading = text.indexOf("### 1. Create goals from the brief");
+		const heading = text.indexOf("### 1. Resolve the ULW CLI");
 	expect(heading).toBeGreaterThanOrEqual(0);
 	const blockStart = text.indexOf("```sh\n", heading);
 	expect(blockStart).toBeGreaterThanOrEqual(0);
@@ -74,9 +74,10 @@ describe("package.json", () => {
 		expect((pkg["engines"] as Record<string, unknown>)["node"]).toBe(">=20.0.0");
 	});
 
-	it("exposes the omo binary pointing at dist/cli.js", async () => {
+	it("exposes the lazyantigravity binary pointing at dist/cli.js", async () => {
 		const pkg = await readJson("package.json") as Record<string, unknown>;
 		const bin = pkg["bin"] as Record<string, string>;
+		expect(bin["lazyantigravity"]).toBe("./dist/cli.js");
 		expect(bin["omo"]).toBe("./dist/cli.js");
 	});
 
@@ -171,7 +172,7 @@ describe("skills/ulw-loop/SKILL.md", () => {
 	it("#given omo is absent from PATH #when bootstrap instructions are read #then local cached CLI fallback is documented", async () => {
 		const text = await readText("skills/ulw-loop/references/full-workflow.md");
 
-		expect(text).toContain("If `omo` is absent from PATH");
+		expect(text).toContain("If `lazyantigravity` and `omo` are absent from PATH");
 		expect(text).toContain("ULW_LOOP_CLI");
 		expect(text).toContain("components/ulw-loop/dist/cli.js");
 	});
@@ -234,19 +235,12 @@ describe("skills/ulw-loop/SKILL.md", () => {
 		expect(text).toContain(".omo/ulw-loop");
 	});
 
-	it("#given long Codex runs #when worker guidance is inspected #then avoids context-expensive agent polling", async () => {
+	it("#given Antigravity workflow #when worker guidance is inspected #then it stays on invoke_subagent and git-master", async () => {
 		const text = await readText("skills/ulw-loop/references/full-workflow.md");
 
-		expect(text).toMatch(/list_agents/);
-		expect(text).toMatch(/polling loop/);
-		expect(text).toMatch(/replay large payloads/);
-		expect(text).toMatch(/Track spawned agent names locally/);
-		expect(text).toMatch(/wait_agent.*mailbox signals/);
-		expect(text).toMatch(/WORKING:/);
-		expect(text).toMatch(/single `list_agents`/);
-		expect(text).toMatch(/Plan and reviewer agents may run for a long time/);
-		expect(text).toMatch(/short wait_agent cycles/);
-		expect(text).toMatch(/single long blocking wait/);
+		expect(text).toMatch(/invoke_subagent/);
+		expect(text).not.toMatch(/list_agents/);
+		expect(text).not.toMatch(/wait_agent/);
 		expect(text).toMatch(/git-master/);
 		expect(text).toMatch(/touched-path commit history/);
 		expect(text).toMatch(/commit in the observed style/);
@@ -255,32 +249,31 @@ describe("skills/ulw-loop/SKILL.md", () => {
 		expect(text).toContain("Each worker does strict TDD");
 	});
 
-	it("#given Codex subagent delegation #when worker guidance is inspected #then assignment ambiguity is hardened", async () => {
+	it("#given Codex ULW reference #when worker guidance is inspected #then it avoids context-expensive agent polling", async () => {
+		const text = await readText("skills/ulw-loop/references/codex.md");
+
+		expect(text).toMatch(/list_agents/);
+		expect(text).toMatch(/wait_agent/);
+		expect(text).toMatch(/WORKING:/);
+		expect(text).toMatch(/spawn_agent\(agent_type="explorer"/);
+	});
+
+	it("#given Antigravity skill compact #when inspected #then assignment uses invoke_subagent not Codex spawn", async () => {
 		const text = await readText("skills/ulw-loop/SKILL.md");
 
-		expect(text).toMatch(/TASK:/);
-		expect(text).toMatch(/fork_turns:\s*"none"/);
-		expect(text).toMatch(/wait_agent.*mailbox signals/);
-		expect(text).toMatch(/WORKING:/);
-		expect(text).toMatch(/single `list_agents`/);
-		expect(text).toMatch(/Fallback only when/);
-		expect(text).toMatch(/BLOCKED:/);
-		expect(text).toMatch(/respawn.*smaller/);
-		expect(text).toMatch(/Plan and reviewer agents may run for a long time/);
-		expect(text).toMatch(/short wait_agent cycles/);
-		expect(text).toMatch(/single long blocking wait/);
+		expect(text).toMatch(/invoke_subagent/);
+		expect(text).not.toMatch(/fork_turns:\s*"none"/);
+		expect(text).not.toMatch(/wait_agent/);
 		expect(text).toMatch(/git-master/);
 		expect(text).toMatch(/commit each verified work unit atomically/);
 	});
 
-	it("#given quiet Codex reviewers #when full workflow guidance is inspected #then timeout is not treated as death", async () => {
-		const text = await readText("skills/ulw-loop/references/full-workflow.md");
+	it("#given Codex ULW reference #when timeout guidance is inspected #then timeout is not treated as death", async () => {
+		const text = await readText("skills/ulw-loop/references/codex.md");
 
-		expect(text).toMatch(/A timeout only means no new mailbox update arrived/i);
+		expect(text).toMatch(/wait_agent/);
 		expect(text).toMatch(/WORKING:/);
-		expect(text).toMatch(/single `list_agents`/);
-		expect(text).toMatch(/do not count it as pass\/review approval/i);
-		expect(text).toMatch(/record inconclusive/i);
+		expect(text).toMatch(/list_agents/);
 	});
 });
 

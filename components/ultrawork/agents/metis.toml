@@ -1,3 +1,6 @@
+# Codex-only agent role. Antigravity does not load this file; do not copy
+# these model pins into invoke_subagent prompts. Codex install copies this
+# into CODEX_HOME/agents/.
 name = "metis"
 description = "Pre-planning analyst. Detects contradictions, ambiguity, missing constraints, and execution risks in a draft plan or request before the planner commits. Read-only."
 nickname_candidates = ["Analyst"]

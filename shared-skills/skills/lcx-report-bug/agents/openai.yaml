@@ -1,10 +1,10 @@
 interface:
-  display_name: "lcx-report-bug (omo)"
-  short_description: "Route LazyAntigravity plugin bugs with source evidence"
+  display_name: "lcx-report-bug (alias)"
+  short_description: "Alias for report-bug"
   search_terms:
     - "lcx-report-bug"
     - "lazyantigravity bug"
     - "lazyantigravity issue"
     - "antigravity plugin bug"
     - "omo-codex bug"
-  default_prompt: "Use $lcx-report-bug to investigate this LazyAntigravity plugin bug, compare runtime evidence with /tmp/daeryundf2-prog/LAZYANTIGRAVITY source, file an issue or PR with reproduction, root cause, fix guidance, and the required LazyAntigravity footer."
+  default_prompt: "Use $report-bug (alias $lcx-report-bug) to investigate this LazyAntigravity plugin bug, compare runtime evidence with /tmp/lazyantigravity-source, file an issue or PR with reproduction, root cause, fix guidance, and the required LazyAntigravity footer."

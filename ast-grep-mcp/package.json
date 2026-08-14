@@ -6,6 +6,7 @@
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
 	"bin": {
+		"lazyantigravity-ast-grep": "./dist/cli.js",
 		"omo-ast-grep": "./dist/cli.js"
 	},
 	"files": [

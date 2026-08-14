@@ -21,6 +21,7 @@
 		"typescript"
 	],
 	"bin": {
+		"lazyantigravity-comment-checker": "./dist/cli.js",
 		"omo-comment-checker": "./dist/cli.js"
 	},
 	"files": [

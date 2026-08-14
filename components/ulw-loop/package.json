@@ -23,6 +23,7 @@
 		"typescript"
 	],
 	"bin": {
+		"lazyantigravity": "./dist/cli.js",
 		"omo": "./dist/cli.js"
 	},
 	"files": [

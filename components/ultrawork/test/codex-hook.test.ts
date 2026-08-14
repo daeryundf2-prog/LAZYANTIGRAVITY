@@ -227,17 +227,15 @@ describe("codex ultrawork hook", () => {
 
 		// then
 		const directive = parsed.hookSpecificOutput.additionalContext;
-		expect(directive).toMatch(/list_agents/);
-		expect(directive).toMatch(/polling loop/);
-		expect(directive).toMatch(/replay large payloads/);
-		expect(directive).toMatch(/Track spawned agent names locally/);
-		expect(directive).toMatch(/wait_agent[\s\S]*mailbox/);
-		expect(directive).toMatch(/WORKING:/);
-		expect(directive).toMatch(/TASK STILL ACTIVE/);
-		expect(directive).toMatch(/Treat child status as a progress signal/);
+		expect(directive).toMatch(/invoke_subagent/);
+		expect(directive).toMatch(/Do \*\*not\*\* invent foreign spawn\/wait APIs|Use `invoke_subagent` only/);
+		expect(directive).not.toMatch(/spawn_agent\s*\(/);
+		expect(directive).not.toMatch(/wait_agent/);
+		expect(directive).not.toMatch(/list_agents/);
+		expect(directive).toMatch(/WORKING:|TASK:/);
 	});
 
-	it("#given directive #when inspected #then hardens Codex subagent assignment ambiguity", () => {
+	it("#given directive #when inspected #then hardens Antigravity subagent assignment", () => {
 		// given
 		const payload = {
 			hook_event_name: "UserPromptSubmit",
@@ -251,13 +249,11 @@ describe("codex ultrawork hook", () => {
 		// then
 		const directive = parsed.hookSpecificOutput.additionalContext;
 		expect(directive).toMatch(/TASK:/);
-		expect(directive).toMatch(/fork_turns:\s*"none"/);
-		expect(directive).toMatch(/wait_agent[\s\S]*mailbox/);
-		expect(directive).toMatch(/TASK STILL ACTIVE/);
-		expect(directive).toMatch(/respawn.*smaller/);
-		expect(directive).toMatch(/timeout only means no new mailbox update arrived/i);
-		expect(directive).toMatch(/WORKING:/);
-		expect(directive).toMatch(/single `list_agents`/);
+		expect(directive).toMatch(/DELIVERABLE/);
+		expect(directive).toMatch(/invoke_subagent/);
+		expect(directive).not.toMatch(/fork_turns:\s*"none"/);
+		expect(directive).not.toMatch(/wait_agent/);
+		expect(directive).not.toMatch(/list_agents/);
 	});
 });
 

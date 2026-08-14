@@ -60,7 +60,7 @@ export async function readUlwLoopPlan(repoRoot: string, scope?: UlwLoopScope): P
 	} catch (error) {
 		if (!hasCode(error, "ENOENT")) throw error;
 		throw new UlwLoopError(
-			`No ulw-loop plan found at ${repoRelative(path, repoRoot)}. Run \`omo ulw-loop create-goals ...\` first.`,
+			`No ulw-loop plan found at ${repoRelative(path, repoRoot)}. Run \`lazyantigravity ulw-loop create-goals ...\` first.`,
 			"ULW_LOOP_PLAN_MISSING",
 			{ cause: error },
 		);

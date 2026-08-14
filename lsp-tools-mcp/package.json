@@ -6,6 +6,7 @@
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
 	"bin": {
+		"lazyantigravity-lsp": "./dist/cli.js",
 		"omo-lsp": "./dist/cli.js"
 	},
 	"files": [

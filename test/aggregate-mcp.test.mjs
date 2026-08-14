@@ -51,7 +51,7 @@ test("#given aggregate MCP config #when inspected #then code MCPs reference pack
 });
 
 test(
-	"#given package-level MCP CLIs #when package metadata is inspected #then bin names use the omo prefix",
+	"#given package-level MCP CLIs #when package metadata is inspected #then bin names use the LazyAntigravity prefix with OMO aliases",
 	{ skip: mcpPackageManifestExists.some((exists) => !exists) },
 	async () => {
 		// given
@@ -67,9 +67,16 @@ test(
 		].sort();
 
 		// then
-		assert.deepEqual(binNames, ["omo-ast-grep", "omo-git-bash", "omo-lsp"]);
+		assert.deepEqual(binNames, [
+			"lazyantigravity-ast-grep",
+			"lazyantigravity-git-bash",
+			"lazyantigravity-lsp",
+			"omo-ast-grep",
+			"omo-git-bash",
+			"omo-lsp",
+		]);
 		for (const name of binNames) {
-			assert.match(name, /^omo-/);
+			assert.match(name, /^(?:lazyantigravity|omo)(?:-|$)/);
 		}
 	},
 );

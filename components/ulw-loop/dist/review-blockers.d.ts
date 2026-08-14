@@ -5,7 +5,7 @@ export interface RecordFinalReviewBlockersArgs {
     readonly title: string;
     readonly objective: string;
     readonly evidence: string;
-    readonly codexGoalJson: string;
+    readonly codexGoalJson?: string;
 }
 export interface RecordFinalReviewBlockersResult {
     readonly plan: UlwLoopPlan;

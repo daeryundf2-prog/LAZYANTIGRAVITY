@@ -11,5 +11,5 @@ This is a thin alias for `report-bug`. When the user types `/lcx-report-bug` or 
 
 ## Instructions
 
-1. Read the `report-bug` skill by opening `../report-bug/SKILL.md` with `Read`. Follow all instructions there exactly.
+1. Read the `report-bug` skill by opening `../../skills/report-bug/SKILL.md` with `Read`. Follow all instructions there exactly.
 2. Do not invent a second reporting path. The canonical skill name is `report-bug`.

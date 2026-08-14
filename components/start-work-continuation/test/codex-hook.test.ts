@@ -108,12 +108,12 @@ describe("start-work Stop hook", () => {
 		// then
 		const parsed = parseBlockOutput(output);
 		expect(parsed.reason).toMatch(/TASK:/);
-		expect(parsed.reason).toMatch(/fork_turns:\s*"none"/);
-		expect(parsed.reason).toMatch(/wait_agent.*mailbox signals/);
-		expect(parsed.reason).toMatch(/TASK STILL ACTIVE/);
-		expect(parsed.reason).toMatch(/respawn.*smaller/);
-		expect(parsed.reason).toMatch(/WORKING:/);
-		expect(parsed.reason).toMatch(/single `list_agents`/);
+		expect(parsed.reason).toMatch(/invoke_subagent/);
+		expect(parsed.reason).toMatch(/Use `invoke_subagent` only/);
+		expect(parsed.reason).not.toMatch(/wait_agent/);
+		expect(parsed.reason).not.toMatch(/list_agents/);
+		expect(parsed.reason).not.toMatch(/spawn_agent/);
+		expect(parsed.reason).not.toMatch(/fork_turns:\s*"none"/);
 	});
 
 	it("#given active work belongs to another harness #when hook runs #then returns empty output", () => {
