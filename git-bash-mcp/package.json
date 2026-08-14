@@ -1,0 +1,15 @@
+{
+	"name": "@sisyphuslabs/git-bash-mcp",
+	"version": "0.1.0",
+	"description": "Standalone Git Bash Model Context Protocol server for Antigravity.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"omo-git-bash": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"package.json"
+	]
+}

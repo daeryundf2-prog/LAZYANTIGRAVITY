@@ -1,0 +1,15 @@
+{
+	"name": "@code-yeongyu/lsp-tools-mcp",
+	"version": "0.1.0",
+	"description": "Standalone Language Server Protocol tools exposed as a stdio MCP server.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"omo-lsp": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"package.json"
+	]
+}

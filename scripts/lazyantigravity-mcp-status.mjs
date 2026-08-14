@@ -198,8 +198,8 @@ function existsSyncish(path) {
 
 function toRelative(path) {
 	const rel = relative(root, path);
-	if (!rel || rel.startsWith("..") || isAbsolute(rel)) return path;
-	return rel;
+	if (!rel || rel.startsWith("..") || isAbsolute(rel)) return path.replaceAll("\\", "/");
+	return rel.replaceAll("\\", "/");
 }
 
 function printTextReport(report) {

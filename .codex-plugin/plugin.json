@@ -1,0 +1,24 @@
+{
+	"name": "lazyantigravity",
+	"version": "0.2.2",
+	"description": "Aggregated Antigravity plugin root for OMO components.",
+	"author": {
+		"name": "Yeongyu Kim",
+		"email": "yeongyu@users.noreply.github.com",
+		"url": "https://github.com/code-yeongyu"
+	},
+	"license": "MIT",
+	"keywords": ["antigravity", "antigravity-plugin", "omo", "hooks", "mcp", "skills"],
+	"skills": "./skills/",
+	"hooks": "./hooks.json",
+	"mcpServers": "./mcp_config.json",
+	"interface": {
+		"displayName": "LazyAntigravity",
+		"shortDescription": "Unified local Antigravity components",
+		"longDescription": "LazyAntigravity exposes the local OMO Rules, Comment Checker, LSP, Ultrawork, and ulw-loop components as one plugin namespace.",
+		"developerName": "Yeongyu Kim",
+		"category": "Developer Tools",
+		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection", "Telemetry"],
+		"brandColor": "#7C3AED"
+	}
+}
