@@ -10,7 +10,7 @@ import { collectCommandHooks, readJson, root } from "./aggregate-plugin-fixture.
 const execFile = promisify(execFileCallback);
 
 async function runHooksReport(...args) {
-	return execFile("npm", ["run", "hooks:report", "--", ...args], {
+	return execFile(process.execPath, ["scripts/lazyantigravity-hooks-report.mjs", ...args], {
 		cwd: root,
 		encoding: "utf8",
 		maxBuffer: 1024 * 1024,

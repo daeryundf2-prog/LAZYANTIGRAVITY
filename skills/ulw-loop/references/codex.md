@@ -31,6 +31,7 @@ On **Google Antigravity**, ignore this file and follow `full-workflow.md` Antigr
 - Start every `spawn_agent` message with `TASK:`, then `DELIVERABLE`, `SCOPE`, `VERIFY`.
 - Prefer `fork_turns: "none"` unless full history is required.
 - Poll with short `wait_agent` cycles; do not use `list_agents` as a status feed.
+- For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops.
 - When translating `load_skills=[...]`, include skill names in the spawned agent `message`.
 
 ## Auto-routing

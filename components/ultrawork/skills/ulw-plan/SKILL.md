@@ -42,24 +42,20 @@ Subagent outputs are not success or approval without independent verification.
 
 ## Delegating Research (Non-Negotiables)
 
-You explore a LOT - fan out parallel read-only research before interviewing - but delegate with Codex discipline:
+You explore a LOT — fan out parallel read-only research before interviewing — but on Antigravity use `invoke_subagent` only (see `../references/antigravity-tools.md`).
 
-- Every `spawn_agent` message starts with `TASK:`, then names `DELIVERABLE`, `SCOPE`, and `VERIFY`. Role selection requires `agent_type`; setting `model` + `reasoning_effort` alone creates a default agent, not the role you wanted. Prefer `fork_turns: "none"` unless full history is truly required.
-- Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short wait_agent cycles. Never use a single long blocking wait for them.
-- For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long reading, testing, or review passes, and `BLOCKED: <reason>` only when it cannot progress.
-- While any child is active, keep yourself visibly alive with active subagent count, agent names, latest `WORKING:` phase, and whether you are waiting for mailbox updates.
-- Track spawned agent names locally. Use `wait_agent` for mailbox signals, not proof of completion. A timeout only means no new mailbox update arrived; after a timeout, run a single `list_agents` check for the named child when you need reassurance. If it is running or its latest message is `WORKING:`, treat it as alive.
-- Do not use `list_agents` as a polling loop or status feed; it can replay large payloads. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running. Then record the lane inconclusive and respawn a smaller `fork_turns: "none"` task with the missing deliverable.
+- Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, and `VERIFY`, plus the role envelope.
+- Prefer Gemini 3.7 Flash (High) as the session model for planning research.
+- Do **not** call `spawn_agent`, `wait_agent`, `list_agents`, or `close_agent` on Antigravity.
+- Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-## Codex Tool Mapping
+## Antigravity Tool Mapping
 
-| Planning intent | Codex tool |
+| Planning intent | Antigravity action |
 | --- | --- |
-| Internal codebase research | `spawn_agent(agent_type="explorer", fork_turns="none", ...)` |
-| External docs / library research | `spawn_agent(agent_type="librarian", fork_turns="none", ...)` |
-| Pre-plan gap analysis (after approval) | `spawn_agent(agent_type="metis", fork_turns="none", ...)` |
-| High-accuracy plan review (optional) | `spawn_agent(agent_type="momus", fork_turns="none", ...)` |
-| Wait for a research result | `wait_agent(...)` |
-| Release a finished subagent | `close_agent(...)` |
+| Internal codebase research | `invoke_subagent` (researcher / explorer focus) |
+| External docs / library research | `invoke_subagent` (researcher focus) |
+| Pre-plan gap analysis (after approval) | `invoke_subagent` (planner/reviewer focus) |
+| High-accuracy plan review (optional) | `invoke_subagent` (verifier focus; prefer 3.1 Pro after manual UI switch) |
 
 Name any skills the child needs directly inside its `message`. Your plan goes to `.omo/plans/<slug>.md`; never split one request into multiple plans.

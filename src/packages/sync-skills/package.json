@@ -1,0 +1,14 @@
+{
+	"name": "@oh-my-opencode/sync-skills",
+	"version": "0.3.3",
+	"type": "module",
+	"exports": {
+		".": "./index.mjs"
+	},
+	"files": [
+		"index.mjs"
+	],
+	"dependencies": {
+		"@oh-my-opencode/shared-skills": "file:../../../shared-skills"
+	}
+}

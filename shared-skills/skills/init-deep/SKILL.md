@@ -2,33 +2,28 @@
 name: init-deep
 description: "(builtin) Initialize hierarchical AGENTS.md knowledge base"
 ---
-## Codex Harness Tool Compatibility
+## Antigravity Tool Mapping (default)
 
-This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
 
-| OpenCode example | Codex tool to use |
+| Intent | Antigravity action |
 | --- | --- |
-| `call_omo_agent(subagent_type="explore", ...)` | `spawn_agent(agent_type="explorer", task_name="...", message="...", fork_turns="none")` |
-| `call_omo_agent(subagent_type="librarian", ...)` | `spawn_agent(agent_type="librarian", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="plan", ...)` | `spawn_agent(agent_type="plan", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="oracle", ...)` for final verification | `spawn_agent(agent_type="codex-ultrawork-reviewer", task_name="...", message="...", fork_turns="none")` |
-| `task(category="...", ...)` for implementation or QA | `spawn_agent(agent_type="worker", task_name="...", message="...", fork_turns="none")` |
-| `background_output(task_id="...")` | `wait_agent(...)` for mailbox signals; after a timeout, run one `list_agents` check for the named child if reassurance is needed |
-| `team_*(...)` | `spawn_agent` + `send_message` + `followup_task` + `wait_agent` + `close_agent` |
+| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
+| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
+| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
 
-For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `wait_agent` timeout only means no new mailbox update arrived. Treat a running child or latest `WORKING:` message as alive. Do not use `list_agents` as a polling loop. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.
+**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
 
-Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns="none"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
+## Codex Tool Mapping
 
-# /init-deep
+Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-Generate hierarchical AGENTS.md files. Root + complexity-scored subdirectories.
 
 ## Usage
 
 ```
 /init-deep                      # Update mode: modify existing + create new where warranted
-/init-deep --create-new         # Read existing → remove all → regenerate from scratch
+/init-deep --create-new         # Read existing —remove all —regenerate from scratch
 /init-deep --max-depth=2        # Limit directory depth (default: 3)
 ```
 
@@ -44,7 +39,7 @@ Generate hierarchical AGENTS.md files. Root + complexity-scored subdirectories.
 4. **Review** - Deduplicate, trim, validate
 
 <critical>
-**TodoWrite ALL phases. Mark in_progress → completed in real-time.**
+**TodoWrite ALL phases. Mark in_progress —completed in real-time.**
 ```
 TodoWrite([
   { id: "discovery", content: "Fire explore agents + LSP codemap + read existing", status: "pending", priority: "high" },
@@ -67,12 +62,12 @@ Don't wait-these run async while main session works.
 
 ```
 // Fire all at once, collect results later
-task(subagent_type="explore", load_skills=[], description="Explore project structure", run_in_background=true, prompt="Project structure: PREDICT standard patterns for detected language → REPORT deviations only")
-task(subagent_type="explore", load_skills=[], description="Find entry points", run_in_background=true, prompt="Entry points: FIND main files → REPORT non-standard organization")
-task(subagent_type="explore", load_skills=[], description="Find conventions", run_in_background=true, prompt="Conventions: FIND config files (.eslintrc, pyproject.toml, .editorconfig) → REPORT project-specific rules")
-task(subagent_type="explore", load_skills=[], description="Find anti-patterns", run_in_background=true, prompt="Anti-patterns: FIND 'DO NOT', 'NEVER', 'ALWAYS', 'DEPRECATED' comments → LIST forbidden patterns")
-task(subagent_type="explore", load_skills=[], description="Explore build/CI", run_in_background=true, prompt="Build/CI: FIND .github/workflows, Makefile → REPORT non-standard patterns")
-task(subagent_type="explore", load_skills=[], description="Find test patterns", run_in_background=true, prompt="Test patterns: FIND test configs, test structure → REPORT unique conventions")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Explore project structure", run_in_background=true, prompt="Project structure: PREDICT standard patterns for detected language —REPORT deviations only")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Find entry points", run_in_background=true, prompt="Entry points: FIND main files —REPORT non-standard organization")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Find conventions", run_in_background=true, prompt="Conventions: FIND config files (.eslintrc, pyproject.toml, .editorconfig) —REPORT project-specific rules")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Find anti-patterns", run_in_background=true, prompt="Anti-patterns: FIND 'DO NOT', 'NEVER', 'ALWAYS', 'DEPRECATED' comments —LIST forbidden patterns")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Explore build/CI", run_in_background=true, prompt="Build/CI: FIND .github/workflows, Makefile —REPORT non-standard patterns")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Find test patterns", run_in_background=true, prompt="Test patterns: FIND test configs, test structure —REPORT unique conventions")
 ```
 
 <dynamic-agents>
@@ -82,7 +77,7 @@ task(subagent_type="explore", load_skills=[], description="Find test patterns", 
 |--------|-----------|-------------------|
 | **Total files** | >100 | +1 per 100 files |
 | **Total lines** | >10k | +1 per 10k lines |
-| **Directory depth** | ≥4 | +2 for deep exploration |
+| **Directory depth** | — | +2 for deep exploration |
 | **Large files (>500 lines)** | >10 files | +1 for complexity hotspots |
 | **Monorepo** | detected | +1 per package/workspace |
 | **Multiple languages** | >1 | +1 per language |
@@ -97,10 +92,10 @@ max_depth=$(find . -type d -not -path '*/node_modules/*' -not -path '*/.git/*' |
 
 Example spawning:
 ```
-// 500 files, 50k lines, depth 6, 15 large files → spawn 5+5+2+1 = 13 additional agents
-task(subagent_type="explore", load_skills=[], description="Analyze large files", run_in_background=true, prompt="Large file analysis: FIND files >500 lines, REPORT complexity hotspots")
-task(subagent_type="explore", load_skills=[], description="Explore deep modules", run_in_background=true, prompt="Deep modules at depth 4+: FIND hidden patterns, internal conventions")
-task(subagent_type="explore", load_skills=[], description="Find shared utilities", run_in_background=true, prompt="Cross-cutting concerns: FIND shared utilities across directories")
+// 500 files, 50k lines, depth 6, 15 large files —spawn 5+5+2+1 = 13 additional agents
+invoke_subagent(subagent_type="explore", load_skills=[], description="Analyze large files", run_in_background=true, prompt="Large file analysis: FIND files >500 lines, REPORT complexity hotspots")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Explore deep modules", run_in_background=true, prompt="Deep modules at depth 4+: FIND hidden patterns, internal conventions")
+invoke_subagent(subagent_type="explore", load_skills=[], description="Find shared utilities", run_in_background=true, prompt="Cross-cutting concerns: FIND shared utilities across directories")
 // ... more based on calculation
 ```
 </dynamic-agents>
@@ -132,7 +127,7 @@ For each existing file found:
   Store in EXISTING_AGENTS map
 ```
 
-If `--create-new`: Read all existing first (preserve context) → then delete all → regenerate.
+If `--create-new`: Read all existing first (preserve context) —then delete all —regenerate.
 
 #### 3. LSP Codemap (if available)
 ```
@@ -208,7 +203,7 @@ AGENTS_LOCATIONS = [
 **Mark "generate" as in_progress.**
 
 <critical>
-**File Writing Rule**: If AGENTS.md already exists at the target path → use `Edit` tool. If it does NOT exist → use `Write` tool.
+**File Writing Rule**: If AGENTS.md already exists at the target path —use `Edit` tool. If it does NOT exist —use `Write` tool.
 NEVER use Write to overwrite an existing file. ALWAYS check existence first via `Read` or discovery results.
 </critical>
 
@@ -227,8 +222,8 @@ NEVER use Write to overwrite an existing file. ALWAYS check existence first via 
 ## STRUCTURE
 ```
 {root}/
-├── {dir}/    # {non-obvious purpose only}
-└── {entry}
+?———— {dir}/    # {non-obvious purpose only}
+?———— {entry}
 ```
 
 ## WHERE TO LOOK
@@ -267,7 +262,7 @@ Launch writing tasks for each location:
 
 ```
 for loc in AGENTS_LOCATIONS (except root):
-  task(category="writing", load_skills=[], run_in_background=false, description="Generate AGENTS.md", prompt=`
+  invoke_subagent(category="writing", load_skills=[], run_in_background=false, description="Generate AGENTS.md", prompt=`
     Generate AGENTS.md for: ${loc.path}
     - Reason: ${loc.reason}
     - 30-80 lines max
@@ -311,7 +306,7 @@ AGENTS.md Updated: {N}
 
 Hierarchy:
   ./AGENTS.md
-  └── src/hooks/AGENTS.md
+  ?———— src/hooks/AGENTS.md
 ```
 
 ---

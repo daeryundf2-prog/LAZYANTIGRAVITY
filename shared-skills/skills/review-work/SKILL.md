@@ -2,68 +2,22 @@
 name: review-work
 description: "Post-implementation review orchestrator. Launches 5 parallel background sub-agents: Oracle (goal/constraint verification), Oracle (code quality), Oracle (security), unspecified-high (hands-on QA execution), unspecified-high (context mining from GitHub/git/Slack/Notion). All must pass for review to pass. MUST USE after completing any significant implementation work. Triggers: 'review work', 'review my work', 'review changes', 'QA my work', 'verify implementation', 'check my work', 'validate changes', 'post-implementation review'."
 ---
-## Codex Harness Tool Compatibility
+## Antigravity Tool Mapping (default)
 
-This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
 
-| OpenCode example | Codex tool to use |
+| Intent | Antigravity action |
 | --- | --- |
-| `call_omo_agent(subagent_type="explore", ...)` | `spawn_agent(agent_type="explorer", task_name="...", message="...", fork_turns="none")` |
-| `call_omo_agent(subagent_type="librarian", ...)` | `spawn_agent(agent_type="librarian", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="plan", ...)` | `spawn_agent(agent_type="plan", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="oracle", ...)` for final verification | `spawn_agent(agent_type="codex-ultrawork-reviewer", task_name="...", message="...", fork_turns="none")` |
-| `task(category="...", ...)` for implementation or QA | `spawn_agent(agent_type="worker", task_name="...", message="...", fork_turns="none")` |
-| `background_output(task_id="...")` | `wait_agent(...)` for mailbox signals; after a timeout, run one `list_agents` check for the named child if reassurance is needed |
-| `team_*(...)` | Use Codex native subagents plus `send_message`, `followup_task`, `wait_agent`, and `close_agent` |
+| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
+| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
+| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
 
-Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns="none"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
+**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
 
-## Codex Subagent Reliability
+## Codex Tool Mapping
 
-Every `spawn_agent` message must be self-contained. Start with
-`TASK: <imperative assignment>`, then name `DELIVERABLE`, `SCOPE`, and
-`VERIFY`. State that it is an executable assignment, not a context
-handoff. Role selection requires `agent_type`; `model` +
-`reasoning_effort` alone creates a default agent, not a reviewer or
-worker. Prefer `fork_turns: "none"` unless full history is truly
-required; paste only the review context that worker needs.
+Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short wait_agent cycles sized to the work. Never use a single long blocking wait for them, and never spin on tiny timeouts as a failure budget.
-
-Treat child status as a progress signal, not a timeout counter. For
-work likely to exceed one wait cycle, require the child to send
-`WORKING: <task> - <current phase>` before long reading, testing, or
-review passes, and `BLOCKED: <reason>` only when it cannot progress.
-While any child is active, keep the parent visibly alive with active
-subagent count, agent names, latest `WORKING:` phase, and whether the
-parent is waiting for mailbox updates. Track spawned agent names
-locally. Use `wait_agent` for mailbox signals, not proof of completion.
-A timeout only means no new mailbox update arrived; after a timeout,
-run a single `list_agents` check for the named child when you need
-reassurance. If it is running or its latest message is `WORKING:`,
-treat it as alive. Do not use `list_agents` as a polling loop or status
-feed; it can replay large payloads. Fallback only when the child is
-completed without the deliverable, ack-only after followup, explicitly
-`BLOCKED:`, or no longer running. Then mark that review lane
-inconclusive, do not count it as PASS or approval, close if safe, and
-respawn a smaller `fork_turns: "none"` reviewer with the missing
-deliverable.
-
-# Review Work - 5-Agent Parallel Review Orchestrator
-
-Launch 5 specialized sub-agents in parallel to review completed implementation work from every angle. All 5 must pass for the review to pass. If even ONE fails, the review fails.
-
-The 5 agents cover complementary concerns - together they form a comprehensive review that no single reviewer could match:
-
-| # | Agent | Type | Role | Focus Level |
-|---|-------|------|------|-------------|
-| 1 | Goal Verifier | Oracle | Did we build what was asked? | MAIN |
-| 2 | QA Executor | unspecified-high | Does it actually work? | MAIN |
-| 3 | Code Reviewer | Oracle | Is the code well-written? | MAIN |
-| 4 | Security Auditor | Oracle | Is it secure? | SUB |
-| 5 | Context Miner | unspecified-high | Did we miss any context? | MAIN |
-
----
 
 ## Phase 0: Gather Review Context
 
@@ -118,7 +72,7 @@ Launch ALL 5 in a single turn. Every agent uses `run_in_background=true`. No seq
 This agent answers: "Did we build exactly what was asked, within the rules we were given?"
 
 ```
-task(
+invoke_subagent(
   subagent_type="oracle",
   run_in_background=true,
   load_skills=[],
@@ -197,7 +151,7 @@ This agent answers: "Does it actually work when you run it?"
 The QA agent follows a structured process: brainstorm scenarios exhaustively first, then self-review and augment, then create a task list, then execute systematically.
 
 ```
-task(
+invoke_subagent(
   category="unspecified-high",
   run_in_background=true,
   load_skills=["playwright", "dev-browser"],
@@ -307,7 +261,7 @@ OUTPUT FORMAT:
 This agent answers: "Is the code well-written, maintainable, and consistent with the codebase?"
 
 ```
-task(
+invoke_subagent(
   subagent_type="oracle",
   run_in_background=true,
   load_skills=[],
@@ -384,7 +338,7 @@ This agent answers: "Are there security vulnerabilities in these changes?"
 This is supplementary - it focuses exclusively on security. It does NOT comment on code style, architecture, or functionality unless those directly create a security risk.
 
 ```
-task(
+invoke_subagent(
   subagent_type="oracle",
   run_in_background=true,
   load_skills=[],
@@ -440,7 +394,7 @@ OUTPUT FORMAT:
 This agent answers: "Did we miss any context that should have informed this implementation?"
 
 ```
-task(
+invoke_subagent(
   category="unspecified-high",
   run_in_background=true,
   load_skills=["git-master"],
@@ -524,12 +478,12 @@ OUTPUT FORMAT:
 
 ## Phase 2: Wait & Collect
 
-After launching all 5 agents in one turn, wait for completions in bounded
-cycles. Do not treat a timeout, ack-only reply, or empty child result as
+After launching all 5 agents in one turn, stay in the parent and continue
+independent work. Do **not** call `wait_agent` / `list_agents`. Re-invoke
+any incomplete lane. Do not treat an ack-only reply or empty child result as
 a PASS.
 
-As each completes, collect via the Codex mapping above (`wait_agent`,
-then the child's substantive final result). Store each verdict:
+As each subagent returns, collect its substantive final result. Store each verdict:
 
 | Agent | Verdict | Notes |
 |-------|---------|-------|
@@ -549,8 +503,8 @@ inconclusive and respawn a smaller reviewer/worker for that exact lane.
 
 <verdict_logic>
 
-ALL 5 agents returned PASS → **REVIEW PASSED**
-ANY agent returned FAIL → **REVIEW FAILED - criteria not met**
+ALL 5 agents returned PASS —**REVIEW PASSED**
+ANY agent returned FAIL —**REVIEW FAILED - criteria not met**
 
 </verdict_logic>
 

@@ -6,16 +6,19 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
-test("#given aggregate MCP config #when inspected #then registers research and structural-search MCPs", async () => {
+test("#given default MCP config #when inspected #then only local servers are enabled", async () => {
 	// given
-	const mcp = JSON.parse(await readFile(join(root, ".mcp.json"), "utf8"));
+	const mcp = JSON.parse(await readFile(join(root, "mcp_config.json"), "utf8"));
+	const remoteExample = JSON.parse(
+		await readFile(join(root, "mcp_config.remote.example.json"), "utf8"),
+	);
 
 	// when
 	const serverNames = Object.keys(mcp.mcpServers).sort();
 
 	// then
-	assert.deepEqual(serverNames, ["ast_grep", "context7", "git_bash", "grep_app", "lsp"]);
-	assert.equal(mcp.mcpServers.grep_app.url, "https://mcp.grep.app");
-	assert.equal(mcp.mcpServers.context7.url, "https://mcp.context7.com/mcp");
-	assert.deepEqual(mcp.mcpServers.ast_grep.args, ["./ast-grep-mcp/dist/cli.js", "mcp"]);
+	assert.deepEqual(serverNames, ["ast_grep", "git_bash", "lsp"]);
+	assert.deepEqual(Object.keys(remoteExample.mcpServers).sort(), ["context7", "grep_app"]);
+	assert.equal(remoteExample.mcpServers.grep_app.url, "https://mcp.grep.app");
+	assert.equal(remoteExample.mcpServers.context7.url, "https://mcp.context7.com/mcp");
 });

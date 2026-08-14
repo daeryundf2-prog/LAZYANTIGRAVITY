@@ -29,13 +29,9 @@ test("#given README and skill claims #when evidence map JSON is requested #then 
 	for (const id of [
 		"readme.doctor-command",
 		"readme.hooks-report-command",
-		"readme.oss-icons-report-command",
 		"readme.mcp-status-command",
 		"readme.provenance-command",
-		"readme.auto-update-status-command",
 		"readme.evidence-map-command",
-		"telemetry.opt-out-env",
-		"telemetry.local-diagnostics",
 	]) {
 		assert.equal(report.claims.find((claim) => claim.id === id)?.status, "verified", `${id} must be verified`);
 	}

@@ -149,7 +149,7 @@ After all beads are resolved:
 
 ## Miri-First Decision Protocol
 
-When the agent encounters `unsafe` code during ANY Rust task (not just audits):
+When the agent encounters `unsafe` code during ANY Rust invoke_subagent(not just audits):
 
 ```
 Is there unsafe code in the changeset?

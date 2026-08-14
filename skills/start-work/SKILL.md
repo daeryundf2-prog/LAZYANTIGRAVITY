@@ -1,59 +1,24 @@
 ---
 name: start-work
-description: "Execute a Prometheus work plan in Codex with Boulder state, evidence ledger updates, worktree discipline, parallel subagents, and Stop-hook continuation. Use after planning when the user says start work, execute plan, continue plan, resume plan, or asks to run a .omo/plans plan."
+description: "Execute a Prometheus work plan on Antigravity with Boulder state, evidence ledger updates, worktree discipline, parallel invoke_subagent workers, and Stop-hook continuation. Use after planning when the user says start work, execute plan, continue plan, resume plan, or asks to run a .omo/plans plan."
 ---
 
-## Codex Harness Tool Compatibility
+## Antigravity Tool Mapping (default)
 
-This skill ports the OpenCode `/start-work` flow onto Codex. Any OpenCode-only tool name in an inherited example must be translated to its Codex equivalent:
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
 
-| OpenCode example | Codex tool to use |
+| Intent | Antigravity action |
 | --- | --- |
-| `task(subagent_type="explore", ...)` | `spawn_agent(agent_type="explorer", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="librarian", ...)` | `spawn_agent(agent_type="librarian", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="plan", ...)` | `spawn_agent(agent_type="plan", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="oracle", ...)` for final verification | `spawn_agent(agent_type="codex-ultrawork-reviewer", task_name="...", message="...", fork_turns="none")` |
-| `task(category="...", ...)` for implementation or QA | `spawn_agent(agent_type="worker", task_name="...", message="...", fork_turns="none")` |
-| `background_output(task_id="...")` | `wait_agent(...)` for mailbox signals; after a timeout, run one `list_agents` check for the named child if reassurance is needed |
-| `dispatchInternalPrompt(...)` | the `Stop` hook emits `{"decision":"block","reason":"<prompt>"}` automatically; see Continuation |
-| `team_*(...)` | `spawn_agent` + `send_message` + `followup_task` + `wait_agent` + `close_agent` |
+| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
+| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
+| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
 
-When translating `load_skills=[...]`, name the skills inside the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
+**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
 
-## Codex Subagent Reliability
+## Codex Tool Mapping
 
-Every `spawn_agent` message must be self-contained. Start with
-`TASK: <imperative assignment>`, then name `DELIVERABLE`, `SCOPE`, and
-`VERIFY`. State that it is an executable assignment, not a context
-handoff. Role selection requires `agent_type`; `model` +
-`reasoning_effort` alone creates a default agent, not a reviewer or
-worker. Prefer `fork_turns: "none"` unless full history is truly
-required; paste only the context the child needs.
+Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-Plan and reviewer agents may run for a long time; spawn them in the background, keep doing independent root work, and poll with short wait_agent cycles sized to the work. Never use a single long blocking wait for them, and never spin on tiny timeouts as a failure budget.
-
-Treat child status as a progress signal, not a timeout counter. For
-work likely to exceed one wait cycle, require the child to send
-`WORKING: <task> - <current phase>` before long reading, testing, or
-review passes, and `BLOCKED: <reason>` only when it cannot progress.
-While any child is active, keep the parent visibly alive with active
-subagent count, agent names, latest `WORKING:` phase, and whether the
-parent is waiting for mailbox updates. Track spawned agent names
-locally. Use `wait_agent` for mailbox signals, not proof of completion.
-A timeout only means no new mailbox update arrived; after a timeout,
-run a single `list_agents` check for the named child when you need
-reassurance. If it is running or its latest message is `WORKING:`,
-treat it as alive. Do not use `list_agents` as a polling loop or status
-feed; it can replay large payloads. Fallback only when the child is
-completed without the deliverable, ack-only after followup, explicitly
-`BLOCKED:`, or no longer running. Then record the result as
-inconclusive, do not count it as pass/review approval, close if safe,
-and respawn a smaller `fork_turns: "none"` task with the missing
-deliverable.
-
-# start-work
-
-Execute a Prometheus work plan until every top-level checkbox is complete. This skill pairs with the `Stop` / `SubagentStop` continuation hook in `components/start-work-continuation`, which re-injects the next turn while `.omo/boulder.json` says the current session still has unchecked plan work. Session ids may be prefixed `antigravity:`, `gemini:`, or `codex:`.
 
 ## Usage
 
@@ -116,7 +81,7 @@ If `--worktree` is set, verify the path with `git worktree list --porcelain` or 
 2. Find the first unchecked column-0 checkbox in `## TODOs` or `## Final Verification Wave`.
 3. Ignore nested checkboxes under acceptance criteria, evidence, and definition-of-done sections.
 4. Decompose that checkbox into atomic sub-tasks.
-5. Dispatch independent sub-tasks in parallel with `spawn_agent`; serialize only when one sub-task has a named dependency on another.
+5. Dispatch independent sub-tasks in parallel with `invoke_subagent`; serialize only when one sub-task has a named dependency on another.
 
 Each sub-task message must include:
 
@@ -129,7 +94,7 @@ Each sub-task message must include:
    - tmux: a `tmux` session driven with `send-keys`, dumped via `capture-pane`.
    - Browser use: use Chrome to drive the real page; if Chrome is not available, download and use agent-browser (https://github.com/vercel-labs/agent-browser).
    - Computer use: OS-level GUI automation against the running desktop app when the surface is not a page.
-6. The adversarial classes that apply to this sub-task (from the 9 ultraqa classes) and how each is probed.
+6. The adversarial classes that apply to this sub-invoke_subagent(from the 9 ultraqa classes) and how each is probed.
 7. Required artifact path and cleanup receipt.
 
 Apply ultraqa's 9 adversarial classes where relevant to each checkbox: malformed input, prompt injection, cancel/resume, stale state, dirty worktree, hung or long commands, flaky tests, misleading success output, repeated interruptions. A checkbox whose behavior is user-visible MUST probe every class that plausibly applies; record which classes were exercised and which were ruled not-applicable with a one-line reason.

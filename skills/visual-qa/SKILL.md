@@ -3,27 +3,22 @@ name: visual-qa
 description: "Rigorous visual QA for any UI you built or changed, across BOTH web/page UIs and TUI/terminal UIs. MUST USE after building or changing any UI to verify it visually before declaring it done. Captures objective reference evidence with a bundled diff script (image-diff for screenshots, tui-check for terminal captures), then runs two parallel read-only oracle passes (design-system and functional integrity; visual fidelity and CJK precision) and synthesizes one good/bad verdict. Triggers: visual QA, visual regression, screenshot diff, pixel diff, image comparison, UI looks wrong, design system check, is this really a design system or just an image, alpha channel breakage, responsive check, CJK text, Korean/Japanese/Chinese text clipping, baseline drop, glyph drop, TUI alignment, terminal UI, tmux capture, box-drawing border misalignment, wide-character column drift. Use it even when the user does not say visual QA but asks whether a page, component, or terminal layout looks right."
 ---
 
-## Codex Harness Tool Compatibility
+## Antigravity Tool Mapping (default)
 
-This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
 
-| OpenCode example | Codex tool to use |
+| Intent | Antigravity action |
 | --- | --- |
-| `call_omo_agent(subagent_type="explore", ...)` | `spawn_agent(agent_type="explorer", task_name="...", message="...", fork_turns="none")` |
-| `call_omo_agent(subagent_type="librarian", ...)` | `spawn_agent(agent_type="librarian", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="plan", ...)` | `spawn_agent(agent_type="plan", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="oracle", ...)` for final verification | `spawn_agent(agent_type="codex-ultrawork-reviewer", task_name="...", message="...", fork_turns="none")` |
-| `task(category="...", ...)` for implementation or QA | `spawn_agent(agent_type="worker", task_name="...", message="...", fork_turns="none")` |
-| `background_output(task_id="...")` | `wait_agent(...)` for mailbox signals; after a timeout, run one `list_agents` check for the named child if reassurance is needed |
-| `team_*(...)` | `spawn_agent` + `send_message` + `followup_task` + `wait_agent` + `close_agent` |
+| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
+| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
+| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
 
-For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `wait_agent` timeout only means no new mailbox update arrived. Treat a running child or latest `WORKING:` message as alive. Do not use `list_agents` as a polling loop. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.
+**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
 
-Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns="none"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
+## Codex Tool Mapping
 
-# Visual QA - Dual-Oracle Web and TUI Verification
+Codex-only hosts: see `../ulw-loop/references/codex.md`.
 
-Verify a rendered UI against intent using objective script evidence plus two parallel read-only oracle passes, then synthesize one good/bad verdict. The script numbers focus the reviewers. They are not the verdict.
 
 ## Purpose and when to use
 
@@ -82,7 +77,7 @@ Paste evidence directly into each prompt, because the oracle works only from the
 ### Pass A - Design-system and functional integrity (deeper, strict)
 
 ```
-task(subagent_type="oracle",
+invoke_subagent(subagent_type="oracle",
   run_in_background=true,
   load_skills=[],
   description="Visual QA pass A: design-system and functional integrity",
@@ -126,7 +121,7 @@ BLOCKING: items that must be fixed; empty if PASS
 ### Pass B - Visual fidelity and CJK precision (focused)
 
 ```
-task(subagent_type="oracle",
+invoke_subagent(subagent_type="oracle",
   run_in_background=true,
   load_skills=[],
   description="Visual QA pass B: visual fidelity and CJK precision",
@@ -171,14 +166,14 @@ BLOCKING: items that must be fixed; empty if PASS
 When Gemini 3.7 Flash is available as a subagent model, dispatch a fast vision pre-screen before the oracle passes. This pass uses Flash's multimodal image input capability to directly analyze the screenshot pixels, complementing the text-based oracle passes.
 
 ```
-task(subagent_type="oracle",
+invoke_subagent(subagent_type="oracle",
   run_in_background=true,
   model="flash",
   load_skills=[],
   description="Visual QA pass C: Gemini 3.7 Flash vision pre-screen",
   prompt="""
 REVIEW TYPE: FAST VISION PRE-SCREEN (read-only, advisory)
-MODEL: Gemini 3.7 Flash — use your multimodal image input capability.
+MODEL: Gemini 3.7 Flash —use your multimodal image input capability.
 
 INTENT:
 {What the user requested and the mock or baseline to match.}
@@ -194,7 +189,7 @@ CHECK QUICKLY (this is a pre-screen, not a deep review):
 2. For CJK text: any clipping, tofu (missing glyphs), or broken wrapping visible in the image?
 3. Does the overall visual structure match the reference/baseline at a glance?
 
-OUTPUT (advisory — does not override Pass A/B verdicts):
+OUTPUT (advisory —does not override Pass A/B verdicts):
 FLASH VERDICT: CLEAR | SUSPECT | FAIL
 FLASH SUMMARY: 1-2 sentences
 FLASH FLAGS: list each visual anomaly with approximate location (top-left, center, etc.)

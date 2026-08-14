@@ -10,7 +10,7 @@ test("README shows the ULW command screenshots from committed assets", () => {
     "assets/readme/lazyantigravity-ulw-running.png",
   ]
 
-  assert.match(README, /## ULW in Antigravity/)
+  assert.match(README, /## ULW CLI on Antigravity/)
 
   for (const imagePath of imagePaths) {
     assert.match(

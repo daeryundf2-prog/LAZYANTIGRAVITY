@@ -8,12 +8,6 @@
 			],
 			"cwd": "."
 		},
-		"grep_app": {
-			"url": "https://mcp.grep.app"
-		},
-		"context7": {
-			"url": "https://mcp.context7.com/mcp"
-		},
 		"git_bash": {
 			"command": "node",
 			"args": [

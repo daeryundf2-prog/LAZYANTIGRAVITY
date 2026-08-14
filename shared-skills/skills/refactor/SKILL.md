@@ -3,25 +3,22 @@ name: refactor
 description: "Intelligent refactor command. Triggers: refactor, refactoring, cleanup, restructure, extract, simplify, modernize."
 ---
 
-## Codex Harness Tool Compatibility
+## Antigravity Tool Mapping (default)
 
-This skill may include examples copied from the OpenCode harness. In Codex, do not call OpenCode-only tools such as `call_omo_agent(...)`, `task(...)`, `background_output(...)`, or `team_*(...)` literally. Translate those examples to Codex native tools:
+This plugin defaults to **Google Antigravity**. Read `../references/antigravity-tools.md` (or `../ulw-loop/references/codex.md` only on Codex).
 
-| OpenCode example | Codex tool to use |
+| Intent | Antigravity action |
 | --- | --- |
-| `call_omo_agent(subagent_type="explore", ...)` | `spawn_agent(agent_type="explorer", task_name="...", message="...", fork_turns="none")` |
-| `call_omo_agent(subagent_type="librarian", ...)` | `spawn_agent(agent_type="librarian", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="plan", ...)` | `spawn_agent(agent_type="plan", task_name="...", message="...", fork_turns="none")` |
-| `task(subagent_type="oracle", ...)` for final verification | `spawn_agent(agent_type="codex-ultrawork-reviewer", task_name="...", message="...", fork_turns="none")` |
-| `task(category="...", ...)` for implementation or QA | `spawn_agent(agent_type="worker", task_name="...", message="...", fork_turns="none")` |
-| `background_output(task_id="...")` | `wait_agent(...)` for mailbox signals; after a timeout, run one `list_agents` check for the named child if reassurance is needed |
-| `team_*(...)` | `spawn_agent` + `send_message` + `followup_task` + `wait_agent` + `close_agent` |
+| Explore / research / plan / implement / QA / review | `invoke_subagent` + TASK/DELIVERABLE/SCOPE/VERIFY + role envelope |
+| Wait / poll children | Stay in parent; re-invoke or continue the conversation — do **not** call `wait_agent` / `list_agents` |
+| Optional model tier | `pro` \| `flash` \| `flash_lite` \| `inherit` (hint only) |
 
-For work likely to exceed one wait cycle, require the child to send `WORKING: <task> - <current phase>` before long passes and `BLOCKED: <reason>` only when progress stops. A `wait_agent` timeout only means no new mailbox update arrived. Treat a running child or latest `WORKING:` message as alive. Do not use `list_agents` as a polling loop. Fallback only when the child is completed without the deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running.
+**Do not** use `spawn_agent`, `wait_agent`, `list_agents`, `close_agent`, `get_goal`, `create_goal`, or OpenCode `task(...)` / `call_omo_agent(...)` on Antigravity.
 
-Codex full-history forks inherit the parent agent type, model, and reasoning effort, so role-specific spawns with `agent_type` must use a non-full-history fork mode such as `fork_turns="none"`. Include any required conversation context, files, diffs, constraints, and requested skill names directly in the spawned agent's `message`. If a code block below conflicts with this section, this section wins.
+## Codex Tool Mapping
 
-export const REFACTOR_TEMPLATE = `# Intelligent Refactor Command
+Codex-only hosts: see `../ulw-loop/references/codex.md`.
+
 
 ## Usage
 \`\`\`
@@ -124,7 +121,7 @@ Fire ALL of these simultaneously using \`call_omo_agent\`:
 
 \`\`\`
 // Agent 1: Find the refactoring target
-call_omo_agent(
+invoke_subagent(
   subagent_type="explore",
   run_in_background=true,
   prompt="Find all occurrences and definitions of [TARGET].
@@ -132,7 +129,7 @@ call_omo_agent(
 )
 
 // Agent 2: Find related code
-call_omo_agent(
+invoke_subagent(
   subagent_type="explore",
   run_in_background=true,
   prompt="Find all code that imports, uses, or depends on [TARGET].
@@ -140,7 +137,7 @@ call_omo_agent(
 )
 
 // Agent 3: Find similar patterns
-call_omo_agent(
+invoke_subagent(
   subagent_type="explore",
   run_in_background=true,
   prompt="Find similar code patterns to [TARGET] in the codebase.
@@ -148,7 +145,7 @@ call_omo_agent(
 )
 
 // Agent 4: Find tests
-call_omo_agent(
+invoke_subagent(
   subagent_type="explore",
   run_in_background=true,
   prompt="Find all test files related to [TARGET].
@@ -156,7 +153,7 @@ call_omo_agent(
 )
 
 // Agent 5: Architecture context
-call_omo_agent(
+invoke_subagent(
   subagent_type="explore",
   run_in_background=true,
   prompt="Find architectural patterns and module organization around [TARGET].
@@ -240,16 +237,16 @@ Based on Phase 1 results, build:
 ### Dependency Graph
 \`\`\`
 [TARGET]
-├── imports from:
-│   ├── module-a (types)
-│   └── module-b (utils)
-├── imported by:
-│   ├── consumer-1.ts
-│   ├── consumer-2.ts
-│   └── consumer-3.ts
-└── used by:
-    ├── handler.ts (direct call)
-    └── service.ts (dependency injection)
+?———— imports from:
+—  ?———— module-a (types)
+—  ?———— module-b (utils)
+?———— imported by:
+—  ?———— consumer-1.ts
+—  ?———— consumer-2.ts
+—  ?———— consumer-3.ts
+?———— used by:
+    ?———— handler.ts (direct call)
+    ?———— service.ts (dependency injection)
 \`\`\`
 
 ### Impact Zones
@@ -297,7 +294,7 @@ ls -la *_test.go
 
 \`\`\`
 // Find all tests related to target
-call_omo_agent(
+invoke_subagent(
   subagent_type="explore",
   run_in_background=false,  // Need this synchronously
   prompt="Analyze test coverage for [TARGET]:
@@ -347,9 +344,9 @@ Which approach do you prefer?
 
 ### Verification Checkpoints
 After each refactoring step:
-1. lsp_diagnostics → zero new errors
-2. Run test command → all pass
-3. Type check → clean
+1. lsp_diagnostics —zero new errors
+2. Run test command —all pass
+3. Type check —clean
 
 ### Regression Indicators
 - [Specific test that must pass]
@@ -475,8 +472,8 @@ bash("tsc --noEmit")  // Or appropriate type check
 \`\`\`
 
 ### Step Completion
-1. If verification passes → Mark step todo as \`completed\`
-2. If verification fails → **STOP AND FIX**
+1. If verification passes —Mark step todo as \`completed\`
+2. If verification fails —**STOP AND FIX**
 
 ## 5.2: Failure Recovery Protocol
 
@@ -613,7 +610,7 @@ You already know these tools. Use them intelligently:
 Leverage LSP tools for precision analysis. Key patterns:
 - **Understand before changing**: \`LspGotoDefinition\` to grasp context
 - **Impact analysis**: \`LspFindReferences\` to map all usages before modification
-- **Safe refactoring**: \`lsp_prepare_rename\` → \`lsp_rename\` for symbol renames
+- **Safe refactoring**: \`lsp_prepare_rename\` —\`lsp_rename\` for symbol renames
 - **Continuous verification**: \`lsp_diagnostics\` after every change
 
 ## AST-Grep
@@ -653,7 +650,7 @@ Team mode is enabled for this session. The rules below **override Phase 4-6** ab
 When invoking the Plan agent in Phase 4.1, append this additional requirement to the prompt:
 
 \`\`\`
-7. (REQUIRED when team mode is active) Output a Team Staffing Recommendation section with these fields — missing fields fail Phase 5.0:
+7. (REQUIRED when team mode is active) Output a Team Staffing Recommendation section with these fields —missing fields fail Phase 5.0:
    - total_atomic_steps: integer
    - file_independent_steps: integer (parallelizable, no cross-file blocker)
    - cross_file_dependent_steps: integer (has blockers)
@@ -663,8 +660,8 @@ When invoking the Plan agent in Phase 4.1, append this additional requirement to
 \`\`\`
 
 **Classification rules** the plan agent must apply to each step:
-- \`quick\`: mechanical edits — LSP rename, extract variable, inline, simple move, signature change without call-site logic.
-- \`unspecified-low\`: logic-preserving refactors that need reasoning — extract function, restructure conditional, pattern transformation, cross-file API change.
+- \`quick\`: mechanical edits —LSP rename, extract variable, inline, simple move, signature change without call-site logic.
+- \`unspecified-low\`: logic-preserving refactors that need reasoning —extract function, restructure conditional, pattern transformation, cross-file API change.
 - Recommend \`team\` path when \`file_independent_steps >= 3\`; recommend \`legacy\` otherwise.
 
 ## Phase 5 override: Dispatch path selection
@@ -696,7 +693,7 @@ Record the chosen path in the TodoWrite list.
     {
       "kind": "category",
       "category": "quick",
-      "prompt": "You handle mechanical refactoring steps (LSP rename, extract variable, inline, simple move, signature change). Use LSP tools for correctness. Apply the task description's per-step instructions verbatim — no scope expansion. After edits, run lsp_diagnostics on touched files. Report via team_send_message(teamRunId=<id>, to=\"lead\", summary=<files touched>, body=<lsp status + diff summary>) + team_task_update(status=completed). Never run tests — the external verifier handles that. Never git add, never --continue."
+      "prompt": "You handle mechanical refactoring steps (LSP rename, extract variable, inline, simple move, signature change). Use LSP tools for correctness. Apply the task description's per-step instructions verbatim —no scope expansion. After edits, run lsp_diagnostics on touched files. Report via team_send_message(teamRunId=<id>, to=\"lead\", summary=<files touched>, body=<lsp status + diff summary>) + team_task_update(status=completed). Never run tests —the external verifier handles that. Never git add, never --continue."
     },
     { "kind": "category", "category": "quick", "prompt": "Same contract as peer quick worker." },
     {
@@ -711,8 +708,8 @@ Record the chosen path in the TodoWrite list.
 
 Rationale for this composition:
 - **4 workers = team mode's parallel cap.** 5+ just queues.
-- **No verifier team member.** Verification needs \`deep\` reasoning (or \`unspecified-high\` fallback). In-team category routing downcasts to sisyphus-junior, which is weaker than required — the verifier runs OUTSIDE the team as a \`task(category="deep")\`.
-- **quick × 2** for mechanical edits, **unspecified-low × 2** for reasoning edits — mirrors the plan's split.
+- **No verifier team member.** Verification needs \`deep\` reasoning (or \`unspecified-high\` fallback). In-team category routing downcasts to sisyphus-junior, which is weaker than required —the verifier runs OUTSIDE the team as a \`invoke_subagent(category="deep")\`.
+- **quick × 2** for mechanical edits, **unspecified-low × 2** for reasoning edits —mirrors the plan's split.
 
 **Team lifecycle** (one team, reused until Phase 6 cleanup):
 
@@ -740,9 +737,9 @@ Rationale for this composition:
 While any team task is \`pending | claimed | in_progress\`:
 
 - Wait for \`<system-reminder>\` or member messages. Avoid tight polling; a single \`team_status\` check is acceptable if no notification arrives within roughly 10 seconds of expected completion.
-- On a worker completion report, immediately dispatch an **external verifier** — verification runs OUTSIDE the team because team-member category routing downcasts to sisyphus-junior:
+- On a worker completion report, immediately dispatch an **external verifier** —verification runs OUTSIDE the team because team-member category routing downcasts to sisyphus-junior:
   \`\`\`
-  task(
+  invoke_subagent(
     category="deep",
     load_skills=[],
     run_in_background=true,
@@ -755,13 +752,13 @@ While any team task is \`pending | claimed | in_progress\`:
 - On a verifier FAIL: Lead decides:
   - **Retry with fix hint**: \`team_task_update(status=pending)\` on the original step + \`team_send_message(teamRunId=<id>, to=<original member>, summary="retry", body=<specific failure from verifier>)\`. Runtime reassigns.
   - **Escalate**: after three FAIL cycles on the same step, STOP and consult the user with full evidence.
-- On a member UNCLEAR message: re-harvest context via a targeted \`task()\` outside the team, broadcast an updated Intent Card fragment, then reassign.
+- On a member UNCLEAR message: re-harvest context via a targeted \`invoke_subagent()\` outside the team, broadcast an updated Intent Card fragment, then reassign.
 
 Proceed to Phase 6 only when every team task is \`completed\` AND every paired verifier task returned PASS.
 
 ## Phase 6 override: Team cleanup before summary
 
-If Phase 5 used the team path, dismantle \`refactor-squad\` BEFORE producing the 6.6 summary. Every exit path — success, escalation, abort — must cleanup; orphan teams poison the next session's precondition check.
+If Phase 5 used the team path, dismantle \`refactor-squad\` BEFORE producing the 6.6 summary. Every exit path —success, escalation, abort —must cleanup; orphan teams poison the next session's precondition check.
 
 1. \`team_shutdown_request\` for each member, then \`team_approve_shutdown\` if members do not self-approve within a reasonable window.
 2. \`team_delete(teamRunId=<id>)\`.
@@ -773,9 +770,9 @@ Append to the 6.6 summary a "Dispatch path" line and, when team path was used, t
 
 ## MUST NOT (team mode)
 
-- Lead never edits files directly — orchestrate only.
-- Do not inline the Intent Card or verify-spec into task descriptions — rely on the broadcasts.
+- Lead never edits files directly —orchestrate only.
+- Do not inline the Intent Card or verify-spec into task descriptions —rely on the broadcasts.
 - Do not recreate the team mid-session.
-- Do not run tests from Lead — the external verifier owns that lane.
-- Do not put \`oracle\` / \`librarian\` / \`deep\` into the team spec — oracle/librarian are team-ineligible, and \`deep\` under category routing downcasts to sisyphus-junior. Use them via \`task()\` outside the team when needed.
+- Do not run tests from Lead —the external verifier owns that lane.
+- Do not put \`oracle\` / \`librarian\` / \`deep\` into the team spec —oracle/librarian are team-ineligible, and \`deep\` under category routing downcasts to sisyphus-junior. Use them via \`invoke_subagent()\` outside the team when needed.
 `

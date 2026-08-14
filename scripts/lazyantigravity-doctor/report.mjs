@@ -5,7 +5,7 @@ import { byName, createContext, finishSection, isDirectory, pathExists, readJson
 import { collectCommandHooks, commandTargetPath } from "./hooks.mjs";
 import { mcpServerEntry } from "./mcp.mjs";
 
-const requiredMcpServers = ["ast_grep", "context7", "git_bash", "grep_app", "lsp"];
+const requiredMcpServers = ["ast_grep", "git_bash", "lsp"];
 const componentMcpNames = ["ast-grep-mcp", "git-bash-mcp", "lsp-tools-mcp"];
 
 export async function buildDoctorReport(root) {
@@ -166,6 +166,7 @@ async function inspectSkills(root, context) {
 	const skills = [];
 	for (const entry of entries) {
 		if (!entry.isDirectory()) continue;
+		if (entry.name === "references") continue;
 		const manifestPath = `${skillRoot}/${entry.name}/SKILL.md`;
 		const exists = await pathExists(root, manifestPath);
 		if (!exists) {

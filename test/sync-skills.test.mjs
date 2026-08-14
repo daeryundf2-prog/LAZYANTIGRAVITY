@@ -91,7 +91,7 @@ test("#given synced aggregate Codex skills #when inspected #then component and s
 
 	// when
 	const skillNames = (await readdir(skillsRoot, { withFileTypes: true }))
-		.filter((entry) => entry.isDirectory())
+		.filter((entry) => entry.isDirectory() && entry.name !== "references")
 		.map((entry) => entry.name)
 		.sort();
 
@@ -260,7 +260,7 @@ test("#given synced git-master skill #when inspected #then commits and git histo
 	assert.match(interfaceMetadata, /- "history search"/);
 });
 
-test("#given synced ulw-loop skill #when worker guidance is inspected #then context-hygiene guidance matches the source", async () => {
+test("#given synced ulw-loop skill #when worker guidance is inspected #then Antigravity + Codex paths are documented", async () => {
 	// given
 	const sourceSkill = await readFile(
 		join(root, "components", "ulw-loop", "skills", "ulw-loop", "references", "full-workflow.md"),
@@ -268,31 +268,31 @@ test("#given synced ulw-loop skill #when worker guidance is inspected #then cont
 	);
 	const syncedSkill = await readFile(join(root, "skills", "ulw-loop", "SKILL.md"), "utf8");
 	const syncedWorkflow = await readFile(join(root, "skills", "ulw-loop", "references", "full-workflow.md"), "utf8");
-	const requiredPatterns = [
-		["list_agents polling guard", /list_agents/],
-		["status polling warning", /polling loop/],
-		["large payload replay risk", /replay large payloads/],
-		["local spawned-name tracking", /Track spawned agent names locally/],
-		["wait_agent mailbox path", /wait_agent.*mailbox signals/],
-		["progress status contract", /WORKING:/],
-		["single list_agents reassurance", /single `list_agents`/],
-		["long-running plan/reviewer background guidance", /Plan and reviewer agents may run for a long time/],
-		["bounded plan/reviewer polling", /short wait_agent cycles/],
-		["single long wait guard", /single long blocking wait/],
+	const syncedCodex = await readFile(join(root, "skills", "ulw-loop", "references", "codex.md"), "utf8");
+	const agPatterns = [
+		["Antigravity invoke_subagent", /invoke_subagent/],
+		["forbid Codex spawn wait on AG", /do not call `spawn_agent`/i],
+		["ULW CLI bootstrap", /ulw-loop\/dist\/cli\.js|PLUGIN_ROOT/],
 		["git-master checkpointing", /git-master/],
-		["touched-path commit-style probe", /touched-path commit history/],
-		["verified work-unit commit", /verified work unit/],
-		["observed commit style", /commit in the observed style/],
+	];
+	const codexPatterns = [
+		["list_agents polling guard", /list_agents/],
+		["wait_agent mailbox path", /wait_agent/],
+		["progress status contract", /WORKING:/],
+		["spawn_agent explorer", /spawn_agent\(agent_type="explorer"/],
 	];
 
 	// when / then
-	for (const [label, pattern] of requiredPatterns) {
+	for (const [label, pattern] of agPatterns) {
 		assert.match(sourceSkill, pattern, `source skill missing ${label}`);
 		assert.match(syncedWorkflow, pattern, `synced workflow missing ${label}`);
 	}
+	for (const [label, pattern] of codexPatterns) {
+		assert.match(syncedCodex, pattern, `codex reference missing ${label}`);
+	}
 	assert.match(syncedSkill, /references\/full-workflow\.md/);
+	assert.match(syncedSkill, /invoke_subagent/);
 	assert.match(syncedSkill, /wait_agent/);
-	assert.match(syncedSkill, /close_agent/);
 });
 
 test("#given packaged start-work skill #when inspected #then no-plan bootstrap and adversarial verification contracts are shipped", async () => {

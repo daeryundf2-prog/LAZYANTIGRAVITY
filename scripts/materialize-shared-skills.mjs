@@ -1,4 +1,4 @@
-import { rm, cp, symlink, lstat } from "node:fs/promises";
+import { rm, cp, symlink, lstat, access } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const targetDir = resolve("shared-skills");
@@ -22,19 +22,39 @@ async function isDirectory(path) {
 	}
 }
 
+async function pathExists(path) {
+	try {
+		await access(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 async function run() {
 	const mode = process.argv[2];
 
 	if (mode === "--pack") {
 		if (await isSymlink(targetDir)) {
+			if (!(await pathExists(sourceDir))) {
+				throw new Error(`Cannot materialize pack: missing ${sourceDir}`);
+			}
 			console.warn(`[materialize-shared-skills] Removing symlink: ${targetDir}`);
 			await rm(targetDir);
 			console.warn(`[materialize-shared-skills] Copying physical directory from ${sourceDir} to ${targetDir}`);
 			await cp(sourceDir, targetDir, { recursive: true });
 		} else {
-			console.warn(`[materialize-shared-skills] ${targetDir} is already a physical directory or does not exist as symlink.`);
+			console.warn(
+				`[materialize-shared-skills] ${targetDir} is already a physical directory or does not exist as symlink.`,
+			);
 		}
 	} else if (mode === "--restore") {
+		if (!(await pathExists(sourceDir))) {
+			console.warn(
+				`[materialize-shared-skills] Skipping restore: ${sourceDir} is absent; keeping physical ${targetDir}.`,
+			);
+			return;
+		}
 		if (await isDirectory(targetDir)) {
 			console.warn(`[materialize-shared-skills] Removing physical directory: ${targetDir}`);
 			await rm(targetDir, { recursive: true, force: true });

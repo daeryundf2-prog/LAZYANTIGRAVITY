@@ -1,0 +1,11 @@
+{
+	"_comment": "Opt-in only. Merge these entries into mcp_config.json / .mcp.json when you accept remote query egress.",
+	"mcpServers": {
+		"grep_app": {
+			"url": "https://mcp.grep.app"
+		},
+		"context7": {
+			"url": "https://mcp.context7.com/mcp"
+		}
+	}
+}

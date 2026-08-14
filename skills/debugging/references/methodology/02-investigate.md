@@ -91,12 +91,12 @@ When the `team_*` tools are present, create a **debug-squad** team and split inv
 Fan out async explore/deep subagents instead. Same rule: one hypothesis per subagent.
 
 ```
-task(subagent_type="explore", load_skills=[], run_in_background=true,
+invoke_subagent(subagent_type="explore", load_skills=[], run_in_background=true,
      prompt="[CONTEXT: bug summary + which hypothesis you own + what state to look at]
      Runtime state investigation for hypothesis 1: ...")
-task(subagent_type="explore", load_skills=[], run_in_background=true,
+invoke_subagent(subagent_type="explore", load_skills=[], run_in_background=true,
      prompt="Log/timing investigation for hypothesis 2: ...")
-task(category="deep", load_skills=[], run_in_background=true,
+invoke_subagent(category="deep", load_skills=[], run_in_background=true,
      prompt="Reproduction minimizer for hypothesis 3: ...")
 ```
 

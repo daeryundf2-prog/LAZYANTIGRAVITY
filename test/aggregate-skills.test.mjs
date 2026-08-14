@@ -9,28 +9,16 @@ import {
 	root,
 } from "./aggregate-plugin-fixture.mjs";
 
-test("#given synced skills with Codex compatibility guidance #when a bundled agent_type is referenced #then a matching TOML is bundled", async () => {
-	const skillsDir = join(root, "skills");
-	const skillEntries = await readdir(skillsDir, { withFileTypes: true });
-	const skillFiles = skillEntries
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => join(skillsDir, entry.name, "SKILL.md"));
+test("#given Codex compatibility reference #when spawn_agent roles are listed #then matching TOMLs are bundled", async () => {
+	const codexPath = join(root, "skills", "ulw-loop", "references", "codex.md");
+	const content = await readFile(codexPath, "utf8");
+	const referencedAgentTypes = findSpawnAgentTypes(content).filter(
+		(agentType) => agentType !== "worker" && agentType !== "codex-ultrawork-reviewer",
+	);
 
-	const referencedAgentTypes = new Set();
-	for (const skillPath of skillFiles) {
-		const content = await readFile(skillPath, "utf8");
-		for (const agentType of findSpawnAgentTypes(content)) {
-			if (agentType === "worker" || agentType === "codex-ultrawork-reviewer") {
-				continue;
-			}
-			referencedAgentTypes.add(agentType);
-		}
-	}
+	assert.deepEqual(referencedAgentTypes, ["explorer", "plan"]);
 
-	const expected = [...referencedAgentTypes].sort();
-	assert.deepEqual(expected, ["explorer", "librarian", "metis", "momus", "plan"]);
-
-	for (const agentType of expected) {
+	for (const agentType of referencedAgentTypes) {
 		const tomlPath = join(root, "components", "ultrawork", "agents", `${agentType}.toml`);
 		const fileStat = await stat(tomlPath);
 		assert.equal(fileStat.isFile(), true);
@@ -38,13 +26,11 @@ test("#given synced skills with Codex compatibility guidance #when a bundled age
 	}
 });
 
-test('#given synced skills and bundled rules #when role-specific agents are spawned #then they set fork_turns="none"', async () => {
-	const skillsDir = join(root, "skills");
-	const skillEntries = await readdir(skillsDir, { withFileTypes: true });
-	const promptFiles = skillEntries
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => join(skillsDir, entry.name, "SKILL.md"));
-	promptFiles.push(join(root, "components", "rules", "bundled-rules", "hephaestus.md"));
+test('#given Codex reference prompts #when role-specific agents are spawned #then they set fork_turns="none"', async () => {
+	const promptFiles = [
+		join(root, "skills", "ulw-loop", "references", "codex.md"),
+		join(root, "components", "rules", "bundled-rules", "hephaestus.md"),
+	];
 
 	const missingForkTurns = [];
 	for (const promptPath of promptFiles) {
@@ -57,22 +43,51 @@ test('#given synced skills and bundled rules #when role-specific agents are spaw
 	assert.deepEqual(missingForkTurns, []);
 });
 
-test("#given long-running orchestration prompts #when waiting on child agents #then parent liveness is surfaced", async () => {
+test("#given Antigravity-default orchestration skills #when inspected #then they teach invoke_subagent and forbid Codex wait loops", async () => {
 	const promptFiles = [
 		join(root, "skills", "ulw-loop", "SKILL.md"),
 		join(root, "skills", "ulw-loop", "references", "full-workflow.md"),
 		join(root, "skills", "review-work", "SKILL.md"),
 		join(root, "skills", "start-work", "SKILL.md"),
-		join(root, "components", "rules", "bundled-rules", "hephaestus.md"),
+		join(root, "skills", "ulw-plan", "SKILL.md"),
 	];
 
-	const missingLivenessGuidance = [];
+	const failures = [];
 	for (const promptPath of promptFiles) {
 		const content = await readFile(promptPath, "utf8");
-		if (!/active\s+subagent count/.test(content) || !/latest `WORKING:` phase/.test(content)) {
-			missingLivenessGuidance.push(`${basename(dirname(promptPath))}/${basename(promptPath)}`);
+		const label = `${basename(dirname(promptPath))}/${basename(promptPath)}`;
+		if (!content.includes("invoke_subagent")) {
+			failures.push(`${label}: missing invoke_subagent`);
+		}
+		if (/As each completes, collect via the Codex mapping above \(`wait_agent`/.test(content)) {
+			failures.push(`${label}: still teaches Codex wait_agent collection`);
+		}
+		if (/\bspawn_agent\(agent_type=/.test(content)) {
+			failures.push(`${label}: still uses spawn_agent(agent_type=) in AG default path`);
 		}
 	}
 
-	assert.deepEqual(missingLivenessGuidance, []);
+	assert.deepEqual(failures, []);
+});
+
+test("#given AG default skill surfaces #when scanned #then OpenCode task/call_omo_agent are not primary dispatch examples", async () => {
+	const skillsDir = join(root, "skills");
+	const skillEntries = await readdir(skillsDir, { withFileTypes: true });
+	const skillFiles = skillEntries
+		.filter((entry) => entry.isDirectory() && entry.name !== "references")
+		.map((entry) => join(skillsDir, entry.name, "SKILL.md"));
+
+	const offenders = [];
+	for (const skillPath of skillFiles) {
+		const content = await readFile(skillPath, "utf8");
+		const stripped = content
+			.replaceAll("OpenCode `task(...)` / `call_omo_agent(...)`", "")
+			.replaceAll("`task(...)`", "")
+			.replaceAll("`call_omo_agent(...)`", "");
+		if (/\btask\s*\(/.test(stripped) || /\bcall_omo_agent\s*\(/.test(stripped)) {
+			offenders.push(basename(dirname(skillPath)));
+		}
+	}
+
+	assert.deepEqual(offenders, []);
 });

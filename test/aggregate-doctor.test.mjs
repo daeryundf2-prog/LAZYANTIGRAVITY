@@ -19,13 +19,13 @@ test("#given aggregate plugin readiness #when doctor emits JSON #then required s
 });
 
 test("#given malformed doctor input #when an unsupported option is supplied #then the command rejects it", () => {
-	const result = spawnSync("npm", ["run", "doctor", "--", "--definitely-not-a-real-option"], {
+	const result = spawnSync(process.execPath, ["scripts/lazyantigravity-doctor.mjs", "--definitely-not-a-real-option"], {
 		cwd: root,
 		encoding: "utf8",
 	});
 
 	assert.notEqual(result.status, 0);
-	assert.match(result.stderr, /unknown argument/i);
+	assert.match(`${result.stderr}\n${result.stdout}`, /unknown argument/i);
 });
 
 test("#given package and plugin version drift #when building doctor report #then version section status is fail", async () => {
@@ -59,7 +59,7 @@ test("#given package and plugin version drift #when building doctor report #then
 });
 
 function readDoctorReport() {
-	const result = spawnSync("npm", ["run", "doctor", "--", "--json"], {
+	const result = spawnSync(process.execPath, ["scripts/lazyantigravity-doctor.mjs", "--json"], {
 		cwd: root,
 		encoding: "utf8",
 	});

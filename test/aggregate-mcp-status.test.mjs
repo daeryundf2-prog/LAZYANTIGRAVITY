@@ -7,7 +7,7 @@ import test from "node:test";
 
 import { root } from "./aggregate-plugin-fixture.mjs";
 
-test("#given aggregate MCP configs #when status JSON is requested #then servers are classified and local targets exist", () => {
+test("#given aggregate MCP configs #when status JSON is requested #then local servers are classified", () => {
 	const result = spawnSync("node", ["scripts/lazyantigravity-mcp-status.mjs", "--json"], {
 		cwd: root,
 		encoding: "utf8",
@@ -17,7 +17,7 @@ test("#given aggregate MCP configs #when status JSON is requested #then servers 
 	const report = JSON.parse(result.stdout);
 	assert.deepEqual(
 		report.servers.map((server) => server.name).sort(),
-		["ast_grep", "context7", "git_bash", "grep_app", "lsp"],
+		["ast_grep", "git_bash", "lsp"],
 	);
 
 	for (const server of report.servers) {
@@ -35,15 +35,8 @@ test("#given aggregate MCP configs #when status JSON is requested #then servers 
 		assert.equal(typeof server.target_path, "string", `${name} must report target_path`);
 	}
 
-	for (const name of ["context7", "grep_app"]) {
-		const server = report.servers.find((entry) => entry.name === name);
-		assert.ok(server, `${name} must be present`);
-		assert.equal(server.trust_class, "remote-third-party");
-		assert.equal(server.status, "remote");
-	}
-
-	assert.equal(report.risks.offline_remote_count, 2);
-	assert.equal(report.risks.no_remote_mode, false);
+	assert.equal(report.risks.offline_remote_count, 0);
+	assert.equal(report.risks.no_remote_mode, true);
 });
 
 test("#given missing configured MCP target with runtime fallback #when status JSON is requested #then configured target remains unhealthy", () => {

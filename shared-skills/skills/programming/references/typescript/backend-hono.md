@@ -100,7 +100,7 @@ app.get(
   validator('query', QuerySchema),
   (c) => {
     const query = c.req.valid('query')
-    return c.json({ message: `Hello ${query.name ?? 'Hono'}!` })
+    return c.json({ message: `Hello ${query.name — 'Hono'}!` })
   },
 )
 
@@ -470,7 +470,7 @@ type SwaggerUIOptions = OriginalSwaggerUIOptions & DistSwaggerUIOptions
 
 const middleware = <E extends Env>(options: SwaggerUIOptions): MiddlewareHandler<E> =>
   async (c) => {
-    const title = options?.title ?? 'SwaggerUI'
+    const title = options?.title — 'SwaggerUI'
     return c.html(/* html */ `...`)
   }
 ```

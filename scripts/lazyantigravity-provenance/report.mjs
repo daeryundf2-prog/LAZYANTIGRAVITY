@@ -57,11 +57,11 @@ async function readComponentPackages(root) {
 	const packages = [];
 	for (const entry of entries) {
 		if (!entry.isDirectory()) continue;
-		const packagePath = join("components", entry.name, "package.json");
+		const packagePath = normalizePath(`components/${entry.name}/package.json`);
 		if (!existsSync(join(root, packagePath))) continue;
 		const packageJson = JSON.parse(await readFile(join(root, packagePath), "utf8"));
 		packages.push({
-			path: `components/${entry.name}`,
+			path: normalizePath(`components/${entry.name}`),
 			package_json: packagePath,
 			name: packageJson.name ?? entry.name,
 			build_script: packageJson.scripts?.build ?? null,
