@@ -49,6 +49,7 @@ test("#given component directories #when scanned #then only intentional resource
 
 	// then
 	assert.deepEqual(componentNames, [
+		"adaptive-reasoning",
 		"comment-checker",
 		"git-bash",
 		"lsp",

@@ -1,82 +1,46 @@
 ---
 name: adaptive-reasoning
-description: "작업 복잡도 기반 적응형 추론 조절 스킬. 작업 난이도별 Thinking Budget과 최적 모델 티어(flash_lite/flash/pro)를 자동 산정하여 디스패치합니다."
+description: "작업 복잡도 기반 적응형 추론 조절 및 AST 코드 스켈레톤 압축 스킬. 프롬프트 난이도별 Thinking Budget과 최적 모델 티어(flash_lite/flash/pro)를 자동 산정하고, AST 시그니처 추출로 컨텍스트 낭비를 절감합니다."
 ---
 
-# Adaptive-Reasoning: Dynamic Thinking Budget & Tier Routing
+# Adaptive-Reasoning: Dynamic Thinking Budget & AST Skeletonizer
 
-Gemini 3.7 Flash의 하이브리드 추론(Thinking Budget: `low`/`medium`/`high`) 특성을 극대화하여, 단순 작업의 불필요한 대기 시간(TTFT)을 제거하고 복잡한 아키텍처/보안 작업에는 최고 강도의 추론 자원을 자동 배정하는 지능형 라우팅 가이드입니다.
+Gemini 3.7 Flash/Pro의 하이브리드 추론 능력을 극대화하기 위해, 작업 복잡도에 따라 Thinking Budget(0, 8k, 32k, 64k)과 모델 티어(Tier 1/2/3)를 동적으로 스케일링하고, 대용량 파일은 AST 스켈레토나이저로 함수 본문을 제거하여 컨텍스트를 80% 압축하는 스킬입니다.
 
 ```mermaid
 flowchart TD
-    Task["사용자 요청 / 태스크 접수"] --> Eval["복잡도 및 리스크 평가<br/>(파일 수, 동시성/보안 키워드, 변경 깊이)"]
-    Eval --> T1{"복잡도 판정"}
-    T1 -- "🟢 Light (단순)" --> Tier1["Tier 1: Fast & Lean<br/>Model: 'flash_lite'<br/>Reasoning: low/none<br/>(파일 검색, 린트, 포맷팅)"]
-    T1 -- "🟡 Standard (보통)" --> Tier2["Tier 2: Workhorse<br/>Model: 'flash'<br/>Reasoning: medium/high<br/>(기능 구현, 단위 테스트, 리팩토링)"]
-    T1 -- "🔴 Deep (고난도)" --> Tier3["Tier 3: Deep Adversarial<br/>Model: 'pro'<br/>Reasoning: high<br/>(시스템 설계, 보안 감사, 교차 검증)"]
+    Task["작업 요청 및 프롬프트"] --> Classify["복잡도 & 위험도 분류"]
+    Classify --> T1["Tier 1: Fast & Lean (Budget: 0, Model: 'flash_lite')<br/>단순 조회, 린트 수정"]
+    Classify --> T2["Tier 2: Standard Workhorse (Budget: 8k~32k, Model: 'flash')<br/>표준 구현, 리팩토링, Flaky Guard"]
+    Classify --> T3["Tier 3: Deep Adversarial (Budget: 64k, Model: 'pro')<br/>보안 감사, 동시성 검증, 아키텍처 가설 반증"]
+
+    File["대형 파일 분석"] --> Skele["AST Skeletonizer<br/>(scripts/ast-skeletonizer.mjs)"]
+    Skele --> Compress["타입/시그니처만 로딩 (80% 절감)"]
 ```
 
 ---
 
-## 3-Tier Dynamic Routing Protocol
+## 3-Tier Adaptive Reasoning Routing
 
-### 🟢 Tier 1: Fast & Lean (`Model: "flash_lite"`)
-* **대상 작업**: 파일 이름/심볼 검색, 마크다운 서식 정리, 린트/타입스크립트 단순 경고 수정
-* **추론 강도**: Thinking 최소화 $\rightarrow$ 초고속 응답
-* **호출 템플릿**:
-```
-invoke_subagent(
-  Subagents=[
-    {
-      TypeName: "self",
-      Role: "Lightweight Chore Worker",
-      Model: "flash_lite",
-      Prompt: "TASK: Format target file and fix formatting warnings.\nSCOPE: src/utils/format.ts\nVERIFY: check output syntax."
-    }
-  ],
-  toolAction: "Running fast chore update",
-  toolSummary: "Lightweight update"
-)
-```
+### 1. Tier 1: Fast & Lean (Low Complexity)
+* **적용**: 단순 파일 조회, 오타 수정, 빠른 상태 체크
+* **할당**: `Model: "flash_lite"`, `Thinking Budget: 0`
+
+### 2. Tier 2: Standard Workhorse (Standard/High Complexity)
+* **적용**: 기능 구현, 단위 테스트 작성, multi-agent ULW 오케스트레이션, UI Loopback
+* **할당**: `Model: "flash"`, `Thinking Budget: 8,192 ~ 32,768`
+
+### 3. Tier 3: Deep Adversarial (Mission-Critical / High Stakes)
+* **적용**: 보안 침투 감사, 비동기 락 경합 격리, 클린 아키텍처 드리프트 방지
+* **할당**: `Model: "pro"`, `Thinking Budget: 64,000`
 
 ---
 
-### 🟡 Tier 2: Standard Workhorse (`Model: "flash"`)
-* **대상 작업**: 핵심 비즈니스 로직 구현, 단위/통합 테스트 작성, AST 구조적 리팩토링, 코드베이스 서베이
-* **추론 강도**: 1M 컨텍스트 + 하이브리드 CoT $\rightarrow$ 속도와 품질의 최적 균형
-* **호출 템플릿**:
-```
-invoke_subagent(
-  Subagents=[
-    {
-      TypeName: "self",
-      Role: "Core Feature Implementer",
-      Model: "flash",
-      Prompt: "TASK: Implement user authentication service with JWT validation.\nDELIVERABLE: auth.service.ts and test/auth.test.ts.\nSCOPE: src/auth/\nVERIFY: npm test."
-    }
-  ],
-  toolAction: "Implementing core feature with tests",
-  toolSummary: "Standard feature development"
-)
-```
+## AST Skeletonizer Usage
 
----
+대형 소스 코드를 에이전트 컨텍스트에 로드할 때 함수 구현부를 제외한 시그니처만 추출합니다:
 
-### 🔴 Tier 3: Deep Adversarial & Architecture (`Model: "pro"`)
-* **대상 작업**: 분산 트랜잭션, 동시성/경쟁상태 분석, 보안 취약점 감사, 아키텍처 경계 검증, 듀얼 패스 교차 검증 오라클
-* **추론 강도**: Deep Reasoning $\rightarrow$ 결함 제로 무결성 달성
-* **호출 템플릿**:
-```
-invoke_subagent(
-  Subagents=[
-    {
-      TypeName: "self",
-      Role: "Adversarial Architecture Critic",
-      Model: "pro",
-      Prompt: "TASK: Conduct adversarial security and race-condition audit on payment gateway.\nDELIVERABLE: vulnerability report and exploit mitigation diff.\nSCOPE: src/payment/\nVERIFY: check against security compliance."
-    }
-  ],
-  toolAction: "Executing deep adversarial audit",
-  toolSummary: "Tier 3 deep verification"
-)
+```bash
+# 파일 스켈레톤 추출 및 출력
+node ~/.gemini/config/plugins/lazyantigravity/scripts/ast-skeletonizer.mjs src/services/auth.ts
 ```
