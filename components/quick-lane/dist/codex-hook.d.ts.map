@@ -1,0 +1,1 @@
+{"version":3,"file":"codex-hook.d.ts","sourceRoot":"","sources":["../src/codex-hook.ts"],"names":[],"mappings":"AAGA,MAAM,MAAM,kBAAkB,GAAG;IAChC,QAAQ,CAAC,eAAe,EAAE,kBAAkB,CAAC;IAC7C,QAAQ,CAAC,MAAM,EAAE,MAAM,CAAC;IACxB,QAAQ,CAAC,eAAe,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CACzC,CAAC;AASF,wBAAgB,gBAAgB,CAAC,KAAK,EAAE,OAAO,GAAG,MAAM,CAWvD"}

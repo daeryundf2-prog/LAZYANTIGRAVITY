@@ -6,15 +6,19 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 [![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.3.9-black?style=for-the-badge)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.4.0-black?style=for-the-badge)](./package.json)
 
 ## Why this plugin
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Single agent, single task | **21 skills** (+ aliases) for ULW, review, refactor, visual QA, and more |
-| No quality gates | **7 hook events / 16 command hooks** (rules, comments, LSP, ULW steering, readiness) |
-| Manual model guessing | **Pass `Subagents[].Model` on `invoke_subagent`** (session Flash; `flash`/`pro` hints; host does not auto-switch) |
+| Single agent, single task | **22 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
+| Heavy overhead on simple tasks | **Quick-Lane Fast-Pass** for direct execution without subagent overhead |
+| Context lost across sessions | **Local Active Memory (`facts.jsonl`)** for persistent working memory |
+| Flaky timing failures | **5-Parallel Flaky Guard** stress-runner for deterministic hardening |
+| Visual defects unnoticed | **Headless Visual Loopback** with Gemini 3.7 Native Vision QA |
+| No quality gates | **7 hook events / 18 command hooks** (rules, memory, quick-lane, comments, LSP) |
+| Manual model guessing | **Pass `Subagents[].Model` on `invoke_subagent`** (session Flash; `flash`/`pro` hints) |
 | Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
 | Weak evidence discipline | **Evidence-bound ULW loop** - claims need local proof |
 
@@ -73,27 +77,29 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 
 | Command | Purpose |
 | :--- | :--- |
-| `/ulw` / `ultrawork` | Evidence-bound implement ??test ??fix loop |
+| `/ulw` / `ultrawork` | Evidence-bound implement → test → fix loop |
 | `/ulw-loop` | Multi-goal orchestration with checkpoints |
 | `/ulw resume` | Resume after quota/model interruption |
 | `/init-deep` | Generate hierarchical `AGENTS.md` context |
 
 ## What ships in this tree
 
-### Components
+### Components (10)
 
-1. `comment-checker` ??comment preservation after edits
-2. `rules` ??project rule injection
-3. `lsp` ??local LSP-backed MCP tools
-4. `ultrawork` ??ULW keyword / directive injection
-5. `ulw-loop` ??goals, evidence, checkpoints
-6. `telemetry` ??**opt-in** daily-active telemetry
-7. `start-work-continuation` ??resume helpers
-8. `git-bash` ??Git Bash MCP recommendation hooks
+1. `quick-lane` — Fast-pass low-complexity task execution
+2. `memory` — Local active memory & facts persistence (`facts.jsonl`)
+3. `comment-checker` — Comment preservation after edits
+4. `rules` — Project rule injection
+5. `lsp` — Local LSP-backed MCP tools
+6. `ultrawork` — ULW keyword / directive injection
+7. `ulw-loop` — Goals, evidence, checkpoints
+8. `telemetry` — **Opt-in** daily-active telemetry
+9. `start-work-continuation` — Resume helpers
+10. `git-bash` — Git Bash MCP recommendation hooks
 
-### Skills (21)
+### Skills (22)
 
-`comment-checker`, `debugging`, `frontend-ui-ux`, `git-master`, `image-prompt`, `information-density`, `init-deep`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `report-bug`, `review-work`, `rules`, `session-persistence`, `start-work`, `ulw`, `ulw-loop`, `ulw-plan`, `visual-qa`
+`active-memory`, `comment-checker`, `debugging`, `frontend-ui-ux`, `git-master`, `image-prompt`, `information-density`, `init-deep`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `repo-survey`, `report-bug`, `review-work`, `rules`, `session-persistence`, `start-work`, `swarm-sync`, `ui-loopback`, `ulw`, `ulw-loop`, `ulw-plan`, `visual-qa`
 
 Aliases: `ulw`, `information-density`, `session-persistence`, `lcx-report-bug`
 

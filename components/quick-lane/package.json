@@ -1,0 +1,28 @@
+{
+	"name": "@lazyantigravity/quick-lane",
+	"version": "0.1.0",
+	"description": "Antigravity fast-pass directive injector for low-complexity / direct tasks.",
+	"type": "module",
+	"license": "MIT",
+	"bin": {
+		"lazyantigravity-quick-lane": "./dist/cli.js",
+		"omo-quick-lane": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"test": "vitest --run",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@types/node": "^25.7.0",
+		"typescript": "^6.0.3",
+		"vitest": "^4.1.5"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	}
+}

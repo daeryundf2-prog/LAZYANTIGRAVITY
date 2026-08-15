@@ -10,6 +10,7 @@ const repoRoot = join(root, "..", "..", "..");
 const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
+	"active-memory",
 	"adaptive-reasoning",
 	"arch-guard",
 	"ast-refactor",

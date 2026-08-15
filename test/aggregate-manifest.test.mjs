@@ -52,6 +52,8 @@ test("#given component directories #when scanned #then only intentional resource
 		"comment-checker",
 		"git-bash",
 		"lsp",
+		"memory",
+		"quick-lane",
 		"rules",
 		"start-work-continuation",
 		"telemetry",
