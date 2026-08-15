@@ -78,9 +78,8 @@ function readSessionState(path: string): LspSessionState {
 		const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
 		if (isLspSessionState(parsed)) return parsed;
 		return emptyState();
-	} catch (error) {
-		if (error instanceof SyntaxError || (isRecord(error) && error["code"] === "ENOENT")) return emptyState();
-		throw error;
+	} catch {
+		return emptyState();
 	}
 }
 

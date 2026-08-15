@@ -1,3 +1,7 @@
+import { existsSync, readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { extname, resolve } from "node:path";
+
 export const LSP_TOOLS = [
 	{
 		name: "lsp_diagnostics",
@@ -49,8 +53,84 @@ export const LSP_TOOLS = [
 	}
 ];
 
-export async function executeLspDiagnostics({ filePath, severity = "error" }) {
+export async function executeLspDiagnostics({ filePath }) {
+	if (!filePath || typeof filePath !== "string") {
+		return {
+			content: [{ type: "text", text: "Error: filePath is required" }],
+			isError: true
+		};
+	}
+
+	const absolutePath = resolve(process.cwd(), filePath);
+	if (!existsSync(absolutePath)) {
+		return {
+			content: [{ type: "text", text: `File not found: ${filePath}` }],
+			isError: true
+		};
+	}
+
+	const ext = extname(absolutePath).toLowerCase();
+	const diagnostics = [];
+
+	if ([".ts", ".tsx", ".js", ".jsx"].includes(ext)) {
+		try {
+			// Run tsc syntax check if available
+			execSync(`npx --no-install tsc --noEmit "${absolutePath}"`, {
+				encoding: "utf8",
+				timeout: 5000,
+				stdio: ["pipe", "pipe", "pipe"]
+			});
+		} catch (err) {
+			const output = (err.stdout || err.stderr || "").trim();
+			if (output) {
+				diagnostics.push({ file: filePath, message: output, severity: "error" });
+			}
+		}
+	}
+
 	return {
-		content: [{ text: "No diagnostics found" }]
+		content: [{
+			type: "text",
+			text: JSON.stringify({
+				ok: true,
+				filePath,
+				diagnostics,
+				total: diagnostics.length
+			}, null, 2)
+		}]
 	};
+}
+
+export async function executeLspSymbols({ filePath }) {
+	const absolutePath = resolve(process.cwd(), filePath);
+	if (!existsSync(absolutePath)) {
+		return {
+			content: [{ type: "text", text: `File not found: ${filePath}` }],
+			isError: true
+		};
+	}
+
+	try {
+		const content = readFileSync(absolutePath, "utf8");
+		const symbols = [];
+		const lines = content.split("\n");
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			const match = line.match(/(?:function|class|interface|type|const|let|var|def)\s+([A-Za-z0-9_$]+)/);
+			if (match) {
+				symbols.push({ name: match[1], line: i + 1, text: line.trim() });
+			}
+		}
+		return {
+			content: [{
+				type: "text",
+				text: JSON.stringify({ ok: true, filePath, symbols, total: symbols.length }, null, 2)
+			}]
+		};
+	} catch (err) {
+		return {
+			content: [{ type: "text", text: `Failed to read symbols: ${err.message}` }],
+			isError: true
+		};
+	}
 }

@@ -124,7 +124,8 @@ function isCountedHeading(heading) {
     return heading === TODO_HEADING || heading === FINAL_VERIFICATION_HEADING;
 }
 function resolvePlanPath(cwd, activePlan) {
-    return isAbsolute(activePlan) ? activePlan : resolve(cwd, activePlan);
+    const sanitized = activePlan.replace(/^(\.\.[\/\\])+/, "");
+    return isAbsolute(sanitized) ? sanitized : resolve(cwd, sanitized);
 }
 function readTextFile(fs, path) {
     try {

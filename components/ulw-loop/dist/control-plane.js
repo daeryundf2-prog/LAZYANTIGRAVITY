@@ -30,8 +30,11 @@ export const FORBIDDEN_PHRASES = [
     /mark run as completed/i,
     /completed the global task/i,
 ];
+function safeSegment(val) {
+    return val.replace(/[^A-Za-z0-9._-]/g, "_");
+}
 export function getRunDir(repoRoot, runId) {
-    return join(repoRoot, ".lazycodex", "runs", runId);
+    return join(repoRoot, ".lazycodex", "runs", safeSegment(runId));
 }
 export async function loadLeasePolicy(repoRoot) {
     const policyPath = join(repoRoot, "plugins", "omo", "components", "ulw-loop", "src", "lease-policy.json");
@@ -67,7 +70,7 @@ export async function appendRunEvent(repoRoot, runId, type, data) {
             await mkdir(agentsDir, { recursive: true });
         const agentState = await getAgentState(repoRoot, runId, event.agentId);
         if (agentState) {
-            await writeFile(join(agentsDir, `${event.agentId}.json`), JSON.stringify(stripSensitiveData(agentState), null, 2), "utf8");
+            await writeFile(join(agentsDir, `${safeSegment(event.agentId)}.json`), JSON.stringify(stripSensitiveData(agentState), null, 2), "utf8");
         }
     }
     return cleanEvent;

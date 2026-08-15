@@ -75,8 +75,12 @@ export const FORBIDDEN_PHRASES = [
 	/completed the global task/i,
 ];
 
+function safeSegment(val: string): string {
+	return val.replace(/[^A-Za-z0-9._-]/g, "_");
+}
+
 export function getRunDir(repoRoot: string, runId: string): string {
-	return join(repoRoot, ".lazycodex", "runs", runId);
+	return join(repoRoot, ".lazycodex", "runs", safeSegment(runId));
 }
 
 export async function loadLeasePolicy(repoRoot: string): Promise<LeasePolicy> {
@@ -117,7 +121,7 @@ export async function appendRunEvent(
 		const agentState = await getAgentState(repoRoot, runId, event.agentId);
 		if (agentState) {
 			await writeFile(
-				join(agentsDir, `${event.agentId}.json`),
+				join(agentsDir, `${safeSegment(event.agentId)}.json`),
 				JSON.stringify(stripSensitiveData(agentState), null, 2),
 				"utf8",
 			);

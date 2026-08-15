@@ -8,14 +8,17 @@ async function main() {
         process.stdout.write(TOP_LEVEL_HELP);
         return 0;
     }
-    if (process.platform !== "win32" && !process.env["OS"]?.includes("Windows") && !process.env["ComSpec"]) {
-        return 0;
-    }
     if (command === "hook" && argv[1] === "pre-tool-use") {
+        if (process.platform !== "win32" && !process.env["OS"]?.includes("Windows") && !process.env["ComSpec"]) {
+            return 0;
+        }
         await runGitBashHookCli(process.stdin, process.stdout, "pre-tool-use");
         return 0;
     }
     if (command === "hook" && argv[1] === "post-compact") {
+        if (process.platform !== "win32" && !process.env["OS"]?.includes("Windows") && !process.env["ComSpec"]) {
+            return 0;
+        }
         await runGitBashHookCli(process.stdin, process.stdout, "post-compact");
         return 0;
     }

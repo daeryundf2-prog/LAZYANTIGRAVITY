@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { executeLspDiagnostics } from "@code-yeongyu/lsp-tools-mcp/dist/tools.js";
 import { isUnavailableLspDiagnostics, markLspSessionCompacted, recordLspDiagnosticsObservations, sessionIdFrom, shouldSkipUnavailableLspDiagnostics, } from "./lsp-session-state.js";
 import { extractMutatedFilePaths } from "./mutated-file-paths.js";
@@ -142,15 +142,26 @@ function hookFeedbackLimit(transcriptPath) {
         : DEFAULT_MAX_HOOK_FEEDBACK_CHARS;
 }
 function isContextPressureTranscript(transcriptPath) {
-    if (typeof transcriptPath !== "string")
+    if (typeof transcriptPath !== "string" || !existsSync(transcriptPath))
         return false;
     try {
-        return hasContextPressureMarker(readFileSync(transcriptPath, "utf8"));
+        const stat = statSync(transcriptPath);
+        const maxBytes = 512 * 1024;
+        if (stat.size <= maxBytes) {
+            return hasContextPressureMarker(readFileSync(transcriptPath, "utf8"));
+        }
+        const fd = openSync(transcriptPath, "r");
+        try {
+            const buffer = Buffer.alloc(maxBytes);
+            readSync(fd, buffer, 0, maxBytes, stat.size - maxBytes);
+            return hasContextPressureMarker(buffer.toString("utf8"));
+        }
+        finally {
+            closeSync(fd);
+        }
     }
-    catch (error) {
-        if (error instanceof Error)
-            return false;
-        throw error;
+    catch {
+        return false;
     }
 }
 function hasContextPressureMarker(text) {

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 const CONTEXT_PRESSURE_MARKERS = [
     "context compacted",
     "context_length_exceeded",
@@ -13,14 +13,25 @@ export function hasContextPressureMarker(text) {
     return CONTEXT_PRESSURE_MARKERS.some((marker) => normalizedText.includes(marker));
 }
 export function transcriptHasContextPressureMarker(transcriptPath) {
-    if (transcriptPath === undefined || transcriptPath === null)
+    if (transcriptPath === undefined || transcriptPath === null || !existsSync(transcriptPath))
         return false;
     try {
-        return hasContextPressureMarker(readFileSync(transcriptPath, "utf8"));
+        const stat = statSync(transcriptPath);
+        const maxBytes = 512 * 1024;
+        if (stat.size <= maxBytes) {
+            return hasContextPressureMarker(readFileSync(transcriptPath, "utf8"));
+        }
+        const fd = openSync(transcriptPath, "r");
+        try {
+            const buffer = Buffer.alloc(maxBytes);
+            readSync(fd, buffer, 0, maxBytes, stat.size - maxBytes);
+            return hasContextPressureMarker(buffer.toString("utf8"));
+        }
+        finally {
+            closeSync(fd);
+        }
     }
-    catch (error) {
-        if (error instanceof Error)
-            return false;
-        throw error;
+    catch {
+        return false;
     }
 }

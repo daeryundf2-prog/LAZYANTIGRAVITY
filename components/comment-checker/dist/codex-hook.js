@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { stdin as processStdin, stdout as processStdout } from "node:process";
 import { extractCommentCheckRequests, isRecord, toHookInput, } from "./core.js";
 import { runCommentChecker } from "./runner.js";
@@ -113,15 +113,26 @@ function hookFeedbackLimit(transcriptPath) {
         : DEFAULT_MAX_HOOK_FEEDBACK_CHARS;
 }
 function isContextPressureTranscript(transcriptPath) {
-    if (transcriptPath === null)
+    if (transcriptPath === null || !existsSync(transcriptPath))
         return false;
     try {
-        return hasContextPressureMarker(readFileSync(transcriptPath, "utf8"));
+        const stat = statSync(transcriptPath);
+        const maxBytes = 512 * 1024;
+        if (stat.size <= maxBytes) {
+            return hasContextPressureMarker(readFileSync(transcriptPath, "utf8"));
+        }
+        const fd = openSync(transcriptPath, "r");
+        try {
+            const buffer = Buffer.alloc(maxBytes);
+            readSync(fd, buffer, 0, maxBytes, stat.size - maxBytes);
+            return hasContextPressureMarker(buffer.toString("utf8"));
+        }
+        finally {
+            closeSync(fd);
+        }
     }
-    catch (error) {
-        if (error instanceof Error)
-            return false;
-        throw error;
+    catch {
+        return false;
     }
 }
 function hasContextPressureMarker(text) {

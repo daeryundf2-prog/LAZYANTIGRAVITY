@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline";
-import { LSP_TOOLS } from "./tools.js";
+import { LSP_TOOLS, executeLspDiagnostics, executeLspSymbols } from "./tools.js";
 
-function handleJsonRpc(message) {
-	if (!message || typeof message !== "object") return;
+async function handleJsonRpc(message) {
+	if (!message || typeof message !== "object") return null;
 	const { id, method, params } = message;
 
 	if (method === "initialize") {
@@ -33,13 +33,41 @@ function handleJsonRpc(message) {
 	if (method === "tools/call") {
 		const name = params?.name;
 		const args = params?.arguments ?? {};
+
+		const toolDef = LSP_TOOLS.find((t) => t.name === name);
+		if (!toolDef) {
+			return {
+				jsonrpc: "2.0",
+				id,
+				error: { code: -32602, message: `Unsupported tool: ${name}` }
+			};
+		}
+
+		if (name === "lsp_diagnostics") {
+			const res = await executeLspDiagnostics(args);
+			return {
+				jsonrpc: "2.0",
+				id,
+				result: res
+			};
+		}
+
+		if (name === "lsp_symbols") {
+			const res = await executeLspSymbols(args);
+			return {
+				jsonrpc: "2.0",
+				id,
+				result: res
+			};
+		}
+
 		return {
 			jsonrpc: "2.0",
 			id,
 			result: {
 				content: [{
 					type: "text",
-					text: JSON.stringify({ ok: true, tool: name, args, diagnostics: [] }, null, 2)
+					text: JSON.stringify({ ok: true, tool: name, args, message: `Executed ${name}` }, null, 2)
 				}]
 			}
 		};
@@ -54,33 +82,25 @@ function handleJsonRpc(message) {
 
 async function runMcpServer() {
 	const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: false });
-	rl.on("line", (line) => {
+	rl.on("line", async (line) => {
 		const trimmed = line.trim();
 		if (!trimmed) return;
 		try {
 			const req = JSON.parse(trimmed);
-			const res = handleJsonRpc(req);
+			const res = await handleJsonRpc(req);
 			if (res) {
 				process.stdout.write(`${JSON.stringify(res)}\n`);
 			}
 		} catch (err) {
-			process.stderr.write(`[lsp-tools-mcp] parse error: ${err.message}\n`);
+			process.stdout.write(
+				`${JSON.stringify({
+					jsonrpc: "2.0",
+					id: null,
+					error: { code: -32700, message: "Parse error" }
+				})}\n`
+			);
 		}
 	});
 }
 
-function main() {
-	const argv = process.argv.slice(2);
-	if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
-		console.log("Usage: omo-lsp <mcp|diagnostics|symbols> [options]");
-		return 0;
-	}
-	if (argv[0] === "mcp") {
-		runMcpServer();
-		return 0;
-	}
-	console.log(`[lsp-tools-mcp] Standalone LSP CLI initialized.`);
-	return 0;
-}
-
-main();
+runMcpServer();

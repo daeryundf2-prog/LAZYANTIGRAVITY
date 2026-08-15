@@ -5,9 +5,13 @@ import { appendRunEvent, checkLeases, heartbeatAgent, reconstructStateFromEvents
 import { UlwLoopError } from "./types.js";
 function required(argv, flag) {
     const value = readValue(argv, flag)?.trim();
-    if (value)
-        return value;
-    throw new UlwLoopError(`Missing ${flag}.`, "ULW_LOOP_ARGUMENT_MISSING", { details: { flag } });
+    if (!value) {
+        throw new UlwLoopError(`Missing ${flag}.`, "ULW_LOOP_ARGUMENT_MISSING", { details: { flag } });
+    }
+    if ((flag === "--run-id" || flag === "--agent-id") && !/^[A-Za-z0-9._-]+$/.test(value)) {
+        throw new UlwLoopError(`Invalid ${flag}: must match ^[A-Za-z0-9._-]+$`, "ULW_LOOP_ARGUMENT_INVALID", { details: { flag, value } });
+    }
+    return value;
 }
 async function readJsonOrPath(value, repoRoot) {
     try {

@@ -158,6 +158,7 @@ export function spawnProcess(
 	args: string[],
 	stdin: string,
 	maxOutputBytes: number = MAX_PROCESS_OUTPUT_BYTES,
+	timeoutMs: number = 10000,
 ): Promise<ProcessResult> {
 	return new Promise((resolve) => {
 		const outputByteLimit = Number.isFinite(maxOutputBytes) && maxOutputBytes > 0 ? Math.floor(maxOutputBytes) : 0;
@@ -166,6 +167,19 @@ export function spawnProcess(
 		});
 		const stdout: OutputAccumulator = { text: "", bytes: 0, truncated: false };
 		const stderr: OutputAccumulator = { text: "", bytes: 0, truncated: false };
+		let resolved = false;
+
+		const timer = setTimeout(() => {
+			if (resolved) return;
+			resolved = true;
+			proc.kill("SIGKILL");
+			appendOutput(stderr, `\n[Process timed out after ${timeoutMs}ms]`, outputByteLimit);
+			resolve({
+				exitCode: null,
+				stdout: formatOutput(stdout, "stdout", outputByteLimit),
+				stderr: formatOutput(stderr, "stderr", outputByteLimit),
+			});
+		}, timeoutMs);
 
 		proc.stdout.setEncoding("utf-8");
 		proc.stderr.setEncoding("utf-8");
@@ -176,6 +190,9 @@ export function spawnProcess(
 			appendOutput(stderr, chunk, outputByteLimit);
 		});
 		proc.once("error", (error) => {
+			if (resolved) return;
+			resolved = true;
+			clearTimeout(timer);
 			appendOutput(stderr, error.message, outputByteLimit);
 			resolve({
 				exitCode: null,
@@ -184,6 +201,9 @@ export function spawnProcess(
 			});
 		});
 		proc.once("close", (exitCode) => {
+			if (resolved) return;
+			resolved = true;
+			clearTimeout(timer);
 			resolve({
 				exitCode,
 				stdout: formatOutput(stdout, "stdout", outputByteLimit),

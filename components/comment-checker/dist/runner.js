@@ -108,7 +108,7 @@ function formatOutput(output, streamName, maxOutputBytes) {
         return output.text;
     return `${output.text}\n[${streamName} truncated after ${maxOutputBytes} bytes]`;
 }
-export function spawnProcess(command, args, stdin, maxOutputBytes = MAX_PROCESS_OUTPUT_BYTES) {
+export function spawnProcess(command, args, stdin, maxOutputBytes = MAX_PROCESS_OUTPUT_BYTES, timeoutMs = 10000) {
     return new Promise((resolve) => {
         const outputByteLimit = Number.isFinite(maxOutputBytes) && maxOutputBytes > 0 ? Math.floor(maxOutputBytes) : 0;
         const proc = spawn(command, args, {
@@ -116,6 +116,19 @@ export function spawnProcess(command, args, stdin, maxOutputBytes = MAX_PROCESS_
         });
         const stdout = { text: "", bytes: 0, truncated: false };
         const stderr = { text: "", bytes: 0, truncated: false };
+        let resolved = false;
+        const timer = setTimeout(() => {
+            if (resolved)
+                return;
+            resolved = true;
+            proc.kill("SIGKILL");
+            appendOutput(stderr, `\n[Process timed out after ${timeoutMs}ms]`, outputByteLimit);
+            resolve({
+                exitCode: null,
+                stdout: formatOutput(stdout, "stdout", outputByteLimit),
+                stderr: formatOutput(stderr, "stderr", outputByteLimit),
+            });
+        }, timeoutMs);
         proc.stdout.setEncoding("utf-8");
         proc.stderr.setEncoding("utf-8");
         proc.stdout.on("data", (chunk) => {
@@ -125,6 +138,10 @@ export function spawnProcess(command, args, stdin, maxOutputBytes = MAX_PROCESS_
             appendOutput(stderr, chunk, outputByteLimit);
         });
         proc.once("error", (error) => {
+            if (resolved)
+                return;
+            resolved = true;
+            clearTimeout(timer);
             appendOutput(stderr, error.message, outputByteLimit);
             resolve({
                 exitCode: null,
@@ -133,6 +150,10 @@ export function spawnProcess(command, args, stdin, maxOutputBytes = MAX_PROCESS_
             });
         });
         proc.once("close", (exitCode) => {
+            if (resolved)
+                return;
+            resolved = true;
+            clearTimeout(timer);
             resolve({
                 exitCode,
                 stdout: formatOutput(stdout, "stdout", outputByteLimit),

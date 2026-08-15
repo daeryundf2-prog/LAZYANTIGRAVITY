@@ -149,7 +149,8 @@ function isCountedHeading(heading: string): boolean {
 }
 
 function resolvePlanPath(cwd: string, activePlan: string): string {
-	return isAbsolute(activePlan) ? activePlan : resolve(cwd, activePlan);
+	const sanitized = activePlan.replace(/^(\.\.[\/\\])+/, "");
+	return isAbsolute(sanitized) ? sanitized : resolve(cwd, sanitized);
 }
 
 function readTextFile(fs: ReadonlyFileSystem, path: string): string | null {

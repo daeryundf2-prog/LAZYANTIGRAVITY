@@ -1,12 +1,27 @@
-import { readFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 
 export interface TranscriptSearchOptions {
 	readonly latestCompactedReplacementOnly?: boolean;
 }
 
 export function readTranscriptSearchText(transcriptPath: string, options: TranscriptSearchOptions = {}): string | null {
+	if (!existsSync(transcriptPath)) return null;
 	try {
-		const rawTranscript = readFileSync(transcriptPath, "utf8");
+		const stat = statSync(transcriptPath);
+		const maxBytes = 512 * 1024;
+		let rawTranscript: string;
+		if (stat.size <= maxBytes) {
+			rawTranscript = readFileSync(transcriptPath, "utf8");
+		} else {
+			const fd = openSync(transcriptPath, "r");
+			try {
+				const buffer = Buffer.alloc(maxBytes);
+				readSync(fd, buffer, 0, maxBytes, stat.size - maxBytes);
+				rawTranscript = buffer.toString("utf8");
+			} finally {
+				closeSync(fd);
+			}
+		}
 		if (options.latestCompactedReplacementOnly === true) {
 			return latestCompactedReplacementSearchText(rawTranscript);
 		}

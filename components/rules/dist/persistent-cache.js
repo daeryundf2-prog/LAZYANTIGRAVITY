@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { postCompactKindState, postCompactPendingKinds, postCompactRecoveringKinds, } from "./post-compact-state.js";
@@ -38,13 +38,9 @@ export function clearSessionState(cachePath) {
     rmSync(cachePath, { force: true });
 }
 export function markSessionCompacted(cachePath) {
-    const state = readSessionState(cachePath);
     writeSessionState(cachePath, {
-        staticDedup: state.staticDedup,
-        dynamicDedup: state.dynamicDedup,
-        ...(state.dynamicTargetFingerprints === undefined
-            ? {}
-            : { dynamicTargetFingerprints: state.dynamicTargetFingerprints }),
+        staticDedup: [],
+        dynamicDedup: {},
         postCompactPending: { static: true, dynamic: true },
     });
 }
@@ -98,8 +94,11 @@ function readSessionState(cachePath) {
     }
 }
 function writeSessionState(cachePath, state) {
-    mkdirSync(dirname(cachePath), { recursive: true });
-    writeFileSync(cachePath, `${JSON.stringify(state)}\n`);
+    const dir = dirname(cachePath);
+    mkdirSync(dir, { recursive: true });
+    const tmpPath = `${cachePath}.${process.pid}.${Date.now()}.tmp`;
+    writeFileSync(tmpPath, `${JSON.stringify(state)}\n`);
+    renameSync(tmpPath, cachePath);
 }
 function emptyState() {
     return { staticDedup: [], dynamicDedup: {}, dynamicTargetFingerprints: {} };

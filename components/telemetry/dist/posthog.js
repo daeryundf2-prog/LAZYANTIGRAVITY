@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import os from "node:os";
@@ -132,7 +132,7 @@ export function getPostHogDistinctId() {
         return newId;
     }
     catch {
-        return createHash("sha256").update(`${MACHINE_ID_PREFIX}${resolveOsProvider().hostname()}`).digest("hex");
+        return `${MACHINE_ID_PREFIX}${randomUUID()}`;
     }
 }
 /** @internal test-only */
