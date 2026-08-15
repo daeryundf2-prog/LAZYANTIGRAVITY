@@ -126,6 +126,8 @@
 			"adaptive-reasoning": "flash",
 			"hypothesis-tree": "pro",
 			"swarm-sync": "flash",
+			"flaky-guard": "flash",
+			"arch-guard": "pro",
 			"verifier": "pro",
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
@@ -231,6 +233,22 @@
 				"reasoningLevel": "high",
 				"purpose": "분산 서브에이전트 파일 소유권 분할 및 원자적 머지 — 병렬 충돌 방지",
 				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"availabilitySource": "ui"
+			},
+			"flaky-guard": {
+				"modelId": "gemini-3.7-flash-high",
+				"displayName": "Gemini 3.7 Flash (High)",
+				"reasoningLevel": "high",
+				"purpose": "간헐적 실패(Flaky) 테스트 자가 치유 — 고속 병렬 스트레스 런 및 결정론적 리팩토링",
+				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"availabilitySource": "ui"
+			},
+			"arch-guard": {
+				"modelId": "gemini-3.1-pro-high",
+				"displayName": "Gemini 3.1 Pro (High)",
+				"reasoningLevel": "high",
+				"purpose": "클린 아키텍처 계층 검증 — 1M 전역 import 그래프 및 AST 의존성 드리프트 차단",
+				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"fast": {

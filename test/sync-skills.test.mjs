@@ -11,10 +11,12 @@ const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
 	"adaptive-reasoning",
+	"arch-guard",
 	"ast-refactor",
 	"comment-checker",
 	"debugging",
 	"dual-verify",
+	"flaky-guard",
 	"frontend-ui-ux",
 	"git-master",
 	"hypothesis-tree",
