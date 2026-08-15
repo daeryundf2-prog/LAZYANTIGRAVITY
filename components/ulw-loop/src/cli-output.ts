@@ -14,6 +14,7 @@ export const ULW_LOOP_HELP = `Usage:
   lazyantigravity ulw-loop save-role-checkpoint --task-id <id> --platform <platform> --selected-model <model> --completed-roles <roles> --current-role <role> --next-recommended-action <action> --resume-command <cmd> [--failed-role <role>] [--error-type <type>] [--files-changed <files>] [--commands-run <cmds>] [--artifacts-generated <arts>] [--json]
   lazyantigravity ulw-loop resume [--json]
   lazyantigravity ulw-loop dry-run [--scenario <scenario>] [--json]
+  lazyantigravity ulw-loop verify-ledger [--json]
 
 Alias: \`omo ulw-loop\` is accepted. --codex-goal-json is optional (Codex snapshots only).
 All subcommands accept [--session-id <id>] to isolate state under .omo/ulw-loop/<id>/; without it, Codex session env is used when present.`;

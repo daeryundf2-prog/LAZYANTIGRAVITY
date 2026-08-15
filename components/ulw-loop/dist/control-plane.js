@@ -18,6 +18,19 @@ const DEFAULT_POLICY = {
         pollerLeaseMs: 10000,
     },
 };
+export const GENESIS_HASH = "0".repeat(64);
+export function computeLedgerHash(cleanEvent) {
+    const payload = { ...cleanEvent, hash: undefined };
+    const hashPayload = JSON.stringify({
+        eventId: payload.eventId,
+        timestamp: payload.timestamp,
+        type: payload.type,
+        runId: payload.runId,
+        prevHash: payload.prevHash,
+        payload,
+    });
+    return createHash("sha256").update(hashPayload).digest("hex");
+}
 export const FORBIDDEN_PHRASES = [
     /completed the whole task/i,
     /completed the entire task/i,
@@ -66,15 +79,7 @@ export async function appendRunEvent(repoRoot, runId, type, data) {
         ...data,
     };
     const cleanEvent = stripSensitiveData(event);
-    const hashPayload = JSON.stringify({
-        eventId: cleanEvent.eventId,
-        timestamp: cleanEvent.timestamp,
-        type: cleanEvent.type,
-        runId: cleanEvent.runId,
-        prevHash: cleanEvent.prevHash,
-        payload: cleanEvent,
-    });
-    cleanEvent.hash = createHash("sha256").update(hashPayload).digest("hex");
+    cleanEvent.hash = computeLedgerHash(cleanEvent);
     const eventsFile = join(runDir, "events.jsonl");
     await writeFile(eventsFile, `${JSON.stringify(cleanEvent)}\n`, { flag: "a", encoding: "utf8" });
     await reconstructAndSaveState(repoRoot, runId);
