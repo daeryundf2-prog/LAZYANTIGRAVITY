@@ -29,6 +29,20 @@ flowchart TD
 node ~/.gemini/config/plugins/lazyantigravity/scripts/visual-capture.mjs http://localhost:5173
 ```
 
+인터랙션(클릭/입력/상태 전이)이 필요한 케이스에는 **Playwright MCP**(`mcp_config.playwright.example.json`으로 opt-in, 로컬 전용)로 실제 브라우저를 구동하고 접근성 트리로 조작합니다:
+
+```
+# Web UI: Playwright MCP (지정된 뷰포트로 실제 페이지에 접근)
+browser_navigate  → dev 서버 URL (예: http://localhost:5273)
+browser_resize    → 참조와 동일한 뷰포트 (예: 1440x900)
+browser_snapshot  → 접근성 트리 획득 (셀렉터 대신 element ref 사용)
+browser_click / browser_type / browser_wait_for → 필요한 상태(호버, 오픈 메뉴)에 도달
+browser_take_screenshot → PNG 저장
+browser_close     → QA 브라우저 컨텍스트 종료 (청소 필수)
+
+# Diagram: Mermaid CLI or SVG render
+```
+
 ### Step 2: Vision Inspection Oracle (비전 오라클 판독)
 `Model: "flash"`를 사용하여 캡처된 스크린샷의 시각적 완성도를 판독합니다.
 

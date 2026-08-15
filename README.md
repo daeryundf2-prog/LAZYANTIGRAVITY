@@ -12,7 +12,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Single agent, single task | **22 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
+| Single agent, single task | **31 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
 | Fixed token budget & bloated context | **Adaptive Thinking Budget & AST Skeletonizer** (dynamic 0~64k budget + 80% context saving) |
 | Parallel multi-agent file collisions | **Dynamic Worktree Swarm** (isolated branching + atomic squash-merge) |
 | Fake passing tests (False Greens) | **Mutation Testing Gate** (automatic mutant kill score verification) |
@@ -102,15 +102,17 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 10. `start-work-continuation` — Resume helpers
 11. `git-bash` — Git Bash MCP recommendation hooks
 
-### Skills (22)
+### Skills (31)
 
-`active-memory`, `adaptive-reasoning`, `comment-checker`, `debugging`, `dual-verify`, `flaky-guard`, `frontend-ui-ux`, `git-master`, `hypothesis-tree`, `image-prompt`, `information-density`, `init-deep`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `repo-survey`, `report-bug`, `review-work`, `rules`, `session-persistence`, `start-work`, `swarm-sync`, `ui-loopback`, `ulw`, `ulw-loop`, `ulw-plan`, `visual-qa`
+`active-memory`, `adaptive-reasoning`, `arch-guard`, `ast-refactor`, `comment-checker`, `debugging`, `dual-verify`, `flaky-guard`, `frontend-ui-ux`, `git-master`, `hypothesis-tree`, `image-prompt`, `information-density`, `init-deep`, `lcx-report-bug`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `repo-survey`, `report-bug`, `review-work`, `rules`, `session-persistence`, `start-work`, `swarm-sync`, `ui-loopback`, `ulw`, `ulw-loop`, `ulw-plan`, `visual-qa`
 
 Aliases: `ulw`, `information-density`, `session-persistence`, `lcx-report-bug`
 
 ### MCP
 
 **Default (local only):** `ast_grep`, `git_bash`, `lsp`
+
+**Local browser tooling (opt-in):** `playwright` ??merge from `mcp_config.playwright.example.json` into `mcp_config.json` / `.mcp.json` when you want real-browser QA. Playwright MCP runs **locally** (no network egress; the browser runs on your machine) and powers the browser channel in `visual-qa` / `ui-loopback`. First run downloads browser binaries (`npx playwright install chromium`).
 
 **Remote helpers (opt-in):** `grep_app`, `context7` ??merge from `mcp_config.remote.example.json` into `mcp_config.json` / `.mcp.json` only if you accept remote query egress. Remote servers are **off by default** so air-gapped and secrets-sensitive sessions stay local.
 

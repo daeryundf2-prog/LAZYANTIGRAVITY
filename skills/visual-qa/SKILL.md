@@ -34,8 +34,15 @@ If the change touches both, run both capture tracks and feed both into the passe
 
 ### Web
 
+Drive a REAL browser at the same viewport size as the reference. Preferred channel: the **Playwright MCP** server (`playwright` in `mcp_config.json`; opt-in via `mcp_config.playwright.example.json`, runs locally, no browser needed in the project). Fall back to the project's own Playwright/puppeteer tooling only when the MCP server is unavailable.
+
 1. Capture a REFERENCE image: the user's mock/target, or a known-good baseline. Save as PNG.
-2. Capture the ACTUAL rendered screenshot at the same viewport size using the project's browser tooling (the playwright, agent-browser, or dev-browser skill). Save as PNG.
+2. Capture the ACTUAL rendered screenshot with Playwright MCP, using the accessibility-tree tools (do not guess selectors):
+   - `browser_navigate` to the page URL.
+   - `browser_resize` to the same width/height as the reference viewport.
+   - `browser_snapshot` to get the accessibility tree and element refs; reach every state (hover, open menu, active tab) with `browser_click` / `browser_type` / `browser_wait_for` before screenshotting. Interact the way a user would.
+   - `browser_take_screenshot` (fullPage when the reference covers the whole page) and save to a PNG. Confirm rendering with `browser_console_messages` for page errors.
+   - Tear the context down afterwards (`browser_close`) so no QA browser is left running.
 3. Run the diff and keep the JSON:
 
 ```bash
@@ -43,6 +50,8 @@ npx -y tsx "$SKILL_DIR/scripts/cli.ts" image-diff <reference.png> <actual.png>
 ```
 
 Key fields: `dimensionsMatch`, `diffRatio` (0..1), `similarityScore` (0..100), `alphaChannelIntact`, `hotspots[]` (grid regions ranked by `diffRatio`).
+
+Viewport matching matters: if the reference is 1440x900, `browser_resize(1440, 900)` before the screenshot so `dimensionsMatch` and the hotspots are meaningful.
 
 ### TUI
 

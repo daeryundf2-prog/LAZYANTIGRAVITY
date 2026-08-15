@@ -1,0 +1,16 @@
+{
+	"_comment": "Opt-in only. Local browser tooling (Playwright MCP) - no network egress, the browser runs on your machine. Merge this entry into mcp_config.json / .mcp.json when you want real-browser QA in visual-qa / ui-loopback. Runs headed by default so font rendering matches a real user; first run downloads browser binaries (npx playwright install chromium).",
+	"mcpServers": {
+		"playwright": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@playwright/mcp@latest",
+				"--isolated",
+				"--output-dir",
+				".omo/playwright"
+			],
+			"cwd": "."
+		}
+	}
+}
