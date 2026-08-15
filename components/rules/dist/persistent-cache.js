@@ -38,9 +38,13 @@ export function clearSessionState(cachePath) {
     rmSync(cachePath, { force: true });
 }
 export function markSessionCompacted(cachePath) {
+    const state = readSessionState(cachePath);
     writeSessionState(cachePath, {
-        staticDedup: [],
-        dynamicDedup: {},
+        staticDedup: state.staticDedup,
+        dynamicDedup: state.dynamicDedup,
+        ...(state.dynamicTargetFingerprints === undefined
+            ? {}
+            : { dynamicTargetFingerprints: state.dynamicTargetFingerprints }),
         postCompactPending: { static: true, dynamic: true },
     });
 }

@@ -1,4 +1,4 @@
-import { isAbsolute, join, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 
 import type { ReadonlyFileSystem } from "./types.js";
 
@@ -149,8 +149,12 @@ function isCountedHeading(heading: string): boolean {
 }
 
 function resolvePlanPath(cwd: string, activePlan: string): string {
-	const sanitized = activePlan.replace(/^(\.\.[\/\\])+/, "");
-	return isAbsolute(sanitized) ? sanitized : resolve(cwd, sanitized);
+	const resolved = isAbsolute(activePlan) ? resolve(activePlan) : resolve(cwd, activePlan);
+	const rel = relative(cwd, resolved);
+	if (rel.startsWith("..") || isAbsolute(rel)) {
+		return resolve(cwd, basename(activePlan));
+	}
+	return resolved;
 }
 
 function readTextFile(fs: ReadonlyFileSystem, path: string): string | null {

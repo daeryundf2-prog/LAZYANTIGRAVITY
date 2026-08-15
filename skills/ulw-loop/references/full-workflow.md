@@ -95,7 +95,8 @@ elif [ -n "$ULW_LOOP_NODE" ]; then
     "$HOME/.local/bin/omo" \
     "$CODEX_HOME/bin/lazyantigravity" \
     "$CODEX_HOME/bin/omo" \
-    "$CODEX_HOME"/plugins/cache/sisyphuslabs/omo/*/components/ulw-loop/dist/cli.js
+    "$CODEX_HOME"/plugins/cache/sisyphuslabs/omo/*/components/ulw-loop/dist/cli.js \
+    $CODEX_HOME/plugins/cache/sisyphuslabs/omo/*/components/ulw-loop/dist/cli.js
   do
     [ -f "$candidate" ] || [ -x "$candidate" ] || continue
     if [ "$candidate" = "lazyantigravity" ] || [ "$candidate" = "omo" ] || "$ULW_LOOP_NODE" "$candidate" ulw-loop help >/dev/null 2>&1; then
@@ -244,7 +245,7 @@ Structured prompt directives accepted: `LAZYANTIGRAVITY_ULW_LOOP_STEER: { ... }`
 10. After completing an aggregate ulw-loop run, confirm `lazyantigravity ulw-loop status --json` shows no open goals.
 11. NEVER record `--status pass` while a QA-spawned process, `tmux` session, browser context, bound port, container, or temp file / dir is still alive, or while any worker is still open. The evidence string MUST include the cleanup receipt. Leftover runtime state = BLOCKED, not PASS.
 12. DELEGATE all code edits, test writes, fixes, and QA execution to right-sized `invoke_subagent` workers; you read, search, plan, integrate, and QA. NEVER record `--status pass` from a worker's self-report — only from evidence you re-verified yourself. Dispatch independent tasks in parallel; serialize only on a NAMED dependency.
-13. Every verified work unit that touched git-tracked files must leave either an atomic `git-master`-style commit hash or explicit no-commit blocker evidence before the next unit starts.
+13. Every verified work unit that touched git-tracked files must leave either an atomic `git-master`-style commit hash or explicit no-commit blocker evidence before the next unit starts. Inspect touched-path commit history, commit in the observed style, and avoid omnibus commit patterns. Every worker message MUST carry TASK / DELIVERABLE / SCOPE / VERIFY. Each worker does strict TDD.
 
 ## Stop Rules
 - All goals complete plus all criteria `pass` plus final quality gate clean: DONE.

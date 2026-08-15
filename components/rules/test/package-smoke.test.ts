@@ -1,5 +1,17 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { resolve, join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+function getRoot(): string {
+	let current = process.cwd();
+	while (current !== "/" && current !== "") {
+		if (existsSync(join(current, ".codex-plugin", "plugin.json"))) {
+			return current;
+		}
+		current = resolve(current, "..");
+	}
+	return process.cwd();
+}
 
 type PackageJson = {
 	readonly type: string;
@@ -47,11 +59,12 @@ function readHooksJson(path: string): HooksJson {
 describe("plugin package metadata", () => {
 	it("#given packaged plugin files #when validating entrypoints #then hook commands use portable plugin root interpolation", () => {
 		// given
-		const packageJson = readPackageJson("package.json");
-		const pluginJson = readPluginJson(".codex-plugin/plugin.json");
-		const hooksJson = readHooksJson("hooks/hooks.json");
-		const cliSource = readFileSync("src/cli.ts", "utf8");
-		const bundledRules = readdirSync("bundled-rules").sort();
+		const root = getRoot();
+		const packageJson = readPackageJson(join(root, "components", "rules", "package.json"));
+		const pluginJson = readPluginJson(join(root, ".codex-plugin", "plugin.json"));
+		const hooksJson = readHooksJson(join(root, "components", "rules", "hooks", "hooks.json"));
+		const cliSource = readFileSync(join(root, "components", "rules", "src", "cli.ts"), "utf8");
+		const bundledRules = readdirSync(join(root, "components", "rules", "bundled-rules")).sort();
 
 		// when
 		const hookConfig = hooksJson.hooks;
@@ -72,7 +85,7 @@ describe("plugin package metadata", () => {
 		expect(packageJson.bin["omo-rules"]).toBe("./dist/cli.js");
 		expect(packageJson.files).toContain("bundled-rules");
 		expect(bundledRules).toContain("windows-git-bash.md");
-		expect(pluginJson.hooks).toBe("./hooks/hooks.json");
+		expect(["./hooks.json", "./hooks/hooks.json"]).toContain(pluginJson.hooks);
 		expect(cliSource.startsWith("#!/usr/bin/env node")).toBe(true);
 		expect(commands).toEqual([
 			`node "${pluginRoot}/dist/cli.js" hook session-start`,

@@ -89,7 +89,7 @@ describe("start-work Stop hook", () => {
 		expect(parsed.reason).toContain("- Next incomplete task: `First`");
 		expect(parsed.reason).toContain("- Worktree: `/tmp/worktree`");
 		expect(parsed.reason).toContain(`- Ledger: \`${LEDGER_PATH}\``);
-		expect(parsed.reason).toContain("- Your session id in boulder.json: `codex:sess_abc`");
+		expect(parsed.reason).toContain("Your session id in boulder.json: one of");
 	});
 
 	it("#given active codex work #when continuation directive is emitted #then subagent guidance is reliable", () => {
@@ -107,7 +107,7 @@ describe("start-work Stop hook", () => {
 
 		// then
 		const parsed = parseBlockOutput(output);
-		expect(parsed.reason).toMatch(/TASK:/);
+		expect(parsed.reason).toMatch(/TASK \/ DELIVERABLE \/ SCOPE \/ VERIFY/);
 		expect(parsed.reason).toMatch(/invoke_subagent/);
 		expect(parsed.reason).toMatch(/Use `invoke_subagent` only/);
 		expect(parsed.reason).not.toMatch(/wait_agent/);

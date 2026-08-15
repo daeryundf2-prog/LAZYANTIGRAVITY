@@ -1,4 +1,4 @@
-import { isAbsolute, join, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 const CHECKBOX_PATTERN = /^- \[[ xX]\] /;
 const UNCHECKED_PATTERN = /^- \[ \] /;
 const TODO_HEADING = "TODOs";
@@ -124,8 +124,12 @@ function isCountedHeading(heading) {
     return heading === TODO_HEADING || heading === FINAL_VERIFICATION_HEADING;
 }
 function resolvePlanPath(cwd, activePlan) {
-    const sanitized = activePlan.replace(/^(\.\.[\/\\])+/, "");
-    return isAbsolute(sanitized) ? sanitized : resolve(cwd, sanitized);
+    const resolved = isAbsolute(activePlan) ? resolve(activePlan) : resolve(cwd, activePlan);
+    const rel = relative(cwd, resolved);
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+        return resolve(cwd, basename(activePlan));
+    }
+    return resolved;
 }
 function readTextFile(fs, path) {
     try {

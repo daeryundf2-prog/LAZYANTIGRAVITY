@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { extname, resolve } from "node:path";
 
 export const LSP_TOOLS = [
@@ -74,17 +74,21 @@ export async function executeLspDiagnostics({ filePath }) {
 
 	if ([".ts", ".tsx", ".js", ".jsx"].includes(ext)) {
 		try {
-			// Run tsc syntax check if available
-			execSync(`npx --no-install tsc --noEmit "${absolutePath}"`, {
+			const res = spawnSync("npx", ["--no-install", "tsc", "--noEmit", absolutePath], {
 				encoding: "utf8",
 				timeout: 5000,
-				stdio: ["pipe", "pipe", "pipe"]
+				shell: false,
+				stdio: ["ignore", "pipe", "pipe"]
 			});
-		} catch (err) {
-			const output = (err.stdout || err.stderr || "").trim();
-			if (output) {
-				diagnostics.push({ file: filePath, message: output, severity: "error" });
+			const output = ((res.stdout || "") + "\n" + (res.stderr || "")).trim();
+			if (res.status !== 0 && output) {
+				// Filter out npx tool missing messages to prevent false positive diagnostics
+				if (!output.includes("could not determine executable to run") && !output.includes("command not found") && !output.includes("not found")) {
+					diagnostics.push({ file: filePath, message: output, severity: "error" });
+				}
 			}
+		} catch {
+			// Ignore execution failures
 		}
 	}
 

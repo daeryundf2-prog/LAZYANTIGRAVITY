@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
 const TOOLS = [
 	{
 		name: "git_bash_execute",
-		description: "Execute a safe command within Git Bash / shell terminal environment.",
+		description: "Execute a safe read-only or git command strictly within Git Bash environment without shell chaining.",
 		inputSchema: {
 			type: "object",
 			properties: {
-				command: { type: "string", description: "Command line to execute" },
+				command: { type: "string", description: "Safe command to execute (e.g. 'git status', 'pwd', 'ls')" },
 				cwd: { type: "string", description: "Working directory path" }
 			},
 			required: ["command"]
@@ -18,17 +18,37 @@ const TOOLS = [
 	}
 ];
 
-const ALLOWED_COMMAND_PREFIXES = [
-	"git", "echo", "pwd", "ls", "cat", "node", "npm", "npx", "which", "where", "env", "printenv"
-];
+const STRICT_ALLOWED_BINARIES = new Set(["git", "pwd", "ls", "echo"]);
+const SHELL_METASYMBOLS = /[;&|`$><()\\\n\r]/;
 
-function isCommandAllowed(command) {
-	if (!command || typeof command !== "string") return false;
-	const trimmed = command.trim();
-	// Check for dangerous shell chaining or dangerous root removal
-	if (/rm\s+-rf\s+[\/\\]/i.test(trimmed)) return false;
-	const firstToken = trimmed.split(/[\s;&|]/)[0].toLowerCase();
-	return ALLOWED_COMMAND_PREFIXES.some((prefix) => firstToken === prefix || firstToken.endsWith(`/${prefix}`) || firstToken.endsWith(`\\${prefix}`));
+function parseSafeCommand(commandStr) {
+	if (!commandStr || typeof commandStr !== "string") {
+		return { ok: false, error: "Command must be a non-empty string." };
+	}
+
+	const trimmed = commandStr.trim();
+	if (SHELL_METASYMBOLS.test(trimmed)) {
+		return { ok: false, error: "Command chaining and shell metacharacters (; & | ` $ > < \\) are strictly prohibited." };
+	}
+
+	// Split by whitespace without shell evaluation
+	const tokens = trimmed.split(/\s+/).filter(Boolean);
+	if (tokens.length === 0) {
+		return { ok: false, error: "Empty command." };
+	}
+
+	const rawBinary = tokens[0].toLowerCase();
+	const binary = rawBinary.split(/[\/\\]/).pop() ?? "";
+
+	if (!STRICT_ALLOWED_BINARIES.has(binary)) {
+		return {
+			ok: false,
+			error: `Binary '${binary}' is not permitted. Only [${Array.from(STRICT_ALLOWED_BINARIES).join(", ")}] are allowed.`
+		};
+	}
+
+	const args = tokens.slice(1);
+	return { ok: true, binary, args };
 }
 
 async function handleJsonRpc(message) {
@@ -71,52 +91,81 @@ async function handleJsonRpc(message) {
 			};
 		}
 
-		const command = args.command;
-		const cwd = args.cwd ? resolve(process.cwd(), args.cwd) : process.cwd();
-
-		if (!isCommandAllowed(command)) {
+		const parsed = parseSafeCommand(args.command);
+		if (!parsed.ok) {
 			return {
 				jsonrpc: "2.0",
 				id,
 				result: {
 					content: [{
 						type: "text",
-						text: JSON.stringify({
-							ok: false,
-							error: `Command '${command}' is not in the safe allowlist or contains prohibited patterns.`
-						}, null, 2)
+						text: JSON.stringify({ ok: false, error: parsed.error }, null, 2)
 					}],
 					isError: true
 				}
 			};
 		}
 
+		const cwd = args.cwd ? resolve(process.cwd(), args.cwd) : process.cwd();
+
 		try {
-			const stdout = execSync(command, {
+			const res = spawnSync(parsed.binary, parsed.args, {
 				cwd,
 				encoding: "utf8",
 				timeout: 10000,
-				stdio: ["pipe", "pipe", "pipe"]
+				shell: false,
+				stdio: ["ignore", "pipe", "pipe"]
 			});
+
+			const stdout = (res.stdout || "").trim();
+			const stderr = (res.stderr || "").trim();
+
+			if (res.error) {
+				return {
+					jsonrpc: "2.0",
+					id,
+					result: {
+						content: [{
+							type: "text",
+							text: JSON.stringify({ ok: false, error: res.error.message }, null, 2)
+						}],
+						isError: true
+					}
+				};
+			}
+
+			if (res.status !== 0) {
+				return {
+					jsonrpc: "2.0",
+					id,
+					result: {
+						content: [{
+							type: "text",
+							text: JSON.stringify({ ok: false, output: stderr || stdout, exitCode: res.status }, null, 2)
+						}],
+						isError: true
+					}
+				};
+			}
+
 			return {
 				jsonrpc: "2.0",
 				id,
 				result: {
 					content: [{
 						type: "text",
-						text: JSON.stringify({ ok: true, output: stdout.trim() }, null, 2)
+						text: JSON.stringify({ ok: true, output: stdout }, null, 2)
 					}]
 				}
 			};
 		} catch (err) {
-			const output = (err.stdout || err.stderr || err.message || "").trim();
 			return {
 				jsonrpc: "2.0",
 				id,
 				result: {
 					content: [{
 						type: "text",
-						text: JSON.stringify({ ok: false, output, exitCode: err.status ?? 1 }, null, 2)
+						text: JSON.stringify({ ok: false, error: err.message }, null, 2)
 					}],
 					isError: true
 				}

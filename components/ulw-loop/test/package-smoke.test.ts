@@ -214,12 +214,15 @@ describe("skills/ulw-loop/SKILL.md", () => {
 					"",
 				].join("\n"),
 			);
+			await chmod(cachedCli, 0o755);
 
 			const result = await runShell(`${bootstrap}\nomo ulw-loop status --json`, {
 				...process.env,
+				PLUGIN_ROOT: "",
+				LAZYANTIGRAVITY_ROOT: "",
 				CODEX_HOME: codexHome,
 				HOME: home,
-				PATH: `${badBin}${delimiter}${process.env["PATH"] ?? ""}`,
+				PATH: `${badBin}${delimiter}${dirname(process.execPath)}`,
 			});
 
 			expect(result.code).toBe(0);
