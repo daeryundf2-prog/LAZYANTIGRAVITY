@@ -6,7 +6,31 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const lspToolsDir = join(__dirname, "..", "..", "..", "lsp-tools-mcp");
+
+function findLspToolsDir() {
+	const candidates = [
+		join(__dirname, "..", "..", "lsp-tools-mcp"),
+		join(__dirname, "..", "..", "..", "lsp-tools-mcp"),
+		join(__dirname, "..", "..", "..", "packages", "lsp-tools-mcp"),
+		join(__dirname, "..", "..", "..", "..", "lsp-tools-mcp"),
+		join(__dirname, "..", "..", "..", "..", "packages", "lsp-tools-mcp"),
+		join(__dirname, "..", "..", "..", "..", "..", "packages", "lsp-tools-mcp"),
+		join(__dirname, "..", "..", "..", "..", "..", "lsp-tools-mcp"),
+	];
+	for (const candidate of candidates) {
+		if (existsSync(join(candidate, "package.json"))) {
+			return candidate;
+		}
+	}
+	for (const candidate of candidates) {
+		if (existsSync(candidate)) {
+			return candidate;
+		}
+	}
+	return join(__dirname, "..", "..", "lsp-tools-mcp");
+}
+
+const lspToolsDir = findLspToolsDir();
 const packageJson = join(lspToolsDir, "package.json");
 const requiredOutputs = [
 	join(lspToolsDir, "dist", "cli.js"),
@@ -14,7 +38,19 @@ const requiredOutputs = [
 ];
 const force = process.argv.includes("--force");
 
-if (!force && requiredOutputs.every((path) => existsSync(path))) {
+function isBuildFresh(inputPath, outputPaths) {
+	if (!existsSync(inputPath)) return false;
+	if (outputPaths.some((path) => !existsSync(path))) return false;
+	const inputMtime = statSync(inputPath).mtimeMs;
+	return outputPaths.every((path) => statSync(path).mtimeMs >= inputMtime);
+}
+
+if (!force && existsSync(packageJson) && isBuildFresh(packageJson, requiredOutputs)) {
+	console.log("Using bundled lsp-tools-mcp dist.");
+	process.exit(0);
+}
+
+if (!force && !existsSync(packageJson) && requiredOutputs.every((path) => existsSync(path))) {
 	console.log("Using bundled lsp-tools-mcp dist.");
 	process.exit(0);
 }
@@ -33,10 +69,3 @@ console.log("Building repository lsp-tools-mcp...");
 execSync("npm run build", { cwd: lspToolsDir, stdio: "inherit" });
 
 console.log("Done.");
-
-function isBuildFresh(inputPath, outputPaths) {
-	if (!existsSync(inputPath)) return false;
-	if (outputPaths.some((path) => !existsSync(path))) return false;
-	const inputMtime = statSync(inputPath).mtimeMs;
-	return outputPaths.every((path) => statSync(path).mtimeMs >= inputMtime);
-}

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -31,7 +31,8 @@ export const FORBIDDEN_PHRASES = [
     /completed the global task/i,
 ];
 function safeSegment(val) {
-    return val.replace(/[^A-Za-z0-9._-]/g, "_");
+    const sanitized = val.replace(/[^A-Za-z0-9._-]/g, "_");
+    return sanitized.replace(/^(\.\.(\/|\\|$))+/, "") || "default";
 }
 export function getRunDir(repoRoot, runId) {
     return join(repoRoot, ".lazycodex", "runs", safeSegment(runId));
@@ -53,14 +54,27 @@ export async function appendRunEvent(repoRoot, runId, type, data) {
     const runDir = getRunDir(repoRoot, runId);
     if (!existsSync(runDir))
         await mkdir(runDir, { recursive: true });
+    const existingEvents = await readRunEvents(repoRoot, runId);
+    const lastEvent = existingEvents.length > 0 ? existingEvents[existingEvents.length - 1] : undefined;
+    const prevHash = lastEvent?.hash || "0000000000000000000000000000000000000000000000000000000000000000";
     const event = {
         eventId: randomUUID(),
         timestamp: new Date().toISOString(),
         type,
         runId,
+        prevHash,
         ...data,
     };
     const cleanEvent = stripSensitiveData(event);
+    const hashPayload = JSON.stringify({
+        eventId: cleanEvent.eventId,
+        timestamp: cleanEvent.timestamp,
+        type: cleanEvent.type,
+        runId: cleanEvent.runId,
+        prevHash: cleanEvent.prevHash,
+        payload: cleanEvent,
+    });
+    cleanEvent.hash = createHash("sha256").update(hashPayload).digest("hex");
     const eventsFile = join(runDir, "events.jsonl");
     await writeFile(eventsFile, `${JSON.stringify(cleanEvent)}\n`, { flag: "a", encoding: "utf8" });
     await reconstructAndSaveState(repoRoot, runId);

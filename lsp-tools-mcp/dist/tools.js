@@ -80,11 +80,19 @@ export async function executeLspDiagnostics({ filePath }) {
 				shell: false,
 				stdio: ["ignore", "pipe", "pipe"]
 			});
-			const output = ((res.stdout || "") + "\n" + (res.stderr || "")).trim();
-			if (res.status !== 0 && output) {
-				// Filter out npx tool missing messages to prevent false positive diagnostics
-				if (!output.includes("could not determine executable to run") && !output.includes("command not found") && !output.includes("not found")) {
-					diagnostics.push({ file: filePath, message: output, severity: "error" });
+			if (res.error) {
+				// Process spawn error (e.g., npx missing in environment)
+			} else {
+				const stdout = (res.stdout || "").trim();
+				const stderr = (res.stderr || "").trim();
+				const isToolMissing = stderr.includes("could not determine executable to run") || 
+					stderr.includes("command not found") || 
+					stderr.includes("npm ERR!");
+				if (res.status !== 0 && !isToolMissing) {
+					const output = (stdout ? stdout + (stderr ? "\n" + stderr : "") : stderr).trim();
+					if (output) {
+						diagnostics.push({ file: filePath, message: output, severity: "error" });
+					}
 				}
 			}
 		} catch {

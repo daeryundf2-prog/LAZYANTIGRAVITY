@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 
 function resolveBundledModule(repoRoot: string, relativeCandidates: string[]): string | null {
-	for (const relative of relativeCandidates) {
-		const absolute = join(repoRoot, relative);
+	for (const relativePath of relativeCandidates) {
+		const absolute = join(repoRoot, relativePath);
 		if (existsSync(absolute)) return absolute;
 	}
 	return null;
@@ -20,9 +20,15 @@ export async function collectLspDiagnostics(repoRoot: string, filesChanged: stri
 
 		const results: string[] = [];
 		for (const file of filesChanged) {
-			const filePath = join(repoRoot, file);
-			if (existsSync(filePath)) {
-				const diag = await runLspDiagnosticsText(filePath);
+			if (!file || typeof file !== "string") continue;
+			const resolvedPath = resolve(repoRoot, file);
+			const rel = relative(repoRoot, resolvedPath);
+			if (rel.startsWith("..") || isAbsolute(rel)) {
+				// Block path traversal outside repo root
+				continue;
+			}
+			if (existsSync(resolvedPath)) {
+				const diag = await runLspDiagnosticsText(resolvedPath);
 				if (diag && diag.trim() !== "" && !diag.includes("No diagnostics found")) {
 					results.push(`LSP error in ${file}: ${diag.trim()}`);
 				}

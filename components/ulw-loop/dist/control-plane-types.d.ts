@@ -5,6 +5,8 @@ export interface LedgerEvent {
     eventId?: string;
     causationId?: string;
     correlationId?: string;
+    prevHash?: string;
+    hash?: string;
     hitlId?: string;
     hitlReason?: string;
     previousState?: string;

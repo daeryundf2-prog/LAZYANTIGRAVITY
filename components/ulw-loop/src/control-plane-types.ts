@@ -59,6 +59,8 @@ export interface LedgerEvent {
 	eventId?: string;
 	causationId?: string;
 	correlationId?: string;
+	prevHash?: string;
+	hash?: string;
 
 	// P2: HITL Context
 	hitlId?: string;

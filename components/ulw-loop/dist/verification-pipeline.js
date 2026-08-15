@@ -27,20 +27,27 @@ export function runMechanicalGate(ctx, policy) {
             parentActionRequired: true,
         };
     }
-    const { commandsRun } = ctx.evidence;
-    // In this initial phase, we just check if evidence was provided if they claim success.
-    // Later we can actually run `npm test` or `npm run build`.
-    if (policy.requireTests && !commandsRun?.some((cmd) => cmd.includes("test"))) {
-        // Just a warning or failure? Requirement says: "evidence envelope로 받은 commandsRun ... 검증하라. 실패 시 quality_gate.failed 이벤트 생성"
-        // If we are strictly failing, maybe we fail if no evidence is provided.
-        // Let's assume for now, if filesChanged is > 0 but no commandsRun, we fail mechanical if they didn't verify.
-        if (ctx.evidence.filesChanged.length > 0 && commandsRun.length === 0) {
+    const { commandsRun, filesChanged } = ctx.evidence;
+    // Enforce that any code change must be accompanied by executed verification commands
+    if (filesChanged && filesChanged.length > 0) {
+        if (!commandsRun || commandsRun.length === 0) {
             return {
                 stage: "mechanical",
                 status: "failed",
-                reason: "Mechanical verification failed: No commands run to verify changes",
+                reason: "Mechanical verification failed: Changes made to files but no verification commands were executed",
                 parentActionRequired: true,
             };
+        }
+        if (policy.requireTests) {
+            const hasTestRun = commandsRun.some((cmd) => /\b(test|vitest|jest|pytest|cargo\s+test|go\s+test|npm\s+test|bun\s+test)\b/i.test(cmd));
+            if (!hasTestRun) {
+                return {
+                    stage: "mechanical",
+                    status: "failed",
+                    reason: "Mechanical verification failed: Policy requires automated tests, but no test execution command was found in evidence",
+                    parentActionRequired: true,
+                };
+            }
         }
     }
     return {

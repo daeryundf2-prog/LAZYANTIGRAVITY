@@ -11,12 +11,13 @@
 	"files": ["dist", "hooks"],
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
-		"test": "bun test test/*.test.ts",
+		"test": "vitest --run",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@types/node": "^25.7.0",
-		"typescript": "^6.0.3"
+		"typescript": "^6.0.3",
+		"vitest": "^4.1.8"
 	},
 	"engines": {
 		"node": ">=20.0.0"

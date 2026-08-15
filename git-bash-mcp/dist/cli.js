@@ -21,6 +21,38 @@ const TOOLS = [
 const STRICT_ALLOWED_BINARIES = new Set(["git", "pwd", "ls", "echo"]);
 const SHELL_METASYMBOLS = /[;&|`$><()\\\n\r]/;
 
+function tokenizeCommand(str) {
+	const tokens = [];
+	let current = "";
+	let inQuote = null;
+	for (let i = 0; i < str.length; i++) {
+		const char = str[i];
+		if (inQuote) {
+			if (char === inQuote) {
+				inQuote = null;
+			} else {
+				current += char;
+			}
+		} else if (char === '"' || char === "'") {
+			inQuote = char;
+		} else if (/\s/.test(char)) {
+			if (current.length > 0) {
+				tokens.push(current);
+				current = "";
+			}
+		} else {
+			current += char;
+		}
+	}
+	if (inQuote) {
+		return { ok: false, error: "Unmatched quote in command." };
+	}
+	if (current.length > 0) {
+		tokens.push(current);
+	}
+	return { ok: true, tokens };
+}
+
 function parseSafeCommand(commandStr) {
 	if (!commandStr || typeof commandStr !== "string") {
 		return { ok: false, error: "Command must be a non-empty string." };
@@ -31,8 +63,12 @@ function parseSafeCommand(commandStr) {
 		return { ok: false, error: "Command chaining and shell metacharacters (; & | ` $ > < \\) are strictly prohibited." };
 	}
 
-	// Split by whitespace without shell evaluation
-	const tokens = trimmed.split(/\s+/).filter(Boolean);
+	const tokenized = tokenizeCommand(trimmed);
+	if (!tokenized.ok) {
+		return { ok: false, error: tokenized.error };
+	}
+
+	const tokens = tokenized.tokens;
 	if (tokens.length === 0) {
 		return { ok: false, error: "Empty command." };
 	}

@@ -259,8 +259,22 @@ function resolveUpdateSource(env) {
 	return { configured: false, legacyCompatibility: false };
 }
 
+const ALLOWED_PACKAGE_PATTERN = /^(?:@[a-z0-9-_.]+\/)?[a-z0-9-_.]+(?:@[a-z0-9-_.]+)?$/i;
+
+function validateUpdateSource(source) {
+	if (typeof source !== "string" || !source.trim()) {
+		throw new TypeError("Auto-update source must be a non-empty string");
+	}
+	const trimmed = source.trim();
+	if (!ALLOWED_PACKAGE_PATTERN.test(trimmed) || trimmed.includes("..") || trimmed.includes("://")) {
+		throw new Error(`Untrusted auto-update source '${trimmed}'; must match valid package specification`);
+	}
+	return trimmed;
+}
+
 function argsForSource(source) {
-	return ["--yes", source, "install", "--no-tui", "--codex-autonomous"];
+	const validSource = validateUpdateSource(source);
+	return ["--yes", validSource, "install", "--no-tui", "--codex-autonomous"];
 }
 
 function parseArgsJson(raw, name) {

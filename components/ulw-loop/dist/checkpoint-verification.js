@@ -294,8 +294,11 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         });
         let consensusPrompt = `Verify the changes for goal: ${goal.objective}`;
         consensusPrompt = injectFeedbackContext(consensusPrompt, lspDiagnostics, rulesViolations);
+        const isLiveAvailable = !!process.env["OPENCODE_API_URL"] || !!process.env["LAZYANTIGRAVITY_LIVE_CONSENSUS"];
+        const isTestEnv = process.env["NODE_ENV"] === "test" || process.env["VITEST"] === "true";
         const dispatchRes = await dispatchConsensus(repoRoot, runId, fingerprint, {
-            mockLive: true,
+            live: isLiveAvailable,
+            mockLive: !isLiveAvailable && isTestEnv,
             prompt: consensusPrompt,
         });
         const updatedEvents = await readRunEvents(repoRoot, runId);

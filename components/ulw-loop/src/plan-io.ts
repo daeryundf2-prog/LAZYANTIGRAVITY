@@ -94,12 +94,18 @@ export async function readUlwLoopPlan(repoRoot: string, scope?: UlwLoopScope): P
 	return parsed;
 }
 
+let writePlanLock = Promise.resolve();
+
 export async function writePlan(repoRoot: string, plan: UlwLoopPlan, scope?: UlwLoopScope): Promise<void> {
-	await mkdir(ulwLoopDir(repoRoot, scope), { recursive: true });
-	const path = ulwLoopGoalsPath(repoRoot, scope);
-	const tmpPath = `${path}.${process.pid}.${Date.now()}.tmp`;
-	await writeFile(tmpPath, `${JSON.stringify(plan, null, 2)}\n`, "utf8");
-	await rename(tmpPath, path);
+	const currentOperation = writePlanLock.then(async () => {
+		await mkdir(ulwLoopDir(repoRoot, scope), { recursive: true });
+		const path = ulwLoopGoalsPath(repoRoot, scope);
+		const tmpPath = `${path}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+		await writeFile(tmpPath, `${JSON.stringify(plan, null, 2)}\n`, "utf8");
+		await rename(tmpPath, path);
+	});
+	writePlanLock = currentOperation.catch(() => {});
+	return currentOperation;
 }
 
 export async function appendLedger(repoRoot: string, entry: UlwLoopLedgerEntry, scope?: UlwLoopScope): Promise<void> {
