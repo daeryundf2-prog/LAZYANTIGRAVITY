@@ -1,5 +1,5 @@
-import type { LedgerEvent } from "./control-plane-types.js";
 import { computeLedgerHash, GENESIS_HASH } from "./control-plane.js";
+import type { LedgerEvent } from "./control-plane-types.js";
 import { readRunEvents } from "./reconstruct.js";
 
 export type LedgerVerificationResult = {
