@@ -9,11 +9,13 @@ let threshold = 80; // Minimum acceptable mutation score %
 
 for (let i = 0; i < args.length; i++) {
 	if (args[i].startsWith("--test=")) {
-		testCommand = args[i].split("=")[1];
+		testCommand = args[i].slice("--test=".length);
 	} else if (args[i].startsWith("--threshold=")) {
-		threshold = parseInt(args[i].split("=")[1], 10) || 80;
+		threshold = parseInt(args[i].slice("--threshold=".length), 10) || 80;
 	} else if (!targetFile) {
 		targetFile = args[i];
+	} else if (testCommand === "npm test") {
+		testCommand = args[i];
 	}
 }
 

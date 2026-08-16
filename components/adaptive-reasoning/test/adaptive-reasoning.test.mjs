@@ -20,9 +20,11 @@ test("computeThinkingBudget routes refactoring and orchestration tasks to 32k to
 });
 
 test("computeThinkingBudget turns off budget for simple fast queries", () => {
-	const res = computeThinkingBudget("git status");
-	assert.equal(res.budget, 0);
-	assert.equal(res.level, "off");
+	assert.equal(computeThinkingBudget("git status").budget, 0);
+	assert.equal(computeThinkingBudget("ls -la").budget, 0);
+	assert.equal(computeThinkingBudget("pwd").budget, 0);
+	assert.equal(computeThinkingBudget("whoami").budget, 0);
+	assert.equal(computeThinkingBudget("clear").budget, 0);
 });
 
 test("computeThinkingBudget routes short location questions and github to off budget", () => {
@@ -33,6 +35,14 @@ test("computeThinkingBudget routes short location questions and github to off bu
 	assert.equal(computeThinkingBudget("github status").budget, 0);
 	assert.equal(computeThinkingBudget("설명해줘").budget, 0);
 	assert.equal(computeThinkingBudget("로그 확인해줘").budget, 0);
+	assert.equal(computeThinkingBudget("where is config.json").budget, 0);
+});
+
+test("computeThinkingBudget routes general non-inquiry non-modification statements to standard", () => {
+	const res = computeThinkingBudget("some general application data processing payload for session");
+	assert.equal(res.budget, 8192);
+	assert.equal(res.tier, "flash");
+	assert.equal(res.level, "standard");
 });
 
 test("computeThinkingBudget does not misclassify short action/modification requests as off budget", () => {
