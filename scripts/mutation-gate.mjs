@@ -19,6 +19,33 @@ for (let i = 0; i < args.length; i++) {
 	}
 }
 
+function parseCommand(cmd) {
+	const parts = [];
+	let current = "";
+	let inSingle = false;
+	let inDouble = false;
+	for (let i = 0; i < cmd.length; i++) {
+		const ch = cmd[i];
+		if (ch === "'" && !inDouble) { inSingle = !inSingle; continue; }
+		if (ch === '"' && !inSingle) { inDouble = !inDouble; continue; }
+		if (ch === " " && !inSingle && !inDouble) {
+			if (current.length > 0) { parts.push(current); current = ""; }
+			continue;
+		}
+		current += ch;
+	}
+	if (current.length > 0) parts.push(current);
+	return parts;
+}
+
+function runCommand(cmd, opts) {
+	if (process.platform === "win32") {
+		return spawnSync(cmd, { ...opts, shell: true });
+	}
+	const parts = parseCommand(cmd);
+	return spawnSync(parts[0], parts.slice(1), { ...opts, shell: false });
+}
+
 if (!targetFile || !existsSync(targetFile)) {
 	console.error("Usage: node scripts/mutation-gate.mjs <targetSourceFile> [--test=\"npm test\"] [--threshold=80]");
 	process.exit(1);
@@ -94,7 +121,7 @@ if (mutants.length === 0) {
 // Baseline sanity check: the test command must pass on the pristine source.
 // Otherwise a broken suite would count every mutant as "killed" and report a false 100%.
 console.log(`[Mutation-Gate] Baseline check: running "${testCommand}" on original source...`);
-const baseline = spawnSync(testCommand, { shell: true, encoding: "utf8" });
+const baseline = runCommand(testCommand, { encoding: "utf8" });
 if (baseline.status !== 0) {
 	console.error("[Mutation-Gate] ❌ FAIL: Test command fails on the ORIGINAL source.");
 	console.error("[Mutation-Gate]    Refusing to run mutants (results would be meaningless).");
@@ -120,7 +147,7 @@ try {
 		writeFileSync(targetFile, mutant.mutatedSource, "utf8");
 
 		// Run test
-		const res = spawnSync(testCommand, { shell: true, encoding: "utf8" });
+		const res = runCommand(testCommand, { encoding: "utf8" });
 
 		if (res.status !== 0) {
 			// Test failed -> Mutant was caught/killed (GOOD)

@@ -1,4 +1,4 @@
-const SENSITIVE_VALUE_REGEX = /(?:sk-|ghp_|gho_)[a-zA-Z0-9_-]{12,}|\beyJ[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\b|(?:Authorization:\s*Bearer\s+|password=|api_key=|token=)[a-zA-Z0-9._-]+|\btoken_secret_[a-zA-Z0-9_-]+\b/gi;
+const SENSITIVE_VALUE_REGEX = /(?:sk-|ghp_|gho_|xox[bpo]-|AKIA)[a-zA-Z0-9_-]{12,}|\beyJ[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\b|(?:Authorization:\s*Bearer\s+|password=|api_key=|token=)[a-zA-Z0-9._-]+|\btoken_secret_[a-zA-Z0-9_-]+\b|-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----/gi;
 export function stripSensitiveData(obj) {
     if (obj === null || obj === undefined)
         return obj;

@@ -1,5 +1,40 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, } from "node:fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, } from "node:fs";
 import { join } from "node:path";
+const LOCK_TIMEOUT_MS = 5_000;
+const LOCK_RETRY_MS = 10;
+function withFileLock(filePath, fn) {
+    const lockPath = `${filePath}.lock`;
+    const deadline = Date.now() + LOCK_TIMEOUT_MS;
+    while (true) {
+        try {
+            const fd = openSync(lockPath, "wx");
+            closeSync(fd);
+            try {
+                return fn();
+            }
+            finally {
+                try {
+                    unlinkSync(lockPath);
+                }
+                catch { }
+            }
+        }
+        catch (err) {
+            if (typeof err === "object" &&
+                err !== null &&
+                "code" in err &&
+                err.code === "EEXIST") {
+                if (Date.now() > deadline) {
+                    return fn();
+                }
+                const start = Date.now();
+                while (Date.now() - start < LOCK_RETRY_MS) { }
+                continue;
+            }
+            return fn();
+        }
+    }
+}
 export function getMemoryFilePath(cwd = process.cwd()) {
     // Check for existing .omo/memory or .lazyantigravity/memory
     const omoPath = join(cwd, ".omo", "memory");
@@ -45,19 +80,21 @@ export function saveFact(content, category = "fact", filePath) {
     if (trimmed.length === 0)
         return null;
     const path = filePath ?? getMemoryFilePath();
-    const existing = readFacts(path);
-    // Deduplication check
-    const isDuplicate = existing.some((f) => f.content.toLowerCase() === trimmed.toLowerCase());
-    if (isDuplicate)
-        return null;
-    const record = {
-        id: `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        timestamp: Date.now(),
-        category,
-        content: trimmed,
-    };
-    appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
-    return record;
+    return withFileLock(path, () => {
+        const existing = readFacts(path);
+        // Deduplication check
+        const isDuplicate = existing.some((f) => f.content.toLowerCase() === trimmed.toLowerCase());
+        if (isDuplicate)
+            return null;
+        const record = {
+            id: `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            timestamp: Date.now(),
+            category,
+            content: trimmed,
+        };
+        appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
+        return record;
+    });
 }
 export function formatActiveMemoryContext(facts) {
     if (facts.length === 0)

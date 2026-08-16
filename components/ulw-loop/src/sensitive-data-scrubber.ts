@@ -1,17 +1,21 @@
 const SENSITIVE_VALUE_REGEX =
-	/(?:sk-|ghp_|gho_)[a-zA-Z0-9_-]{12,}|\beyJ[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\b|(?:Authorization:\s*Bearer\s+|password=|api_key=|token=)[a-zA-Z0-9._-]+|\btoken_secret_[a-zA-Z0-9_-]+\b/gi;
+	/(?:sk-|ghp_|gho_|xox[bpo]-|AKIA)[a-zA-Z0-9_-]{12,}|\beyJ[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+\b|(?:Authorization:\s*Bearer\s+|password=|api_key=|token=)[a-zA-Z0-9._-]+|\btoken_secret_[a-zA-Z0-9_-]+\b|-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----/gi;
 
-export function stripSensitiveData(obj: any): any {
+interface ScrubResult {
+	[key: string]: unknown;
+}
+
+export function stripSensitiveData<T>(obj: T): T {
 	if (obj === null || obj === undefined) return obj;
 	if (typeof obj === "string") {
-		return obj.replace(SENSITIVE_VALUE_REGEX, "[REDACTED]");
+		return obj.replace(SENSITIVE_VALUE_REGEX, "[REDACTED]") as T;
 	}
 	if (Array.isArray(obj)) {
-		return obj.map(stripSensitiveData);
+		return obj.map(stripSensitiveData) as T;
 	}
 	if (typeof obj === "object") {
-		const result: any = {};
-		for (const key of Object.keys(obj)) {
+		const result: ScrubResult = {};
+		for (const key of Object.keys(obj as Record<string, unknown>)) {
 			const lowerKey = key.toLowerCase();
 			if (
 				lowerKey.includes("token") ||
@@ -25,10 +29,10 @@ export function stripSensitiveData(obj: any): any {
 			) {
 				result[key] = "[REDACTED]";
 			} else {
-				result[key] = stripSensitiveData(obj[key]);
+				result[key] = stripSensitiveData((obj as Record<string, unknown>)[key]);
 			}
 		}
-		return result;
+		return result as T;
 	}
 	return obj;
 }

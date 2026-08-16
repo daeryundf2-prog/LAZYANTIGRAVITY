@@ -6,6 +6,13 @@ import { join, resolve } from "node:path";
 const args = process.argv.slice(2);
 const command = args[0];
 const agentId = args[1] || `agent-${Date.now().toString(36)}`;
+
+const SAFE_AGENT_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
+if (!SAFE_AGENT_ID.test(agentId)) {
+	console.error(`[Worktree-Swarm] Invalid agentId: "${agentId}". Must match ${SAFE_AGENT_ID}`);
+	process.exit(1);
+}
+
 const worktreeBase = join(process.cwd(), ".lazyantigravity", "worktrees");
 
 function runGit(cmdArgs, cwd = process.cwd(), throwOnError = true) {

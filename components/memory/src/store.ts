@@ -1,17 +1,56 @@
 import {
 	appendFileSync,
+	closeSync,
 	existsSync,
 	mkdirSync,
+	openSync,
 	readFileSync,
+	unlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+
+const LOCK_TIMEOUT_MS = 5_000;
+const LOCK_RETRY_MS = 10;
 
 export interface FactRecord {
 	id: string;
 	timestamp: number;
 	category: "fact" | "preference" | "gotcha" | "rule";
 	content: string;
+}
+
+function withFileLock<T>(filePath: string, fn: () => T): T {
+	const lockPath = `${filePath}.lock`;
+	const deadline = Date.now() + LOCK_TIMEOUT_MS;
+	while (true) {
+		try {
+			const fd = openSync(lockPath, "wx");
+			closeSync(fd);
+			try {
+				return fn();
+			} finally {
+				try {
+					unlinkSync(lockPath);
+				} catch {}
+			}
+		} catch (err: unknown) {
+			if (
+				typeof err === "object" &&
+				err !== null &&
+				"code" in err &&
+				(err as { code: string }).code === "EEXIST"
+			) {
+				if (Date.now() > deadline) {
+					return fn();
+				}
+				const start = Date.now();
+				while (Date.now() - start < LOCK_RETRY_MS) {}
+				continue;
+			}
+			return fn();
+		}
+	}
 }
 
 export function getMemoryFilePath(cwd: string = process.cwd()): string {
@@ -63,23 +102,25 @@ export function saveFact(
 	if (trimmed.length === 0) return null;
 
 	const path = filePath ?? getMemoryFilePath();
-	const existing = readFacts(path);
+	return withFileLock(path, () => {
+		const existing = readFacts(path);
 
-	// Deduplication check
-	const isDuplicate = existing.some(
-		(f) => f.content.toLowerCase() === trimmed.toLowerCase(),
-	);
-	if (isDuplicate) return null;
+		// Deduplication check
+		const isDuplicate = existing.some(
+			(f) => f.content.toLowerCase() === trimmed.toLowerCase(),
+		);
+		if (isDuplicate) return null;
 
-	const record: FactRecord = {
-		id: `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-		timestamp: Date.now(),
-		category,
-		content: trimmed,
-	};
+		const record: FactRecord = {
+			id: `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			timestamp: Date.now(),
+			category,
+			content: trimmed,
+		};
 
-	appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
-	return record;
+		appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
+		return record;
+	});
 }
 
 export function formatActiveMemoryContext(facts: FactRecord[]): string {

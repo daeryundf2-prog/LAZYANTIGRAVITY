@@ -21,6 +21,33 @@ if (!testCommand) {
 	testCommand = "npm test";
 }
 
+function parseCommand(cmd) {
+	const parts = [];
+	let current = "";
+	let inSingle = false;
+	let inDouble = false;
+	for (let i = 0; i < cmd.length; i++) {
+		const ch = cmd[i];
+		if (ch === "'" && !inDouble) { inSingle = !inSingle; continue; }
+		if (ch === '"' && !inSingle) { inDouble = !inDouble; continue; }
+		if (ch === " " && !inSingle && !inDouble) {
+			if (current.length > 0) { parts.push(current); current = ""; }
+			continue;
+		}
+		current += ch;
+	}
+	if (current.length > 0) parts.push(current);
+	return parts;
+}
+
+function spawnCommand(cmd, opts) {
+	if (process.platform === "win32") {
+		return spawn(cmd, { ...opts, shell: true });
+	}
+	const parts = parseCommand(cmd);
+	return spawn(parts[0], parts.slice(1), { ...opts, shell: false });
+}
+
 console.log(`[Flaky-Stress-Runner] Target Command: "${testCommand}"`);
 console.log(`[Flaky-Stress-Runner] Concurrency: ${concurrency}, Total Iterations: ${totalIterations}`);
 
@@ -36,8 +63,7 @@ function runSingleTest(iterationIndex) {
 		setTimeout(() => {
 			let stdout = "";
 			let stderr = "";
-			const proc = spawn(testCommand, {
-				shell: true,
+			const proc = spawnCommand(testCommand, {
 				env: { ...process.env, CI: "true" },
 			});
 

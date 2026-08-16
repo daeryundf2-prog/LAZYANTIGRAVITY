@@ -1,0 +1,25 @@
+import type { UlwLimitErrorType } from "./role-checkpoint.js";
+export declare const SCENARIO_NAMES: readonly ["happy-path", "quota-opus-exhausted", "context-window-exceeded", "output-token-limit", "provider-unavailable", "subagent-self-finalizes", "stale-heartbeat-missed", "polling-loop-prevented", "parent-progress-reconstruct", "subagent-wrong-role-envelope", "same-error-loop", "oscillating-patch", "heartbeat-only-stall", "no-evidence-progress", "quality-happy-path", "quality-mechanical-fail", "quality-semantic-insufficient-evidence", "quality-consensus-required", "quality-stagnation-unresolved", "hitl-scenario", "rewind-preview", "rewind-create-branch", "rewind-destructive-requires-flag", "rewind-invalid-event-id", "rewind-preserves-original-ledger", "consensus-happy-path", "consensus-devil-rejects", "consensus-regression-risk", "consensus-security-state-risk", "consensus-inconclusive", "consensus-self-finalizes-rejected", "consensus-dispatcher-runtime", "consensus-dispatch-invalid-envelope", "consensus-dispatch-antigravity-inherits-model", "consensus-live-invocation"];
+export declare const DRY_RUN_HELP = "Usage:\n  omo ulw-loop dry-run [--scenario <scenario>] [--json] [--write-checkpoint | --persist-checkpoint]\n\nScenarios:\n  happy-path                 Simulates a fully successful role execution flow without errors\n  quota-opus-exhausted       Simulates a Claude Opus quota exhausted / model_rate_limited failure\n  context-window-exceeded    Simulates context window limit hit with Compact Mode transition\n  output-token-limit         Simulates output token limit hit with Batch Mode transition\n  provider-unavailable       Simulates provider API endpoint down with retry mitigation\n  subagent-self-finalizes    Simulates subagent attempting to self-finalize the global run\n  stale-heartbeat-missed     Simulates a subagent lease expiration transitioning to stale_candidate\n  polling-loop-prevented     Simulates prevention of multiple active pollers on a run\n  parent-progress-reconstruct Reconstructs run progress from an events ledger file\n  subagent-wrong-role-envelope Simulates rejection of a subagent with mismatched role envelope\n  same-error-loop            Simulates a subagent stuck in an identical error loop\n  oscillating-patch          Simulates a subagent generating A/B/A/B alternating patches\n  heartbeat-only-stall       Simulates a subagent sending heartbeats but no progress\n  no-evidence-progress       Simulates a subagent reporting progress without actionable evidence\n  quality-happy-path         Simulates passing all quality gates\n  quality-mechanical-fail    Simulates a mechanical gate failure (no tests run)\n  quality-semantic-insufficient-evidence Simulates a semantic gate failure (empty goal or evidence mismatch)\n  quality-consensus-required Simulates high risk condition requiring consensus\n  quality-stagnation-unresolved Simulates semantic failure due to unresolved stagnation\n  hitl-scenario              Simulates a Human-in-the-Loop intervention requirement\n  rewind-preview             Preview the result of a rewind operation\n  rewind-create-branch       Simulates an append-only branch creation\n  rewind-destructive-requires-flag Simulates requiring the destructive flag\n  rewind-invalid-event-id    Simulates rewinding to a non-existent event\n  rewind-preserves-original-ledger Simulates preserving original ledger\n  consensus-happy-path       Simulates all personas approving\n  consensus-devil-rejects    Simulates Devil's Advocate rejecting\n  consensus-regression-risk  Simulates Regression Reviewer requiring rework\n  consensus-security-state-risk Simulates Security-State Reviewer rejecting\n  consensus-inconclusive     Simulates inconclusive consensus results\n  consensus-self-finalizes-rejected Simulates consensus attempting to self-finalize\n  consensus-dispatcher-runtime Simulates dispatcher appending events for consensus\n  consensus-dispatch-invalid-envelope Simulates rejection of invalid envelope properties\n  consensus-dispatch-antigravity-inherits-model Simulates consensus inheriting model without switching\n  consensus-live-invocation          Simulates real consensus multi-persona invocation loop\nOptions:\n  --scenario <scenario>      Select the simulation scenario (default: happy-path)\n  --json                     Output details in machine-readable JSON format\n  --write-checkpoint         Actually write a dry-run checkpoint to .lazycodex/checkpoints/\n  --persist-checkpoint       Alias for --write-checkpoint";
+export interface DryRunState {
+    completedRoles: string[];
+    failedRole: string | null;
+    errorType: UlwLimitErrorType | null;
+    checkpointPath: string | null;
+    nextRecommendedAction: string;
+    isQualityScenario: boolean;
+    qualityStatus: string;
+    qualityStage: string;
+}
+export interface DryRunContext {
+    repoRoot: string;
+    json: boolean;
+    writeCheckpoint: boolean;
+    writeLedger: boolean;
+    platform: string;
+    selectedModel: string;
+    userResumeCommand: string;
+    internalResumeCommand: string;
+    wouldSwitchModel: boolean;
+    allRoles: readonly string[];
+}
