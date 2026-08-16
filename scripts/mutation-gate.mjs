@@ -24,6 +24,19 @@ if (!targetFile || !existsSync(targetFile)) {
 
 const originalSource = readFileSync(targetFile, "utf8");
 
+// Guard: always restore the original source, even if the process is interrupted.
+function restoreOriginal() {
+	try {
+		writeFileSync(targetFile, originalSource, "utf8");
+	} catch {}
+}
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+	process.on(signal, () => {
+		restoreOriginal();
+		process.exit(130);
+	});
+}
+
 // Mutation operators
 const mutationRules = [
 	{ name: "Equality Replacement", from: /===/g, to: "!==" },
@@ -72,6 +85,18 @@ if (mutants.length === 0) {
 	process.exit(0);
 }
 
+// Baseline sanity check: the test command must pass on the pristine source.
+// Otherwise a broken suite would count every mutant as "killed" and report a false 100%.
+console.log(`[Mutation-Gate] Baseline check: running "${testCommand}" on original source...`);
+const baseline = spawnSync(testCommand, { shell: true, encoding: "utf8" });
+if (baseline.status !== 0) {
+	console.error("[Mutation-Gate] ❌ FAIL: Test command fails on the ORIGINAL source.");
+	console.error("[Mutation-Gate]    Refusing to run mutants (results would be meaningless).");
+	console.error((baseline.stderr || baseline.stdout || "").trim().split("\n").slice(0, 12).join("\n"));
+	process.exit(1);
+}
+console.log("[Mutation-Gate] Baseline check passed.");
+
 // Sample up to 10 mutants to keep verification fast
 const sampledMutants = mutants.slice(0, 10);
 console.log(`[Mutation-Gate] Generated ${mutants.length} total mutants (evaluating sample of ${sampledMutants.length})...\n`);
@@ -101,8 +126,8 @@ try {
 		}
 	}
 } finally {
-	// Restore original source always
-	writeFileSync(targetFile, originalSource, "utf8");
+	// Restore original source always (signals are handled by restoreOriginal above)
+	restoreOriginal();
 }
 
 console.log("\n");

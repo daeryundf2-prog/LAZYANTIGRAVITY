@@ -17,11 +17,17 @@ const addedLines = diffText
 	.map((line) => line.slice(1))
 	.join("\n");
 
+// Strip comments so they are not mistaken for live code (avoids false positives
+// like "// Promise.all(...)" or "// child_process.exec(...)" in a comment).
+const strippedLines = addedLines
+	.replace(/\/\*[\s\S]*?\*\//g, "")
+	.replace(/\/\/.*$/gm, "");
+
 // 3 Adversarial Domain Checkers
 const issues = [];
 
 // Domain 1: Security & Injection Hazards
-if (/child_process\.(exec|execSync)\([^,)]*\$\{|eval\(|new Function\(|dangerouslySetInnerHTML/i.test(addedLines)) {
+if (/child_process\.(exec|execSync)\([^,)]*\$\{|eval\(|new Function\(|dangerouslySetInnerHTML/i.test(strippedLines)) {
 	issues.push({
 		domain: "SECURITY",
 		severity: "CRITICAL",
@@ -30,7 +36,7 @@ if (/child_process\.(exec|execSync)\([^,)]*\$\{|eval\(|new Function\(|dangerousl
 }
 
 // Domain 2: Concurrency & Async Hazards
-if (/(?<!await\s+)Promise\.all|new Promise\([^)]*\)(?!\.catch)|setTimeout\(\s*\(\)\s*=>\s*\{[^}]*\}, \d{2,4}\)/.test(addedLines)) {
+if (/(?<!await\s+)Promise\.all|new Promise\([^)]*\)(?!\.catch)|setTimeout\(\s*\(\)\s*=>\s*\{[^}]*\}, \d{2,4}\)/.test(strippedLines)) {
 	issues.push({
 		domain: "CONCURRENCY",
 		severity: "HIGH",
@@ -39,7 +45,7 @@ if (/(?<!await\s+)Promise\.all|new Promise\([^)]*\)(?!\.catch)|setTimeout\(\s*\(
 }
 
 // Domain 3: Boundary & Type Safety Hazards
-if (/(\bas\s+any\b|@ts-ignore|@ts-nocheck|\bunwrap\(\)|\bpanic!\()/.test(addedLines)) {
+if (/(\bas\s+any\b|@ts-ignore|@ts-nocheck|\bunwrap\(\)|\bpanic!\()/.test(strippedLines)) {
 	issues.push({
 		domain: "BOUNDARY_INTEGRITY",
 		severity: "MEDIUM",

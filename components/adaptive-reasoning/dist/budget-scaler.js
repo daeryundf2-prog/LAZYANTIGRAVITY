@@ -23,13 +23,23 @@ export function computeThinkingBudget(prompt) {
         };
     }
     // 3. Off / Fast-Pass Simple Queries
-    if (/^(git\s+(status|diff|log|branch|show)|ls|pwd|whoami|clear)/i.test(trimmed) ||
+    if (/^(git|github)\s+(status|diff|log|branch|show|remote)/i.test(trimmed) ||
+        /^(ls|pwd|whoami|clear)(\s|$)/i.test(trimmed) ||
         /^(어디|위치|설명|찾아|오타|단순|간단|확인|explain|where|what|how)/i.test(trimmed)) {
         return {
             budget: 0,
             tier: "flash_lite",
             level: "off",
             rationale: "Direct low-complexity lookup or quick query",
+        };
+    }
+    // 3b. Short single-intent question (mirrors quick-lane: < 80 chars ending in ?)
+    if (trimmed.length < 80 && (trimmed.endsWith("?") || trimmed.endsWith("줘") || trimmed.endsWith("해봐"))) {
+        return {
+            budget: 0,
+            tier: "flash_lite",
+            level: "off",
+            rationale: "Short direct question routed to quick-lane",
         };
     }
     // 4. Standard Default (Implementation, testing, debugging)

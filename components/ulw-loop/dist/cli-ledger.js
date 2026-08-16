@@ -4,10 +4,7 @@ import { verifyLedgerIntegrity } from "./ledger-integrity.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
 export async function verifyLedgerCmd(repoRoot, argv, json, scope) {
     const explicitRunId = readValue(argv, "--run-id")?.trim();
-    const runId = explicitRunId ??
-        normalizeUlwLoopSessionId(scope?.sessionId) ??
-        resolveUlwLoopSessionIdFromEnv() ??
-        "default-run";
+    const runId = explicitRunId ?? normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
     const result = await verifyLedgerIntegrity(repoRoot, runId);
     if (json)
         printJson({ ok: result.valid, ...result });
