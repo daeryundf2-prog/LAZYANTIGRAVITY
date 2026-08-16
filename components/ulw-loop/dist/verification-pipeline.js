@@ -215,8 +215,12 @@ export function runVerificationPipeline(ctx, policy) {
                     },
                 ];
             }
-            // If it completed, we return passed
-            return [{ stage: "all", status: "passed", reason: "Already completed for this fingerprint" }];
+            // If it completed, we return all gates passed
+            return [
+                { stage: "mechanical", status: "passed", reason: "Already completed for this fingerprint" },
+                { stage: "semantic", status: "passed", reason: "Already completed for this fingerprint" },
+                { stage: "consensus", status: "passed", reason: "Already completed for this fingerprint" },
+            ];
         }
     }
     const results = [];

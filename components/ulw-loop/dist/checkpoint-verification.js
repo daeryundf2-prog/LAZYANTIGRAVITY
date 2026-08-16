@@ -9,8 +9,8 @@ import { codexGoalMode, compatibleCodexObjectives, expectedCodexObjective, isFin
 import { collectLspDiagnostics, collectRulesViolations, injectFeedbackContext } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv, ulwLoopBriefPath } from "./paths.js";
 import { validateQualityGate } from "./quality-gate.js";
-import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
+import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
 import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline } from "./verification-pipeline.js";
 function textMentionsUlwLoopPlanArtifact(value) {
     const normalized = (value ?? "").toLowerCase();
@@ -105,12 +105,15 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
     const events = await readRunEvents(repoRoot, runId);
     const stagnationPolicy = await loadStagnationPolicy(repoRoot);
     const stagnationResult = checkStagnation(events, stagnationPolicy);
-    if (stagnationResult.status !== "ok" && stagnationResult.payload) {
-        if (!events.some((e) => e.type === "parent.stagnation_detected" && e.fingerprint === stagnationResult.payload.fingerprint)) {
-            await appendRunEvent(repoRoot, runId, "parent.stagnation_detected", {
-                ...stagnationResult.payload,
-                fingerprint: stagnationResult.payload.fingerprint,
-            });
+    if (stagnationResult.status !== "ok") {
+        const payload = stagnationResult.payload;
+        if (payload) {
+            if (!events.some((e) => e.type === "parent.stagnation_detected" && e.fingerprint === payload.fingerprint)) {
+                await appendRunEvent(repoRoot, runId, "parent.stagnation_detected", {
+                    ...payload,
+                    fingerprint: payload.fingerprint,
+                });
+            }
         }
     }
     const completedEvents = events.filter((e) => e.type === "agent.completed_reported");

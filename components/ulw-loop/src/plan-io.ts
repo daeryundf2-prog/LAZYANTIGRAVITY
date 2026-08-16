@@ -1,4 +1,5 @@
-import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, open, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { aggregateCodexObjectiveForScope } from "./goal-status.js";
 import {
@@ -15,6 +16,52 @@ import { iso, ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from
 const LEGACY_OBJECTIVE_PREFIX = `Complete all ulw-loop stories in ${ULW_LOOP_DIR}/${ULW_LOOP_GOALS}: `;
 const LEGACY_OBJECTIVE = `Complete all ulw-loop stories listed in ${ULW_LOOP_DIR}/${ULW_LOOP_GOALS}. Use ${ULW_LOOP_DIR}/${ULW_LOOP_LEDGER} as the durable audit trail.`;
 const locks = new Map<string, Promise<unknown>>();
+
+const RETRY_DELAY_MS = 25;
+const LOCK_TIMEOUT_MS = 10_000;
+
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Cross-process file lock for a ulw-loop run ledger. Uses an atomic `open(path, "wx")`
+ * lock file so concurrent processes (hook + CLI + heartbeat) cannot read-modify-write
+ * the same hash chain with a shared prevHash. Releases the lock on completion or error.
+ */
+export async function withLedgerWriteLock<T>(repoRoot: string, runId: string, fn: () => Promise<T>): Promise<T> {
+	const lockDir = getRunDir(repoRoot, runId);
+	await mkdir(lockDir, { recursive: true });
+	const lockPath = join(lockDir, ".write.lock");
+	const deadline = Date.now() + LOCK_TIMEOUT_MS;
+	let handle: Awaited<ReturnType<typeof open>> | undefined;
+	while (true) {
+		try {
+			handle = await open(lockPath, "wx");
+			break;
+		} catch (error) {
+			if (!hasCode(error, "EEXIST")) throw error;
+			if (Date.now() > deadline) {
+				throw new UlwLoopError(
+					`Could not acquire ledger write lock ${lockPath} within ${LOCK_TIMEOUT_MS}ms.`,
+					"ULW_LOOP_LEDGER_LOCK_TIMEOUT",
+				);
+			}
+			await sleep(RETRY_DELAY_MS);
+		}
+	}
+	try {
+		return await fn();
+	} finally {
+		await handle.close();
+		await rm(lockPath, { force: true });
+	}
+}
+
+function getRunDir(repoRoot: string, runId: string): string {
+	const safe = runId.replace(/[^A-Za-z0-9_.-]/g, "_").replace(/^(\.\.(\/|\\|$))+/, "") || "default";
+	return join(repoRoot, ".lazycodex", "runs", safe);
+}
 
 function hasCode(error: unknown, code: string): boolean {
 	return error instanceof Error && "code" in error && error.code === code;

@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, appendFileSync, writeFileSync } from "node:fs";
+import {
+	appendFileSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 export interface FactRecord {
@@ -34,7 +40,9 @@ export function readFacts(filePath?: string): FactRecord[] {
 				const item = JSON.parse(line);
 				if (item && typeof item.content === "string") {
 					facts.push({
-						id: item.id || `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+						id:
+							item.id ||
+							`fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 						timestamp: item.timestamp || Date.now(),
 						category: item.category || "fact",
 						content: item.content.trim(),
@@ -46,7 +54,11 @@ export function readFacts(filePath?: string): FactRecord[] {
 	return facts;
 }
 
-export function saveFact(content: string, category: FactRecord["category"] = "fact", filePath?: string): FactRecord | null {
+export function saveFact(
+	content: string,
+	category: FactRecord["category"] = "fact",
+	filePath?: string,
+): FactRecord | null {
 	const trimmed = content.trim();
 	if (trimmed.length === 0) return null;
 
@@ -54,7 +66,9 @@ export function saveFact(content: string, category: FactRecord["category"] = "fa
 	const existing = readFacts(path);
 
 	// Deduplication check
-	const isDuplicate = existing.some((f) => f.content.toLowerCase() === trimmed.toLowerCase());
+	const isDuplicate = existing.some(
+		(f) => f.content.toLowerCase() === trimmed.toLowerCase(),
+	);
 	if (isDuplicate) return null;
 
 	const record: FactRecord = {
@@ -78,7 +92,12 @@ export function formatActiveMemoryContext(facts: FactRecord[]): string {
 	];
 
 	for (const fact of facts.slice(-20)) {
-		const prefix = fact.category === "gotcha" ? "⚠️ [GOTCHA]" : fact.category === "preference" ? "⭐ [PREFERENCE]" : "📌 [FACT]";
+		const prefix =
+			fact.category === "gotcha"
+				? "⚠️ [GOTCHA]"
+				: fact.category === "preference"
+					? "⭐ [PREFERENCE]"
+					: "📌 [FACT]";
 		lines.push(`- ${prefix} ${fact.content}`);
 	}
 

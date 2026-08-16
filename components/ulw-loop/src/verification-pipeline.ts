@@ -71,7 +71,8 @@ export function runMechanicalGate(ctx: VerificationContext, policy: Verification
 				return {
 					stage: "mechanical",
 					status: "failed",
-					reason: "Mechanical verification failed: Policy requires automated tests, but no test execution command was found in evidence",
+					reason:
+						"Mechanical verification failed: Policy requires automated tests, but no test execution command was found in evidence",
 					parentActionRequired: true,
 				};
 			}
@@ -279,8 +280,12 @@ export function runVerificationPipeline(ctx: VerificationContext, policy: Verifi
 					},
 				];
 			}
-			// If it completed, we return passed
-			return [{ stage: "all" as any, status: "passed", reason: "Already completed for this fingerprint" }];
+			// If it completed, we return all gates passed
+			return [
+				{ stage: "mechanical", status: "passed", reason: "Already completed for this fingerprint" },
+				{ stage: "semantic", status: "passed", reason: "Already completed for this fingerprint" },
+				{ stage: "consensus", status: "passed", reason: "Already completed for this fingerprint" },
+			];
 		}
 	}
 

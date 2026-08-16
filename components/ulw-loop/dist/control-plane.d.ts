@@ -7,6 +7,7 @@ export type { AgentState, AssignmentState, EventType, LeasePolicy, LedgerEvent, 
 export declare const GENESIS_HASH: string;
 export declare function computeLedgerHash(cleanEvent: LedgerEvent): string;
 export declare const FORBIDDEN_PHRASES: RegExp[];
+export declare function safeSegment(val: string): string;
 export declare function getRunDir(repoRoot: string, runId: string): string;
 export declare function loadLeasePolicy(repoRoot: string): Promise<LeasePolicy>;
 export declare function appendRunEvent(repoRoot: string, runId: string, type: EventType, data: Omit<LedgerEvent, "timestamp" | "type" | "runId">): Promise<LedgerEvent>;

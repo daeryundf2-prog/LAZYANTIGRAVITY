@@ -1,12 +1,39 @@
 #!/usr/bin/env node
 import { stdin as processStdin, stdout as processStdout } from "node:process";
-import { readFacts, saveFact, formatActiveMemoryContext } from "./store.js";
+import {
+	formatActiveMemoryContext,
+	getMemoryFilePath,
+	readFacts,
+	saveFact,
+} from "./store.js";
 
 const command = process.argv[2];
 const subcommand = process.argv[3];
 
+function readStdinPayload(): Promise<Record<string, unknown>> {
+	return new Promise((resolve) => {
+		let data = "";
+		processStdin.setEncoding("utf8");
+		processStdin.on("data", (chunk) => (data += chunk));
+		processStdin.once("end", () => {
+			try {
+				resolve(JSON.parse(data));
+			} catch {
+				resolve({});
+			}
+		});
+		processStdin.once("error", () => resolve({}));
+		if (processStdin.isTTY) resolve({});
+	});
+}
+
 if (command === "hook" && subcommand === "session-start") {
-	const facts = readFacts();
+	const payload = await readStdinPayload();
+	const cwd =
+		typeof payload.cwd === "string" && payload.cwd.length > 0
+			? payload.cwd
+			: process.cwd();
+	const facts = readFacts(getMemoryFilePath(cwd));
 	const context = formatActiveMemoryContext(facts);
 	if (context.length > 0) {
 		const output = {
@@ -33,9 +60,13 @@ if (command === "hook" && subcommand === "session-start") {
 	const facts = readFacts();
 	console.log(`=== Active Memory Facts (${facts.length}) ===`);
 	for (const f of facts) {
-		console.log(`[${new Date(f.timestamp).toISOString()}] (${f.category}) ${f.content}`);
+		console.log(
+			`[${new Date(f.timestamp).toISOString()}] (${f.category}) ${f.content}`,
+		);
 	}
 } else {
-	process.stderr.write("Usage: omo-memory hook session-start | remember <text> | list\n");
+	process.stderr.write(
+		"Usage: omo-memory hook session-start | remember <text> | list\n",
+	);
 	process.exitCode = 1;
 }

@@ -9,7 +9,9 @@ function required(argv, flag) {
         throw new UlwLoopError(`Missing ${flag}.`, "ULW_LOOP_ARGUMENT_MISSING", { details: { flag } });
     }
     if ((flag === "--run-id" || flag === "--agent-id") && !/^[A-Za-z0-9._-]+$/.test(value)) {
-        throw new UlwLoopError(`Invalid ${flag}: must match ^[A-Za-z0-9._-]+$`, "ULW_LOOP_ARGUMENT_INVALID", { details: { flag, value } });
+        throw new UlwLoopError(`Invalid ${flag}: must match ^[A-Za-z0-9._-]+$`, "ULW_LOOP_ARGUMENT_INVALID", {
+            details: { flag, value },
+        });
     }
     return value;
 }

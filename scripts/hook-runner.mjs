@@ -5,6 +5,20 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+function writeFallbackPayload(fallbackPayloadRaw, stdout, stderr) {
+	if (stderr) process.stderr.write(stderr);
+	if (fallbackPayloadRaw) {
+		try {
+			// Decode base64 or just use it raw if we passed it encoded to avoid arg parsing issues.
+			// Assume it's base64 encoded JSON
+			const decoded = Buffer.from(fallbackPayloadRaw, "base64").toString("utf8");
+			process.stdout.write(decoded);
+		} catch (e) {
+			// fallback decoding failed, just exit 0
+		}
+	}
+}
+
 async function readAllStdin() {
 	return new Promise((resolve) => {
 		let data = "";
@@ -94,16 +108,7 @@ async function main() {
 				resolve(1);
 			} else if (policy === "FAIL_SAFE") {
 				// Return fallback payload, exit 0
-				if (fallbackPayloadRaw) {
-					try {
-						// Decode base64 or just use it raw if we passed it encoded to avoid arg parsing issues.
-						// Assume it's base64 encoded JSON
-						const decoded = Buffer.from(fallbackPayloadRaw, "base64").toString("utf8");
-						process.stdout.write(decoded);
-					} catch (e) {
-						// fallback decoding failed, just exit 0
-					}
-				}
+				writeFallbackPayload(fallbackPayloadRaw, "", stderrData);
 				resolve(0);
 			} else if (policy === "HITL_REQUIRED") {
 				// Parse stdin payload to get cwd and runId
@@ -147,8 +152,10 @@ async function main() {
 
 		child.on("error", (err) => {
 			if (policy === "FAIL_OPEN") resolve(0);
-			else if (policy === "FAIL_SAFE") resolve(0);
-			else resolve(1);
+			else if (policy === "FAIL_SAFE") {
+				writeFallbackPayload(fallbackPayloadRaw, "", `[hook-runner] spawn error: ${err.message}\n`);
+				resolve(0);
+			} else resolve(1);
 		});
 	}).then((code) => {
 		process.exit(code);

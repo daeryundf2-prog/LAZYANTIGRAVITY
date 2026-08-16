@@ -8,6 +8,11 @@ console.log(`[Dual-Consensus] Running 3-Domain Adversarial Consensus Audit on: $
 
 // Run git diff to inspect recent changes on source files only
 const diffRes = spawnSync("git", ["diff", "HEAD", "--", targetPath, ":!*.md", ":!*.json", ":!dist/**", ":!test/**", ":!scripts/flaky-stress-runner.mjs"], { encoding: "utf8" });
+if (diffRes.status !== 0) {
+	console.error("❌ [Dual-Consensus] FAIL: `git diff HEAD` could not be computed (not a git repo?).");
+	console.error("    Refusing to pass the adversarial gate on empty input (fail-closed).");
+	process.exit(1);
+}
 const diffText = diffRes.stdout || "";
 
 // Filter only added or modified lines (lines starting with "+")
@@ -27,11 +32,14 @@ const strippedLines = addedLines
 const issues = [];
 
 // Domain 1: Security & Injection Hazards
-if (/child_process\.(exec|execSync)\([^,)]*\$\{|eval\(|new Function\(|dangerouslySetInnerHTML/i.test(strippedLines)) {
+if (
+	/child_process\.(exec|execSync)\(/.test(strippedLines) ||
+	/eval\(|new Function\(|dangerouslySetInnerHTML/i.test(strippedLines)
+) {
 	issues.push({
 		domain: "SECURITY",
 		severity: "CRITICAL",
-		message: "Unsanitized command execution or dynamic code evaluation detected in diff.",
+		message: "Shell command execution or dynamic code evaluation detected in diff — verify arguments are constant.",
 	});
 }
 

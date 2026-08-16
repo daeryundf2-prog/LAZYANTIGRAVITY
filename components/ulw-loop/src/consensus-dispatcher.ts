@@ -166,7 +166,7 @@ export class MockLiveConsensusClient implements LiveConsensusClient {
 			consensusId: this.consensusId,
 			agentId: sessionId,
 			persona: persona as ConsensusPersona,
-			verdict: mockVerdict as any,
+			verdict: mockVerdict as ConsensusResultEnvelope["verdict"],
 			reason: `Mock consensus response for ${persona} with verdict ${mockVerdict}`,
 			requiresParentAck: true,
 		};

@@ -291,7 +291,7 @@ function resolveCurrentVersion(env) {
 	const pluginRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 	return (
 		readVersionManifest(resolveInstalledVersionPath(env, pluginRoot)) ??
-		readVersionManifest(join(pluginRoot, "..", "..", "..", "package.json")) ??
+		readVersionManifest(join(pluginRoot, "package.json")) ??
 		readVersionManifest(join(pluginRoot, ".codex-plugin", "plugin.json"))
 	);
 }
@@ -344,7 +344,36 @@ function compareVersions(left, right) {
 	if (left.prerelease === undefined && right.prerelease !== undefined) return 1;
 	if (left.prerelease !== undefined && right.prerelease === undefined) return -1;
 	if (left.prerelease !== undefined && right.prerelease !== undefined) {
-		return left.prerelease.localeCompare(right.prerelease);
+		return comparePrerelease(left.prerelease, right.prerelease);
+	}
+	return 0;
+}
+
+function isNumericPart(part) {
+	return /^\d+$/.test(part);
+}
+
+function comparePrerelease(left, right) {
+	const leftParts = left.split(".");
+	const rightParts = right.split(".");
+	for (let i = 0; i < Math.max(leftParts.length, rightParts.length); i++) {
+		const l = leftParts[i];
+		const r = rightParts[i];
+		if (l === undefined) return -1; // left is shorter -> older
+		if (r === undefined) return 1; // right is shorter -> older
+		const lIsNum = isNumericPart(l);
+		const rIsNum = isNumericPart(r);
+		if (lIsNum && rIsNum) {
+			const lNum = Number(l);
+			const rNum = Number(r);
+			if (lNum !== rNum) return lNum > rNum ? 1 : -1;
+		} else if (lIsNum !== rIsNum) {
+			// Numeric identifiers always have lower precedence than alphanumeric ones.
+			return lIsNum ? -1 : 1;
+		} else {
+			const cmp = l.localeCompare(r);
+			if (cmp !== 0) return cmp;
+		}
 	}
 	return 0;
 }

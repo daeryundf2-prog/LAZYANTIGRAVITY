@@ -100,22 +100,41 @@ function extractFingerprints(event: LedgerEvent) {
 	) {
 		hasProgress = true;
 		if (event.result && typeof event.result === "object") {
-			const res = event.result as any;
+			const res = event.result as Record<string, unknown>;
+			const error = res["error"];
+			const stderr = res["stderr"];
+			const errorCode = res["errorCode"];
+			const errValue = typeof error === "string" ? error : "";
+			const stderrValue = typeof stderr === "string" ? stderr : "";
+			const errorCodeValue = typeof errorCode === "string" ? errorCode : "";
 			// Detect error
-			if (res.error || res.stderr || res.errorCode) {
-				errorHash = hashPayload({ error: res.error, stderr: res.stderr, errorCode: res.errorCode });
+			if (errValue || stderrValue || errorCodeValue) {
+				errorHash = hashPayload({ error: errValue, stderr: stderrValue, errorCode: errorCodeValue });
 			}
 			// Detect patch / commands
-			if (res.diff || res.filesChanged?.length > 0 || res.command || res.commandsRun?.length > 0) {
+			const diff = res["diff"];
+			const diffValue = typeof diff === "string" ? diff : "";
+			const filesChanged = Array.isArray(res["filesChanged"])
+				? res["filesChanged"].filter((f): f is string => typeof f === "string")
+				: [];
+			const command = res["command"];
+			const commandValue = typeof command === "string" ? command : "";
+			const commandsRun = Array.isArray(res["commandsRun"])
+				? res["commandsRun"].filter((c): c is string => typeof c === "string")
+				: [];
+			if (diffValue || filesChanged.length > 0 || commandValue || commandsRun.length > 0) {
 				patchHash = hashPayload({
-					diff: res.diff,
-					filesChanged: res.filesChanged,
-					command: res.command,
-					commandsRun: res.commandsRun,
+					diff: diffValue,
+					filesChanged,
+					command: commandValue,
+					commandsRun,
 				});
 				hasEvidence = true; // patches or commands count as evidence of work
 			}
-			if (res.artifactsGenerated?.length > 0) {
+			const artifactsGenerated = Array.isArray(res["artifactsGenerated"])
+				? res["artifactsGenerated"].filter((a): a is string => typeof a === "string")
+				: [];
+			if (artifactsGenerated.length > 0) {
 				hasEvidence = true;
 			}
 		}

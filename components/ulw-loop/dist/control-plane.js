@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkLeases, heartbeatAgent, registerPoller, validateQualityEvidenceEnvelope, validateResultEnvelope, } from "./control-plane-helpers.js";
+import { withLedgerWriteLock } from "./plan-io.js";
 import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 export { checkLeases, heartbeatAgent, readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, registerPoller, repairLedgerFile, stripSensitiveData, validateQualityEvidenceEnvelope, validateResultEnvelope, };
@@ -43,7 +44,7 @@ export const FORBIDDEN_PHRASES = [
     /mark run as completed/i,
     /completed the global task/i,
 ];
-function safeSegment(val) {
+export function safeSegment(val) {
     const sanitized = val.replace(/[^A-Za-z0-9._-]/g, "_");
     return sanitized.replace(/^(\.\.(\/|\\|$))+/, "") || "default";
 }
@@ -64,6 +65,9 @@ export async function loadLeasePolicy(repoRoot) {
     return DEFAULT_POLICY;
 }
 export async function appendRunEvent(repoRoot, runId, type, data) {
+    return withLedgerWriteLock(repoRoot, runId, () => appendRunEventLocked(repoRoot, runId, type, data));
+}
+async function appendRunEventLocked(repoRoot, runId, type, data) {
     const runDir = getRunDir(repoRoot, runId);
     if (!existsSync(runDir))
         await mkdir(runDir, { recursive: true });

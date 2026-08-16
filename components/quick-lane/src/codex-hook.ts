@@ -31,7 +31,8 @@ function isQuickLaneHookInput(value: unknown): value is QuickLaneHookInput {
 	return (
 		typeof value === "object" &&
 		value !== null &&
-		(value as Record<string, unknown>)["hook_event_name"] === "UserPromptSubmit" &&
+		(value as Record<string, unknown>)["hook_event_name"] ===
+			"UserPromptSubmit" &&
 		typeof (value as Record<string, unknown>)["prompt"] === "string"
 	);
 }

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getRunDir, loadLeasePolicy } from "./control-plane.js";
+import { computeLedgerHash, getRunDir, loadLeasePolicy } from "./control-plane.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 // Read events
 export async function readRunEvents(repoRoot, runId) {
@@ -54,8 +54,10 @@ export async function reconstructStateFromEvents(repoRoot, runId, nowOverride) {
                 delete runState.activeHitlId;
         }
         else if (event.type === "parent.resumed") {
-            if (runState.activeHitlId && event.hitlId && runState.activeHitlId !== event.hitlId) {
-                // Invalid hitlId, ignore
+            // Do not lift an active human-intervention block on a resumed event that
+            // does not reference the pending hitlId explicitly.
+            if (runState.activeHitlId && event.hitlId !== runState.activeHitlId) {
+                // Invalid or missing hitlId while HITL is active, ignore
             }
             else {
                 if (event.resumeTargetState) {
@@ -197,6 +199,16 @@ export async function repairLedgerFile(repoRoot, runId) {
         }
     }
     if (corruptedCount > 0) {
+        // Re-link the surviving events into a fresh hash chain: dropping lines
+        // changes indices, so original prevHash/hash values are invalid and would
+        // make verifyLedgerIntegrity fail afterwards.
+        let prevHash = "0000000000000000000000000000000000000000000000000000000000000000";
+        for (const event of validEvents) {
+            const clean = stripSensitiveData({ ...event, prevHash });
+            clean.hash = computeLedgerHash(clean);
+            prevHash = clean.hash;
+            Object.assign(event, clean);
+        }
         const newContent = `${validEvents.map((e) => JSON.stringify(e)).join("\n")}\n`;
         await writeFile(eventsFile, newContent, "utf8");
         await reconstructAndSaveState(repoRoot, runId);

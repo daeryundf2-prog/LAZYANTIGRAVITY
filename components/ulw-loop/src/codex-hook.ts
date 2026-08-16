@@ -149,7 +149,10 @@ export async function runUlwLoopHookCli(stdin: NodeJS.ReadableStream, stdout: No
 	}
 }
 
-export async function runPostCompactHookCli(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Promise<void> {
+export async function runPostCompactHookCli(
+	stdin: NodeJS.ReadableStream,
+	stdout: NodeJS.WritableStream,
+): Promise<void> {
 	try {
 		const payload = parsePostCompactPayload(await readAll(stdin));
 		if (payload === null) return;

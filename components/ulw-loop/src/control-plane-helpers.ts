@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { appendRunEvent, FORBIDDEN_PHRASES, getRunDir, loadLeasePolicy } from "./control-plane.js";
+import { appendRunEvent, FORBIDDEN_PHRASES, getRunDir, loadLeasePolicy, safeSegment } from "./control-plane.js";
 import type {
 	LedgerEvent,
 	PollerState,
@@ -82,7 +82,7 @@ export async function heartbeatAgent(repoRoot: string, runId: string, agentId: s
 	const dir = join(getRunDir(repoRoot, runId), "heartbeats");
 	if (!existsSync(dir)) await mkdir(dir, { recursive: true });
 	await writeFile(
-		join(dir, `${agentId}.json`),
+		join(dir, `${safeSegment(agentId)}.json`),
 		JSON.stringify({ agentId, timestamp: event.timestamp }, null, 2),
 		"utf8",
 	);

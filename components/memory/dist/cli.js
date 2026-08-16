@@ -1,10 +1,32 @@
 #!/usr/bin/env node
-import { stdout as processStdout } from "node:process";
-import { readFacts, saveFact, formatActiveMemoryContext } from "./store.js";
+import { stdin as processStdin, stdout as processStdout } from "node:process";
+import { formatActiveMemoryContext, getMemoryFilePath, readFacts, saveFact, } from "./store.js";
 const command = process.argv[2];
 const subcommand = process.argv[3];
+function readStdinPayload() {
+    return new Promise((resolve) => {
+        let data = "";
+        processStdin.setEncoding("utf8");
+        processStdin.on("data", (chunk) => (data += chunk));
+        processStdin.once("end", () => {
+            try {
+                resolve(JSON.parse(data));
+            }
+            catch {
+                resolve({});
+            }
+        });
+        processStdin.once("error", () => resolve({}));
+        if (processStdin.isTTY)
+            resolve({});
+    });
+}
 if (command === "hook" && subcommand === "session-start") {
-    const facts = readFacts();
+    const payload = await readStdinPayload();
+    const cwd = typeof payload.cwd === "string" && payload.cwd.length > 0
+        ? payload.cwd
+        : process.cwd();
+    const facts = readFacts(getMemoryFilePath(cwd));
     const context = formatActiveMemoryContext(facts);
     if (context.length > 0) {
         const output = {

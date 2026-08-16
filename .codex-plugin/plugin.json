@@ -1,13 +1,19 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.3.9",
+	"version": "0.5.0",
 	"description": "Aggregated Antigravity plugin root for LazyAntigravity components.",
 	"author": {
 		"name": "daeryundf2-prog",
 		"url": "https://github.com/daeryundf2-prog"
 	},
 	"license": "MIT",
-	"keywords": ["antigravity", "antigravity-plugin", "hooks", "mcp", "skills"],
+	"keywords": [
+		"antigravity",
+		"antigravity-plugin",
+		"hooks",
+		"mcp",
+		"skills"
+	],
 	"skills": "./skills/",
 	"hooks": "./hooks.json",
 	"mcpServers": "./mcp_config.json",
@@ -17,7 +23,14 @@
 		"longDescription": "LazyAntigravity exposes local Rules, Comment Checker, LSP, Ultrawork, and ulw-loop as one plugin namespace. Default coding model hint: Gemini 3.7 Flash.",
 		"developerName": "daeryundf2-prog",
 		"category": "Developer Tools",
-		"capabilities": ["Hooks", "MCP Tools", "Code Intelligence", "Workflow", "Context Injection", "Telemetry"],
+		"capabilities": [
+			"Hooks",
+			"MCP Tools",
+			"Code Intelligence",
+			"Workflow",
+			"Context Injection",
+			"Telemetry"
+		],
 		"brandColor": "#7C3AED"
 	}
 }

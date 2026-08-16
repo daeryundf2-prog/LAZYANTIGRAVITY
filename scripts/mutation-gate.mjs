@@ -67,7 +67,11 @@ for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 	if (/^\s*(\/\/|\/\*|\*|import|export\s+type)/.test(line)) continue;
 
 	for (const rule of mutationRules) {
+		// /g-flagged regexes keep a stateful lastIndex across test() calls;
+		// reset so successive lines are not skipped and mutations are not missed.
+		rule.from.lastIndex = 0;
 		if (rule.from.test(line)) {
+			rule.from.lastIndex = 0;
 			const mutatedLine = line.replace(rule.from, rule.to);
 			const mutatedLines = [...lines];
 			mutatedLines[lineIndex] = mutatedLine;

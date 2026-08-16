@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { ulwLoopCommand } from "./cli-commands.js";
-import { runPreToolUseGoalBudgetGuardCli, runPostCompactHookCli, runUlwLoopHookCli } from "./codex-hook.js";
+import { runPostCompactHookCli, runPreToolUseGoalBudgetGuardCli, runUlwLoopHookCli } from "./codex-hook.js";
 const TOP_LEVEL_HELP = "Usage:\n  lazyantigravity ulw-loop <subcommand> [args]\n  lazyantigravity hook user-prompt-submit         (Codex UserPromptSubmit hook)\n  lazyantigravity help | --help | -h              (this message)\n\nAlias: `omo` is accepted. Run `lazyantigravity ulw-loop help` for ulw-loop subcommands.\n";
 async function main() {
     const argv = process.argv.slice(2);

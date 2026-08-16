@@ -47,12 +47,19 @@ export function skeletonizeCode(
 	};
 }
 
+function classBodyMethodHeader(trimmed: string): boolean {
+	return /^(public|private|protected|static|async|readonly|abstract|get|set)?\s*[A-Za-z_$][\w$]*\s*\(/.test(
+		trimmed,
+	);
+}
+
 function skeletonizeCStyle(source: string): string {
 	const lines = source.split(/\r?\n/);
 	const result: string[] = [];
 	let inBlockComment = false;
 	let typeDepth = 0; // >0: inside an interface/type/enum block -> preserve members
 	let stripDepth = 0; // >0: inside a stripped body -> drop interior, keep closing brace
+	let classDepth = 0; // >0: inside a class body -> keep members, stub method bodies
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i] ?? "";
@@ -91,6 +98,22 @@ function skeletonizeCStyle(source: string): string {
 			continue;
 		}
 
+		// Inside a class body: keep member declarations, stub method bodies
+		if (classDepth > 0) {
+			if (closes > opens && /\}\s*;?$/.test(trimmed) && opens === 0) {
+				classDepth -= closes;
+			}
+			result.push(
+				classDepth > 0 && classBodyMethodHeader(trimmed)
+					? line.replace(/\{\s*$/, "/* ... */")
+					: line,
+			);
+			if (classBodyMethodHeader(trimmed) && trimmed.endsWith("{")) {
+				stripDepth = 1;
+			}
+			continue;
+		}
+
 		// Preserve import / export / interface / type declarations
 		if (
 			/^(import|export\s+(type|interface|enum|const|let|var|default)|type\s+|interface\s+|enum\s+)/.test(
@@ -115,6 +138,15 @@ function skeletonizeCStyle(source: string): string {
 			if (trimmed.endsWith("{")) {
 				result.push(line.replace(/\{$/, "/* ... */"));
 				stripDepth = 1;
+			} else if (
+				line.includes("{") &&
+				line.includes("}") &&
+				net === 0 &&
+				trimmed.endsWith("}")
+			) {
+				// single-line body: `function foo() { return 1; }` -> `function foo() /* ... */`
+				const openAt = line.indexOf("{");
+				result.push(`${line.slice(0, openAt)}/* ... */`);
 			} else {
 				result.push(line);
 				if (net > 0) stripDepth = net;
@@ -124,8 +156,18 @@ function skeletonizeCStyle(source: string): string {
 
 		// Class headers
 		if (/^(export\s+)?(abstract\s+)?class\s+[\w$]+/.test(trimmed)) {
-			result.push(line);
-			if (net > 0) stripDepth = net;
+			const head = trimmed.includes("{")
+				? trimmed.slice(0, trimmed.indexOf("{"))
+				: trimmed;
+			result.push(
+				trimmed.includes("{") ? `${line.replace(/\{\s*$/, "")} {` : line,
+			);
+			if (net > 0) classDepth = net + (line.includes("{") ? 1 : 0);
+			else if (trimmed.includes("{")) classDepth = 1;
+			// single-line class body: nothing else to preserve
+			if (!trimmed.endsWith("{")) {
+				classDepth = 0;
+			}
 			continue;
 		}
 

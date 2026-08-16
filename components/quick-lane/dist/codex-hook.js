@@ -16,6 +16,7 @@ export function runQuickLaneHook(input) {
 function isQuickLaneHookInput(value) {
     return (typeof value === "object" &&
         value !== null &&
-        value["hook_event_name"] === "UserPromptSubmit" &&
+        value["hook_event_name"] ===
+            "UserPromptSubmit" &&
         typeof value["prompt"] === "string");
 }

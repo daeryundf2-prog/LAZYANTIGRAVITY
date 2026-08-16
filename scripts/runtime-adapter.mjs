@@ -33,14 +33,16 @@ export function detectRuntime(env = process.env) {
 
 		// 2. Path-based detection
 		if (pluginRoot.includes(".gemini")) return "antigravity";
+		if (pluginRoot.includes(".codex")) return "codex";
 	}
 
 	// 3. Environment variable detection
 	if (env.GEMINI_HOME?.trim() || env.ANTIGRAVITY_HOME?.trim()) return "antigravity";
+	if (env.CODEX_HOME?.trim()) return "codex";
 
 	// 4. Check if we are building/running in the lazyantigravity repository
 	try {
-		const rootPkgPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "package.json");
+		const rootPkgPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
 		const pkg = JSON.parse(readFileSync(rootPkgPath, "utf8"));
 		if (pkg.name === "lazyantigravity") return "antigravity";
 	} catch {

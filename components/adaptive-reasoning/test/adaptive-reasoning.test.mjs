@@ -111,3 +111,39 @@ export async function fetchUserData(userId: string) {
 	assert.ok(!result.skeleton.includes("for (let"));
 	assert.ok(!result.skeleton.includes("console.log(i)"));
 });
+
+test("skeletonizeCode preserves class members and getters while stripping method bodies", () => {
+	const tsCode = `
+export class UserService {
+    private users: Map<string, string>;
+
+    constructor(private db: Database) {
+        this.db.connect();
+    }
+
+    async find(id: string): Promise<User> {
+        const raw = await this.db.query(id);
+        return this.parse(raw);
+    }
+
+    get count(): number {
+        return this.users.size;
+    }
+}
+`;
+	const result = skeletonizeCode(tsCode, "test.ts");
+	assert.ok(result.skeleton.includes("export class UserService"));
+	assert.ok(result.skeleton.includes("private users: Map"));
+	assert.ok(result.skeleton.includes("constructor(private db"));
+	assert.ok(result.skeleton.includes("async find(id: string)"));
+	assert.ok(result.skeleton.includes("get count(): number"));
+	assert.ok(!result.skeleton.includes("this.db.connect"));
+	assert.ok(!result.skeleton.includes("const raw = await this.db.query"));
+	assert.ok(!result.skeleton.includes("return this.users.size"));
+});
+
+test("skeletonizeCode strips single-line function bodies", () => {
+	const result = skeletonizeCode("function foo() { return 1; }\nconst x = 2;", "test.ts");
+	assert.ok(result.skeleton.includes("function foo() /* ... */"));
+	assert.ok(!result.skeleton.includes("return 1"));
+});

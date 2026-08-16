@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { appendRunEvent, FORBIDDEN_PHRASES, getRunDir, loadLeasePolicy } from "./control-plane.js";
+import { appendRunEvent, FORBIDDEN_PHRASES, getRunDir, loadLeasePolicy, safeSegment } from "./control-plane.js";
 import { reconstructStateFromEvents } from "./reconstruct.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 export function validateQualityEvidenceEnvelope(envelope) {
@@ -67,7 +67,7 @@ export async function heartbeatAgent(repoRoot, runId, agentId) {
     const dir = join(getRunDir(repoRoot, runId), "heartbeats");
     if (!existsSync(dir))
         await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, `${agentId}.json`), JSON.stringify({ agentId, timestamp: event.timestamp }, null, 2), "utf8");
+    await writeFile(join(dir, `${safeSegment(agentId)}.json`), JSON.stringify({ agentId, timestamp: event.timestamp }, null, 2), "utf8");
     return event;
 }
 export async function checkLeases(repoRoot, runId, nowOverride) {

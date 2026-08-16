@@ -9,6 +9,7 @@ import {
 	validateQualityEvidenceEnvelope,
 	validateResultEnvelope,
 } from "./control-plane-helpers.js";
+import { withLedgerWriteLock } from "./plan-io.js";
 import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 
@@ -90,7 +91,7 @@ export const FORBIDDEN_PHRASES = [
 	/completed the global task/i,
 ];
 
-function safeSegment(val: string): string {
+export function safeSegment(val: string): string {
 	const sanitized = val.replace(/[^A-Za-z0-9._-]/g, "_");
 	return sanitized.replace(/^(\.\.(\/|\\|$))+/, "") || "default";
 }
@@ -113,6 +114,15 @@ export async function loadLeasePolicy(repoRoot: string): Promise<LeasePolicy> {
 }
 
 export async function appendRunEvent(
+	repoRoot: string,
+	runId: string,
+	type: EventType,
+	data: Omit<LedgerEvent, "timestamp" | "type" | "runId">,
+): Promise<LedgerEvent> {
+	return withLedgerWriteLock(repoRoot, runId, () => appendRunEventLocked(repoRoot, runId, type, data));
+}
+
+async function appendRunEventLocked(
 	repoRoot: string,
 	runId: string,
 	type: EventType,

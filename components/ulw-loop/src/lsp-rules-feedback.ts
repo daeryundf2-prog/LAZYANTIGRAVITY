@@ -82,29 +82,45 @@ export function generateReworkSuggestions(lspDiagnostics: string[], rulesViolati
 		if (parsed) {
 			suggestions.push(`- LSP error in ${parsed.file}:${parsed.line ?? "?"}: ${parsed.message}`);
 			if (parsed.errorCode || parsed.missingName) {
-				suggestions.push(`  Suggested ast-grep search pattern: $$PROP$$ where the error occurs, then apply the correct type or import.`);
+				suggestions.push(
+					`  Suggested ast-grep search pattern: $$PROP$$ where the error occurs, then apply the correct type or import.`,
+				);
 			}
 			if (parsed.missingName) {
-				suggestions.push(`  Missing name: '${parsed.missingName}'. Check if an import is missing or a variable was renamed.`);
+				suggestions.push(
+					`  Missing name: '${parsed.missingName}'. Check if an import is missing or a variable was renamed.`,
+				);
 			}
 			if (parsed.errorCode === "TS2304") {
-				suggestions.push(`  TS2304 (Cannot find name): Add the missing import or define the variable before its first use.`);
+				suggestions.push(
+					`  TS2304 (Cannot find name): Add the missing import or define the variable before its first use.`,
+				);
 			} else if (parsed.errorCode === "TS2339") {
-				suggestions.push(`  TS2339 (Property does not exist): Check the type definition; the property may have been renamed or removed.`);
+				suggestions.push(
+					`  TS2339 (Property does not exist): Check the type definition; the property may have been renamed or removed.`,
+				);
 			} else if (parsed.errorCode === "TS2322") {
-				suggestions.push(`  TS2322 (Type mismatch): The assigned value's type does not match the target. Adjust the type or cast safely.`);
+				suggestions.push(
+					`  TS2322 (Type mismatch): The assigned value's type does not match the target. Adjust the type or cast safely.`,
+				);
 			} else if (parsed.errorCode === "TS2551") {
-				suggestions.push(`  TS2551 (Property does not exist, did you mean): A typo is likely. Use the suggested name.`);
+				suggestions.push(
+					`  TS2551 (Property does not exist, did you mean): A typo is likely. Use the suggested name.`,
+				);
 			}
 		} else {
 			suggestions.push(`- LSP error found: ${diag}`);
 		}
 	}
 	for (const rule of rulesViolations) {
-		suggestions.push(`- Rule violation: ${rule}. Align code with workspace AST patterns using ast_grep_search to find similar structures.`);
+		suggestions.push(
+			`- Rule violation: ${rule}. Align code with workspace AST patterns using ast_grep_search to find similar structures.`,
+		);
 	}
 	if (lspDiagnostics.length >= 3) {
-		suggestions.push(`- WARNING: ${lspDiagnostics.length} LSP errors detected. Consider switching to Gemini 3.7 Flash (Medium) for rapid iterative bug fixes before re-attempting the checkpoint.`);
+		suggestions.push(
+			`- WARNING: ${lspDiagnostics.length} LSP errors detected. Consider switching to Gemini 3.7 Flash (Medium) for rapid iterative bug fixes before re-attempting the checkpoint.`,
+		);
 	}
 	return suggestions.join("\n");
 }

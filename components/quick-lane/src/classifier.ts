@@ -9,13 +9,13 @@ const QUICK_LANE_PATTERNS = [
 	/^(?:explain|where is|find|lookup|show|what is|how to|why)\b/i,
 	/^(?:설명|어디|찾아|보여|어떻게|왜)\b/i,
 	/(?:오타|단순 수정|테이블 포맷|quick check|단순 확인|상태 확인)/i,
-	/^(?:git status|git diff|git log|npm test|ls|pwd)$/i,
+	/^(?:git status|git diff|git log|npm test|ls|pwd)(?:[ \t]+[^\s"']+){0,2}$/i,
 ];
 
 export function isQuickLanePrompt(prompt: string): boolean {
 	const trimmed = prompt.trim();
 	if (trimmed.length === 0) return false;
-	
+
 	// If it explicitly asks for heavy orchestration or planning, do not use quick-lane
 	if (HEAVY_ORCHESTRATION_PATTERNS.some((pattern) => pattern.test(trimmed))) {
 		return false;
@@ -27,7 +27,13 @@ export function isQuickLanePrompt(prompt: string): boolean {
 	}
 
 	// Short direct question heuristics
-	if (trimmed.length < 80 && (trimmed.endsWith("?") || trimmed.endsWith("줘") || trimmed.endsWith("해봐") || trimmed.endsWith("나열해라"))) {
+	if (
+		trimmed.length < 80 &&
+		(trimmed.endsWith("?") ||
+			trimmed.endsWith("줘") ||
+			trimmed.endsWith("해봐") ||
+			trimmed.endsWith("나열해라"))
+	) {
 		return true;
 	}
 
