@@ -5,6 +5,12 @@ export interface ThinkingBudgetDecision {
 	rationale: string;
 }
 
+const ACTION_MODIFICATION_PATTERN =
+	/수정|구현|작성|추가|생성|개발|빌드|고쳐|만들어|디버깅|패치|설계|fix|implement|create|add|write|build|update|refactor|generate|debug|patch/i;
+
+const PURE_INQUIRY_PATTERN =
+	/^(어디|위치|설명|찾아|오타|단순|간단|확인|알려|보여|조회|explain|where|what|how|why|which|show|find)/i;
+
 export function computeThinkingBudget(prompt: string): ThinkingBudgetDecision {
 	const trimmed = prompt.trim();
 	if (!trimmed) {
@@ -41,11 +47,11 @@ export function computeThinkingBudget(prompt: string): ThinkingBudgetDecision {
 		};
 	}
 
-	// 3. Off / Fast-Pass Simple Queries
+	// 3. Fast-Pass Simple CLI or System Inquiries
 	if (
 		/^(git|github)\s+(status|diff|log|branch|show|remote)/i.test(trimmed) ||
 		/^(ls|pwd|whoami|clear)(\s|$)/i.test(trimmed) ||
-		/^(어디|위치|설명|찾아|오타|단순|간단|확인|explain|where|what|how)/i.test(trimmed)
+		(PURE_INQUIRY_PATTERN.test(trimmed) && !ACTION_MODIFICATION_PATTERN.test(trimmed))
 	) {
 		return {
 			budget: 0,
@@ -55,8 +61,12 @@ export function computeThinkingBudget(prompt: string): ThinkingBudgetDecision {
 		};
 	}
 
-	// 3b. Short single-intent question (mirrors quick-lane: < 80 chars ending in ?)
-	if (trimmed.length < 80 && (trimmed.endsWith("?") || trimmed.endsWith("줘") || trimmed.endsWith("해봐"))) {
+	// 3b. Short single-intent inquiry (Quick-Lane: < 80 chars ending in ? / 줘 / 해봐 without code modification intent)
+	if (
+		trimmed.length < 80 &&
+		(trimmed.endsWith("?") || trimmed.endsWith("줘") || trimmed.endsWith("해봐")) &&
+		!ACTION_MODIFICATION_PATTERN.test(trimmed)
+	) {
 		return {
 			budget: 0,
 			tier: "flash_lite",
@@ -65,7 +75,7 @@ export function computeThinkingBudget(prompt: string): ThinkingBudgetDecision {
 		};
 	}
 
-	// 4. Standard Default (Implementation, testing, debugging)
+	// 4. Standard Default (Implementation, testing, debugging, code modification)
 	return {
 		budget: 8192,
 		tier: "flash",

@@ -32,6 +32,25 @@ test("computeThinkingBudget routes short location questions and github to off bu
 	);
 	assert.equal(computeThinkingBudget("github status").budget, 0);
 	assert.equal(computeThinkingBudget("설명해줘").budget, 0);
+	assert.equal(computeThinkingBudget("로그 확인해줘").budget, 0);
+});
+
+test("computeThinkingBudget does not misclassify short action/modification requests as off budget", () => {
+	// Should route to standard (8192 tokens / flash) instead of quick-lane (0 tokens / flash_lite)
+	const res1 = computeThinkingBudget("JWT 인증 구현해줘");
+	assert.equal(res1.budget, 8192);
+	assert.equal(res1.tier, "flash");
+	assert.equal(res1.level, "standard");
+
+	const res2 = computeThinkingBudget("auth.ts 버그 고쳐줘");
+	assert.equal(res2.budget, 8192);
+	assert.equal(res2.tier, "flash");
+	assert.equal(res2.level, "standard");
+
+	const res3 = computeThinkingBudget("단위 테스트 작성해봐");
+	assert.equal(res3.budget, 8192);
+	assert.equal(res3.tier, "flash");
+	assert.equal(res3.level, "standard");
 });
 
 test("skeletonizeCode compresses TypeScript code by stripping function bodies", () => {
