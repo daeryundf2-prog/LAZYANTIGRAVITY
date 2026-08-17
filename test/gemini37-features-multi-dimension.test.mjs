@@ -177,6 +177,7 @@ test("Dimension 7: Packaging & npm Pack Materialization Dry-Run", async () => {
 	assert.ok(files.includes("shared-skills/skills/ui-loopback/SKILL.md"), "npm pack must include ui-loopback");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/SKILL.md"), "npm pack must include visual-qa");
 	assert.ok(files.includes("shared-skills/skills/frontend-ui-ux/SKILL.md"), "npm pack must include frontend-ui-ux");
+	assert.ok(files.includes("shared-skills/skills/ultra-research/SKILL.md"), "npm pack must include ultra-research");
 });
 
 test("Dimension 8: AST-Refactor & Dual-Verify Functional & Schema Integrity", async () => {
@@ -251,6 +252,17 @@ test("Dimension 11: Production-Resilience Flaky-Guard & Arch-Guard Integrity", a
 	assert.match(archSkill, /Import Graph Mapping/i, "Must specify Import Graph Mapping");
 	assert.match(archSkill, /Layer Boundary Inspection/i, "Must specify Layer Boundary Inspection");
 	assert.match(archSkill, /Model:\s*"pro"/, "Must route to Model: pro");
+});
+
+test("Dimension 12: Ultra-Research & Insane-Search Fact Gate Functional Integrity", async () => {
+	const researchSkill = await readFile(join(root, "skills", "ultra-research", "SKILL.md"), "utf8");
+	assert.match(researchSkill, /name:\s*ultra-research/, "Must have name: ultra-research");
+	assert.match(researchSkill, /Problem Decomposition/i, "Must have Problem Decomposition step");
+	assert.match(researchSkill, /Insane-Search Multi-Channel/i, "Must specify Insane-Search Multi-Channel techniques");
+	assert.match(researchSkill, /Claim Ledger Data-Flow Lock/i, "Must specify Claim Ledger Data-Flow Lock");
+	assert.match(researchSkill, /SYNTHESIS\.md/, "Must document SYNTHESIS.md deliverable");
+	assert.match(researchSkill, /Model:\s*"flash"/, "Wave scouts must route to Model: flash");
+	assert.match(researchSkill, /Model:\s*"pro"/, "Verification oracle must route to Model: pro");
 });
 
 

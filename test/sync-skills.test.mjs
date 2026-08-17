@@ -37,6 +37,7 @@ const expectedSkills = [
 	"start-work",
 	"swarm-sync",
 	"ui-loopback",
+	"ultra-research",
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
