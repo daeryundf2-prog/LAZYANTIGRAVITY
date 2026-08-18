@@ -10,9 +10,16 @@ export function formatLazyAntigravityHookStatusMessage(version, label) {
 }
 
 export function normalizeLazyAntigravityHookStatusLabel(label) {
-	const parsed = parseLazyAntigravityHookStatusMessage(label);
-	const rawLabel = parsed === null ? label : parsed.label;
-	const normalized = rawLabel.replace(/\bOMO\b/gi, " ").replace(/\s+/g, " ").trim();
+	let current = label;
+	while (true) {
+		const parsed = parseLazyAntigravityHookStatusMessage(current);
+		if (parsed !== null) {
+			current = parsed.label;
+		} else {
+			break;
+		}
+	}
+	const normalized = current.replace(/\b(?:LazyAntigravity|LazyCodex|OMO)\b:?/gi, " ").replace(/\s+/g, " ").trim();
 	if (normalized.length === 0) return "";
 	return normalized
 		.split(" ")
@@ -21,10 +28,10 @@ export function normalizeLazyAntigravityHookStatusLabel(label) {
 }
 
 export function parseLazyAntigravityHookStatusMessage(message) {
-	const match = /^(?:LazyCodex|LazyAntigravity)\(([^)]+)\):\s+(.+)$/.exec(message.trim());
+	const match = /^(?:LazyCodex|LazyAntigravity)(?:\(([^)]*)\))?:\s+(.+)$/.exec(message.trim());
 	if (match === null) return null;
 	const [, version, label] = match;
-	return { version, label };
+	return { version: version || "", label };
 }
 
 // Legacy compatibility exports: keep existing callers working while generated

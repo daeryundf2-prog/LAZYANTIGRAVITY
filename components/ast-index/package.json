@@ -1,0 +1,27 @@
+{
+	"name": "@lazyantigravity/ast-index",
+	"version": "0.1.0",
+	"description": "Pre-emptive AST & Call-Graph Indexer for ultra-fast symbol lookup and blast radius analysis.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"lazyantigravity-ast-index": "./dist/cli.js"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"test": "node --test test/*.test.mjs"
+	},
+	"files": [
+		"dist",
+		"hooks",
+		"README.md"
+	],
+	"devDependencies": {
+		"@types/node": "^25.7.0",
+		"typescript": "^6.0.3"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	}
+}

@@ -1,0 +1,27 @@
+{
+	"name": "@lazyantigravity/daemon-bridge",
+	"version": "0.1.0",
+	"description": "Local IPC Daemon Bridge and In-Memory Shared Blackboard for LazyAntigravity subagents.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"lazyantigravity-daemon-bridge": "./dist/cli.js"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"test": "node --test test/*.test.mjs"
+	},
+	"files": [
+		"dist",
+		"hooks",
+		"README.md"
+	],
+	"devDependencies": {
+		"@types/node": "^25.7.0",
+		"typescript": "^6.0.3"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	}
+}

@@ -49,13 +49,17 @@ test("#given component directories #when scanned #then only intentional resource
 
 	// then
 	assert.deepEqual(componentNames, [
+		"active-learning",
 		"adaptive-reasoning",
+		"ast-index",
 		"comment-checker",
+		"daemon-bridge",
 		"git-bash",
 		"lsp",
 		"memory",
 		"quick-lane",
 		"rules",
+		"session-tree",
 		"start-work-continuation",
 		"telemetry",
 		"ultrawork",

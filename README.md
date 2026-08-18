@@ -6,13 +6,17 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 [![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
 [![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.5.0-black?style=for-the-badge)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.6.0-black?style=for-the-badge)](./package.json)
 
 ## Why this plugin
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Single agent, single task | **31 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
+| Subagents isolated without IPC | **Local IPC Daemon Bridge & In-Memory Blackboard** (0.5ms real-time subagent peer communication) |
+| Slow on-demand AST parsing | **Pre-emptive AST & Call-Graph Indexer** (<5ms symbol lookups & blast radius analysis) |
+| Linear conversation without undo | **Git-Backed Session Tree Forker** (shadow git snapshots & non-destructive hypothesis branching) |
+| Repetitive errors across sessions | **Active Learning Rule Evolver** (telemetry-driven auto-promotion of `⚠️ [Gotchas]`) |
+| Single agent, single task | **32 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
 | Fixed token budget & bloated context | **Adaptive Thinking Budget & AST Skeletonizer** (dynamic 0~64k budget + 80% context saving) |
 | Parallel multi-agent file collisions | **Dynamic Worktree Swarm** (isolated branching + atomic squash-merge) |
 | Fake passing tests (False Greens) | **Mutation Testing Gate** (automatic mutant kill score verification) |
@@ -21,7 +25,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 | Context lost across sessions | **Local Active Memory (`facts.jsonl`)** for persistent working memory |
 | Flaky timing failures | **5-Parallel Flaky Guard** stress-runner for deterministic hardening |
 | Visual defects unnoticed | **Headless Visual Loopback** with Gemini 3.7 Native Vision QA |
-| No quality gates | **7 hook events / 19 command hooks** (rules, memory, quick-lane, adaptive-reasoning, comments, LSP) |
+| No quality gates | **7 hook events / 24 command hooks** (rules, memory, quick-lane, adaptive-reasoning, daemon, ast-index, session-tree, active-learning) |
 | Manual model guessing | **Pass `Subagents[].Model` on `invoke_subagent`** (session Flash; `flash`/`pro` hints) |
 | Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
 | Weak evidence discipline | **Evidence-bound ULW loop** - claims need local proof |
