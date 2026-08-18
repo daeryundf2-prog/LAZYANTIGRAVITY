@@ -1,36 +1,6 @@
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-export const DEFAULT_STAGNATION_POLICY = {
-    recentEventWindow: 10,
-    repeatedErrorThreshold: 3,
-    repeatedPatchThreshold: 3,
-    oscillationWindow: 4,
-    heartbeatOnlyThreshold: 5,
-    noEvidenceProgressThreshold: 5,
-    actionOnStagnation: "emit_event",
-    minimumEventsForDetection: 5,
-    cooldownEventsAfterDetection: 5,
-    requireSameAgentForRepeatedError: true,
-    requireSameRoleForOscillation: true,
-    ignoreHeartbeatOnlyWhenRoleIsWaiting: true,
-    defaultSeverity: "high",
-};
-export async function loadStagnationPolicy(repoRoot) {
-    const policyPath = join(repoRoot, "plugins", "omo", "components", "ulw-loop", "config", "stagnation-policy.json");
-    if (existsSync(policyPath)) {
-        try {
-            const content = await readFile(policyPath, "utf8");
-            const parsed = JSON.parse(content);
-            return { ...DEFAULT_STAGNATION_POLICY, ...parsed };
-        }
-        catch {
-            return DEFAULT_STAGNATION_POLICY;
-        }
-    }
-    return DEFAULT_STAGNATION_POLICY;
-}
+import { DEFAULT_STAGNATION_POLICY, loadStagnationPolicy, } from "./stagnation-policy.js";
+export { DEFAULT_STAGNATION_POLICY, loadStagnationPolicy };
 function hashPayload(payload) {
     if (payload === undefined || payload === null)
         return "";
@@ -54,11 +24,9 @@ function extractFingerprints(event) {
             const errValue = typeof error === "string" ? error : "";
             const stderrValue = typeof stderr === "string" ? stderr : "";
             const errorCodeValue = typeof errorCode === "string" ? errorCode : "";
-            // Detect error
             if (errValue || stderrValue || errorCodeValue) {
                 errorHash = hashPayload({ error: errValue, stderr: stderrValue, errorCode: errorCodeValue });
             }
-            // Detect patch / commands
             const diff = res["diff"];
             const diffValue = typeof diff === "string" ? diff : "";
             const filesChanged = Array.isArray(res["filesChanged"])
@@ -70,13 +38,8 @@ function extractFingerprints(event) {
                 ? res["commandsRun"].filter((c) => typeof c === "string")
                 : [];
             if (diffValue || filesChanged.length > 0 || commandValue || commandsRun.length > 0) {
-                patchHash = hashPayload({
-                    diff: diffValue,
-                    filesChanged,
-                    command: commandValue,
-                    commandsRun,
-                });
-                hasEvidence = true; // patches or commands count as evidence of work
+                patchHash = hashPayload({ diff: diffValue, filesChanged, command: commandValue, commandsRun });
+                hasEvidence = true;
             }
             const artifactsGenerated = Array.isArray(res["artifactsGenerated"])
                 ? res["artifactsGenerated"].filter((a) => typeof a === "string")
@@ -98,22 +61,12 @@ export function checkStagnation(events, policy) {
     const runId = recentEvents[recentEvents.length - 1]?.runId || "";
     const agentId = recentEvents[recentEvents.length - 1]?.agentId;
     const role = recentEvents[recentEvents.length - 1]?.role;
-    let _heartbeatCount = 0;
-    let _progressCount = 0;
-    let _evidenceCount = 0;
     const errorHashes = [];
     const patchHashes = [];
     for (const ev of recentEvents) {
         if (!ev)
             continue;
-        if (ev.type === "agent.heartbeat") {
-            _heartbeatCount++;
-        }
-        const { errorHash, patchHash, hasEvidence, hasProgress } = extractFingerprints(ev);
-        if (hasProgress)
-            _progressCount++;
-        if (hasEvidence)
-            _evidenceCount++;
+        const { errorHash, patchHash } = extractFingerprints(ev);
         if (errorHash)
             errorHashes.push({ hash: errorHash, agent: ev.agentId });
         if (patchHash)
@@ -126,7 +79,7 @@ export function checkStagnation(events, policy) {
         kind,
         severity: policy.defaultSeverity,
         fingerprint,
-        matchedEventIds: [], // We don't have event IDs yet in LedgerEvent by default, mock it
+        matchedEventIds: [],
         windowSize,
         threshold,
         suggestedParentAction,
@@ -175,10 +128,7 @@ export function checkStagnation(events, policy) {
         if (!ev)
             continue;
         if (ev.type === "agent.heartbeat") {
-            if (policy.ignoreHeartbeatOnlyWhenRoleIsWaiting && ev.state === "waiting") {
-                // skip
-            }
-            else {
+            if (!(policy.ignoreHeartbeatOnlyWhenRoleIsWaiting && ev.state === "waiting")) {
                 consecutiveHeartbeats++;
             }
         }

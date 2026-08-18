@@ -1,14 +1,7 @@
 import { type UlwLoopScope } from "./paths.js";
-import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan, UlwLoopQualityGate } from "./types.js";
-export interface CheckpointQualityGateResult {
-    readonly finalizerAllowed: boolean;
-    readonly qualityGate?: UlwLoopQualityGate | undefined;
-    readonly codexGoal?: unknown;
-    readonly aggregateCompletion?: UlwLoopAggregateCompletion | undefined;
-    readonly goalStatusOverride?: UlwLoopItem["status"] | undefined;
-    readonly blockedReasonOverride?: string | undefined;
-    readonly failedReasonOverride?: string | undefined;
-}
+import type { UlwLoopItem, UlwLoopPlan } from "./types.js";
+import { type CheckpointQualityGateResult } from "./checkpoint-reconciliation.js";
+export type { CheckpointQualityGateResult };
 export declare function runCheckpointQualityGate(repoRoot: string, goal: UlwLoopItem, plan: UlwLoopPlan, evidence: string, args: {
     readonly codexGoalJson?: string;
     readonly qualityGateJson?: string;

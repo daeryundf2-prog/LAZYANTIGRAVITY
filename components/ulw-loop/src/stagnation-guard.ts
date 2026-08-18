@@ -1,85 +1,16 @@
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import type { LedgerEvent } from "./control-plane-types.js";
+import {
+	DEFAULT_STAGNATION_POLICY,
+	type StagnationDetectedPayload,
+	type StagnationPolicy,
+	type StagnationResult,
+	type StagnationStatus,
+	loadStagnationPolicy,
+} from "./stagnation-policy.js";
 
-export interface StagnationPolicy {
-	recentEventWindow: number;
-	repeatedErrorThreshold: number;
-	repeatedPatchThreshold: number;
-	oscillationWindow: number;
-	heartbeatOnlyThreshold: number;
-	noEvidenceProgressThreshold: number;
-	actionOnStagnation: string;
-	minimumEventsForDetection: number;
-	cooldownEventsAfterDetection: number;
-	requireSameAgentForRepeatedError: boolean;
-	requireSameRoleForOscillation: boolean;
-	ignoreHeartbeatOnlyWhenRoleIsWaiting: boolean;
-	defaultSeverity: string;
-}
-
-export const DEFAULT_STAGNATION_POLICY: StagnationPolicy = {
-	recentEventWindow: 10,
-	repeatedErrorThreshold: 3,
-	repeatedPatchThreshold: 3,
-	oscillationWindow: 4,
-	heartbeatOnlyThreshold: 5,
-	noEvidenceProgressThreshold: 5,
-	actionOnStagnation: "emit_event",
-	minimumEventsForDetection: 5,
-	cooldownEventsAfterDetection: 5,
-	requireSameAgentForRepeatedError: true,
-	requireSameRoleForOscillation: true,
-	ignoreHeartbeatOnlyWhenRoleIsWaiting: true,
-	defaultSeverity: "high",
-};
-
-export type StagnationStatus =
-	| "ok"
-	| "stagnation_candidate"
-	| "same_error_loop"
-	| "oscillation_detected"
-	| "heartbeat_only_stall"
-	| "no_evidence_progress";
-
-export interface StagnationDetectedPayload {
-	runId: string;
-	agentId?: string;
-	role?: string;
-	kind: string;
-	severity: string;
-	fingerprint: string;
-	matchedEventIds: string[];
-	windowSize: number;
-	threshold: number;
-	suggestedParentAction: string;
-	parentActionRequired: boolean;
-	mustNotAutoFailRun: boolean;
-	wouldSwitchModel: boolean;
-	timestamp: string;
-}
-
-export interface StagnationResult {
-	status: StagnationStatus;
-	details?: string;
-	payload?: StagnationDetectedPayload;
-}
-
-export async function loadStagnationPolicy(repoRoot: string): Promise<StagnationPolicy> {
-	const policyPath = join(repoRoot, "plugins", "omo", "components", "ulw-loop", "config", "stagnation-policy.json");
-	if (existsSync(policyPath)) {
-		try {
-			const content = await readFile(policyPath, "utf8");
-			const parsed = JSON.parse(content) as Partial<StagnationPolicy>;
-			return { ...DEFAULT_STAGNATION_POLICY, ...parsed };
-		} catch {
-			return DEFAULT_STAGNATION_POLICY;
-		}
-	}
-	return DEFAULT_STAGNATION_POLICY;
-}
+export type { StagnationDetectedPayload, StagnationPolicy, StagnationResult, StagnationStatus };
+export { DEFAULT_STAGNATION_POLICY, loadStagnationPolicy };
 
 function hashPayload(payload: unknown): string {
 	if (payload === undefined || payload === null) return "";
@@ -107,11 +38,9 @@ function extractFingerprints(event: LedgerEvent) {
 			const errValue = typeof error === "string" ? error : "";
 			const stderrValue = typeof stderr === "string" ? stderr : "";
 			const errorCodeValue = typeof errorCode === "string" ? errorCode : "";
-			// Detect error
 			if (errValue || stderrValue || errorCodeValue) {
 				errorHash = hashPayload({ error: errValue, stderr: stderrValue, errorCode: errorCodeValue });
 			}
-			// Detect patch / commands
 			const diff = res["diff"];
 			const diffValue = typeof diff === "string" ? diff : "";
 			const filesChanged = Array.isArray(res["filesChanged"])
@@ -123,13 +52,8 @@ function extractFingerprints(event: LedgerEvent) {
 				? res["commandsRun"].filter((c): c is string => typeof c === "string")
 				: [];
 			if (diffValue || filesChanged.length > 0 || commandValue || commandsRun.length > 0) {
-				patchHash = hashPayload({
-					diff: diffValue,
-					filesChanged,
-					command: commandValue,
-					commandsRun,
-				});
-				hasEvidence = true; // patches or commands count as evidence of work
+				patchHash = hashPayload({ diff: diffValue, filesChanged, command: commandValue, commandsRun });
+				hasEvidence = true;
 			}
 			const artifactsGenerated = Array.isArray(res["artifactsGenerated"])
 				? res["artifactsGenerated"].filter((a): a is string => typeof a === "string")
@@ -150,28 +74,16 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 	if (events.length < policy.minimumEventsForDetection) return { status: "ok" };
 
 	const recentEvents = events.slice(-policy.recentEventWindow);
-
 	const runId = recentEvents[recentEvents.length - 1]?.runId || "";
 	const agentId = recentEvents[recentEvents.length - 1]?.agentId;
 	const role = recentEvents[recentEvents.length - 1]?.role;
-
-	let _heartbeatCount = 0;
-	let _progressCount = 0;
-	let _evidenceCount = 0;
 
 	const errorHashes: { hash: string; agent: string | undefined }[] = [];
 	const patchHashes: { hash: string; role: string | undefined }[] = [];
 
 	for (const ev of recentEvents) {
 		if (!ev) continue;
-		if (ev.type === "agent.heartbeat") {
-			_heartbeatCount++;
-		}
-
-		const { errorHash, patchHash, hasEvidence, hasProgress } = extractFingerprints(ev);
-
-		if (hasProgress) _progressCount++;
-		if (hasEvidence) _evidenceCount++;
+		const { errorHash, patchHash } = extractFingerprints(ev);
 		if (errorHash) errorHashes.push({ hash: errorHash, agent: ev.agentId });
 		if (patchHash) patchHashes.push({ hash: patchHash, role: ev.role });
 	}
@@ -189,7 +101,7 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		kind,
 		severity: policy.defaultSeverity,
 		fingerprint,
-		matchedEventIds: [], // We don't have event IDs yet in LedgerEvent by default, mock it
+		matchedEventIds: [],
 		windowSize,
 		threshold,
 		suggestedParentAction,
@@ -259,9 +171,7 @@ export function checkStagnation(events: LedgerEvent[], policy: StagnationPolicy)
 		const ev = recentEvents[i];
 		if (!ev) continue;
 		if (ev.type === "agent.heartbeat") {
-			if (policy.ignoreHeartbeatOnlyWhenRoleIsWaiting && ev.state === "waiting") {
-				// skip
-			} else {
+			if (!(policy.ignoreHeartbeatOnlyWhenRoleIsWaiting && ev.state === "waiting")) {
 				consecutiveHeartbeats++;
 			}
 		} else {

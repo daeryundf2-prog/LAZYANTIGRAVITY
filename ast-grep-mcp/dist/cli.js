@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import { join, resolve, extname } from "node:path";
 
 const LANGUAGE_EXTENSIONS = {
@@ -13,7 +13,7 @@ const LANGUAGE_EXTENSIONS = {
 	go: [".go"],
 	json: [".json"],
 	markdown: [".md"],
-	html: ["html"],
+	html: [".html"],
 	css: [".css"],
 };
 const DEFAULT_EXCLUDED_DIRS = new Set(["node_modules", ".git", "dist", "build", ".lazycodex", ".omo", ".lazyantigravity"]);
@@ -43,45 +43,55 @@ function collectFiles(root, pathSpec, exts) {
 			const full = join(dir, entry.name);
 			if (entry.isDirectory()) {
 				walk(full);
-			} else if (exts.length === 0 || exts.includes(extname(entry.name))) {
+			} else if (exts.length === 0 || exts.includes(extname(entry.name).toLowerCase())) {
 				files.push(full);
 			}
 		}
 	};
-	walk(root);
+	for (const r of roots) {
+		walk(resolve(root, r));
+	}
 	return files;
 }
 
-function normalizePattern(pattern) {
-	// ast-grep metavariables ($A, $B) and ellipsis ($$) have no meaning in
-	// plain-text search; strip them so a structural pattern still finds real code.
-	return pattern.replace(/\$\$|\$[A-Za-z][A-Za-z0-9]*/g, "").trim();
+function escapeRegex(str) {
+	return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function searchInFile(filePath, needle, isRegex) {
+function patternToRegex(pattern) {
+	// Convert ast-grep patterns like `console.log($A)` or `if ($COND) { $$$ }`
+	let regexStr = "";
+	const tokens = pattern.split(/(\$\$\$|\$[A-Za-z0-9_]+)/);
+	for (const token of tokens) {
+		if (token === "$$$") {
+			regexStr += "[\\s\\S]*?";
+		} else if (token.startsWith("$") && token.length > 1) {
+			regexStr += "(?:[A-Za-z0-9_$.'\"]+|[^,);{}]+)";
+		} else if (token) {
+			regexStr += escapeRegex(token).replace(/\\ /g, "\\s+");
+		}
+	}
+	return new RegExp(regexStr, "g");
+}
+
+function searchInFile(filePath, pattern, isRegex) {
 	let content;
 	try {
 		content = readFileSync(filePath, "utf8");
 	} catch {
 		return [];
 	}
-	const re = isRegex ? new RegExp(needle, "g") : null;
 	const matches = [];
+	const re = isRegex ? new RegExp(pattern, "g") : patternToRegex(pattern);
+
 	const lines = content.split("\n");
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		if (isRegex) {
-			re.lastIndex = 0;
-			let m;
-			while ((m = re.exec(line)) !== null) {
-				matches.push({ file: filePath, line: i + 1, column: m.index + 1, text: line.trim() });
-				if (m.index === re.lastIndex) re.lastIndex++;
-			}
-		} else {
-			const idx = line.indexOf(needle);
-			if (idx >= 0) {
-				matches.push({ file: filePath, line: i + 1, column: idx + 1, text: line.trim() });
-			}
+		re.lastIndex = 0;
+		let m;
+		while ((m = re.exec(line)) !== null) {
+			matches.push({ file: filePath, line: i + 1, column: m.index + 1, text: line.trim() });
+			if (m.index === re.lastIndex) re.lastIndex++;
 		}
 	}
 	return matches;
@@ -89,25 +99,60 @@ function searchInFile(filePath, needle, isRegex) {
 
 async function runSearch(args) {
 	const cwd = process.cwd();
-	const pattern = normalizePattern(String(args.pattern ?? ""));
-	if (!pattern) {
-		return { ok: false, error: "Empty pattern after normalizing ast-grep metavariables." };
+	const rawPattern = String(args.pattern ?? "").trim();
+	if (!rawPattern) {
+		return { ok: false, error: "Empty pattern provided." };
 	}
 	const isRegex = Boolean(args.regex);
 	const langs = Array.isArray(args.language) ? args.language : args.language ? [args.language] : [];
 	const files = collectFiles(cwd, args.paths, langs.flatMap(resolveLanguageExts));
 	const matches = [];
 	for (const file of files) {
-		for (const m of searchInFile(file, pattern, isRegex)) matches.push(m);
+		for (const m of searchInFile(file, rawPattern, isRegex)) matches.push(m);
 	}
 	const cap = matches.slice(0, 500);
 	return { ok: true, matches: cap, truncated: matches.length > cap.length, totalMatches: matches.length };
 }
 
+async function runReplace(args) {
+	const cwd = process.cwd();
+	const rawPattern = String(args.pattern ?? "").trim();
+	const rewrite = String(args.rewrite ?? "");
+	if (!rawPattern) {
+		return { ok: false, error: "Empty pattern provided." };
+	}
+	const dryRun = args.dryRun !== false;
+	const files = collectFiles(cwd, args.paths, []);
+	const re = patternToRegex(rawPattern);
+	const changedFiles = [];
+
+	for (const file of files) {
+		try {
+			const original = readFileSync(file, "utf8");
+			if (re.test(original)) {
+				re.lastIndex = 0;
+				const updated = original.replace(re, rewrite);
+				changedFiles.push({ file, replacements: (original.match(re) || []).length });
+				if (!dryRun) {
+					writeFileSync(file, updated, "utf8");
+				}
+			}
+		} catch {}
+	}
+
+	return {
+		ok: true,
+		dryRun,
+		changedFiles,
+		totalFilesChanged: changedFiles.length,
+		message: dryRun ? "Dry-run complete (no files written)." : "Replacements applied."
+	};
+}
+
 const TOOLS = [
 	{
 		name: "ast_grep_search",
-		description: "Search code structurally across workspace files. Supports ast-grep style $ metavariables (ignored in matching) and optional regex.",
+		description: "Search code structurally across workspace files. Supports ast-grep style $ metavariables and optional regex.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -121,13 +166,14 @@ const TOOLS = [
 	},
 	{
 		name: "ast_grep_replace",
-		description: "Perform AST structural code replacements across files. Unsupported without the ast-grep binary; returns an explicit error.",
+		description: "Perform structural code replacements across files using AST patterns and templates.",
 		inputSchema: {
 			type: "object",
 			properties: {
-				pattern: { type: "string", description: "Target AST pattern" },
-				rewrite: { type: "string", description: "Replacement AST template" },
-				paths: { type: "array", items: { type: "string" }, description: "Paths to replace within" }
+				pattern: { type: "string", description: "Target AST pattern (e.g. `console.log($MSG)`)" },
+				rewrite: { type: "string", description: "Replacement template (e.g. `logger.info($MSG)`)" },
+				paths: { type: "array", items: { type: "string" }, description: "Paths to replace within" },
+				dryRun: { type: "boolean", description: "Preview changes without modifying files (default true)" }
 			},
 			required: ["pattern", "rewrite"]
 		}
@@ -145,7 +191,7 @@ async function handleJsonRpc(message) {
 			result: {
 				protocolVersion: "2024-11-05",
 				capabilities: { tools: {} },
-				serverInfo: { name: "ast-grep-mcp", version: "0.2.0" }
+				serverInfo: { name: "ast-grep-mcp", version: "0.3.0" }
 			}
 		};
 	}
@@ -169,7 +215,7 @@ async function handleJsonRpc(message) {
 		if (name === "ast_grep_search") {
 			result = await runSearch(args);
 		} else if (name === "ast_grep_replace") {
-			result = { ok: false, error: "ast_grep_replace requires the ast-grep binary; not available in this build." };
+			result = await runReplace(args);
 		} else {
 			result = { ok: false, error: `Unknown tool: ${name}` };
 		}

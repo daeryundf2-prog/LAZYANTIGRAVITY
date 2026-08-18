@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { extname, resolve } from "node:path";
+import { extname, join, resolve } from "node:path";
 
 export const LSP_TOOLS = [
 	{
@@ -35,9 +35,10 @@ export const LSP_TOOLS = [
 			properties: {
 				filePath: { type: "string", description: "Source file path" },
 				line: { type: "integer", description: "1-indexed line number" },
-				column: { type: "integer", description: "1-indexed column number" }
+				column: { type: "integer", description: "1-indexed column number" },
+				symbol: { type: "string", description: "Optional symbol name if line/column omitted" }
 			},
-			required: ["filePath", "line", "column"]
+			required: ["filePath"]
 		}
 	},
 	{
@@ -80,9 +81,7 @@ export async function executeLspDiagnostics({ filePath }) {
 				shell: false,
 				stdio: ["ignore", "pipe", "pipe"]
 			});
-			if (res.error) {
-				// Process spawn error (e.g., npx missing in environment)
-			} else {
+			if (!res.error) {
 				const stdout = (res.stdout || "").trim();
 				const stderr = (res.stderr || "").trim();
 				const isToolMissing = stderr.includes("could not determine executable to run") || 
@@ -98,6 +97,36 @@ export async function executeLspDiagnostics({ filePath }) {
 		} catch {
 			// Ignore execution failures
 		}
+	} else if (ext === ".py") {
+		try {
+			const res = spawnSync("python3", ["-m", "py_compile", absolutePath], {
+				encoding: "utf8",
+				timeout: 5000,
+				shell: false,
+				stdio: ["ignore", "pipe", "pipe"]
+			});
+			if (!res.error && res.status !== 0) {
+				const stderr = (res.stderr || "").trim();
+				if (stderr) {
+					diagnostics.push({ file: filePath, message: stderr, severity: "error" });
+				}
+			}
+		} catch {}
+	} else if (ext === ".go") {
+		try {
+			const res = spawnSync("go", ["vet", absolutePath], {
+				encoding: "utf8",
+				timeout: 5000,
+				shell: false,
+				stdio: ["ignore", "pipe", "pipe"]
+			});
+			if (!res.error && res.status !== 0) {
+				const stderr = (res.stderr || res.stdout || "").trim();
+				if (stderr) {
+					diagnostics.push({ file: filePath, message: stderr, severity: "error" });
+				}
+			}
+		} catch {}
 	}
 
 	return {
@@ -111,6 +140,153 @@ export async function executeLspDiagnostics({ filePath }) {
 			}, null, 2)
 		}]
 	};
+}
+
+function extractSymbolAtCoordinates(content, line, column) {
+	const lines = content.split("\n");
+	if (line < 1 || line > lines.length) return "";
+	const targetLine = lines[line - 1];
+	const col = column ? column - 1 : 0;
+	if (col < 0 || col >= targetLine.length) return "";
+
+	// Match identifier at col
+	let start = col;
+	while (start > 0 && /[A-Za-z0-9_$]/.test(targetLine[start - 1])) {
+		start--;
+	}
+	let end = col;
+	while (end < targetLine.length && /[A-Za-z0-9_$]/.test(targetLine[end])) {
+		end++;
+	}
+	return targetLine.slice(start, end).trim();
+}
+
+function walkProjectFiles(dir, maxDepth = 4, currentDepth = 0) {
+	if (currentDepth > maxDepth) return [];
+	const files = [];
+	try {
+		const entries = readdirSync(dir, { withFileTypes: true });
+		for (const entry of entries) {
+			if (["node_modules", ".git", "dist", "build", ".lazycodex", ".omo"].includes(entry.name)) continue;
+			const full = join(dir, entry.name);
+			if (entry.isDirectory()) {
+				files.push(...walkProjectFiles(full, maxDepth, currentDepth + 1));
+			} else if ([".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go"].includes(extname(entry.name).toLowerCase())) {
+				files.push(full);
+			}
+		}
+	} catch {}
+	return files;
+}
+
+export async function executeLspDefinitions({ filePath, line, column, symbol }) {
+	const absolutePath = resolve(process.cwd(), filePath);
+	if (!existsSync(absolutePath)) {
+		return {
+			content: [{ type: "text", text: `File not found: ${filePath}` }],
+			isError: true
+		};
+	}
+
+	try {
+		const fileContent = readFileSync(absolutePath, "utf8");
+		const targetSymbol = symbol || extractSymbolAtCoordinates(fileContent, line, column);
+		if (!targetSymbol) {
+			return {
+				content: [{ type: "text", text: JSON.stringify({ ok: true, definitions: [], message: "No symbol found at coordinates" }, null, 2) }]
+			};
+		}
+
+		const definitions = [];
+		const declPattern = new RegExp(`(?:function|class|interface|type|const|let|var|def|fn|struct|enum)\\s+(${targetSymbol})\\b`);
+
+		const files = [absolutePath, ...walkProjectFiles(process.cwd())];
+		const visited = new Set();
+
+		for (const file of files) {
+			if (visited.has(file)) continue;
+			visited.add(file);
+			try {
+				const content = readFileSync(file, "utf8");
+				const lines = content.split("\n");
+				for (let i = 0; i < lines.length; i++) {
+					if (declPattern.test(lines[i])) {
+						definitions.push({
+							symbol: targetSymbol,
+							filePath: file,
+							line: i + 1,
+							text: lines[i].trim()
+						});
+					}
+				}
+			} catch {}
+		}
+
+		return {
+			content: [{
+				type: "text",
+				text: JSON.stringify({ ok: true, symbol: targetSymbol, definitions, total: definitions.length }, null, 2)
+			}]
+		};
+	} catch (err) {
+		return {
+			content: [{ type: "text", text: `Failed to find definitions: ${err.message}` }],
+			isError: true
+		};
+	}
+}
+
+export async function executeLspReferences({ filePath, line, column, symbol }) {
+	const absolutePath = resolve(process.cwd(), filePath);
+	if (!existsSync(absolutePath)) {
+		return {
+			content: [{ type: "text", text: `File not found: ${filePath}` }],
+			isError: true
+		};
+	}
+
+	try {
+		const fileContent = readFileSync(absolutePath, "utf8");
+		const targetSymbol = symbol || extractSymbolAtCoordinates(fileContent, line, column);
+		if (!targetSymbol) {
+			return {
+				content: [{ type: "text", text: JSON.stringify({ ok: true, references: [], message: "No symbol identified" }, null, 2) }]
+			};
+		}
+
+		const references = [];
+		const refPattern = new RegExp(`\\b${targetSymbol}\\b`);
+		const files = walkProjectFiles(process.cwd());
+
+		for (const file of files) {
+			try {
+				const content = readFileSync(file, "utf8");
+				const lines = content.split("\n");
+				for (let i = 0; i < lines.length; i++) {
+					if (refPattern.test(lines[i])) {
+						references.push({
+							symbol: targetSymbol,
+							filePath: file,
+							line: i + 1,
+							text: lines[i].trim()
+						});
+					}
+				}
+			} catch {}
+		}
+
+		return {
+			content: [{
+				type: "text",
+				text: JSON.stringify({ ok: true, symbol: targetSymbol, references: references.slice(0, 100), total: references.length }, null, 2)
+			}]
+		};
+	} catch (err) {
+		return {
+			content: [{ type: "text", text: `Failed to find references: ${err.message}` }],
+			isError: true
+		};
+	}
 }
 
 export async function executeLspSymbols({ filePath }) {
@@ -128,7 +304,7 @@ export async function executeLspSymbols({ filePath }) {
 		const lines = content.split("\n");
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
-			const match = line.match(/(?:function|class|interface|type|const|let|var|def)\s+([A-Za-z0-9_$]+)/);
+			const match = line.match(/(?:function|class|interface|type|const|let|var|def|fn|struct|enum)\s+([A-Za-z0-9_$]+)/);
 			if (match) {
 				symbols.push({ name: match[1], line: i + 1, text: line.trim() });
 			}

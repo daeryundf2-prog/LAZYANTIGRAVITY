@@ -20,6 +20,16 @@ export interface FactRecord {
 	content: string;
 }
 
+function sleepSync(ms: number): void {
+	try {
+		Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+	} catch {
+		// Fallback if SharedArrayBuffer unavailable
+		const start = Date.now();
+		while (Date.now() - start < ms) {}
+	}
+}
+
 function withFileLock<T>(filePath: string, fn: () => T): T {
 	const lockPath = `${filePath}.lock`;
 	const deadline = Date.now() + LOCK_TIMEOUT_MS;
@@ -44,8 +54,7 @@ function withFileLock<T>(filePath: string, fn: () => T): T {
 				if (Date.now() > deadline) {
 					return fn();
 				}
-				const start = Date.now();
-				while (Date.now() - start < LOCK_RETRY_MS) {}
+				sleepSync(LOCK_RETRY_MS);
 				continue;
 			}
 			return fn();

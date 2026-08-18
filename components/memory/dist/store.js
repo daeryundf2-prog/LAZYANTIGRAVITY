@@ -2,6 +2,16 @@ import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSyn
 import { join } from "node:path";
 const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_RETRY_MS = 10;
+function sleepSync(ms) {
+    try {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+    }
+    catch {
+        // Fallback if SharedArrayBuffer unavailable
+        const start = Date.now();
+        while (Date.now() - start < ms) { }
+    }
+}
 function withFileLock(filePath, fn) {
     const lockPath = `${filePath}.lock`;
     const deadline = Date.now() + LOCK_TIMEOUT_MS;
@@ -27,8 +37,7 @@ function withFileLock(filePath, fn) {
                 if (Date.now() > deadline) {
                     return fn();
                 }
-                const start = Date.now();
-                while (Date.now() - start < LOCK_RETRY_MS) { }
+                sleepSync(LOCK_RETRY_MS);
                 continue;
             }
             return fn();

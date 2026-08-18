@@ -1,6 +1,5 @@
 import { readValue } from "./cli-arg-parser.js";
 import { printJson } from "./cli-output.js";
-import { aggregateConsensus, dispatchConsensus, reportConsensusResult } from "./consensus-dispatcher.js";
 import {
 	appendRunEvent,
 	checkLeases,
@@ -13,6 +12,8 @@ import {
 	validateResultEnvelope,
 } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
+
+export { aggregateConsensusCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
 
 function required(argv: readonly string[], flag: string): string {
 	const value = readValue(argv, flag)?.trim();
@@ -116,7 +117,6 @@ export async function reportCompleteCmd(repoRoot: string, argv: readonly string[
 	}
 
 	const envelope = validateResultEnvelope(result, runId, agent.role);
-
 	const event = await appendRunEvent(repoRoot, runId, "agent.completed_reported", { agentId, result: envelope });
 	if (json) printJson({ ok: true, event });
 	else process.stdout.write(`Agent ${agentId} reported completion.\n`);
@@ -136,7 +136,6 @@ export async function reportFailedCmd(repoRoot: string, argv: readonly string[],
 	}
 
 	const envelope = validateResultEnvelope(result, runId, agent.role);
-
 	const event = await appendRunEvent(repoRoot, runId, "agent.failed_reported", { agentId, result: envelope });
 	if (json) printJson({ ok: true, event });
 	else process.stdout.write(`Agent ${agentId} reported failure.\n`);
@@ -201,57 +200,5 @@ export async function rewindRunCmd(repoRoot: string, argv: readonly string[], js
 		process.stdout.write(`  Destructive Truncate: ${isDestructive}\n`);
 		process.stdout.write(`  State is now: ${state.state}\n`);
 	}
-	return 0;
-}
-
-export async function dispatchConsensusCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
-	const runId = required(argv, "--run-id");
-	const fingerprint = readValue(argv, "--quality-input-fingerprint")?.trim();
-	const live = argv.includes("--live");
-	const mockLive = argv.includes("--mock-live");
-	const prompt = readValue(argv, "--prompt")?.trim();
-	const voterTimeoutStr = readValue(argv, "--voter-timeout-ms")?.trim();
-	const voterTimeoutMs = voterTimeoutStr ? parseInt(voterTimeoutStr, 10) : undefined;
-	const consensusTimeoutStr = readValue(argv, "--consensus-timeout-ms")?.trim();
-	const consensusTimeoutMs = consensusTimeoutStr ? parseInt(consensusTimeoutStr, 10) : undefined;
-	const opencodeBaseUrl = readValue(argv, "--opencode-base-url")?.trim();
-
-	const result = await dispatchConsensus(repoRoot, runId, fingerprint, {
-		live,
-		mockLive,
-		...(prompt !== undefined && { prompt }),
-		...(voterTimeoutMs !== undefined && { voterTimeoutMs }),
-		...(consensusTimeoutMs !== undefined && { consensusTimeoutMs }),
-		...(opencodeBaseUrl !== undefined && { opencodeBaseUrl }),
-	});
-	if (json) printJson({ ok: true, ...result });
-	else process.stdout.write(`Dispatched consensus ${result.consensusId} for run ${runId}.\n`);
-	return 0;
-}
-
-export async function reportConsensusResultCmd(
-	repoRoot: string,
-	argv: readonly string[],
-	json: boolean,
-): Promise<number> {
-	const runId = required(argv, "--run-id");
-	const consensusId = required(argv, "--consensus-id");
-	const agentId = required(argv, "--agent-id");
-	const resultJsonStr = required(argv, "--result-json");
-	const result = await readJsonOrPath(resultJsonStr, repoRoot);
-
-	await reportConsensusResult(repoRoot, runId, consensusId, agentId, result);
-	if (json) printJson({ ok: true, consensusId, agentId });
-	else process.stdout.write(`Reported consensus result for agent ${agentId} in consensus ${consensusId}.\n`);
-	return 0;
-}
-
-export async function aggregateConsensusCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
-	const runId = required(argv, "--run-id");
-	const consensusId = required(argv, "--consensus-id");
-	const verdict = await aggregateConsensus(repoRoot, runId, consensusId);
-
-	if (json) printJson({ ok: true, consensusId, verdict });
-	else process.stdout.write(`Aggregated consensus ${consensusId}. Verdict: ${verdict}\n`);
 	return 0;
 }

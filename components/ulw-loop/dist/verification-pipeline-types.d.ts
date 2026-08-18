@@ -1,4 +1,5 @@
-export type VerificationStage = "mechanical" | "semantic" | "consensus";
+import type { LedgerEvent, QualityEvidenceEnvelope } from "./control-plane-types.js";
+export type VerificationStage = "mechanical" | "semantic" | "consensus" | "evidence_completeness";
 export type VerificationStatus = "passed" | "failed" | "skipped" | "required" | "blocked";
 export interface VerificationPolicy {
     requireTests: boolean;
@@ -16,6 +17,20 @@ export interface QualityGateResult {
     status: VerificationStatus;
     reason?: string;
     parentActionRequired?: boolean;
+}
+export interface VerificationContext {
+    runId: string;
+    events: LedgerEvent[];
+    evidence?: QualityEvidenceEnvelope;
+    goal?: string;
+    wouldSwitchModel?: boolean;
+    isDryRun?: boolean;
+    riskLevel?: "low" | "medium" | "high";
+    destructiveChange?: boolean;
+    publicRelease?: boolean;
+    securitySensitive?: boolean;
+    lspDiagnostics?: string[] | undefined;
+    rulesViolations?: string[] | undefined;
 }
 export type ConsensusPersona = "advocate" | "devils_advocate" | "regression_reviewer" | "security_state_reviewer";
 export interface ConsensusRoleEnvelope {

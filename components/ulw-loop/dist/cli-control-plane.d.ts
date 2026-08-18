@@ -1,3 +1,4 @@
+export { aggregateConsensusCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
 export declare function initRunCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
 export declare function setRunStateCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
 export declare function dispatchAgentCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
@@ -11,6 +12,3 @@ export declare function rejectAgentCmd(repoRoot: string, argv: readonly string[]
 export declare function checkLeasesCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
 export declare function registerPollerCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
 export declare function rewindRunCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
-export declare function dispatchConsensusCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
-export declare function reportConsensusResultCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
-export declare function aggregateConsensusCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;

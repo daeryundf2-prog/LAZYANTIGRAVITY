@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline";
-import { LSP_TOOLS, executeLspDiagnostics, executeLspSymbols } from "./tools.js";
+import { LSP_TOOLS, executeLspDefinitions, executeLspDiagnostics, executeLspReferences, executeLspSymbols } from "./tools.js";
 
 async function handleJsonRpc(message) {
 	if (!message || typeof message !== "object") return null;
@@ -45,6 +45,24 @@ async function handleJsonRpc(message) {
 
 		if (name === "lsp_diagnostics") {
 			const res = await executeLspDiagnostics(args);
+			return {
+				jsonrpc: "2.0",
+				id,
+				result: res
+			};
+		}
+
+		if (name === "lsp_definitions") {
+			const res = await executeLspDefinitions(args);
+			return {
+				jsonrpc: "2.0",
+				id,
+				result: res
+			};
+		}
+
+		if (name === "lsp_references") {
+			const res = await executeLspReferences(args);
 			return {
 				jsonrpc: "2.0",
 				id,
