@@ -148,6 +148,10 @@ async function appendRunEventLocked(
 
 	const eventsFile = join(runDir, "events.jsonl");
 	await writeFile(eventsFile, `${JSON.stringify(cleanEvent)}\n`, { flag: "a", encoding: "utf8" });
+	try {
+		const { appendTransactionalEvent } = await import("./control-plane-sqlite.js");
+		await appendTransactionalEvent(repoRoot, runId, cleanEvent);
+	} catch {}
 	await reconstructAndSaveState(repoRoot, runId);
 	if (event.agentId) {
 		const agentsDir = join(runDir, "agents");

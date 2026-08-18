@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
+import { cpus } from "node:os";
 
 const args = process.argv.slice(2);
-let concurrency = 5;
+let concurrency = Math.min(Math.max(cpus()?.length || 4, 2), 16);
 let totalIterations = 20;
 let testCommand = "";
 
 for (let i = 0; i < args.length; i++) {
 	if (args[i].startsWith("--concurrency=")) {
-		concurrency = parseInt(args[i].split("=")[1], 10) || 5;
+		concurrency = parseInt(args[i].split("=")[1], 10) || concurrency;
 	} else if (args[i].startsWith("--iterations=")) {
 		totalIterations = parseInt(args[i].split("=")[1], 10) || 20;
 	} else {

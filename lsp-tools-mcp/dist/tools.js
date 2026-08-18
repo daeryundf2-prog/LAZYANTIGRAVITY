@@ -198,7 +198,7 @@ export async function executeLspDefinitions({ filePath, line, column, symbol }) 
 		}
 
 		const definitions = [];
-		const declPattern = new RegExp(`(?:function|class|interface|type|const|let|var|def|fn|struct|enum)\\s+(${targetSymbol})\\b`);
+		const declPattern = new RegExp(`(?:export\\s+)?(?:pub\\s+)?(?:async\\s+)?(?:function|class|interface|type|const|let|var|def|fn|struct|enum|trait|typealias)\\s+(${targetSymbol})\\b`);
 
 		const files = [absolutePath, ...walkProjectFiles(process.cwd())];
 		const visited = new Set();
@@ -210,17 +210,31 @@ export async function executeLspDefinitions({ filePath, line, column, symbol }) 
 				const content = readFileSync(file, "utf8");
 				const lines = content.split("\n");
 				for (let i = 0; i < lines.length; i++) {
-					if (declPattern.test(lines[i])) {
+					const lineText = lines[i];
+					if (declPattern.test(lineText)) {
+						const isExported = /export|pub\b/.test(lineText);
+						const isLocalFile = file === absolutePath;
 						definitions.push({
 							symbol: targetSymbol,
 							filePath: file,
 							line: i + 1,
-							text: lines[i].trim()
+							isExported,
+							isLocalFile,
+							text: lineText.trim()
 						});
 					}
 				}
 			} catch {}
 		}
+
+		// Sort definitions: local file first, then exported declarations
+		definitions.sort((a, b) => {
+			if (a.isLocalFile && !b.isLocalFile) return -1;
+			if (!a.isLocalFile && b.isLocalFile) return 1;
+			if (a.isExported && !b.isExported) return -1;
+			if (!a.isExported && b.isExported) return 1;
+			return 0;
+		});
 
 		return {
 			content: [{

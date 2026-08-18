@@ -66,7 +66,7 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
 	});
 }
 
-// Mutation operators
+// Mutation operators (Syntactic & Semantic)
 const mutationRules = [
 	{ name: "Equality Replacement", from: /===/g, to: "!==" },
 	{ name: "Inequality Replacement", from: /!==/g, to: "===" },
@@ -77,7 +77,10 @@ const mutationRules = [
 	{ name: "Comparison Greater to LessEq", from: />=/g, to: "<" },
 	{ name: "Comparison Less to GreaterEq", from: /<=/g, to: ">" },
 	{ name: "Arithmetic Addition to Subtraction", from: /\s\+\s/g, to: " - " },
-	{ name: "Arithmetic Subtraction to Addition", from: /\s-\s/g, to: " + " }
+	{ name: "Arithmetic Subtraction to Addition", from: /\s-\s/g, to: " + " },
+	{ name: "Semantic Boundary Shift (0 to 1)", from: /\b0\b/g, to: "1" },
+	{ name: "Semantic Boundary Shift (1 to 0)", from: /\b1\b/g, to: "0" },
+	{ name: "Semantic Early Return Null", from: /return\s+([a-zA-Z0-9_$]+);/g, to: "return null;" }
 ];
 
 console.log(`[Mutation-Gate] Target Source: ${targetFile}`);
