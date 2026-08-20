@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { validateStrictEvidence } from "../components/ulw-loop/dist/evidence-contract.js";
+import { evolveRules } from "../components/active-learning/dist/evolver.js";
 
 const ROOT = resolve(process.cwd());
 
@@ -91,4 +93,64 @@ test("P1-3: all TypeScript source modules adhere to <250 LOC ceiling", async () 
 	}
 
 	checkDir(join(ROOT, "components"));
+});
+
+test("Evidence-1: validateStrictEvidence enforces verified purity and gap documentation", () => {
+	// 1. Verified with unknowns must be rejected
+	const badVerified = validateStrictEvidence({
+		status: "verified",
+		summary: "All done",
+		unknowns: ["Database schema was unread"],
+	});
+	assert.equal(badVerified.valid, false);
+	assert.ok(badVerified.error?.includes("cannot contain unknowns"));
+
+	// 2. Verified with unreadRanges must be rejected
+	const unreadVerified = validateStrictEvidence({
+		status: "verified",
+		summary: "All done",
+		unreadRanges: [{ file: "src/auth.ts", startLine: 1, endLine: 50 }],
+	});
+	assert.equal(unreadVerified.valid, false);
+	assert.ok(unreadVerified.error?.includes("cannot contain unreadRanges"));
+
+	// 3. Partial without documented gaps must be rejected
+	const badPartial = validateStrictEvidence({
+		status: "partial",
+		summary: "Partial work",
+		unknowns: [],
+		inferences: [],
+		unreadRanges: [],
+	});
+	assert.equal(badPartial.valid, false);
+	assert.ok(badPartial.error?.includes("must explicitly document at least one"));
+
+	// 4. Pure verified must pass
+	const pureVerified = validateStrictEvidence({
+		status: "verified",
+		summary: "Clean verified execution with all tests green",
+		readRanges: [{ file: "src/index.ts" }],
+		filesChanged: ["src/index.ts"],
+		commandsRun: ["npm test"],
+	});
+	assert.equal(pureVerified.valid, true);
+	assert.equal(pureVerified.envelope?.status, "verified");
+});
+
+test("Evidence-2: Active-learning rejects memory promotion when evidence has unknowns", () => {
+	assert.throws(
+		() => {
+			evolveRules(ROOT, {
+				approve: true,
+				evidenceJson: {
+					status: "verified",
+					summary: "Fake completion",
+					unknowns: ["Did not check edge cases"],
+				},
+			});
+		},
+		{
+			message: /Active-learning memory promotion rejected/,
+		},
+	);
 });

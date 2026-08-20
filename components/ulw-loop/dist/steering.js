@@ -1,87 +1,10 @@
-import { isUlwLoopDone } from "./goal-status.js";
 import { seedDefaultSuccessCriteria } from "./plan-crud.js";
 import { appendLedger, readSteeringLedgerEntries, readUlwLoopPlan, withUlwLoopMutationLock, writePlan, } from "./plan-io.js";
-import { auditFor, child, children, childValues, hasProtected, isKind, isModel, isPlain, isSource, isText, pendingOrder, read, revised, targets, text, weakens, } from "./steering-validation.js";
+import { children, isKind, isModel, isPlain, isSource, isText, pendingOrder, read, revised, targets, text, validateUlwLoopSteeringProposal, } from "./steering-validation.js";
 import { iso } from "./types.js";
+export { validateUlwLoopSteeringProposal };
 function goal(plan, id) {
     return id === undefined ? undefined : plan.goals.find((item) => item.id === id);
-}
-function validateKind(plan, proposal, kind, reasons) {
-    const target = goal(plan, targets(proposal)[0]);
-    if (kind === "add_subgoal" && (text(proposal, "title") === undefined || text(proposal, "objective") === undefined))
-        reasons.push("add_subgoal requires title/objective");
-    if ((kind === "split_subgoal" || kind === "revise_pending_wording" || kind === "mark_blocked_superseded") &&
-        target === undefined)
-        reasons.push(`${kind} requires target`);
-    if ((kind === "split_subgoal" || kind === "revise_pending_wording") &&
-        target !== undefined &&
-        target.status !== "pending")
-        reasons.push(`${kind} requires pending target`);
-    const rawChildren = childValues(proposal);
-    if (kind === "split_subgoal" && rawChildren.length === 0)
-        reasons.push("split_subgoal requires children");
-    if ((kind === "split_subgoal" || kind === "mark_blocked_superseded") &&
-        rawChildren.some((item) => child(item) === null))
-        reasons.push(`${kind} children require title/objective`);
-    if (kind === "reorder_pending")
-        validateOrder(plan, proposal, reasons);
-    if (kind === "revise_pending_wording" &&
-        revised(proposal, "revisedTitle", "title") === undefined &&
-        revised(proposal, "revisedObjective", "objective") === undefined)
-        reasons.push("revise_pending_wording requires update");
-    if (kind === "revise_criterion")
-        validateCriterion(plan, proposal, reasons);
-}
-function validateOrder(plan, proposal, reasons) {
-    const requested = pendingOrder(proposal);
-    const pending = plan.goals
-        .filter((item) => item.status === "pending" && item.steeringStatus === undefined)
-        .map((item) => item.id);
-    if (requested.length === 0)
-        reasons.push("reorder_pending requires ids");
-    if (new Set(requested).size !== requested.length)
-        reasons.push("duplicate pending id");
-    if (requested.some((id) => !pending.includes(id)))
-        reasons.push("unknown pending id");
-}
-function validateCriterion(plan, proposal, reasons) {
-    const target = goal(plan, targets(proposal)[0]);
-    const criterionId = text(proposal, "criterionId");
-    if (target === undefined)
-        reasons.push("revise_criterion requires goalId");
-    else if (criterionId === undefined || target.successCriteria.every((item) => item.id !== criterionId))
-        reasons.push("revise_criterion requires criterionId");
-    const model = read(proposal, "userModel");
-    if (read(proposal, "scenario") === undefined &&
-        read(proposal, "expectedEvidence") === undefined &&
-        model === undefined)
-        reasons.push("revise_criterion requires update");
-    if (model !== undefined && !isModel(model))
-        reasons.push("invalid userModel");
-}
-export function validateUlwLoopSteeringProposal(plan, proposal) {
-    const reasons = [];
-    if (!isPlain(proposal))
-        reasons.push("proposal must be an object");
-    const object = isPlain(proposal) ? proposal : {};
-    const kind = read(object, "kind");
-    if (!isKind(kind))
-        reasons.push(`invalid kind: ${String(kind)}`);
-    if (!isSource(read(object, "source")))
-        reasons.push(`invalid source: ${String(read(object, "source"))}`);
-    if (text(object, "evidence") === undefined)
-        reasons.push("missing evidence");
-    if (text(object, "rationale") === undefined)
-        reasons.push("missing rationale");
-    if (hasProtected(proposal))
-        reasons.push("protected payload");
-    if (weakens(proposal))
-        reasons.push("weakened completion");
-    if (isUlwLoopDone(plan))
-        reasons.push("plan already complete");
-    if (isKind(kind))
-        validateKind(plan, object, kind, reasons);
-    return auditFor(proposal, reasons);
 }
 function nextId(plan, offset) {
     const max = plan.goals.reduce((current, item) => {

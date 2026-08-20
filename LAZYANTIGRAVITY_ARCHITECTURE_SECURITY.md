@@ -55,7 +55,12 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 2. **Semantic Gate**: Enforces non-empty goals/summaries, verifies claim-vs-file consistency, blocks unresolved stagnation, and prevents unapproved model switching.
 3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk, security-sensitive, or destructive changes.
 
-### 4.2. Fail-Open Hook Architecture
+### 4.2. Strict Evidence Verification Contract
+- **Anti-Hallucination Gate**: Mandates explicit classification of evidence into `verified`, `partial`, `not_checked`, or `inference`.
+- **Zero-Gap Purity**: Verified evidence rejects any unread ranges, unknowns, or inferences. Partial/inference states must explicitly document gaps.
+- **Active-Learning Memory Provenance**: Permanent fact storage requires verified evidence with origin traceability.
+
+### 4.3. Fail-Open Hook Architecture
 All lifecycle hooks run under `hook-runner.mjs` with `FAIL_OPEN` semantics and tight timeouts (2~10s). A hook failure or timeout logs an alert but never interrupts user workflow or locks the IDE turn.
 
 ---

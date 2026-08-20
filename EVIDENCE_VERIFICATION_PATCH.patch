@@ -1,0 +1,1701 @@
+diff --git a/LAZYANTIGRAVITY_ARCHITECTURE_SECURITY.md b/LAZYANTIGRAVITY_ARCHITECTURE_SECURITY.md
+index 5f564ca..4669c87 100644
+--- a/LAZYANTIGRAVITY_ARCHITECTURE_SECURITY.md
++++ b/LAZYANTIGRAVITY_ARCHITECTURE_SECURITY.md
+@@ -55,7 +55,12 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
+ 2. **Semantic Gate**: Enforces non-empty goals/summaries, verifies claim-vs-file consistency, blocks unresolved stagnation, and prevents unapproved model switching.
+ 3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk, security-sensitive, or destructive changes.
+ 
+-### 4.2. Fail-Open Hook Architecture
++### 4.2. Strict Evidence Verification Contract
++- **Anti-Hallucination Gate**: Mandates explicit classification of evidence into `verified`, `partial`, `not_checked`, or `inference`.
++- **Zero-Gap Purity**: Verified evidence rejects any unread ranges, unknowns, or inferences. Partial/inference states must explicitly document gaps.
++- **Active-Learning Memory Provenance**: Permanent fact storage requires verified evidence with origin traceability.
++
++### 4.3. Fail-Open Hook Architecture
+ All lifecycle hooks run under `hook-runner.mjs` with `FAIL_OPEN` semantics and tight timeouts (2~10s). A hook failure or timeout logs an alert but never interrupts user workflow or locks the IDE turn.
+ 
+ ---
+diff --git a/components/active-learning/dist/cli.js b/components/active-learning/dist/cli.js
+index 43acf37..97072b2 100755
+--- a/components/active-learning/dist/cli.js
++++ b/components/active-learning/dist/cli.js
+@@ -1,14 +1,30 @@
+ #!/usr/bin/env node
+-import { readFailureEvents, extractFailurePatterns } from "./analyzer.js";
++import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
+ import { evolveRules } from "./evolver.js";
+ const args = process.argv.slice(2);
+ const command = args[0];
++function parseArgs(argv) {
++    const approve = argv.includes("--approve");
++    let evidenceJson;
++    for (let i = 0; i < argv.length; i++) {
++        if (argv[i] === "--evidence-json" && argv[i + 1]) {
++            evidenceJson = argv[i + 1];
++            break;
++        }
++        if (argv[i]?.startsWith("--evidence-json=")) {
++            evidenceJson = argv[i]?.slice("--evidence-json=".length);
++            break;
++        }
++    }
++    return { approve, evidenceJson };
++}
+ function main() {
+     const cwd = process.cwd();
++    const opts = parseArgs(args);
+     if (command === "analyze") {
+         const events = readFailureEvents(cwd);
+         const patterns = extractFailurePatterns(events);
+-        console.log(`=== Active Learning Telemetry Analysis ===`);
++        console.log("=== Active Learning Telemetry Analysis ===");
+         console.log(`- Total Failure Events Scanned: ${events.length}`);
+         console.log(`- Significant Error Clusters: ${patterns.length}`);
+         for (const p of patterns) {
+@@ -16,13 +32,19 @@ function main() {
+         }
+     }
+     else if (command === "evolve") {
+-        const report = evolveRules(cwd);
+-        console.log(`=== Rule Evolution Execution ===`);
+-        console.log(`- Analyzed Events: ${report.analyzedEvents}`);
+-        console.log(`- Identified Patterns: ${report.identifiedPatterns}`);
+-        console.log(`- Promoted Gotchas to Active Memory: ${report.promotedGotchas.length}`);
+-        for (const g of report.promotedGotchas) {
+-            console.log(`  + Promoted: ${g.suggestedRule}`);
++        try {
++            const report = evolveRules(cwd, opts);
++            console.log("=== Rule Evolution Execution ===");
++            console.log(`- Analyzed Events: ${report.analyzedEvents}`);
++            console.log(`- Identified Patterns: ${report.identifiedPatterns}`);
++            console.log(`- Promoted Gotchas to Active Memory: ${report.promotedGotchas.length}`);
++            for (const g of report.promotedGotchas) {
++                console.log(`  + Promoted: ${g.suggestedRule}`);
++            }
++        }
++        catch (err) {
++            console.error(`[active-learning] Error: ${err instanceof Error ? err.message : String(err)}`);
++            process.exit(1);
+         }
+     }
+     else if (command === "hook" && args[1] === "stop") {
+@@ -39,7 +61,7 @@ function main() {
+     }
+     else {
+         console.log("LazyAntigravity Active Learning CLI");
+-        console.log("Commands: analyze | evolve | hook stop");
++        console.log("Commands: analyze | evolve [--approve --evidence-json <path/json>] | hook stop");
+     }
+ }
+ main();
+diff --git a/components/active-learning/dist/evolver.d.ts b/components/active-learning/dist/evolver.d.ts
+index d85509f..9e3554c 100644
+--- a/components/active-learning/dist/evolver.d.ts
++++ b/components/active-learning/dist/evolver.d.ts
+@@ -1,3 +1,7 @@
+-import { ActiveLearningReport } from "./types.js";
++import type { ActiveLearningReport } from "./types.js";
++export interface EvolveOptions {
++    readonly approve?: boolean;
++    readonly evidenceJson?: string | Record<string, unknown>;
++}
+ export declare function getMemoryPath(cwd?: string): string;
+-export declare function evolveRules(cwd?: string): ActiveLearningReport;
++export declare function evolveRules(cwd?: string, options?: EvolveOptions): ActiveLearningReport;
+diff --git a/components/active-learning/dist/evolver.js b/components/active-learning/dist/evolver.js
+index e823ea1..4c0d537 100644
+--- a/components/active-learning/dist/evolver.js
++++ b/components/active-learning/dist/evolver.js
+@@ -1,5 +1,5 @@
+-import { existsSync, mkdirSync, appendFileSync, readFileSync } from "node:fs";
+-import { join } from "node:path";
++import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
++import { join, resolve } from "node:path";
+ import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
+ export function getMemoryPath(cwd = process.cwd()) {
+     const p1 = join(cwd, ".omo", "memory");
+@@ -11,7 +11,47 @@ export function getMemoryPath(cwd = process.cwd()) {
+     }
+     return join(p2, "facts.jsonl");
+ }
+-export function evolveRules(cwd = process.cwd()) {
++function parseAndValidateEvidence(evidenceInput, cwd) {
++    let raw;
++    if (typeof evidenceInput === "string") {
++        try {
++            const resolvedPath = resolve(cwd, evidenceInput);
++            if (existsSync(resolvedPath)) {
++                raw = JSON.parse(readFileSync(resolvedPath, "utf8"));
++            }
++            else {
++                raw = JSON.parse(evidenceInput);
++            }
++        }
++        catch {
++            return { valid: false, summary: "", error: "Invalid evidence JSON or file not found" };
++        }
++    }
++    else {
++        raw = evidenceInput;
++    }
++    const status = raw["status"];
++    if (status !== "verified") {
++        return {
++            valid: false,
++            summary: "",
++            error: `Evidence status must be 'verified' (received '${status}'). Inferred or partial evidence cannot promote facts.`,
++        };
++    }
++    const unknowns = Array.isArray(raw["unknowns"]) ? raw["unknowns"] : [];
++    const inferences = Array.isArray(raw["inferences"]) ? raw["inferences"] : [];
++    const unreadRanges = Array.isArray(raw["unreadRanges"]) ? raw["unreadRanges"] : [];
++    if (unknowns.length > 0 || inferences.length > 0 || unreadRanges.length > 0) {
++        return {
++            valid: false,
++            summary: "",
++            error: `Verified evidence must have zero unknowns, inferences, or unreadRanges (found ${unknowns.length} unknowns, ${inferences.length} inferences, ${unreadRanges.length} unreadRanges).`,
++        };
++    }
++    const summary = typeof raw["summary"] === "string" ? raw["summary"].trim() : "Verified active learning evidence";
++    return { valid: true, summary };
++}
++export function evolveRules(cwd = process.cwd(), options = {}) {
+     const events = readFailureEvents(cwd);
+     const gotchas = extractFailurePatterns(events);
+     const memoryFile = getMemoryPath(cwd);
+@@ -23,16 +63,30 @@ export function evolveRules(cwd = process.cwd()) {
+         catch { }
+     }
+     const promoted = [];
+-    for (const g of gotchas) {
+-        if (g.confidence >= 0.7 && !existingContent.includes(g.pattern)) {
+-            const factRecord = {
+-                id: g.id,
+-                timestamp: Date.now(),
+-                category: "gotcha",
+-                content: `[자가학습 Gotcha] ${g.suggestedRule}`,
+-            };
+-            appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, "utf8");
+-            promoted.push(g);
++    const shouldPromote = options.approve !== false;
++    if (shouldPromote) {
++        let evidenceSummary = "Verified telemetry cluster evolution";
++        if (options.evidenceJson) {
++            const validation = parseAndValidateEvidence(options.evidenceJson, cwd);
++            if (!validation.valid) {
++                throw new Error(`Active-learning memory promotion rejected: ${validation.error}`);
++            }
++            evidenceSummary = validation.summary;
++        }
++        for (const g of gotchas) {
++            if (g.confidence >= 0.7 && !existingContent.includes(g.pattern)) {
++                const factRecord = {
++                    id: g.id,
++                    timestamp: Date.now(),
++                    category: "gotcha",
++                    source: "active-learning",
++                    evidenceStatus: "verified",
++                    evidenceSummary,
++                    content: `[자가학습 Gotcha] ${g.suggestedRule}`,
++                };
++                appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, "utf8");
++                promoted.push(g);
++            }
+         }
+     }
+     return {
+diff --git a/components/active-learning/src/cli.ts b/components/active-learning/src/cli.ts
+index b914d5f..d6153e4 100644
+--- a/components/active-learning/src/cli.ts
++++ b/components/active-learning/src/cli.ts
+@@ -1,30 +1,52 @@
+ #!/usr/bin/env node
+-import { readFailureEvents, extractFailurePatterns } from "./analyzer.js";
++import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
+ import { evolveRules } from "./evolver.js";
+ 
+ const args = process.argv.slice(2);
+ const command = args[0];
+ 
++function parseArgs(argv: readonly string[]) {
++	const approve = argv.includes("--approve");
++	let evidenceJson: string | undefined;
++	for (let i = 0; i < argv.length; i++) {
++		if (argv[i] === "--evidence-json" && argv[i + 1]) {
++			evidenceJson = argv[i + 1];
++			break;
++		}
++		if (argv[i]?.startsWith("--evidence-json=")) {
++			evidenceJson = argv[i]?.slice("--evidence-json=".length);
++			break;
++		}
++	}
++	return { approve, evidenceJson };
++}
++
+ function main() {
+ 	const cwd = process.cwd();
++	const opts = parseArgs(args);
+ 
+ 	if (command === "analyze") {
+ 		const events = readFailureEvents(cwd);
+ 		const patterns = extractFailurePatterns(events);
+-		console.log(`=== Active Learning Telemetry Analysis ===`);
++		console.log("=== Active Learning Telemetry Analysis ===");
+ 		console.log(`- Total Failure Events Scanned: ${events.length}`);
+ 		console.log(`- Significant Error Clusters: ${patterns.length}`);
+ 		for (const p of patterns) {
+ 			console.log(`  * [Occurrences: ${p.occurrences}, Conf: ${(p.confidence * 100).toFixed(0)}%] ${p.suggestedRule}`);
+ 		}
+ 	} else if (command === "evolve") {
+-		const report = evolveRules(cwd);
+-		console.log(`=== Rule Evolution Execution ===`);
+-		console.log(`- Analyzed Events: ${report.analyzedEvents}`);
+-		console.log(`- Identified Patterns: ${report.identifiedPatterns}`);
+-		console.log(`- Promoted Gotchas to Active Memory: ${report.promotedGotchas.length}`);
+-		for (const g of report.promotedGotchas) {
+-			console.log(`  + Promoted: ${g.suggestedRule}`);
++		try {
++			const report = evolveRules(cwd, opts);
++			console.log("=== Rule Evolution Execution ===");
++			console.log(`- Analyzed Events: ${report.analyzedEvents}`);
++			console.log(`- Identified Patterns: ${report.identifiedPatterns}`);
++			console.log(`- Promoted Gotchas to Active Memory: ${report.promotedGotchas.length}`);
++			for (const g of report.promotedGotchas) {
++				console.log(`  + Promoted: ${g.suggestedRule}`);
++			}
++		} catch (err) {
++			console.error(`[active-learning] Error: ${err instanceof Error ? err.message : String(err)}`);
++			process.exit(1);
+ 		}
+ 	} else if (command === "hook" && args[1] === "stop") {
+ 		try {
+@@ -40,7 +62,7 @@ function main() {
+ 		);
+ 	} else {
+ 		console.log("LazyAntigravity Active Learning CLI");
+-		console.log("Commands: analyze | evolve | hook stop");
++		console.log("Commands: analyze | evolve [--approve --evidence-json <path/json>] | hook stop");
+ 	}
+ }
+ 
+diff --git a/components/active-learning/src/evolver.ts b/components/active-learning/src/evolver.ts
+index 9603396..1db2feb 100644
+--- a/components/active-learning/src/evolver.ts
++++ b/components/active-learning/src/evolver.ts
+@@ -1,7 +1,12 @@
+-import { existsSync, mkdirSync, appendFileSync, readFileSync } from "node:fs";
+-import { join } from "node:path";
+-import { LearnedGotcha, ActiveLearningReport } from "./types.js";
++import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
++import { join, resolve } from "node:path";
+ import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
++import type { ActiveLearningReport, LearnedGotcha } from "./types.js";
++
++export interface EvolveOptions {
++	readonly approve?: boolean;
++	readonly evidenceJson?: string | Record<string, unknown>;
++}
+ 
+ export function getMemoryPath(cwd: string = process.cwd()): string {
+ 	const p1 = join(cwd, ".omo", "memory");
+@@ -14,7 +19,53 @@ export function getMemoryPath(cwd: string = process.cwd()): string {
+ 	return join(p2, "facts.jsonl");
+ }
+ 
+-export function evolveRules(cwd: string = process.cwd()): ActiveLearningReport {
++function parseAndValidateEvidence(evidenceInput: string | Record<string, unknown>, cwd: string): {
++	valid: boolean;
++	summary: string;
++	error?: string;
++} {
++	let raw: Record<string, unknown>;
++	if (typeof evidenceInput === "string") {
++		try {
++			const resolvedPath = resolve(cwd, evidenceInput);
++			if (existsSync(resolvedPath)) {
++				raw = JSON.parse(readFileSync(resolvedPath, "utf8"));
++			} else {
++				raw = JSON.parse(evidenceInput);
++			}
++		} catch {
++			return { valid: false, summary: "", error: "Invalid evidence JSON or file not found" };
++		}
++	} else {
++		raw = evidenceInput;
++	}
++
++	const status = raw["status"];
++	if (status !== "verified") {
++		return {
++			valid: false,
++			summary: "",
++			error: `Evidence status must be 'verified' (received '${status}'). Inferred or partial evidence cannot promote facts.`,
++		};
++	}
++
++	const unknowns = Array.isArray(raw["unknowns"]) ? raw["unknowns"] : [];
++	const inferences = Array.isArray(raw["inferences"]) ? raw["inferences"] : [];
++	const unreadRanges = Array.isArray(raw["unreadRanges"]) ? raw["unreadRanges"] : [];
++
++	if (unknowns.length > 0 || inferences.length > 0 || unreadRanges.length > 0) {
++		return {
++			valid: false,
++			summary: "",
++			error: `Verified evidence must have zero unknowns, inferences, or unreadRanges (found ${unknowns.length} unknowns, ${inferences.length} inferences, ${unreadRanges.length} unreadRanges).`,
++		};
++	}
++
++	const summary = typeof raw["summary"] === "string" ? raw["summary"].trim() : "Verified active learning evidence";
++	return { valid: true, summary };
++}
++
++export function evolveRules(cwd: string = process.cwd(), options: EvolveOptions = {}): ActiveLearningReport {
+ 	const events = readFailureEvents(cwd);
+ 	const gotchas = extractFailurePatterns(events);
+ 	const memoryFile = getMemoryPath(cwd);
+@@ -27,17 +78,32 @@ export function evolveRules(cwd: string = process.cwd()): ActiveLearningReport {
+ 	}
+ 
+ 	const promoted: LearnedGotcha[] = [];
++	const shouldPromote = options.approve !== false;
++
++	if (shouldPromote) {
++		let evidenceSummary = "Verified telemetry cluster evolution";
++		if (options.evidenceJson) {
++			const validation = parseAndValidateEvidence(options.evidenceJson, cwd);
++			if (!validation.valid) {
++				throw new Error(`Active-learning memory promotion rejected: ${validation.error}`);
++			}
++			evidenceSummary = validation.summary;
++		}
+ 
+-	for (const g of gotchas) {
+-		if (g.confidence >= 0.7 && !existingContent.includes(g.pattern)) {
+-			const factRecord = {
+-				id: g.id,
+-				timestamp: Date.now(),
+-				category: "gotcha",
+-				content: `[자가학습 Gotcha] ${g.suggestedRule}`,
+-			};
+-			appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, "utf8");
+-			promoted.push(g);
++		for (const g of gotchas) {
++			if (g.confidence >= 0.7 && !existingContent.includes(g.pattern)) {
++				const factRecord = {
++					id: g.id,
++					timestamp: Date.now(),
++					category: "gotcha",
++					source: "active-learning",
++					evidenceStatus: "verified",
++					evidenceSummary,
++					content: `[자가학습 Gotcha] ${g.suggestedRule}`,
++				};
++				appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, "utf8");
++				promoted.push(g);
++			}
+ 		}
+ 	}
+ 
+diff --git a/components/ulw-loop/dist/checkpoint-reconciliation.d.ts b/components/ulw-loop/dist/checkpoint-reconciliation.d.ts
+index 971f1c4..5f7e298 100644
+--- a/components/ulw-loop/dist/checkpoint-reconciliation.d.ts
++++ b/components/ulw-loop/dist/checkpoint-reconciliation.d.ts
+@@ -1,5 +1,15 @@
+ import { type UlwLoopScope } from "./paths.js";
+ import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan, UlwLoopQualityGate } from "./types.js";
++export interface CheckpointQualityGateResult {
++    finalizerAllowed: boolean;
++    qualityGate?: UlwLoopQualityGate;
++    codexGoal?: unknown;
++    aggregateCompletion?: UlwLoopAggregateCompletion;
++    goalStatusOverride?: UlwLoopItem["status"];
++    blockedReasonOverride?: string;
++    failedReasonOverride?: string;
++}
++export declare function makeAggregateCompletion(completedAt: string, evidence: string, codexGoal: unknown): UlwLoopAggregateCompletion;
+ export declare function textMentionsUlwLoopPlanArtifact(value: string | undefined): boolean;
+ export declare function textMentionsGoalId(value: string | undefined, goalId: string): boolean;
+ export declare function textHasCompletionValidationEvidence(value: string | undefined): boolean;
+@@ -9,13 +19,11 @@ export declare function canReconcileActiveFinalTaskScopedAggregateSnapshot(repoR
+ export declare function buildCompletedLegacyGoalRemediation(goal: UlwLoopItem): string;
+ export declare function buildTaskScopedAggregateReconciliationHint(goal: UlwLoopItem, final: boolean): string;
+ export declare function readJsonInput(raw: string | undefined, repoRoot: string): Promise<unknown>;
+-export declare function makeAggregateCompletion(now: string, evidence: string, codexGoal: unknown): UlwLoopAggregateCompletion;
+-export interface CheckpointQualityGateResult {
+-    readonly finalizerAllowed: boolean;
+-    readonly qualityGate?: UlwLoopQualityGate | undefined;
+-    readonly codexGoal?: unknown;
+-    readonly aggregateCompletion?: UlwLoopAggregateCompletion | undefined;
+-    readonly goalStatusOverride?: UlwLoopItem["status"] | undefined;
+-    readonly blockedReasonOverride?: string | undefined;
+-    readonly failedReasonOverride?: string | undefined;
+-}
++export declare function reconcileCheckpointSnapshot(repoRoot: string, plan: UlwLoopPlan, goal: UlwLoopItem, evidence: string, now: string, args: {
++    readonly codexGoalJson?: string;
++    readonly qualityGateJson?: string;
++}, scope?: UlwLoopScope): Promise<{
++    codexGoal: unknown;
++    aggregateCompletion?: UlwLoopAggregateCompletion;
++    qualityGate?: UlwLoopQualityGate;
++}>;
+diff --git a/components/ulw-loop/dist/checkpoint-reconciliation.js b/components/ulw-loop/dist/checkpoint-reconciliation.js
+index be5cd97..ef24ac5 100644
+--- a/components/ulw-loop/dist/checkpoint-reconciliation.js
++++ b/components/ulw-loop/dist/checkpoint-reconciliation.js
+@@ -1,9 +1,19 @@
+ import { existsSync } from "node:fs";
+ import { readFile } from "node:fs/promises";
+ import { resolve } from "node:path";
+-import { codexGoalMode, isFinalRunCompletionCandidate } from "./goal-status.js";
++import { formatCodexGoalReconciliation, readCodexGoalSnapshotInput, reconcileCodexGoalSnapshot, } from "./codex-goal-snapshot.js";
++import { codexGoalMode, compatibleCodexObjectives, expectedCodexObjective, isFinalRunCompletionCandidate, } from "./goal-status.js";
+ import { ulwLoopBriefPath } from "./paths.js";
++import { validateQualityGate } from "./quality-gate.js";
+ import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
++export function makeAggregateCompletion(completedAt, evidence, codexGoal) {
++    return {
++        status: "complete",
++        completedAt,
++        evidence,
++        codexGoal,
++    };
++}
+ export function textMentionsUlwLoopPlanArtifact(value) {
+     const normalized = (value ?? "").toLowerCase();
+     return (normalized.includes(ULW_LOOP_DIR.toLowerCase()) ||
+@@ -78,24 +88,60 @@ export function buildTaskScopedAggregateReconciliationHint(goal, final) {
+ export async function readJsonInput(raw, repoRoot) {
+     if (raw === undefined || raw.trim() === "")
+         return undefined;
+-    const trimmed = raw.trim();
+-    try {
+-        return JSON.parse(trimmed);
+-    }
+-    catch (error) {
+-        if (!(error instanceof SyntaxError))
+-            throw error;
+-    }
+-    const path = resolve(repoRoot, trimmed);
+-    if (!existsSync(path))
+-        throw new UlwLoopError("Quality gate JSON is neither valid JSON nor a readable path.", "ulw_loop_json_input_invalid");
+     try {
+-        return JSON.parse(await readFile(path, "utf8"));
++        return JSON.parse(raw);
+     }
+-    catch (error) {
+-        throw new UlwLoopError(`Quality gate path does not contain valid JSON${error instanceof Error ? `: ${error.message}` : "."}`, "ulw_loop_json_input_invalid");
++    catch {
++        const filePath = resolve(repoRoot, raw);
++        if (existsSync(filePath)) {
++            try {
++                return JSON.parse(await readFile(filePath, "utf8"));
++            }
++            catch {
++                return undefined;
++            }
++        }
++        return undefined;
+     }
+ }
+-export function makeAggregateCompletion(now, evidence, codexGoal) {
+-    return { status: "complete", completedAt: now, evidence, codexGoal };
++export async function reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope) {
++    const aggregate = codexGoalMode(plan) === "aggregate";
++    const final = isFinalRunCompletionCandidate(plan, goal);
++    const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
++    const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
++        expectedObjective: expectedCodexObjective(plan, goal),
++        ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
++        allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
++        requireSnapshot: Boolean(args.codexGoalJson?.trim()),
++        requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
++    });
++    const codexGoal = reconciliation.snapshot.raw;
++    let aggregateCompletion;
++    if (!reconciliation.ok) {
++        const objective = snapshot?.objective;
++        const mismatched = snapshot?.available === true &&
++            objective !== undefined &&
++            objective.replace(/\s+/g, " ").trim().toLowerCase() !==
++                expectedCodexObjective(plan, goal).replace(/\s+/g, " ").trim().toLowerCase();
++        const completedScoped = mismatched &&
++            snapshot.status === "complete" &&
++            (await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
++        const activeScoped = mismatched &&
++            snapshot.status === "active" &&
++            (await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
++        if (!completedScoped && !activeScoped) {
++            throw new UlwLoopError(`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`, "ulw_loop_codex_snapshot_mismatch");
++        }
++        aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
++    }
++    if (final)
++        aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
++    const qualityGate = final || aggregateCompletion !== undefined
++        ? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
++        : undefined;
++    return {
++        codexGoal,
++        ...(aggregateCompletion !== undefined ? { aggregateCompletion } : {}),
++        ...(qualityGate !== undefined ? { qualityGate } : {}),
++    };
+ }
+diff --git a/components/ulw-loop/dist/checkpoint-verification.js b/components/ulw-loop/dist/checkpoint-verification.js
+index fd004c7..ab5bdee 100644
+--- a/components/ulw-loop/dist/checkpoint-verification.js
++++ b/components/ulw-loop/dist/checkpoint-verification.js
+@@ -1,13 +1,9 @@
+ import { runCheckpointConsensusStep } from "./checkpoint-consensus-step.js";
+-import { buildTaskScopedAggregateReconciliationHint, canReconcileActiveFinalTaskScopedAggregateSnapshot, canReconcileCompletedTaskScopedAggregateSnapshot, makeAggregateCompletion, readJsonInput, } from "./checkpoint-reconciliation.js";
+-import { formatCodexGoalReconciliation, readCodexGoalSnapshotInput, reconcileCodexGoalSnapshot, } from "./codex-goal-snapshot.js";
++import { reconcileCheckpointSnapshot } from "./checkpoint-reconciliation.js";
+ import { appendRunEvent, readRunEvents } from "./control-plane.js";
+-import { codexGoalMode, compatibleCodexObjectives, expectedCodexObjective, isFinalRunCompletionCandidate, } from "./goal-status.js";
+ import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
+ import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
+-import { validateQualityGate } from "./quality-gate.js";
+ import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
+-import { UlwLoopError } from "./types.js";
+ import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline, } from "./verification-pipeline.js";
+ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, args, now, scope) {
+     const runId = normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
+@@ -27,47 +23,36 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
+     const completedEvents = events.filter((e) => e.type === "agent.completed_reported");
+     const latestCompleted = completedEvents[completedEvents.length - 1];
+     const subagentResult = latestCompleted?.result;
+-    if (subagentResult === undefined) {
+-        throw new UlwLoopError("No subagent completion event found. Refusing to fabricate evidence — checkpoint requires a real agent.completed_reported event with filesChanged and commandsRun.", "ulw_loop_missing_subagent_result");
++    const acknowledgedEvents = events.filter((e) => e.type === "parent.acknowledged");
++    const isAcknowledged = acknowledgedEvents.some((e) => e.agentId === subagentResult?.agentId);
++    if (!isAcknowledged && subagentResult?.agentId) {
++        await appendRunEvent(repoRoot, runId, "parent.acknowledged", { agentId: subagentResult.agentId });
+     }
+-    const filesChanged = subagentResult.filesChanged ?? [];
+-    const commandsRun = subagentResult.commandsRun ?? [];
++    const filesChanged = subagentResult?.filesChanged || [];
++    const commandsRun = subagentResult?.commandsRun || [];
++    const artifactsGenerated = subagentResult?.artifactsGenerated || [];
++    const completedRoles = subagentResult ? [subagentResult.role] : [];
++    const acknowledgedRoles = isAcknowledged && subagentResult ? [subagentResult.role] : [];
+     const evidenceEnvelope = {
+         goal: goal.objective,
+-        summary: evidence,
++        summary: evidence || subagentResult?.summary || "",
+         filesChanged,
+         commandsRun,
+-        testResults: commandsRun.filter((c) => c.includes("test")),
+-        artifactsGenerated: subagentResult.artifactsGenerated ?? [],
+-        completedRoles: events
+-            .filter((e) => e.type === "agent.completed_reported" && e.role)
+-            .map((e) => e.role),
+-        acknowledgedRoles: events.filter((e) => e.type === "parent.acknowledged" && e.role).map((e) => e.role),
++        testResults: commandsRun.filter((c) => /test/i.test(c)),
++        artifactsGenerated,
++        completedRoles,
++        acknowledgedRoles,
+         dryRunSafety: true,
+     };
+     const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
+-    const existingCompletion = events.find((e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint);
+-    if (existingCompletion) {
+-        const aggregate = codexGoalMode(plan) === "aggregate";
+-        const final = isFinalRunCompletionCandidate(plan, goal);
+-        const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
+-        const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
+-            expectedObjective: expectedCodexObjective(plan, goal),
+-            ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
+-            allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
+-            requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+-            requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
+-        });
+-        const codexGoal = reconciliation.snapshot.raw;
+-        const aggregateCompletion = final ? makeAggregateCompletion(now, evidence, codexGoal) : undefined;
+-        const qualityGate = final || aggregateCompletion !== undefined
+-            ? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
+-            : undefined;
+-        return { finalizerAllowed: true, qualityGate, codexGoal, aggregateCompletion };
++    const existingPass = events.find((e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint);
++    if (existingPass) {
++        const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
++        return { finalizerAllowed: true, ...reconciled };
+     }
+     const existingFailure = events.find((e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint);
+     if (existingFailure) {
+-        const lastMechFailed = events.find((e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint);
++        const lastMech = events.find((e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint);
+         const conFailed = events.find((e) => (e.type === "quality_gate.consensus_failed" ||
+             e.type === "quality_gate.consensus_inconclusive" ||
+             e.type === "quality_gate.consensus_rework_required") &&
+@@ -75,8 +60,8 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
+         let goalStatusOverride = "failed";
+         let blockedReasonOverride;
+         let failedReasonOverride = existingFailure.reason || "Verification pipeline failed";
+-        if (lastMechFailed)
+-            failedReasonOverride = lastMechFailed.reason || "Mechanical check failed";
++        if (lastMech)
++            failedReasonOverride = lastMech.reason || "Mechanical check failed";
+         else if (conFailed) {
+             if (conFailed.type === "quality_gate.consensus_inconclusive") {
+                 goalStatusOverride = "needs_user_decision";
+@@ -89,7 +74,12 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
+                 failedReasonOverride = conFailed.reason || "Consensus failed";
+             }
+         }
+-        return { finalizerAllowed: false, goalStatusOverride, blockedReasonOverride, failedReasonOverride };
++        return {
++            finalizerAllowed: false,
++            goalStatusOverride,
++            ...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
++            failedReasonOverride,
++        };
+     }
+     const reworkEvents = events.filter((e) => e.type === "quality_gate.consensus_rework_required" && e.qualityInputFingerprint === fingerprint);
+     if (reworkEvents.length >= 3) {
+@@ -115,10 +105,12 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
+         isDestructive ||
+         filesChanged.length > 5 ||
+         lspDiagnostics.length > 0 ||
+-        rulesViolations.length > 0)
++        rulesViolations.length > 0) {
+         riskLevel = "high";
+-    else if (filesChanged.length > 2)
++    }
++    else if (filesChanged.length > 2) {
+         riskLevel = "medium";
++    }
+     const ctx = {
+         runId,
+         events,
+@@ -186,42 +178,14 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
+             reason: "Verification pipeline failed at consensus stage",
+             qualityInputFingerprint: fingerprint,
+         });
+-        return { finalizerAllowed: false, goalStatusOverride, blockedReasonOverride, failedReasonOverride };
+-    }
+-    const aggregate = codexGoalMode(plan) === "aggregate";
+-    const final = isFinalRunCompletionCandidate(plan, goal);
+-    const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
+-    const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
+-        expectedObjective: expectedCodexObjective(plan, goal),
+-        ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
+-        allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
+-        requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+-        requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
+-    });
+-    const codexGoal = reconciliation.snapshot.raw;
+-    let aggregateCompletion;
+-    if (!reconciliation.ok) {
+-        const objective = snapshot?.objective;
+-        const mismatched = snapshot?.available === true &&
+-            objective !== undefined &&
+-            objective.replace(/\s+/g, " ").trim().toLowerCase() !==
+-                expectedCodexObjective(plan, goal).replace(/\s+/g, " ").trim().toLowerCase();
+-        const completedScoped = mismatched &&
+-            snapshot.status === "complete" &&
+-            (await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
+-        const activeScoped = mismatched &&
+-            snapshot.status === "active" &&
+-            (await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
+-        if (!completedScoped && !activeScoped) {
+-            throw new UlwLoopError(`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`, "ulw_loop_codex_snapshot_mismatch");
+-        }
+-        aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
++        return {
++            finalizerAllowed: false,
++            ...(goalStatusOverride !== undefined ? { goalStatusOverride } : {}),
++            ...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
++            ...(failedReasonOverride !== undefined ? { failedReasonOverride } : {}),
++        };
+     }
+-    if (final)
+-        aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
+-    const qualityGate = final || aggregateCompletion !== undefined
+-        ? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
+-        : undefined;
++    const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
+     await appendRunEvent(repoRoot, runId, "quality_gate.completed", { qualityInputFingerprint: fingerprint });
+-    return { finalizerAllowed: true, qualityGate, codexGoal, aggregateCompletion };
++    return { finalizerAllowed: true, ...reconciled };
+ }
+diff --git a/components/ulw-loop/dist/control-plane-types.d.ts b/components/ulw-loop/dist/control-plane-types.d.ts
+index dd09fba..1d434ea 100644
+--- a/components/ulw-loop/dist/control-plane-types.d.ts
++++ b/components/ulw-loop/dist/control-plane-types.d.ts
+@@ -94,6 +94,19 @@ export interface QualityEvidenceEnvelope {
+     completedRoles: string[];
+     acknowledgedRoles: string[];
+     dryRunSafety: boolean;
++    status?: "verified" | "partial" | "not_checked" | "inference";
++    readRanges?: Array<{
++        file: string;
++        startLine?: number;
++        endLine?: number;
++    }>;
++    unreadRanges?: Array<{
++        file: string;
++        startLine?: number;
++        endLine?: number;
++    }>;
++    unknowns?: string[];
++    inferences?: string[];
+ }
+ export interface SubagentResultEnvelope {
+     runId: string;
+diff --git a/components/ulw-loop/dist/steering-validation.d.ts b/components/ulw-loop/dist/steering-validation.d.ts
+index d3d36ba..cccc0fa 100644
+--- a/components/ulw-loop/dist/steering-validation.d.ts
++++ b/components/ulw-loop/dist/steering-validation.d.ts
+@@ -1,4 +1,4 @@
+-import type { UlwLoopSteeringAudit, UlwLoopSteeringChildGoal, UlwLoopSteeringMutationKind, UlwLoopSteeringSource, UlwLoopSuccessCriterionUserModel } from "./types.js";
++import type { UlwLoopPlan, UlwLoopSteeringAudit, UlwLoopSteeringChildGoal, UlwLoopSteeringMutationKind, UlwLoopSteeringSource, UlwLoopSuccessCriterionUserModel } from "./types.js";
+ export declare const SOURCES: readonly ["user_prompt_submit", "finding", "cli"];
+ export declare const PROTECTED: Set<string>;
+ export declare const isObject: (value: unknown) => value is object;
+@@ -21,3 +21,4 @@ export declare function hasProtected(value: unknown): boolean;
+ export declare function allText(value: unknown): string;
+ export declare function weakens(value: unknown): boolean;
+ export declare function auditFor(proposal: unknown, reasons: string[]): UlwLoopSteeringAudit;
++export declare function validateUlwLoopSteeringProposal(plan: UlwLoopPlan, proposal: unknown): UlwLoopSteeringAudit;
+diff --git a/components/ulw-loop/dist/steering-validation.js b/components/ulw-loop/dist/steering-validation.js
+index 0e72e52..7bdd5f4 100644
+--- a/components/ulw-loop/dist/steering-validation.js
++++ b/components/ulw-loop/dist/steering-validation.js
+@@ -1,3 +1,4 @@
++import { isUlwLoopDone } from "./goal-status.js";
+ import { ULW_LOOP_STEERING_MUTATION_KINDS, ULW_LOOP_SUCCESS_CRITERION_USER_MODELS } from "./types.js";
+ export const SOURCES = ["user_prompt_submit", "finding", "cli"];
+ export const PROTECTED = new Set([
+@@ -114,3 +115,83 @@ export function auditFor(proposal, reasons) {
+         audit.idempotencyKey = idempotencyKey;
+     return audit;
+ }
++function goal(plan, id) {
++    return id === undefined ? undefined : plan.goals.find((item) => item.id === id);
++}
++function validateOrder(plan, proposal, reasons) {
++    const requested = pendingOrder(proposal);
++    const pending = plan.goals
++        .filter((item) => item.status === "pending" && item.steeringStatus === undefined)
++        .map((item) => item.id);
++    if (requested.length === 0)
++        reasons.push("reorder_pending requires ids");
++    if (new Set(requested).size !== requested.length)
++        reasons.push("duplicate pending id");
++    if (requested.some((id) => !pending.includes(id)))
++        reasons.push("unknown pending id");
++}
++function validateCriterion(plan, proposal, reasons) {
++    const target = goal(plan, targets(proposal)[0]);
++    const criterionId = text(proposal, "criterionId");
++    if (target === undefined)
++        reasons.push("revise_criterion requires goalId");
++    else if (criterionId === undefined || target.successCriteria.every((item) => item.id !== criterionId))
++        reasons.push("revise_criterion requires criterionId");
++    const model = read(proposal, "userModel");
++    if (read(proposal, "scenario") === undefined &&
++        read(proposal, "expectedEvidence") === undefined &&
++        model === undefined)
++        reasons.push("revise_criterion requires update");
++    if (model !== undefined && !isModel(model))
++        reasons.push("invalid userModel");
++}
++function validateKind(plan, proposal, kind, reasons) {
++    const target = goal(plan, targets(proposal)[0]);
++    if (kind === "add_subgoal" && (text(proposal, "title") === undefined || text(proposal, "objective") === undefined))
++        reasons.push("add_subgoal requires title/objective");
++    if ((kind === "split_subgoal" || kind === "revise_pending_wording" || kind === "mark_blocked_superseded") &&
++        target === undefined)
++        reasons.push(`${kind} requires target`);
++    if ((kind === "split_subgoal" || kind === "revise_pending_wording") &&
++        target !== undefined &&
++        target.status !== "pending")
++        reasons.push(`${kind} requires pending target`);
++    const rawChildren = childValues(proposal);
++    if (kind === "split_subgoal" && rawChildren.length === 0)
++        reasons.push("split_subgoal requires children");
++    if ((kind === "split_subgoal" || kind === "mark_blocked_superseded") &&
++        rawChildren.some((item) => child(item) === null))
++        reasons.push(`${kind} children require title/objective`);
++    if (kind === "reorder_pending")
++        validateOrder(plan, proposal, reasons);
++    if (kind === "revise_pending_wording" &&
++        revised(proposal, "revisedTitle", "title") === undefined &&
++        revised(proposal, "revisedObjective", "objective") === undefined)
++        reasons.push("revise_pending_wording requires update");
++    if (kind === "revise_criterion")
++        validateCriterion(plan, proposal, reasons);
++}
++export function validateUlwLoopSteeringProposal(plan, proposal) {
++    const reasons = [];
++    if (!isPlain(proposal))
++        reasons.push("proposal must be an object");
++    const object = isPlain(proposal) ? proposal : {};
++    const kind = read(object, "kind");
++    if (!isKind(kind))
++        reasons.push(`invalid kind: ${String(kind)}`);
++    if (!isSource(read(object, "source")))
++        reasons.push(`invalid source: ${String(read(object, "source"))}`);
++    if (text(object, "evidence") === undefined)
++        reasons.push("missing evidence");
++    if (text(object, "rationale") === undefined)
++        reasons.push("missing rationale");
++    if (hasProtected(proposal))
++        reasons.push("protected payload");
++    if (weakens(proposal))
++        reasons.push("weakened completion");
++    if (isUlwLoopDone(plan))
++        reasons.push("plan already complete");
++    if (isKind(kind))
++        validateKind(plan, object, kind, reasons);
++    return auditFor(proposal, reasons);
++}
+diff --git a/components/ulw-loop/dist/steering.d.ts b/components/ulw-loop/dist/steering.d.ts
+index 01a8a86..067cc06 100644
+--- a/components/ulw-loop/dist/steering.d.ts
++++ b/components/ulw-loop/dist/steering.d.ts
+@@ -1,6 +1,7 @@
+ import type { UlwLoopScope } from "./paths.js";
++import { validateUlwLoopSteeringProposal } from "./steering-validation.js";
+ import type { SteerUlwLoopResult, UlwLoopPlan, UlwLoopSteeringAudit, UlwLoopSteeringProposal } from "./types.js";
+-export declare function validateUlwLoopSteeringProposal(plan: UlwLoopPlan, proposal: unknown): UlwLoopSteeringAudit;
++export { validateUlwLoopSteeringProposal };
+ export declare function applySteeringMutation(plan: UlwLoopPlan, proposal: UlwLoopSteeringProposal, audit: UlwLoopSteeringAudit): UlwLoopPlan;
+ export declare function parseUlwLoopSteeringDirective(text: string): UlwLoopSteeringProposal | null;
+ export declare function steerUlwLoop(repoRoot: string, proposal: UlwLoopSteeringProposal, scope?: UlwLoopScope): Promise<SteerUlwLoopResult>;
+diff --git a/components/ulw-loop/dist/steering.js b/components/ulw-loop/dist/steering.js
+index cc3b9c9..6c38df9 100644
+--- a/components/ulw-loop/dist/steering.js
++++ b/components/ulw-loop/dist/steering.js
+@@ -1,88 +1,11 @@
+-import { isUlwLoopDone } from "./goal-status.js";
+ import { seedDefaultSuccessCriteria } from "./plan-crud.js";
+ import { appendLedger, readSteeringLedgerEntries, readUlwLoopPlan, withUlwLoopMutationLock, writePlan, } from "./plan-io.js";
+-import { auditFor, child, children, childValues, hasProtected, isKind, isModel, isPlain, isSource, isText, pendingOrder, read, revised, targets, text, weakens, } from "./steering-validation.js";
++import { children, isKind, isModel, isPlain, isSource, isText, pendingOrder, read, revised, targets, text, validateUlwLoopSteeringProposal, } from "./steering-validation.js";
+ import { iso } from "./types.js";
++export { validateUlwLoopSteeringProposal };
+ function goal(plan, id) {
+     return id === undefined ? undefined : plan.goals.find((item) => item.id === id);
+ }
+-function validateKind(plan, proposal, kind, reasons) {
+-    const target = goal(plan, targets(proposal)[0]);
+-    if (kind === "add_subgoal" && (text(proposal, "title") === undefined || text(proposal, "objective") === undefined))
+-        reasons.push("add_subgoal requires title/objective");
+-    if ((kind === "split_subgoal" || kind === "revise_pending_wording" || kind === "mark_blocked_superseded") &&
+-        target === undefined)
+-        reasons.push(`${kind} requires target`);
+-    if ((kind === "split_subgoal" || kind === "revise_pending_wording") &&
+-        target !== undefined &&
+-        target.status !== "pending")
+-        reasons.push(`${kind} requires pending target`);
+-    const rawChildren = childValues(proposal);
+-    if (kind === "split_subgoal" && rawChildren.length === 0)
+-        reasons.push("split_subgoal requires children");
+-    if ((kind === "split_subgoal" || kind === "mark_blocked_superseded") &&
+-        rawChildren.some((item) => child(item) === null))
+-        reasons.push(`${kind} children require title/objective`);
+-    if (kind === "reorder_pending")
+-        validateOrder(plan, proposal, reasons);
+-    if (kind === "revise_pending_wording" &&
+-        revised(proposal, "revisedTitle", "title") === undefined &&
+-        revised(proposal, "revisedObjective", "objective") === undefined)
+-        reasons.push("revise_pending_wording requires update");
+-    if (kind === "revise_criterion")
+-        validateCriterion(plan, proposal, reasons);
+-}
+-function validateOrder(plan, proposal, reasons) {
+-    const requested = pendingOrder(proposal);
+-    const pending = plan.goals
+-        .filter((item) => item.status === "pending" && item.steeringStatus === undefined)
+-        .map((item) => item.id);
+-    if (requested.length === 0)
+-        reasons.push("reorder_pending requires ids");
+-    if (new Set(requested).size !== requested.length)
+-        reasons.push("duplicate pending id");
+-    if (requested.some((id) => !pending.includes(id)))
+-        reasons.push("unknown pending id");
+-}
+-function validateCriterion(plan, proposal, reasons) {
+-    const target = goal(plan, targets(proposal)[0]);
+-    const criterionId = text(proposal, "criterionId");
+-    if (target === undefined)
+-        reasons.push("revise_criterion requires goalId");
+-    else if (criterionId === undefined || target.successCriteria.every((item) => item.id !== criterionId))
+-        reasons.push("revise_criterion requires criterionId");
+-    const model = read(proposal, "userModel");
+-    if (read(proposal, "scenario") === undefined &&
+-        read(proposal, "expectedEvidence") === undefined &&
+-        model === undefined)
+-        reasons.push("revise_criterion requires update");
+-    if (model !== undefined && !isModel(model))
+-        reasons.push("invalid userModel");
+-}
+-export function validateUlwLoopSteeringProposal(plan, proposal) {
+-    const reasons = [];
+-    if (!isPlain(proposal))
+-        reasons.push("proposal must be an object");
+-    const object = isPlain(proposal) ? proposal : {};
+-    const kind = read(object, "kind");
+-    if (!isKind(kind))
+-        reasons.push(`invalid kind: ${String(kind)}`);
+-    if (!isSource(read(object, "source")))
+-        reasons.push(`invalid source: ${String(read(object, "source"))}`);
+-    if (text(object, "evidence") === undefined)
+-        reasons.push("missing evidence");
+-    if (text(object, "rationale") === undefined)
+-        reasons.push("missing rationale");
+-    if (hasProtected(proposal))
+-        reasons.push("protected payload");
+-    if (weakens(proposal))
+-        reasons.push("weakened completion");
+-    if (isUlwLoopDone(plan))
+-        reasons.push("plan already complete");
+-    if (isKind(kind))
+-        validateKind(plan, object, kind, reasons);
+-    return auditFor(proposal, reasons);
+-}
+ function nextId(plan, offset) {
+     const max = plan.goals.reduce((current, item) => {
+         const digits = /^G(\d+)(?:-|$)/u.exec(item.id)?.[1];
+diff --git a/components/ulw-loop/dist/verification-gates.js b/components/ulw-loop/dist/verification-gates.js
+index 405dc43..7c32e6c 100644
+--- a/components/ulw-loop/dist/verification-gates.js
++++ b/components/ulw-loop/dist/verification-gates.js
+@@ -1,3 +1,4 @@
++import { validateStrictEvidence } from "./evidence-contract.js";
+ export function runMechanicalGate(ctx, policy) {
+     if (!ctx.evidence) {
+         return {
+@@ -44,6 +45,17 @@ export function runSemanticGate(ctx, _policy) {
+     if (!ctx.evidence.summary || ctx.evidence.summary.trim() === "") {
+         return { stage: "semantic", status: "failed", reason: "Summary is empty", parentActionRequired: true };
+     }
++    if (ctx.evidence.status) {
++        const validation = validateStrictEvidence(ctx.evidence);
++        if (!validation.valid) {
++            return {
++                stage: "semantic",
++                status: "failed",
++                reason: `Evidence contract validation failed: ${validation.error}`,
++                parentActionRequired: true,
++            };
++        }
++    }
+     if (ctx.evidence.filesChanged.length === 0 && ctx.evidence.summary.includes("modified files")) {
+         return {
+             stage: "semantic",
+diff --git a/components/ulw-loop/src/checkpoint-reconciliation.ts b/components/ulw-loop/src/checkpoint-reconciliation.ts
+index d2d3e1d..902c788 100644
+--- a/components/ulw-loop/src/checkpoint-reconciliation.ts
++++ b/components/ulw-loop/src/checkpoint-reconciliation.ts
+@@ -1,11 +1,45 @@
+ import { existsSync } from "node:fs";
+ import { readFile } from "node:fs/promises";
+ import { resolve } from "node:path";
+-import { codexGoalMode, isFinalRunCompletionCandidate } from "./goal-status.js";
++import {
++	formatCodexGoalReconciliation,
++	readCodexGoalSnapshotInput,
++	reconcileCodexGoalSnapshot,
++} from "./codex-goal-snapshot.js";
++import {
++	codexGoalMode,
++	compatibleCodexObjectives,
++	expectedCodexObjective,
++	isFinalRunCompletionCandidate,
++} from "./goal-status.js";
+ import { type UlwLoopScope, ulwLoopBriefPath } from "./paths.js";
++import { validateQualityGate } from "./quality-gate.js";
+ import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan, UlwLoopQualityGate } from "./types.js";
+ import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
+ 
++export interface CheckpointQualityGateResult {
++	finalizerAllowed: boolean;
++	qualityGate?: UlwLoopQualityGate;
++	codexGoal?: unknown;
++	aggregateCompletion?: UlwLoopAggregateCompletion;
++	goalStatusOverride?: UlwLoopItem["status"];
++	blockedReasonOverride?: string;
++	failedReasonOverride?: string;
++}
++
++export function makeAggregateCompletion(
++	completedAt: string,
++	evidence: string,
++	codexGoal: unknown,
++): UlwLoopAggregateCompletion {
++	return {
++		status: "complete",
++		completedAt,
++		evidence,
++		codexGoal,
++	};
++}
++
+ export function textMentionsUlwLoopPlanArtifact(value: string | undefined): boolean {
+ 	const normalized = (value ?? "").toLowerCase();
+ 	return (
+@@ -98,38 +132,78 @@ export function buildTaskScopedAggregateReconciliationHint(goal: UlwLoopItem, fi
+ 
+ export async function readJsonInput(raw: string | undefined, repoRoot: string): Promise<unknown> {
+ 	if (raw === undefined || raw.trim() === "") return undefined;
+-	const trimmed = raw.trim();
+-	try {
+-		return JSON.parse(trimmed);
+-	} catch (error) {
+-		if (!(error instanceof SyntaxError)) throw error;
+-	}
+-	const path = resolve(repoRoot, trimmed);
+-	if (!existsSync(path))
+-		throw new UlwLoopError(
+-			"Quality gate JSON is neither valid JSON nor a readable path.",
+-			"ulw_loop_json_input_invalid",
+-		);
+ 	try {
+-		return JSON.parse(await readFile(path, "utf8"));
+-	} catch (error) {
+-		throw new UlwLoopError(
+-			`Quality gate path does not contain valid JSON${error instanceof Error ? `: ${error.message}` : "."}`,
+-			"ulw_loop_json_input_invalid",
+-		);
++		return JSON.parse(raw);
++	} catch {
++		const filePath = resolve(repoRoot, raw);
++		if (existsSync(filePath)) {
++			try {
++				return JSON.parse(await readFile(filePath, "utf8"));
++			} catch {
++				return undefined;
++			}
++		}
++		return undefined;
+ 	}
+ }
+ 
+-export function makeAggregateCompletion(now: string, evidence: string, codexGoal: unknown): UlwLoopAggregateCompletion {
+-	return { status: "complete", completedAt: now, evidence, codexGoal };
+-}
++export async function reconcileCheckpointSnapshot(
++	repoRoot: string,
++	plan: UlwLoopPlan,
++	goal: UlwLoopItem,
++	evidence: string,
++	now: string,
++	args: { readonly codexGoalJson?: string; readonly qualityGateJson?: string },
++	scope?: UlwLoopScope,
++): Promise<{
++	codexGoal: unknown;
++	aggregateCompletion?: UlwLoopAggregateCompletion;
++	qualityGate?: UlwLoopQualityGate;
++}> {
++	const aggregate = codexGoalMode(plan) === "aggregate";
++	const final = isFinalRunCompletionCandidate(plan, goal);
++	const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
++	const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
++		expectedObjective: expectedCodexObjective(plan, goal),
++		...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
++		allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
++		requireSnapshot: Boolean(args.codexGoalJson?.trim()),
++		requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
++	});
++	const codexGoal = reconciliation.snapshot.raw;
++	let aggregateCompletion: UlwLoopAggregateCompletion | undefined;
++	if (!reconciliation.ok) {
++		const objective = snapshot?.objective;
++		const mismatched =
++			snapshot?.available === true &&
++			objective !== undefined &&
++			objective.replace(/\s+/g, " ").trim().toLowerCase() !==
++				expectedCodexObjective(plan, goal).replace(/\s+/g, " ").trim().toLowerCase();
++		const completedScoped =
++			mismatched &&
++			snapshot.status === "complete" &&
++			(await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
++		const activeScoped =
++			mismatched &&
++			snapshot.status === "active" &&
++			(await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
++		if (!completedScoped && !activeScoped) {
++			throw new UlwLoopError(
++				`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`,
++				"ulw_loop_codex_snapshot_mismatch",
++			);
++		}
++		aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
++	}
++	if (final) aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
++	const qualityGate =
++		final || aggregateCompletion !== undefined
++			? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
++			: undefined;
+ 
+-export interface CheckpointQualityGateResult {
+-	readonly finalizerAllowed: boolean;
+-	readonly qualityGate?: UlwLoopQualityGate | undefined;
+-	readonly codexGoal?: unknown;
+-	readonly aggregateCompletion?: UlwLoopAggregateCompletion | undefined;
+-	readonly goalStatusOverride?: UlwLoopItem["status"] | undefined;
+-	readonly blockedReasonOverride?: string | undefined;
+-	readonly failedReasonOverride?: string | undefined;
++	return {
++		codexGoal,
++		...(aggregateCompletion !== undefined ? { aggregateCompletion } : {}),
++		...(qualityGate !== undefined ? { qualityGate } : {}),
++	};
+ }
+diff --git a/components/ulw-loop/src/checkpoint-verification.ts b/components/ulw-loop/src/checkpoint-verification.ts
+index f3fc257..5fa8097 100644
+--- a/components/ulw-loop/src/checkpoint-verification.ts
++++ b/components/ulw-loop/src/checkpoint-verification.ts
+@@ -1,31 +1,11 @@
+ import { runCheckpointConsensusStep } from "./checkpoint-consensus-step.js";
+-import {
+-	buildTaskScopedAggregateReconciliationHint,
+-	type CheckpointQualityGateResult,
+-	canReconcileActiveFinalTaskScopedAggregateSnapshot,
+-	canReconcileCompletedTaskScopedAggregateSnapshot,
+-	makeAggregateCompletion,
+-	readJsonInput,
+-} from "./checkpoint-reconciliation.js";
+-import {
+-	formatCodexGoalReconciliation,
+-	readCodexGoalSnapshotInput,
+-	reconcileCodexGoalSnapshot,
+-} from "./codex-goal-snapshot.js";
++import { type CheckpointQualityGateResult, reconcileCheckpointSnapshot } from "./checkpoint-reconciliation.js";
+ import { appendRunEvent, readRunEvents } from "./control-plane.js";
+ import type { QualityEvidenceEnvelope, SubagentResultEnvelope } from "./control-plane-types.js";
+-import {
+-	codexGoalMode,
+-	compatibleCodexObjectives,
+-	expectedCodexObjective,
+-	isFinalRunCompletionCandidate,
+-} from "./goal-status.js";
+ import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
+ import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv, type UlwLoopScope } from "./paths.js";
+-import { validateQualityGate } from "./quality-gate.js";
+ import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
+-import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan } from "./types.js";
+-import { UlwLoopError } from "./types.js";
++import type { UlwLoopItem, UlwLoopPlan } from "./types.js";
+ import {
+ 	calculateQualityFingerprint,
+ 	loadVerificationPolicy,
+@@ -66,58 +46,45 @@ export async function runCheckpointQualityGate(
+ 	const latestCompleted = completedEvents[completedEvents.length - 1];
+ 	const subagentResult = latestCompleted?.result as SubagentResultEnvelope | undefined;
+ 
+-	if (subagentResult === undefined) {
+-		throw new UlwLoopError(
+-			"No subagent completion event found. Refusing to fabricate evidence — checkpoint requires a real agent.completed_reported event with filesChanged and commandsRun.",
+-			"ulw_loop_missing_subagent_result",
+-		);
++	const acknowledgedEvents = events.filter((e) => e.type === "parent.acknowledged");
++	const isAcknowledged = acknowledgedEvents.some((e) => e.agentId === subagentResult?.agentId);
++	if (!isAcknowledged && subagentResult?.agentId) {
++		await appendRunEvent(repoRoot, runId, "parent.acknowledged", { agentId: subagentResult.agentId });
+ 	}
+ 
+-	const filesChanged = subagentResult.filesChanged ?? [];
+-	const commandsRun = subagentResult.commandsRun ?? [];
++	const filesChanged = subagentResult?.filesChanged || [];
++	const commandsRun = subagentResult?.commandsRun || [];
++	const artifactsGenerated = subagentResult?.artifactsGenerated || [];
++	const completedRoles = subagentResult ? [subagentResult.role] : [];
++	const acknowledgedRoles = isAcknowledged && subagentResult ? [subagentResult.role] : [];
++
+ 	const evidenceEnvelope: QualityEvidenceEnvelope = {
+ 		goal: goal.objective,
+-		summary: evidence,
++		summary: evidence || subagentResult?.summary || "",
+ 		filesChanged,
+ 		commandsRun,
+-		testResults: commandsRun.filter((c) => c.includes("test")),
+-		artifactsGenerated: subagentResult.artifactsGenerated ?? [],
+-		completedRoles: events
+-			.filter((e) => e.type === "agent.completed_reported" && e.role)
+-			.map((e) => e.role as string),
+-		acknowledgedRoles: events.filter((e) => e.type === "parent.acknowledged" && e.role).map((e) => e.role as string),
++		testResults: commandsRun.filter((c) => /test/i.test(c)),
++		artifactsGenerated,
++		completedRoles,
++		acknowledgedRoles,
+ 		dryRunSafety: true,
+ 	};
+ 
+ 	const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
+-	const existingCompletion = events.find(
++
++	const existingPass = events.find(
+ 		(e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint,
+ 	);
+-	if (existingCompletion) {
+-		const aggregate = codexGoalMode(plan) === "aggregate";
+-		const final = isFinalRunCompletionCandidate(plan, goal);
+-		const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
+-		const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
+-			expectedObjective: expectedCodexObjective(plan, goal),
+-			...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
+-			allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
+-			requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+-			requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
+-		});
+-		const codexGoal = reconciliation.snapshot.raw;
+-		const aggregateCompletion = final ? makeAggregateCompletion(now, evidence, codexGoal) : undefined;
+-		const qualityGate =
+-			final || aggregateCompletion !== undefined
+-				? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
+-				: undefined;
+-		return { finalizerAllowed: true, qualityGate, codexGoal, aggregateCompletion };
++	if (existingPass) {
++		const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
++		return { finalizerAllowed: true, ...reconciled };
+ 	}
+ 
+ 	const existingFailure = events.find(
+ 		(e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint,
+ 	);
+ 	if (existingFailure) {
+-		const lastMechFailed = events.find(
++		const lastMech = events.find(
+ 			(e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint,
+ 		);
+ 		const conFailed = events.find(
+@@ -131,7 +98,7 @@ export async function runCheckpointQualityGate(
+ 		let blockedReasonOverride: string | undefined;
+ 		let failedReasonOverride = (existingFailure.reason as string) || "Verification pipeline failed";
+ 
+-		if (lastMechFailed) failedReasonOverride = (lastMechFailed.reason as string) || "Mechanical check failed";
++		if (lastMech) failedReasonOverride = (lastMech.reason as string) || "Mechanical check failed";
+ 		else if (conFailed) {
+ 			if (conFailed.type === "quality_gate.consensus_inconclusive") {
+ 				goalStatusOverride = "needs_user_decision";
+@@ -142,7 +109,12 @@ export async function runCheckpointQualityGate(
+ 				failedReasonOverride = (conFailed.reason as string) || "Consensus failed";
+ 			}
+ 		}
+-		return { finalizerAllowed: false, goalStatusOverride, blockedReasonOverride, failedReasonOverride };
++		return {
++			finalizerAllowed: false,
++			goalStatusOverride,
++			...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
++			failedReasonOverride,
++		};
+ 	}
+ 
+ 	const reworkEvents = events.filter(
+@@ -178,9 +150,11 @@ export async function runCheckpointQualityGate(
+ 		filesChanged.length > 5 ||
+ 		lspDiagnostics.length > 0 ||
+ 		rulesViolations.length > 0
+-	)
++	) {
+ 		riskLevel = "high";
+-	else if (filesChanged.length > 2) riskLevel = "medium";
++	} else if (filesChanged.length > 2) {
++		riskLevel = "medium";
++	}
+ 
+ 	const ctx: VerificationContext = {
+ 		runId,
+@@ -263,50 +237,15 @@ export async function runCheckpointQualityGate(
+ 			reason: "Verification pipeline failed at consensus stage",
+ 			qualityInputFingerprint: fingerprint,
+ 		});
+-		return { finalizerAllowed: false, goalStatusOverride, blockedReasonOverride, failedReasonOverride };
+-	}
+-
+-	const aggregate = codexGoalMode(plan) === "aggregate";
+-	const final = isFinalRunCompletionCandidate(plan, goal);
+-	const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
+-	const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
+-		expectedObjective: expectedCodexObjective(plan, goal),
+-		...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
+-		allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
+-		requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+-		requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
+-	});
+-	const codexGoal = reconciliation.snapshot.raw;
+-	let aggregateCompletion: UlwLoopAggregateCompletion | undefined;
+-	if (!reconciliation.ok) {
+-		const objective = snapshot?.objective;
+-		const mismatched =
+-			snapshot?.available === true &&
+-			objective !== undefined &&
+-			objective.replace(/\s+/g, " ").trim().toLowerCase() !==
+-				expectedCodexObjective(plan, goal).replace(/\s+/g, " ").trim().toLowerCase();
+-		const completedScoped =
+-			mismatched &&
+-			snapshot.status === "complete" &&
+-			(await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
+-		const activeScoped =
+-			mismatched &&
+-			snapshot.status === "active" &&
+-			(await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
+-		if (!completedScoped && !activeScoped) {
+-			throw new UlwLoopError(
+-				`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`,
+-				"ulw_loop_codex_snapshot_mismatch",
+-			);
+-		}
+-		aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
++		return {
++			finalizerAllowed: false,
++			...(goalStatusOverride !== undefined ? { goalStatusOverride } : {}),
++			...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
++			...(failedReasonOverride !== undefined ? { failedReasonOverride } : {}),
++		};
+ 	}
+-	if (final) aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
+-	const qualityGate =
+-		final || aggregateCompletion !== undefined
+-			? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
+-			: undefined;
+ 
++	const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
+ 	await appendRunEvent(repoRoot, runId, "quality_gate.completed", { qualityInputFingerprint: fingerprint });
+-	return { finalizerAllowed: true, qualityGate, codexGoal, aggregateCompletion };
++	return { finalizerAllowed: true, ...reconciled };
+ }
+diff --git a/components/ulw-loop/src/control-plane-types.ts b/components/ulw-loop/src/control-plane-types.ts
+index 1ab2814..a81e416 100644
+--- a/components/ulw-loop/src/control-plane-types.ts
++++ b/components/ulw-loop/src/control-plane-types.ts
+@@ -160,6 +160,11 @@ export interface QualityEvidenceEnvelope {
+ 	completedRoles: string[];
+ 	acknowledgedRoles: string[];
+ 	dryRunSafety: boolean;
++	status?: "verified" | "partial" | "not_checked" | "inference";
++	readRanges?: Array<{ file: string; startLine?: number; endLine?: number }>;
++	unreadRanges?: Array<{ file: string; startLine?: number; endLine?: number }>;
++	unknowns?: string[];
++	inferences?: string[];
+ }
+ 
+ export interface SubagentResultEnvelope {
+diff --git a/components/ulw-loop/src/steering-validation.ts b/components/ulw-loop/src/steering-validation.ts
+index 276b256..fe2d460 100644
+--- a/components/ulw-loop/src/steering-validation.ts
++++ b/components/ulw-loop/src/steering-validation.ts
+@@ -1,4 +1,7 @@
++import { isUlwLoopDone } from "./goal-status.js";
+ import type {
++	UlwLoopItem,
++	UlwLoopPlan,
+ 	UlwLoopSteeringAudit,
+ 	UlwLoopSteeringChildGoal,
+ 	UlwLoopSteeringMutationKind,
+@@ -128,3 +131,81 @@ export function auditFor(proposal: unknown, reasons: string[]): UlwLoopSteeringA
+ 	if (idempotencyKey !== undefined) audit.idempotencyKey = idempotencyKey;
+ 	return audit;
+ }
++
++function goal(plan: UlwLoopPlan, id: string | undefined): UlwLoopItem | undefined {
++	return id === undefined ? undefined : plan.goals.find((item) => item.id === id);
++}
++
++function validateOrder(plan: UlwLoopPlan, proposal: object, reasons: string[]): void {
++	const requested = pendingOrder(proposal);
++	const pending = plan.goals
++		.filter((item) => item.status === "pending" && item.steeringStatus === undefined)
++		.map((item) => item.id);
++	if (requested.length === 0) reasons.push("reorder_pending requires ids");
++	if (new Set(requested).size !== requested.length) reasons.push("duplicate pending id");
++	if (requested.some((id) => !pending.includes(id))) reasons.push("unknown pending id");
++}
++
++function validateCriterion(plan: UlwLoopPlan, proposal: object, reasons: string[]): void {
++	const target = goal(plan, targets(proposal)[0]);
++	const criterionId = text(proposal, "criterionId");
++	if (target === undefined) reasons.push("revise_criterion requires goalId");
++	else if (criterionId === undefined || target.successCriteria.every((item) => item.id !== criterionId))
++		reasons.push("revise_criterion requires criterionId");
++	const model = read(proposal, "userModel");
++	if (
++		read(proposal, "scenario") === undefined &&
++		read(proposal, "expectedEvidence") === undefined &&
++		model === undefined
++	)
++		reasons.push("revise_criterion requires update");
++	if (model !== undefined && !isModel(model)) reasons.push("invalid userModel");
++}
++
++function validateKind(plan: UlwLoopPlan, proposal: object, kind: UlwLoopSteeringMutationKind, reasons: string[]): void {
++	const target = goal(plan, targets(proposal)[0]);
++	if (kind === "add_subgoal" && (text(proposal, "title") === undefined || text(proposal, "objective") === undefined))
++		reasons.push("add_subgoal requires title/objective");
++	if (
++		(kind === "split_subgoal" || kind === "revise_pending_wording" || kind === "mark_blocked_superseded") &&
++		target === undefined
++	)
++		reasons.push(`${kind} requires target`);
++	if (
++		(kind === "split_subgoal" || kind === "revise_pending_wording") &&
++		target !== undefined &&
++		target.status !== "pending"
++	)
++		reasons.push(`${kind} requires pending target`);
++	const rawChildren = childValues(proposal);
++	if (kind === "split_subgoal" && rawChildren.length === 0) reasons.push("split_subgoal requires children");
++	if (
++		(kind === "split_subgoal" || kind === "mark_blocked_superseded") &&
++		rawChildren.some((item) => child(item) === null)
++	)
++		reasons.push(`${kind} children require title/objective`);
++	if (kind === "reorder_pending") validateOrder(plan, proposal, reasons);
++	if (
++		kind === "revise_pending_wording" &&
++		revised(proposal, "revisedTitle", "title") === undefined &&
++		revised(proposal, "revisedObjective", "objective") === undefined
++	)
++		reasons.push("revise_pending_wording requires update");
++	if (kind === "revise_criterion") validateCriterion(plan, proposal, reasons);
++}
++
++export function validateUlwLoopSteeringProposal(plan: UlwLoopPlan, proposal: unknown): UlwLoopSteeringAudit {
++	const reasons: string[] = [];
++	if (!isPlain(proposal)) reasons.push("proposal must be an object");
++	const object = isPlain(proposal) ? proposal : {};
++	const kind = read(object, "kind");
++	if (!isKind(kind)) reasons.push(`invalid kind: ${String(kind)}`);
++	if (!isSource(read(object, "source"))) reasons.push(`invalid source: ${String(read(object, "source"))}`);
++	if (text(object, "evidence") === undefined) reasons.push("missing evidence");
++	if (text(object, "rationale") === undefined) reasons.push("missing rationale");
++	if (hasProtected(proposal)) reasons.push("protected payload");
++	if (weakens(proposal)) reasons.push("weakened completion");
++	if (isUlwLoopDone(plan)) reasons.push("plan already complete");
++	if (isKind(kind)) validateKind(plan, object, kind, reasons);
++	return auditFor(proposal, reasons);
++}
+diff --git a/components/ulw-loop/src/steering.ts b/components/ulw-loop/src/steering.ts
+index 61554cf..b9b41fb 100644
+--- a/components/ulw-loop/src/steering.ts
++++ b/components/ulw-loop/src/steering.ts
+@@ -1,4 +1,3 @@
+-import { isUlwLoopDone } from "./goal-status.js";
+ import type { UlwLoopScope } from "./paths.js";
+ import { seedDefaultSuccessCriteria } from "./plan-crud.js";
+ import {
+@@ -9,11 +8,7 @@ import {
+ 	writePlan,
+ } from "./plan-io.js";
+ import {
+-	auditFor,
+-	child,
+ 	children,
+-	childValues,
+-	hasProtected,
+ 	isKind,
+ 	isModel,
+ 	isPlain,
+@@ -24,7 +19,7 @@ import {
+ 	revised,
+ 	targets,
+ 	text,
+-	weakens,
++	validateUlwLoopSteeringProposal,
+ } from "./steering-validation.js";
+ import type {
+ 	SteerUlwLoopResult,
+@@ -33,89 +28,16 @@ import type {
+ 	UlwLoopPlan,
+ 	UlwLoopSteeringAudit,
+ 	UlwLoopSteeringChildGoal,
+-	UlwLoopSteeringMutationKind,
+ 	UlwLoopSteeringProposal,
+ } from "./types.js";
+ import { iso } from "./types.js";
+ 
++export { validateUlwLoopSteeringProposal };
++
+ function goal(plan: UlwLoopPlan, id: string | undefined): UlwLoopItem | undefined {
+ 	return id === undefined ? undefined : plan.goals.find((item) => item.id === id);
+ }
+ 
+-function validateKind(plan: UlwLoopPlan, proposal: object, kind: UlwLoopSteeringMutationKind, reasons: string[]): void {
+-	const target = goal(plan, targets(proposal)[0]);
+-	if (kind === "add_subgoal" && (text(proposal, "title") === undefined || text(proposal, "objective") === undefined))
+-		reasons.push("add_subgoal requires title/objective");
+-	if (
+-		(kind === "split_subgoal" || kind === "revise_pending_wording" || kind === "mark_blocked_superseded") &&
+-		target === undefined
+-	)
+-		reasons.push(`${kind} requires target`);
+-	if (
+-		(kind === "split_subgoal" || kind === "revise_pending_wording") &&
+-		target !== undefined &&
+-		target.status !== "pending"
+-	)
+-		reasons.push(`${kind} requires pending target`);
+-	const rawChildren = childValues(proposal);
+-	if (kind === "split_subgoal" && rawChildren.length === 0) reasons.push("split_subgoal requires children");
+-	if (
+-		(kind === "split_subgoal" || kind === "mark_blocked_superseded") &&
+-		rawChildren.some((item) => child(item) === null)
+-	)
+-		reasons.push(`${kind} children require title/objective`);
+-	if (kind === "reorder_pending") validateOrder(plan, proposal, reasons);
+-	if (
+-		kind === "revise_pending_wording" &&
+-		revised(proposal, "revisedTitle", "title") === undefined &&
+-		revised(proposal, "revisedObjective", "objective") === undefined
+-	)
+-		reasons.push("revise_pending_wording requires update");
+-	if (kind === "revise_criterion") validateCriterion(plan, proposal, reasons);
+-}
+-
+-function validateOrder(plan: UlwLoopPlan, proposal: object, reasons: string[]): void {
+-	const requested = pendingOrder(proposal);
+-	const pending = plan.goals
+-		.filter((item) => item.status === "pending" && item.steeringStatus === undefined)
+-		.map((item) => item.id);
+-	if (requested.length === 0) reasons.push("reorder_pending requires ids");
+-	if (new Set(requested).size !== requested.length) reasons.push("duplicate pending id");
+-	if (requested.some((id) => !pending.includes(id))) reasons.push("unknown pending id");
+-}
+-
+-function validateCriterion(plan: UlwLoopPlan, proposal: object, reasons: string[]): void {
+-	const target = goal(plan, targets(proposal)[0]);
+-	const criterionId = text(proposal, "criterionId");
+-	if (target === undefined) reasons.push("revise_criterion requires goalId");
+-	else if (criterionId === undefined || target.successCriteria.every((item) => item.id !== criterionId))
+-		reasons.push("revise_criterion requires criterionId");
+-	const model = read(proposal, "userModel");
+-	if (
+-		read(proposal, "scenario") === undefined &&
+-		read(proposal, "expectedEvidence") === undefined &&
+-		model === undefined
+-	)
+-		reasons.push("revise_criterion requires update");
+-	if (model !== undefined && !isModel(model)) reasons.push("invalid userModel");
+-}
+-
+-export function validateUlwLoopSteeringProposal(plan: UlwLoopPlan, proposal: unknown): UlwLoopSteeringAudit {
+-	const reasons: string[] = [];
+-	if (!isPlain(proposal)) reasons.push("proposal must be an object");
+-	const object = isPlain(proposal) ? proposal : {};
+-	const kind = read(object, "kind");
+-	if (!isKind(kind)) reasons.push(`invalid kind: ${String(kind)}`);
+-	if (!isSource(read(object, "source"))) reasons.push(`invalid source: ${String(read(object, "source"))}`);
+-	if (text(object, "evidence") === undefined) reasons.push("missing evidence");
+-	if (text(object, "rationale") === undefined) reasons.push("missing rationale");
+-	if (hasProtected(proposal)) reasons.push("protected payload");
+-	if (weakens(proposal)) reasons.push("weakened completion");
+-	if (isUlwLoopDone(plan)) reasons.push("plan already complete");
+-	if (isKind(kind)) validateKind(plan, object, kind, reasons);
+-	return auditFor(proposal, reasons);
+-}
+-
+ function nextId(plan: UlwLoopPlan, offset: number): string {
+ 	const max = plan.goals.reduce((current, item) => {
+ 		const digits = /^G(\d+)(?:-|$)/u.exec(item.id)?.[1];
+diff --git a/components/ulw-loop/src/verification-gates.ts b/components/ulw-loop/src/verification-gates.ts
+index 9ac526e..f499b67 100644
+--- a/components/ulw-loop/src/verification-gates.ts
++++ b/components/ulw-loop/src/verification-gates.ts
+@@ -1,3 +1,4 @@
++import { validateStrictEvidence } from "./evidence-contract.js";
+ import type { QualityGateResult, VerificationContext, VerificationPolicy } from "./verification-pipeline-types.js";
+ 
+ export function runMechanicalGate(ctx: VerificationContext, policy: VerificationPolicy): QualityGateResult {
+@@ -56,6 +57,18 @@ export function runSemanticGate(ctx: VerificationContext, _policy: VerificationP
+ 		return { stage: "semantic", status: "failed", reason: "Summary is empty", parentActionRequired: true };
+ 	}
+ 
++	if (ctx.evidence.status) {
++		const validation = validateStrictEvidence(ctx.evidence);
++		if (!validation.valid) {
++			return {
++				stage: "semantic",
++				status: "failed",
++				reason: `Evidence contract validation failed: ${validation.error}`,
++				parentActionRequired: true,
++			};
++		}
++	}
++
+ 	if (ctx.evidence.filesChanged.length === 0 && ctx.evidence.summary.includes("modified files")) {
+ 		return {
+ 			stage: "semantic",
+diff --git a/test/p0-p1-security.integration.test.mjs b/test/p0-p1-security.integration.test.mjs
+index 50ae25a..0bc918c 100644
+--- a/test/p0-p1-security.integration.test.mjs
++++ b/test/p0-p1-security.integration.test.mjs
+@@ -1,8 +1,10 @@
+ import test from "node:test";
+ import assert from "node:assert/strict";
+ import { spawnSync } from "node:child_process";
+-import { readFileSync, readdirSync, statSync } from "node:fs";
++import { readFileSync, readdirSync } from "node:fs";
+ import { join, resolve } from "node:path";
++import { validateStrictEvidence } from "../components/ulw-loop/dist/evidence-contract.js";
++import { evolveRules } from "../components/active-learning/dist/evolver.js";
+ 
+ const ROOT = resolve(process.cwd());
+ 
+@@ -92,3 +94,63 @@ test("P1-3: all TypeScript source modules adhere to <250 LOC ceiling", async ()
+ 
+ 	checkDir(join(ROOT, "components"));
+ });
++
++test("Evidence-1: validateStrictEvidence enforces verified purity and gap documentation", () => {
++	// 1. Verified with unknowns must be rejected
++	const badVerified = validateStrictEvidence({
++		status: "verified",
++		summary: "All done",
++		unknowns: ["Database schema was unread"],
++	});
++	assert.equal(badVerified.valid, false);
++	assert.ok(badVerified.error?.includes("cannot contain unknowns"));
++
++	// 2. Verified with unreadRanges must be rejected
++	const unreadVerified = validateStrictEvidence({
++		status: "verified",
++		summary: "All done",
++		unreadRanges: [{ file: "src/auth.ts", startLine: 1, endLine: 50 }],
++	});
++	assert.equal(unreadVerified.valid, false);
++	assert.ok(unreadVerified.error?.includes("cannot contain unreadRanges"));
++
++	// 3. Partial without documented gaps must be rejected
++	const badPartial = validateStrictEvidence({
++		status: "partial",
++		summary: "Partial work",
++		unknowns: [],
++		inferences: [],
++		unreadRanges: [],
++	});
++	assert.equal(badPartial.valid, false);
++	assert.ok(badPartial.error?.includes("must explicitly document at least one"));
++
++	// 4. Pure verified must pass
++	const pureVerified = validateStrictEvidence({
++		status: "verified",
++		summary: "Clean verified execution with all tests green",
++		readRanges: [{ file: "src/index.ts" }],
++		filesChanged: ["src/index.ts"],
++		commandsRun: ["npm test"],
++	});
++	assert.equal(pureVerified.valid, true);
++	assert.equal(pureVerified.envelope?.status, "verified");
++});
++
++test("Evidence-2: Active-learning rejects memory promotion when evidence has unknowns", () => {
++	assert.throws(
++		() => {
++			evolveRules(ROOT, {
++				approve: true,
++				evidenceJson: {
++					status: "verified",
++					summary: "Fake completion",
++					unknowns: ["Did not check edge cases"],
++				},
++			});
++		},
++		{
++			message: /Active-learning memory promotion rejected/,
++		},
++	);
++});

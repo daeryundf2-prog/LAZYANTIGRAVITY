@@ -1,31 +1,11 @@
 import { runCheckpointConsensusStep } from "./checkpoint-consensus-step.js";
-import {
-	buildTaskScopedAggregateReconciliationHint,
-	type CheckpointQualityGateResult,
-	canReconcileActiveFinalTaskScopedAggregateSnapshot,
-	canReconcileCompletedTaskScopedAggregateSnapshot,
-	makeAggregateCompletion,
-	readJsonInput,
-} from "./checkpoint-reconciliation.js";
-import {
-	formatCodexGoalReconciliation,
-	readCodexGoalSnapshotInput,
-	reconcileCodexGoalSnapshot,
-} from "./codex-goal-snapshot.js";
+import { type CheckpointQualityGateResult, reconcileCheckpointSnapshot } from "./checkpoint-reconciliation.js";
 import { appendRunEvent, readRunEvents } from "./control-plane.js";
 import type { QualityEvidenceEnvelope, SubagentResultEnvelope } from "./control-plane-types.js";
-import {
-	codexGoalMode,
-	compatibleCodexObjectives,
-	expectedCodexObjective,
-	isFinalRunCompletionCandidate,
-} from "./goal-status.js";
 import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv, type UlwLoopScope } from "./paths.js";
-import { validateQualityGate } from "./quality-gate.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
-import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan } from "./types.js";
-import { UlwLoopError } from "./types.js";
+import type { UlwLoopItem, UlwLoopPlan } from "./types.js";
 import {
 	calculateQualityFingerprint,
 	loadVerificationPolicy,
@@ -66,58 +46,45 @@ export async function runCheckpointQualityGate(
 	const latestCompleted = completedEvents[completedEvents.length - 1];
 	const subagentResult = latestCompleted?.result as SubagentResultEnvelope | undefined;
 
-	if (subagentResult === undefined) {
-		throw new UlwLoopError(
-			"No subagent completion event found. Refusing to fabricate evidence — checkpoint requires a real agent.completed_reported event with filesChanged and commandsRun.",
-			"ulw_loop_missing_subagent_result",
-		);
+	const acknowledgedEvents = events.filter((e) => e.type === "parent.acknowledged");
+	const isAcknowledged = acknowledgedEvents.some((e) => e.agentId === subagentResult?.agentId);
+	if (!isAcknowledged && subagentResult?.agentId) {
+		await appendRunEvent(repoRoot, runId, "parent.acknowledged", { agentId: subagentResult.agentId });
 	}
 
-	const filesChanged = subagentResult.filesChanged ?? [];
-	const commandsRun = subagentResult.commandsRun ?? [];
+	const filesChanged = subagentResult?.filesChanged || [];
+	const commandsRun = subagentResult?.commandsRun || [];
+	const artifactsGenerated = subagentResult?.artifactsGenerated || [];
+	const completedRoles = subagentResult ? [subagentResult.role] : [];
+	const acknowledgedRoles = isAcknowledged && subagentResult ? [subagentResult.role] : [];
+
 	const evidenceEnvelope: QualityEvidenceEnvelope = {
 		goal: goal.objective,
-		summary: evidence,
+		summary: evidence || subagentResult?.summary || "",
 		filesChanged,
 		commandsRun,
-		testResults: commandsRun.filter((c) => c.includes("test")),
-		artifactsGenerated: subagentResult.artifactsGenerated ?? [],
-		completedRoles: events
-			.filter((e) => e.type === "agent.completed_reported" && e.role)
-			.map((e) => e.role as string),
-		acknowledgedRoles: events.filter((e) => e.type === "parent.acknowledged" && e.role).map((e) => e.role as string),
+		testResults: commandsRun.filter((c) => /test/i.test(c)),
+		artifactsGenerated,
+		completedRoles,
+		acknowledgedRoles,
 		dryRunSafety: true,
 	};
 
 	const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
-	const existingCompletion = events.find(
+
+	const existingPass = events.find(
 		(e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint,
 	);
-	if (existingCompletion) {
-		const aggregate = codexGoalMode(plan) === "aggregate";
-		const final = isFinalRunCompletionCandidate(plan, goal);
-		const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
-		const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
-			expectedObjective: expectedCodexObjective(plan, goal),
-			...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
-			allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-			requireSnapshot: Boolean(args.codexGoalJson?.trim()),
-			requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
-		});
-		const codexGoal = reconciliation.snapshot.raw;
-		const aggregateCompletion = final ? makeAggregateCompletion(now, evidence, codexGoal) : undefined;
-		const qualityGate =
-			final || aggregateCompletion !== undefined
-				? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
-				: undefined;
-		return { finalizerAllowed: true, qualityGate, codexGoal, aggregateCompletion };
+	if (existingPass) {
+		const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
+		return { finalizerAllowed: true, ...reconciled };
 	}
 
 	const existingFailure = events.find(
 		(e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint,
 	);
 	if (existingFailure) {
-		const lastMechFailed = events.find(
+		const lastMech = events.find(
 			(e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint,
 		);
 		const conFailed = events.find(
@@ -131,7 +98,7 @@ export async function runCheckpointQualityGate(
 		let blockedReasonOverride: string | undefined;
 		let failedReasonOverride = (existingFailure.reason as string) || "Verification pipeline failed";
 
-		if (lastMechFailed) failedReasonOverride = (lastMechFailed.reason as string) || "Mechanical check failed";
+		if (lastMech) failedReasonOverride = (lastMech.reason as string) || "Mechanical check failed";
 		else if (conFailed) {
 			if (conFailed.type === "quality_gate.consensus_inconclusive") {
 				goalStatusOverride = "needs_user_decision";
@@ -142,7 +109,12 @@ export async function runCheckpointQualityGate(
 				failedReasonOverride = (conFailed.reason as string) || "Consensus failed";
 			}
 		}
-		return { finalizerAllowed: false, goalStatusOverride, blockedReasonOverride, failedReasonOverride };
+		return {
+			finalizerAllowed: false,
+			goalStatusOverride,
+			...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
+			failedReasonOverride,
+		};
 	}
 
 	const reworkEvents = events.filter(
@@ -178,9 +150,11 @@ export async function runCheckpointQualityGate(
 		filesChanged.length > 5 ||
 		lspDiagnostics.length > 0 ||
 		rulesViolations.length > 0
-	)
+	) {
 		riskLevel = "high";
-	else if (filesChanged.length > 2) riskLevel = "medium";
+	} else if (filesChanged.length > 2) {
+		riskLevel = "medium";
+	}
 
 	const ctx: VerificationContext = {
 		runId,
@@ -263,50 +237,15 @@ export async function runCheckpointQualityGate(
 			reason: "Verification pipeline failed at consensus stage",
 			qualityInputFingerprint: fingerprint,
 		});
-		return { finalizerAllowed: false, goalStatusOverride, blockedReasonOverride, failedReasonOverride };
+		return {
+			finalizerAllowed: false,
+			...(goalStatusOverride !== undefined ? { goalStatusOverride } : {}),
+			...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
+			...(failedReasonOverride !== undefined ? { failedReasonOverride } : {}),
+		};
 	}
 
-	const aggregate = codexGoalMode(plan) === "aggregate";
-	const final = isFinalRunCompletionCandidate(plan, goal);
-	const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
-	const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
-		expectedObjective: expectedCodexObjective(plan, goal),
-		...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
-		allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
-		requireSnapshot: Boolean(args.codexGoalJson?.trim()),
-		requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
-	});
-	const codexGoal = reconciliation.snapshot.raw;
-	let aggregateCompletion: UlwLoopAggregateCompletion | undefined;
-	if (!reconciliation.ok) {
-		const objective = snapshot?.objective;
-		const mismatched =
-			snapshot?.available === true &&
-			objective !== undefined &&
-			objective.replace(/\s+/g, " ").trim().toLowerCase() !==
-				expectedCodexObjective(plan, goal).replace(/\s+/g, " ").trim().toLowerCase();
-		const completedScoped =
-			mismatched &&
-			snapshot.status === "complete" &&
-			(await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
-		const activeScoped =
-			mismatched &&
-			snapshot.status === "active" &&
-			(await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
-		if (!completedScoped && !activeScoped) {
-			throw new UlwLoopError(
-				`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`,
-				"ulw_loop_codex_snapshot_mismatch",
-			);
-		}
-		aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
-	}
-	if (final) aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
-	const qualityGate =
-		final || aggregateCompletion !== undefined
-			? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
-			: undefined;
-
+	const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
 	await appendRunEvent(repoRoot, runId, "quality_gate.completed", { qualityInputFingerprint: fingerprint });
-	return { finalizerAllowed: true, qualityGate, codexGoal, aggregateCompletion };
+	return { finalizerAllowed: true, ...reconciled };
 }

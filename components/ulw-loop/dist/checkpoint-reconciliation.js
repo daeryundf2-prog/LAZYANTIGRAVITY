@@ -1,9 +1,19 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { codexGoalMode, isFinalRunCompletionCandidate } from "./goal-status.js";
+import { formatCodexGoalReconciliation, readCodexGoalSnapshotInput, reconcileCodexGoalSnapshot, } from "./codex-goal-snapshot.js";
+import { codexGoalMode, compatibleCodexObjectives, expectedCodexObjective, isFinalRunCompletionCandidate, } from "./goal-status.js";
 import { ulwLoopBriefPath } from "./paths.js";
+import { validateQualityGate } from "./quality-gate.js";
 import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
+export function makeAggregateCompletion(completedAt, evidence, codexGoal) {
+    return {
+        status: "complete",
+        completedAt,
+        evidence,
+        codexGoal,
+    };
+}
 export function textMentionsUlwLoopPlanArtifact(value) {
     const normalized = (value ?? "").toLowerCase();
     return (normalized.includes(ULW_LOOP_DIR.toLowerCase()) ||
@@ -78,24 +88,60 @@ export function buildTaskScopedAggregateReconciliationHint(goal, final) {
 export async function readJsonInput(raw, repoRoot) {
     if (raw === undefined || raw.trim() === "")
         return undefined;
-    const trimmed = raw.trim();
     try {
-        return JSON.parse(trimmed);
+        return JSON.parse(raw);
     }
-    catch (error) {
-        if (!(error instanceof SyntaxError))
-            throw error;
-    }
-    const path = resolve(repoRoot, trimmed);
-    if (!existsSync(path))
-        throw new UlwLoopError("Quality gate JSON is neither valid JSON nor a readable path.", "ulw_loop_json_input_invalid");
-    try {
-        return JSON.parse(await readFile(path, "utf8"));
-    }
-    catch (error) {
-        throw new UlwLoopError(`Quality gate path does not contain valid JSON${error instanceof Error ? `: ${error.message}` : "."}`, "ulw_loop_json_input_invalid");
+    catch {
+        const filePath = resolve(repoRoot, raw);
+        if (existsSync(filePath)) {
+            try {
+                return JSON.parse(await readFile(filePath, "utf8"));
+            }
+            catch {
+                return undefined;
+            }
+        }
+        return undefined;
     }
 }
-export function makeAggregateCompletion(now, evidence, codexGoal) {
-    return { status: "complete", completedAt: now, evidence, codexGoal };
+export async function reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope) {
+    const aggregate = codexGoalMode(plan) === "aggregate";
+    const final = isFinalRunCompletionCandidate(plan, goal);
+    const snapshot = await readCodexGoalSnapshotInput(args.codexGoalJson, repoRoot);
+    const reconciliation = reconcileCodexGoalSnapshot(snapshot, {
+        expectedObjective: expectedCodexObjective(plan, goal),
+        ...(aggregate ? { acceptedObjectives: compatibleCodexObjectives(plan) } : {}),
+        allowedStatuses: aggregate ? (final ? ["complete"] : ["active"]) : ["complete"],
+        requireSnapshot: Boolean(args.codexGoalJson?.trim()),
+        requireComplete: Boolean(args.codexGoalJson?.trim()) && (!aggregate || final),
+    });
+    const codexGoal = reconciliation.snapshot.raw;
+    let aggregateCompletion;
+    if (!reconciliation.ok) {
+        const objective = snapshot?.objective;
+        const mismatched = snapshot?.available === true &&
+            objective !== undefined &&
+            objective.replace(/\s+/g, " ").trim().toLowerCase() !==
+                expectedCodexObjective(plan, goal).replace(/\s+/g, " ").trim().toLowerCase();
+        const completedScoped = mismatched &&
+            snapshot.status === "complete" &&
+            (await canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
+        const activeScoped = mismatched &&
+            snapshot.status === "active" &&
+            (await canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot, plan, goal, objective, evidence, scope));
+        if (!completedScoped && !activeScoped) {
+            throw new UlwLoopError(`${formatCodexGoalReconciliation(reconciliation)}${aggregate && snapshot?.status === "complete" && objective !== undefined ? buildTaskScopedAggregateReconciliationHint(goal, final) : ""}`, "ulw_loop_codex_snapshot_mismatch");
+        }
+        aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
+    }
+    if (final)
+        aggregateCompletion = makeAggregateCompletion(now, evidence, codexGoal);
+    const qualityGate = final || aggregateCompletion !== undefined
+        ? validateQualityGate(await readJsonInput(args.qualityGateJson, repoRoot))
+        : undefined;
+    return {
+        codexGoal,
+        ...(aggregateCompletion !== undefined ? { aggregateCompletion } : {}),
+        ...(qualityGate !== undefined ? { qualityGate } : {}),
+    };
 }

@@ -1,5 +1,15 @@
 import { type UlwLoopScope } from "./paths.js";
 import type { UlwLoopAggregateCompletion, UlwLoopItem, UlwLoopPlan, UlwLoopQualityGate } from "./types.js";
+export interface CheckpointQualityGateResult {
+    finalizerAllowed: boolean;
+    qualityGate?: UlwLoopQualityGate;
+    codexGoal?: unknown;
+    aggregateCompletion?: UlwLoopAggregateCompletion;
+    goalStatusOverride?: UlwLoopItem["status"];
+    blockedReasonOverride?: string;
+    failedReasonOverride?: string;
+}
+export declare function makeAggregateCompletion(completedAt: string, evidence: string, codexGoal: unknown): UlwLoopAggregateCompletion;
 export declare function textMentionsUlwLoopPlanArtifact(value: string | undefined): boolean;
 export declare function textMentionsGoalId(value: string | undefined, goalId: string): boolean;
 export declare function textHasCompletionValidationEvidence(value: string | undefined): boolean;
@@ -9,13 +19,11 @@ export declare function canReconcileActiveFinalTaskScopedAggregateSnapshot(repoR
 export declare function buildCompletedLegacyGoalRemediation(goal: UlwLoopItem): string;
 export declare function buildTaskScopedAggregateReconciliationHint(goal: UlwLoopItem, final: boolean): string;
 export declare function readJsonInput(raw: string | undefined, repoRoot: string): Promise<unknown>;
-export declare function makeAggregateCompletion(now: string, evidence: string, codexGoal: unknown): UlwLoopAggregateCompletion;
-export interface CheckpointQualityGateResult {
-    readonly finalizerAllowed: boolean;
-    readonly qualityGate?: UlwLoopQualityGate | undefined;
-    readonly codexGoal?: unknown;
-    readonly aggregateCompletion?: UlwLoopAggregateCompletion | undefined;
-    readonly goalStatusOverride?: UlwLoopItem["status"] | undefined;
-    readonly blockedReasonOverride?: string | undefined;
-    readonly failedReasonOverride?: string | undefined;
-}
+export declare function reconcileCheckpointSnapshot(repoRoot: string, plan: UlwLoopPlan, goal: UlwLoopItem, evidence: string, now: string, args: {
+    readonly codexGoalJson?: string;
+    readonly qualityGateJson?: string;
+}, scope?: UlwLoopScope): Promise<{
+    codexGoal: unknown;
+    aggregateCompletion?: UlwLoopAggregateCompletion;
+    qualityGate?: UlwLoopQualityGate;
+}>;

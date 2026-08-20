@@ -160,6 +160,11 @@ export interface QualityEvidenceEnvelope {
 	completedRoles: string[];
 	acknowledgedRoles: string[];
 	dryRunSafety: boolean;
+	status?: "verified" | "partial" | "not_checked" | "inference";
+	readRanges?: Array<{ file: string; startLine?: number; endLine?: number }>;
+	unreadRanges?: Array<{ file: string; startLine?: number; endLine?: number }>;
+	unknowns?: string[];
+	inferences?: string[];
 }
 
 export interface SubagentResultEnvelope {

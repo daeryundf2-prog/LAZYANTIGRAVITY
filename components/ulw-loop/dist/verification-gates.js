@@ -1,3 +1,4 @@
+import { validateStrictEvidence } from "./evidence-contract.js";
 export function runMechanicalGate(ctx, policy) {
     if (!ctx.evidence) {
         return {
@@ -43,6 +44,17 @@ export function runSemanticGate(ctx, _policy) {
     }
     if (!ctx.evidence.summary || ctx.evidence.summary.trim() === "") {
         return { stage: "semantic", status: "failed", reason: "Summary is empty", parentActionRequired: true };
+    }
+    if (ctx.evidence.status) {
+        const validation = validateStrictEvidence(ctx.evidence);
+        if (!validation.valid) {
+            return {
+                stage: "semantic",
+                status: "failed",
+                reason: `Evidence contract validation failed: ${validation.error}`,
+                parentActionRequired: true,
+            };
+        }
     }
     if (ctx.evidence.filesChanged.length === 0 && ctx.evidence.summary.includes("modified files")) {
         return {

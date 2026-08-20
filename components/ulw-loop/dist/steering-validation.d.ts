@@ -1,4 +1,4 @@
-import type { UlwLoopSteeringAudit, UlwLoopSteeringChildGoal, UlwLoopSteeringMutationKind, UlwLoopSteeringSource, UlwLoopSuccessCriterionUserModel } from "./types.js";
+import type { UlwLoopPlan, UlwLoopSteeringAudit, UlwLoopSteeringChildGoal, UlwLoopSteeringMutationKind, UlwLoopSteeringSource, UlwLoopSuccessCriterionUserModel } from "./types.js";
 export declare const SOURCES: readonly ["user_prompt_submit", "finding", "cli"];
 export declare const PROTECTED: Set<string>;
 export declare const isObject: (value: unknown) => value is object;
@@ -21,3 +21,4 @@ export declare function hasProtected(value: unknown): boolean;
 export declare function allText(value: unknown): string;
 export declare function weakens(value: unknown): boolean;
 export declare function auditFor(proposal: unknown, reasons: string[]): UlwLoopSteeringAudit;
+export declare function validateUlwLoopSteeringProposal(plan: UlwLoopPlan, proposal: unknown): UlwLoopSteeringAudit;
