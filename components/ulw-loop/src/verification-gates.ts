@@ -1,4 +1,5 @@
 import { validateStrictEvidence } from "./evidence-contract.js";
+import { verifyEvidenceGroundTruth } from "./evidence-verifier.js";
 import type { QualityGateResult, VerificationContext, VerificationPolicy } from "./verification-pipeline-types.js";
 
 export function runMechanicalGate(ctx: VerificationContext, policy: VerificationPolicy): QualityGateResult {
@@ -66,6 +67,17 @@ export function runSemanticGate(ctx: VerificationContext, _policy: VerificationP
 				reason: `Evidence contract validation failed: ${validation.error}`,
 				parentActionRequired: true,
 			};
+		}
+		if (validation.envelope) {
+			const groundTruth = verifyEvidenceGroundTruth(process.cwd(), validation.envelope, ctx.events);
+			if (!groundTruth.verified) {
+				return {
+					stage: "semantic",
+					status: "failed",
+					reason: `Evidence ground-truth verification failed: ${groundTruth.error}`,
+					parentActionRequired: true,
+				};
+			}
 		}
 	}
 

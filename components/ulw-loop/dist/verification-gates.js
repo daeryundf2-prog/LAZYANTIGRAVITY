@@ -1,4 +1,5 @@
 import { validateStrictEvidence } from "./evidence-contract.js";
+import { verifyEvidenceGroundTruth } from "./evidence-verifier.js";
 export function runMechanicalGate(ctx, policy) {
     if (!ctx.evidence) {
         return {
@@ -54,6 +55,17 @@ export function runSemanticGate(ctx, _policy) {
                 reason: `Evidence contract validation failed: ${validation.error}`,
                 parentActionRequired: true,
             };
+        }
+        if (validation.envelope) {
+            const groundTruth = verifyEvidenceGroundTruth(process.cwd(), validation.envelope, ctx.events);
+            if (!groundTruth.verified) {
+                return {
+                    stage: "semantic",
+                    status: "failed",
+                    reason: `Evidence ground-truth verification failed: ${groundTruth.error}`,
+                    parentActionRequired: true,
+                };
+            }
         }
     }
     if (ctx.evidence.filesChanged.length === 0 && ctx.evidence.summary.includes("modified files")) {

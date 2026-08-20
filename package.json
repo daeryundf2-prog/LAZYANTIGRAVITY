@@ -47,9 +47,9 @@
 		"prepack": "node scripts/materialize-shared-skills.mjs --pack",
 		"postpack": "node scripts/materialize-shared-skills.mjs --restore",
 		"provenance": "node scripts/lazyantigravity-provenance.mjs",
-		"sync:hooks": "node scripts/sync-hook-status-messages.mjs",
 		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
-		"test": "node --test test/*.test.mjs"
+		"test": "node --test test/*.test.mjs",
+		"verify:reproducible": "node scripts/verify-dist-sync.mjs"
 	}
 }

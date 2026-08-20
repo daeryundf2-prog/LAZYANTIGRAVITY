@@ -1,6 +1,6 @@
 /**
  * Strict Evidence Verification Contract
- * Prevents automated completion on unverified, partial, or inferred evidence.
+ * Prevents automated completion on unverified, partial, or fabricated evidence.
  */
 export type EvidenceStatus = "verified" | "partial" | "not_checked" | "inference";
 export interface EvidenceRange {
@@ -8,15 +8,27 @@ export interface EvidenceRange {
     readonly startLine?: number;
     readonly endLine?: number;
 }
+export interface FileChecksum {
+    readonly file: string;
+    readonly sha256: string;
+}
+export interface CommandExecutionAudit {
+    readonly command: string;
+    readonly exitCode?: number;
+    readonly outputSnippet?: string;
+}
 export interface StrictEvidenceEnvelope {
     readonly status: EvidenceStatus;
     readonly summary: string;
+    readonly workspaceRoot?: string;
     readonly readRanges?: readonly EvidenceRange[];
     readonly unreadRanges?: readonly EvidenceRange[];
     readonly unknowns?: readonly string[];
     readonly inferences?: readonly string[];
     readonly filesChanged?: readonly string[];
+    readonly fileChecksums?: readonly FileChecksum[];
     readonly commandsRun?: readonly string[];
+    readonly commandAudits?: readonly CommandExecutionAudit[];
     readonly dryRunSafety?: boolean;
 }
 export interface EvidenceValidationResult {

@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { validateStrictEvidence } from "../components/ulw-loop/dist/evidence-contract.js";
+import { verifyEvidenceGroundTruth, computeFileSha256 } from "../components/ulw-loop/dist/evidence-verifier.js";
 import { evolveRules } from "../components/active-learning/dist/evolver.js";
 
 const ROOT = resolve(process.cwd());
@@ -129,8 +130,8 @@ test("Evidence-1: validateStrictEvidence enforces verified purity and gap docume
 	const pureVerified = validateStrictEvidence({
 		status: "verified",
 		summary: "Clean verified execution with all tests green",
-		readRanges: [{ file: "src/index.ts" }],
-		filesChanged: ["src/index.ts"],
+		readRanges: [{ file: "package.json" }],
+		filesChanged: ["package.json"],
 		commandsRun: ["npm test"],
 	});
 	assert.equal(pureVerified.valid, true);
@@ -153,4 +154,46 @@ test("Evidence-2: Active-learning rejects memory promotion when evidence has unk
 			message: /Active-learning memory promotion rejected/,
 		},
 	);
+});
+
+test("Evidence-3: verifyEvidenceGroundTruth rejects fabricated readRanges for non-existent files", () => {
+	const result = verifyEvidenceGroundTruth(ROOT, {
+		status: "verified",
+		summary: "Fake read ranges",
+		readRanges: [{ file: "non_existent_module_404.ts", startLine: 1, endLine: 20 }],
+	});
+	assert.equal(result.verified, false);
+	assert.ok(result.error?.includes("Missing referenced file"));
+});
+
+test("Evidence-4: verifyEvidenceGroundTruth rejects invalid line numbers outside file bounds", () => {
+	const result = verifyEvidenceGroundTruth(ROOT, {
+		status: "verified",
+		summary: "Invalid line bounds",
+		readRanges: [{ file: "package.json", startLine: 99999, endLine: 100000 }],
+	});
+	assert.equal(result.verified, false);
+	assert.ok(result.error?.includes("Invalid startLine") || result.error?.includes("Invalid endLine"));
+});
+
+test("Evidence-5: verifyEvidenceGroundTruth verifies real file SHA-256 and rejects mismatched hashes", () => {
+	const realSha = computeFileSha256(join(ROOT, "package.json"));
+	assert.ok(realSha, "Real SHA-256 must be computable");
+
+	// Matched hash passes
+	const matchRes = verifyEvidenceGroundTruth(ROOT, {
+		status: "verified",
+		summary: "Valid file hash",
+		fileChecksums: [{ file: "package.json", sha256: realSha }],
+	});
+	assert.equal(matchRes.verified, true);
+
+	// Fabricated hash fails
+	const mismatchRes = verifyEvidenceGroundTruth(ROOT, {
+		status: "verified",
+		summary: "Fake file hash",
+		fileChecksums: [{ file: "package.json", sha256: "0".repeat(64) }],
+	});
+	assert.equal(mismatchRes.verified, false);
+	assert.ok(mismatchRes.error?.includes("SHA-256 mismatch"));
 });

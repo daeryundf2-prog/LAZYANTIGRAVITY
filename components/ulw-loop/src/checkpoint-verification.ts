@@ -28,39 +28,36 @@ export async function runCheckpointQualityGate(
 	const events = await readRunEvents(repoRoot, runId);
 
 	const stagnationPolicy = await loadStagnationPolicy(repoRoot);
-	const stagnationResult = checkStagnation(events, stagnationPolicy);
-	if (stagnationResult.status !== "ok") {
-		const payload = stagnationResult.payload;
-		if (
-			payload &&
-			!events.some((e) => e.type === "parent.stagnation_detected" && e.fingerprint === payload.fingerprint)
-		) {
-			await appendRunEvent(repoRoot, runId, "parent.stagnation_detected", {
-				...payload,
-				fingerprint: payload.fingerprint,
-			});
-		}
+	const stag = checkStagnation(events, stagnationPolicy);
+	if (
+		stag.status !== "ok" &&
+		stag.payload &&
+		!events.some((e) => e.type === "parent.stagnation_detected" && e.fingerprint === stag.payload?.fingerprint)
+	) {
+		await appendRunEvent(repoRoot, runId, "parent.stagnation_detected", {
+			...stag.payload,
+			fingerprint: stag.payload.fingerprint,
+		});
 	}
 
-	const completedEvents = events.filter((e) => e.type === "agent.completed_reported");
-	const latestCompleted = completedEvents[completedEvents.length - 1];
-	const subagentResult = latestCompleted?.result as SubagentResultEnvelope | undefined;
-
-	const acknowledgedEvents = events.filter((e) => e.type === "parent.acknowledged");
-	const isAcknowledged = acknowledgedEvents.some((e) => e.agentId === subagentResult?.agentId);
-	if (!isAcknowledged && subagentResult?.agentId) {
-		await appendRunEvent(repoRoot, runId, "parent.acknowledged", { agentId: subagentResult.agentId });
+	const completed = events.filter((e) => e.type === "agent.completed_reported");
+	const subResult = completed[completed.length - 1]?.result as SubagentResultEnvelope | undefined;
+	const isAck = subResult?.agentId
+		? events.some((e) => e.type === "parent.acknowledged" && e.agentId === subResult.agentId)
+		: false;
+	if (!isAck && subResult?.agentId) {
+		await appendRunEvent(repoRoot, runId, "parent.acknowledged", { agentId: subResult.agentId });
 	}
 
-	const filesChanged = subagentResult?.filesChanged || [];
-	const commandsRun = subagentResult?.commandsRun || [];
-	const artifactsGenerated = subagentResult?.artifactsGenerated || [];
-	const completedRoles = subagentResult ? [subagentResult.role] : [];
-	const acknowledgedRoles = isAcknowledged && subagentResult ? [subagentResult.role] : [];
+	const filesChanged = subResult?.filesChanged || [];
+	const commandsRun = subResult?.commandsRun || [];
+	const artifactsGenerated = subResult?.artifactsGenerated || [];
+	const completedRoles = subResult ? [subResult.role] : [];
+	const acknowledgedRoles = isAck && subResult ? [subResult.role] : [];
 
 	const evidenceEnvelope: QualityEvidenceEnvelope = {
 		goal: goal.objective,
-		summary: evidence || subagentResult?.summary || "",
+		summary: evidence || subResult?.summary || "",
 		filesChanged,
 		commandsRun,
 		testResults: commandsRun.filter((c) => /test/i.test(c)),
@@ -72,18 +69,18 @@ export async function runCheckpointQualityGate(
 
 	const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
 
-	const existingPass = events.find(
+	const passEvent = events.find(
 		(e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint,
 	);
-	if (existingPass) {
-		const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
-		return { finalizerAllowed: true, ...reconciled };
+	if (passEvent) {
+		return {
+			finalizerAllowed: true,
+			...(await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope)),
+		};
 	}
 
-	const existingFailure = events.find(
-		(e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint,
-	);
-	if (existingFailure) {
+	const failEvent = events.find((e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint);
+	if (failEvent) {
 		const lastMech = events.find(
 			(e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint,
 		);
@@ -96,7 +93,7 @@ export async function runCheckpointQualityGate(
 		);
 		let goalStatusOverride: UlwLoopItem["status"] = "failed";
 		let blockedReasonOverride: string | undefined;
-		let failedReasonOverride = (existingFailure.reason as string) || "Verification pipeline failed";
+		let failedReasonOverride = (failEvent.reason as string) || "Verification pipeline failed";
 
 		if (lastMech) failedReasonOverride = (lastMech.reason as string) || "Mechanical check failed";
 		else if (conFailed) {
@@ -117,10 +114,10 @@ export async function runCheckpointQualityGate(
 		};
 	}
 
-	const reworkEvents = events.filter(
+	const reworks = events.filter(
 		(e) => e.type === "quality_gate.consensus_rework_required" && e.qualityInputFingerprint === fingerprint,
 	);
-	if (reworkEvents.length >= 3) {
+	if (reworks.length >= 3) {
 		await appendRunEvent(repoRoot, runId, "parent.hitl_required", {
 			reason: "Consensus rework iteration limit reached (max 3 reworks). User intervention required.",
 			qualityInputFingerprint: fingerprint,
@@ -136,25 +133,16 @@ export async function runCheckpointQualityGate(
 	const lspDiagnostics = await collectLspDiagnostics(repoRoot, filesChanged);
 	const rulesViolations = await collectRulesViolations(repoRoot, filesChanged);
 
-	const isSecuritySensitive = /\b(security|auth|login|password|encrypt|token|credential|permission)\b/i.test(
+	const isSec = /\b(security|auth|login|password|encrypt|token|credential|permission)\b/i.test(
 		`${goal.objective} ${evidence}`,
 	);
-	const isPublicRelease = /\b(release|publish|deploy|production|public)\b/i.test(`${goal.objective} ${evidence}`);
-	const isDestructive = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(`${goal.objective} ${evidence}`);
+	const isPub = /\b(release|publish|deploy|production|public)\b/i.test(`${goal.objective} ${evidence}`);
+	const isDest = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(`${goal.objective} ${evidence}`);
 
 	let riskLevel: "low" | "medium" | "high" = "low";
-	if (
-		isSecuritySensitive ||
-		isPublicRelease ||
-		isDestructive ||
-		filesChanged.length > 5 ||
-		lspDiagnostics.length > 0 ||
-		rulesViolations.length > 0
-	) {
+	if (isSec || isPub || isDest || filesChanged.length > 5 || lspDiagnostics.length > 0 || rulesViolations.length > 0)
 		riskLevel = "high";
-	} else if (filesChanged.length > 2) {
-		riskLevel = "medium";
-	}
+	else if (filesChanged.length > 2) riskLevel = "medium";
 
 	const ctx: VerificationContext = {
 		runId,
@@ -164,22 +152,22 @@ export async function runCheckpointQualityGate(
 		wouldSwitchModel: false,
 		isDryRun: true,
 		riskLevel,
-		destructiveChange: isDestructive,
-		publicRelease: isPublicRelease,
-		securitySensitive: isSecuritySensitive,
+		destructiveChange: isDest,
+		publicRelease: isPub,
+		securitySensitive: isSec,
 		lspDiagnostics,
 		rulesViolations,
 	};
 	const policy = await loadVerificationPolicy(repoRoot);
 	const gateResults = runVerificationPipeline(ctx, policy);
 
-	const mechResult = gateResults.find((r) => r.stage === "mechanical");
-	const semResult = gateResults.find((r) => r.stage === "semantic");
-	const conResult = gateResults.find((r) => r.stage === "consensus");
+	const mech = gateResults.find((r) => r.stage === "mechanical");
+	const sem = gateResults.find((r) => r.stage === "semantic");
+	const con = gateResults.find((r) => r.stage === "consensus");
 
-	if (mechResult?.status === "failed") {
+	if (mech?.status === "failed") {
 		await appendRunEvent(repoRoot, runId, "quality_gate.mechanical_failed", {
-			reason: mechResult.reason || "Mechanical check failed",
+			reason: mech.reason || "Mechanical check failed",
 			qualityInputFingerprint: fingerprint,
 		});
 		await appendRunEvent(repoRoot, runId, "quality_gate.failed", {
@@ -189,20 +177,20 @@ export async function runCheckpointQualityGate(
 		return {
 			finalizerAllowed: false,
 			goalStatusOverride: "failed",
-			failedReasonOverride: mechResult.reason || "Mechanical check failed",
+			failedReasonOverride: mech.reason || "Mechanical check failed",
 		};
 	}
 
-	if (semResult?.status === "failed") {
+	if (sem?.status === "failed") {
 		await appendRunEvent(repoRoot, runId, "quality_gate.mechanical_passed", { qualityInputFingerprint: fingerprint });
 		await appendRunEvent(repoRoot, runId, "quality_gate.failed", {
-			reason: semResult.reason || "Semantic check failed",
+			reason: sem.reason || "Semantic check failed",
 			qualityInputFingerprint: fingerprint,
 		});
 		return {
 			finalizerAllowed: false,
 			goalStatusOverride: "failed",
-			failedReasonOverride: semResult.reason || "Semantic check failed",
+			failedReasonOverride: sem.reason || "Semantic check failed",
 		};
 	}
 
@@ -213,9 +201,9 @@ export async function runCheckpointQualityGate(
 	let blockedReasonOverride: string | undefined;
 	let failedReasonOverride: string | undefined;
 
-	if (conResult?.status === "required") {
+	if (con?.status === "required") {
 		await appendRunEvent(repoRoot, runId, "quality_gate.consensus_required", {
-			reason: conResult.reason || "Consensus required due to policy triggers",
+			reason: con.reason || "Consensus required due to policy triggers",
 			qualityInputFingerprint: fingerprint,
 		});
 		const conStep = await runCheckpointConsensusStep(

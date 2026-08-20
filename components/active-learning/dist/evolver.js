@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
 export function getMemoryPath(cwd = process.cwd()) {
     const p1 = join(cwd, ".omo", "memory");
@@ -10,6 +11,33 @@ export function getMemoryPath(cwd = process.cwd()) {
         mkdirSync(p2, { recursive: true });
     }
     return join(p2, "facts.jsonl");
+}
+function verifyDiskFilesAndHashes(raw, cwd) {
+    if (Array.isArray(raw["readRanges"])) {
+        for (const range of raw["readRanges"]) {
+            if (range && typeof range === "object" && typeof range["file"] === "string") {
+                const filePath = isAbsolute(range["file"]) ? range["file"] : resolve(cwd, range["file"]);
+                if (!existsSync(filePath)) {
+                    return `Referenced file in readRanges does not exist on disk: ${range["file"]}`;
+                }
+            }
+        }
+    }
+    if (Array.isArray(raw["fileChecksums"])) {
+        for (const item of raw["fileChecksums"]) {
+            if (item && typeof item === "object" && typeof item["file"] === "string" && typeof item["sha256"] === "string") {
+                const filePath = isAbsolute(item["file"]) ? item["file"] : resolve(cwd, item["file"]);
+                if (!existsSync(filePath)) {
+                    return `Checksum file does not exist: ${item["file"]}`;
+                }
+                const actualSha = createHash("sha256").update(readFileSync(filePath)).digest("hex");
+                if (actualSha !== item["sha256"].trim().toLowerCase()) {
+                    return `SHA-256 mismatch for ${item["file"]}: expected ${item["sha256"]}, got ${actualSha}`;
+                }
+            }
+        }
+    }
+    return null;
 }
 function parseAndValidateEvidence(evidenceInput, cwd) {
     let raw;
@@ -47,6 +75,10 @@ function parseAndValidateEvidence(evidenceInput, cwd) {
             summary: "",
             error: `Verified evidence must have zero unknowns, inferences, or unreadRanges (found ${unknowns.length} unknowns, ${inferences.length} inferences, ${unreadRanges.length} unreadRanges).`,
         };
+    }
+    const diskMismatch = verifyDiskFilesAndHashes(raw, cwd);
+    if (diskMismatch) {
+        return { valid: false, summary: "", error: diskMismatch };
     }
     const summary = typeof raw["summary"] === "string" ? raw["summary"].trim() : "Verified active learning evidence";
     return { valid: true, summary };

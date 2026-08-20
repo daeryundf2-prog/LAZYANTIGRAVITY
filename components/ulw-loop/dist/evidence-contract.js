@@ -1,9 +1,62 @@
 /**
  * Strict Evidence Verification Contract
- * Prevents automated completion on unverified, partial, or inferred evidence.
+ * Prevents automated completion on unverified, partial, or fabricated evidence.
  */
 export function isStrictEvidenceStatus(status) {
     return status === "verified" || status === "partial" || status === "not_checked" || status === "inference";
+}
+function parseRanges(rawRanges) {
+    if (!Array.isArray(rawRanges))
+        return [];
+    const result = [];
+    for (const item of rawRanges) {
+        if (item && typeof item === "object" && typeof item["file"] === "string") {
+            const record = item;
+            const file = record["file"].trim();
+            const startLine = typeof record["startLine"] === "number" ? record["startLine"] : undefined;
+            const endLine = typeof record["endLine"] === "number" ? record["endLine"] : undefined;
+            result.push({
+                file,
+                ...(startLine !== undefined ? { startLine } : {}),
+                ...(endLine !== undefined ? { endLine } : {}),
+            });
+        }
+    }
+    return result;
+}
+function parseChecksums(rawChecksums) {
+    if (!Array.isArray(rawChecksums))
+        return [];
+    const result = [];
+    for (const item of rawChecksums) {
+        if (item && typeof item === "object" && typeof item["file"] === "string") {
+            const record = item;
+            const sha256 = typeof record["sha256"] === "string" ? record["sha256"].trim().toLowerCase() : "";
+            if (sha256.length === 64) {
+                result.push({ file: record["file"].trim(), sha256 });
+            }
+        }
+    }
+    return result;
+}
+function parseCommandAudits(rawAudits) {
+    if (!Array.isArray(rawAudits))
+        return [];
+    const result = [];
+    for (const item of rawAudits) {
+        if (item && typeof item === "object" && typeof item["command"] === "string") {
+            const record = item;
+            const command = record["command"].trim();
+            const exitCode = typeof record["exitCode"] === "number" ? record["exitCode"] : undefined;
+            const outputSnippet = typeof record["outputSnippet"] === "string" ? record["outputSnippet"] : undefined;
+            result.push({
+                command,
+                ...(exitCode !== undefined ? { exitCode } : {}),
+                ...(outputSnippet !== undefined ? { outputSnippet } : {}),
+            });
+        }
+    }
+    return result;
 }
 export function validateStrictEvidence(evidence) {
     if (!evidence || typeof evidence !== "object") {
@@ -21,7 +74,8 @@ export function validateStrictEvidence(evidence) {
     if (!summary) {
         return { valid: false, error: "Evidence summary is required and cannot be empty." };
     }
-    const unreadRanges = Array.isArray(raw["unreadRanges"]) ? raw["unreadRanges"] : [];
+    const readRanges = parseRanges(raw["readRanges"]);
+    const unreadRanges = parseRanges(raw["unreadRanges"]);
     const unknowns = Array.isArray(raw["unknowns"])
         ? raw["unknowns"].filter((u) => typeof u === "string" && u.trim().length > 0)
         : [];
@@ -62,12 +116,15 @@ export function validateStrictEvidence(evidence) {
     const envelope = {
         status,
         summary,
-        readRanges: Array.isArray(raw["readRanges"]) ? raw["readRanges"] : [],
-        unreadRanges: unreadRanges,
+        ...(typeof raw["workspaceRoot"] === "string" ? { workspaceRoot: raw["workspaceRoot"].trim() } : {}),
+        readRanges,
+        unreadRanges,
         unknowns,
         inferences,
         filesChanged: Array.isArray(raw["filesChanged"]) ? raw["filesChanged"] : [],
+        fileChecksums: parseChecksums(raw["fileChecksums"]),
         commandsRun: Array.isArray(raw["commandsRun"]) ? raw["commandsRun"] : [],
+        commandAudits: parseCommandAudits(raw["commandAudits"]),
         dryRunSafety: Boolean(raw["dryRunSafety"]),
     };
     return { valid: true, envelope };
