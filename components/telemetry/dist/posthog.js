@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import os from "node:os";
-import { getActivityStateDir } from "./data-path.js";
+import { join } from "node:path";
 import { writeFileAtomically } from "./atomic-write.js";
+import { getActivityStateDir } from "./data-path.js";
 import { writeTelemetryDiagnostic, } from "./diagnostics.js";
-import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, isTelemetryOptedIn, shouldDisablePostHog } from "./env-flags.js";
+import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, isTelemetryOptedIn, shouldDisablePostHog, } from "./env-flags.js";
 import { getPostHogActivityCaptureState } from "./posthog-activity-state.js";
 import { DEFAULT_POSTHOG_API_KEY, DEFAULT_POSTHOG_HOST, EVENT_NAME, getComponentVersion, MACHINE_ID_PREFIX, PACKAGE_NAME, PRODUCT_NAME, } from "./product-identity.js";
 export { DEFAULT_POSTHOG_API_KEY, DEFAULT_POSTHOG_HOST };

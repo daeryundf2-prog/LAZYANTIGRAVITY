@@ -86,10 +86,7 @@ export function readContinuationState(
 
 const SESSION_PREFIXES = ["antigravity:", "gemini:", "codex:"] as const;
 
-function findMatchingWorkForSession(
-	state: Record<string, unknown>,
-	sessionId: string,
-): BoulderWork | null {
+function findMatchingWorkForSession(state: Record<string, unknown>, sessionId: string): BoulderWork | null {
 	for (const prefix of SESSION_PREFIXES) {
 		const work = findMatchingWork(state, `${prefix}${sessionId}`);
 		if (work !== null) return work;

@@ -40,9 +40,9 @@ describe("Ledger hash-chain integrity", () => {
 		const lines = readFileSync(eventsFile, "utf8")
 			.split("\n")
 			.filter((l) => l.trim());
-		const tampered = JSON.parse(lines[1]);
+		const tampered = JSON.parse(lines[1] ?? "{}");
 		tampered.prevHash = "f".repeat(64);
-		const restored = [JSON.parse(lines[0]), tampered].map((e) => JSON.stringify(e)).join("\n");
+		const restored = [JSON.parse(lines[0] ?? "{}"), tampered].map((e) => JSON.stringify(e)).join("\n");
 		const fs = await import("node:fs/promises");
 		await fs.writeFile(eventsFile, `${restored}\n`, "utf8");
 
@@ -60,7 +60,7 @@ describe("Ledger hash-chain integrity", () => {
 		const lines = readFileSync(eventsFile, "utf8")
 			.split("\n")
 			.filter((l) => l.trim());
-		const tampered = JSON.parse(lines[0]);
+		const tampered = JSON.parse(lines[0] ?? "{}");
 		tampered.timestamp = "2999-01-01T00:00:00.000Z";
 		const fs = await import("node:fs/promises");
 		await fs.writeFile(eventsFile, `${JSON.stringify(tampered)}\n`, "utf8");
@@ -78,7 +78,7 @@ describe("Ledger hash-chain integrity", () => {
 		const runId = "run-chain-concurrent";
 		const writers = Array.from({ length: 4 }, (_, w) => async () => {
 			for (let i = 0; i < 8; i++) {
-				await appendRunEvent(testDir, runId, "progress", { agentId: `w${w}`, message: `e${w}-${i}` });
+				await appendRunEvent(testDir, runId, "agent.progress", { agentId: `w${w}`, progress: `e${w}-${i}` });
 			}
 		});
 		await Promise.all(writers.map((w) => w()));

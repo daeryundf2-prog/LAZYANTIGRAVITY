@@ -1,5 +1,4 @@
-import type { QualityGateResult, VerificationPolicy } from "./verification-pipeline-types.js";
-import type { VerificationContext } from "./verification-pipeline-types.js";
+import type { QualityGateResult, VerificationContext, VerificationPolicy } from "./verification-pipeline-types.js";
 
 export function runMechanicalGate(ctx: VerificationContext, policy: VerificationPolicy): QualityGateResult {
 	if (!ctx.evidence) {

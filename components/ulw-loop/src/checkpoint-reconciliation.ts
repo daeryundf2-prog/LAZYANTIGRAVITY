@@ -8,7 +8,11 @@ import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./t
 
 export function textMentionsUlwLoopPlanArtifact(value: string | undefined): boolean {
 	const normalized = (value ?? "").toLowerCase();
-	return normalized.includes(ULW_LOOP_DIR.toLowerCase()) || normalized.includes(ULW_LOOP_GOALS.toLowerCase()) || normalized.includes(ULW_LOOP_LEDGER.toLowerCase());
+	return (
+		normalized.includes(ULW_LOOP_DIR.toLowerCase()) ||
+		normalized.includes(ULW_LOOP_GOALS.toLowerCase()) ||
+		normalized.includes(ULW_LOOP_LEDGER.toLowerCase())
+	);
 }
 
 export function textMentionsGoalId(value: string | undefined, goalId: string): boolean {
@@ -17,33 +21,59 @@ export function textMentionsGoalId(value: string | undefined, goalId: string): b
 
 export function textHasCompletionValidationEvidence(value: string | undefined): boolean {
 	const normalized = (value ?? "").toLowerCase();
-	const done = /\b(?:planned work|implementation|deliverables?|scope|task|work)\b/.test(normalized) && /\b(?:done|complete|completed|finished|shipped)\b/.test(normalized);
-	const verified = /\b(?:validation|verification|tests?|build|lint|review|quality gate|code-review)\b/.test(normalized) && /\b(?:passed|complete|completed|clean|green|approve|approved|clear)\b/.test(normalized);
+	const done =
+		/\b(?:planned work|implementation|deliverables?|scope|task|work)\b/.test(normalized) &&
+		/\b(?:done|complete|completed|finished|shipped)\b/.test(normalized);
+	const verified =
+		/\b(?:validation|verification|tests?|build|lint|review|quality gate|code-review)\b/.test(normalized) &&
+		/\b(?:passed|complete|completed|clean|green|approve|approved|clear)\b/.test(normalized);
 	return done && verified;
 }
 
-export async function snapshotObjectiveMapsToUlwLoopPlan(repoRoot: string, snapshotObjective: string, scope?: UlwLoopScope): Promise<boolean> {
+export async function snapshotObjectiveMapsToUlwLoopPlan(
+	repoRoot: string,
+	snapshotObjective: string,
+	scope?: UlwLoopScope,
+): Promise<boolean> {
 	const actual = snapshotObjective.replace(/\s+/g, " ").trim().toLowerCase();
 	if (textMentionsUlwLoopPlanArtifact(actual)) return true;
 	if (actual.length < 24 || !existsSync(ulwLoopBriefPath(repoRoot, scope))) return false;
 	try {
-		const brief = (await readFile(ulwLoopBriefPath(repoRoot, scope), "utf8")).replace(/\s+/g, " ").trim().toLowerCase();
+		const brief = (await readFile(ulwLoopBriefPath(repoRoot, scope), "utf8"))
+			.replace(/\s+/g, " ")
+			.trim()
+			.toLowerCase();
 		return brief.length >= 24 && (brief.includes(actual) || actual.includes(brief));
 	} catch {
 		return false;
 	}
 }
 
-export async function canReconcileCompletedTaskScopedAggregateSnapshot(repoRoot: string, plan: UlwLoopPlan, goal: UlwLoopItem, snapshotObjective: string, evidence: string, scope?: UlwLoopScope): Promise<boolean> {
+export async function canReconcileCompletedTaskScopedAggregateSnapshot(
+	repoRoot: string,
+	plan: UlwLoopPlan,
+	goal: UlwLoopItem,
+	snapshotObjective: string,
+	evidence: string,
+	scope?: UlwLoopScope,
+): Promise<boolean> {
 	if (codexGoalMode(plan) !== "aggregate") return false;
 	if (goal.status !== "in_progress" || plan.activeGoalId !== goal.id) return false;
-	if (isFinalRunCompletionCandidate(plan, goal)) return snapshotObjectiveMapsToUlwLoopPlan(repoRoot, snapshotObjective, scope);
+	if (isFinalRunCompletionCandidate(plan, goal))
+		return snapshotObjectiveMapsToUlwLoopPlan(repoRoot, snapshotObjective, scope);
 	if (!textMentionsUlwLoopPlanArtifact(evidence) || !textMentionsGoalId(evidence, goal.id)) return false;
 	if (!textHasCompletionValidationEvidence(evidence)) return false;
 	return snapshotObjectiveMapsToUlwLoopPlan(repoRoot, snapshotObjective, scope);
 }
 
-export async function canReconcileActiveFinalTaskScopedAggregateSnapshot(repoRoot: string, plan: UlwLoopPlan, goal: UlwLoopItem, snapshotObjective: string, evidence: string, scope?: UlwLoopScope): Promise<boolean> {
+export async function canReconcileActiveFinalTaskScopedAggregateSnapshot(
+	repoRoot: string,
+	plan: UlwLoopPlan,
+	goal: UlwLoopItem,
+	snapshotObjective: string,
+	evidence: string,
+	scope?: UlwLoopScope,
+): Promise<boolean> {
 	if (codexGoalMode(plan) !== "aggregate") return false;
 	if (goal.status !== "in_progress" || plan.activeGoalId !== goal.id) return false;
 	if (!isFinalRunCompletionCandidate(plan, goal)) return false;
@@ -69,10 +99,25 @@ export function buildTaskScopedAggregateReconciliationHint(goal: UlwLoopItem, fi
 export async function readJsonInput(raw: string | undefined, repoRoot: string): Promise<unknown> {
 	if (raw === undefined || raw.trim() === "") return undefined;
 	const trimmed = raw.trim();
-	try { return JSON.parse(trimmed); } catch (error) { if (!(error instanceof SyntaxError)) throw error; }
+	try {
+		return JSON.parse(trimmed);
+	} catch (error) {
+		if (!(error instanceof SyntaxError)) throw error;
+	}
 	const path = resolve(repoRoot, trimmed);
-	if (!existsSync(path)) throw new UlwLoopError("Quality gate JSON is neither valid JSON nor a readable path.", "ulw_loop_json_input_invalid");
-	try { return JSON.parse(await readFile(path, "utf8")); } catch (error) { throw new UlwLoopError(`Quality gate path does not contain valid JSON${error instanceof Error ? `: ${error.message}` : "."}`, "ulw_loop_json_input_invalid"); }
+	if (!existsSync(path))
+		throw new UlwLoopError(
+			"Quality gate JSON is neither valid JSON nor a readable path.",
+			"ulw_loop_json_input_invalid",
+		);
+	try {
+		return JSON.parse(await readFile(path, "utf8"));
+	} catch (error) {
+		throw new UlwLoopError(
+			`Quality gate path does not contain valid JSON${error instanceof Error ? `: ${error.message}` : "."}`,
+			"ulw_loop_json_input_invalid",
+		);
+	}
 }
 
 export function makeAggregateCompletion(now: string, evidence: string, codexGoal: unknown): UlwLoopAggregateCompletion {

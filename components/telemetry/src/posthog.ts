@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { existsSync, readFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import os from "node:os";
-import { getActivityStateDir } from "./data-path.js";
-import { writeFileAtomically } from "./atomic-write.js";
-
+import { join } from "node:path";
 import type { PostHog } from "posthog-node";
+import { writeFileAtomically } from "./atomic-write.js";
+import { getActivityStateDir } from "./data-path.js";
 
 import {
 	type TelemetryDiagnosticErrorKind,
@@ -13,7 +12,13 @@ import {
 	type TelemetryDiagnosticSource,
 	writeTelemetryDiagnostic,
 } from "./diagnostics.js";
-import { getPostHogApiKey, getPostHogHost, hasPostHogApiKey, isTelemetryOptedIn, shouldDisablePostHog } from "./env-flags.js";
+import {
+	getPostHogApiKey,
+	getPostHogHost,
+	hasPostHogApiKey,
+	isTelemetryOptedIn,
+	shouldDisablePostHog,
+} from "./env-flags.js";
 import { getPostHogActivityCaptureState } from "./posthog-activity-state.js";
 import {
 	DEFAULT_POSTHOG_API_KEY,

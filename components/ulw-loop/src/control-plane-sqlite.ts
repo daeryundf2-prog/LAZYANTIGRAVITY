@@ -19,7 +19,9 @@ export interface TransactionalEventEnvelope {
 }
 
 export function computePayloadChecksum(payload: unknown): string {
-	return createHash("sha256").update(JSON.stringify(payload ?? {})).digest("hex");
+	return createHash("sha256")
+		.update(JSON.stringify(payload ?? {}))
+		.digest("hex");
 }
 
 export function getLedgerWalDir(repoRoot: string, runId: string): string {
@@ -66,7 +68,10 @@ export async function appendTransactionalEvent(
 	return envelope;
 }
 
-export function verifyLedgerWalIntegrity(repoRoot: string, runId: string): {
+export function verifyLedgerWalIntegrity(
+	repoRoot: string,
+	runId: string,
+): {
 	valid: boolean;
 	totalEvents: number;
 	corruptEventIndex?: number;

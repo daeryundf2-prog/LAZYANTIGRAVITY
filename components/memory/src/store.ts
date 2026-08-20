@@ -23,11 +23,7 @@ export interface FactRecord {
 function sleepSync(ms: number): void {
 	try {
 		Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-	} catch {
-		// Fallback if SharedArrayBuffer unavailable
-		const start = Date.now();
-		while (Date.now() - start < ms) {}
-	}
+	} catch {}
 }
 
 function withFileLock<T>(filePath: string, fn: () => T): T {

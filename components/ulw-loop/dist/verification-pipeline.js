@@ -3,9 +3,9 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { FORBIDDEN_PHRASES } from "./control-plane.js";
+import { runMechanicalGate, runSemanticGate } from "./verification-gates.js";
 import { DEFAULT_VERIFICATION_POLICY, } from "./verification-pipeline-types.js";
-import { runMechanicalGate, runSemanticGate, } from "./verification-gates.js";
-export { runMechanicalGate, runSemanticGate, };
+export { runMechanicalGate, runSemanticGate };
 export async function loadVerificationPolicy(repoRoot) {
     const policyPath = join(repoRoot, "plugins", "omo", "components", "ulw-loop", "config", "verification-policy.json");
     if (existsSync(policyPath)) {

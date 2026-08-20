@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { FORBIDDEN_PHRASES } from "./control-plane.js";
+import { runMechanicalGate, runSemanticGate } from "./verification-gates.js";
 import {
 	type ConsensusResultEnvelope,
 	DEFAULT_VERIFICATION_POLICY,
@@ -10,16 +11,9 @@ import {
 	type VerificationContext,
 	type VerificationPolicy,
 } from "./verification-pipeline-types.js";
-import {
-	runMechanicalGate,
-	runSemanticGate,
-} from "./verification-gates.js";
 
 export type { VerificationContext };
-export {
-	runMechanicalGate,
-	runSemanticGate,
-};
+export { runMechanicalGate, runSemanticGate };
 
 export async function loadVerificationPolicy(repoRoot: string): Promise<VerificationPolicy> {
 	const policyPath = join(repoRoot, "plugins", "omo", "components", "ulw-loop", "config", "verification-policy.json");

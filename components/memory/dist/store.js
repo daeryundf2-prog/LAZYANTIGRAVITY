@@ -6,11 +6,7 @@ function sleepSync(ms) {
     try {
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
     }
-    catch {
-        // Fallback if SharedArrayBuffer unavailable
-        const start = Date.now();
-        while (Date.now() - start < ms) { }
-    }
+    catch { }
 }
 function withFileLock(filePath, fn) {
     const lockPath = `${filePath}.lock`;

@@ -2,11 +2,11 @@ import { createHash } from "node:crypto";
 import type { LedgerEvent } from "./control-plane-types.js";
 import {
 	DEFAULT_STAGNATION_POLICY,
+	loadStagnationPolicy,
 	type StagnationDetectedPayload,
 	type StagnationPolicy,
 	type StagnationResult,
 	type StagnationStatus,
-	loadStagnationPolicy,
 } from "./stagnation-policy.js";
 
 export type { StagnationDetectedPayload, StagnationPolicy, StagnationResult, StagnationStatus };

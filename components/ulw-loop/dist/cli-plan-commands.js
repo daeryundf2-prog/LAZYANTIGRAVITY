@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { checkpointUlwLoop } from "./checkpoint.js";
-import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, readStdin, readValue } from "./cli-arg-parser.js";
+import { hasFlag, parseCodexGoalJson, parseRecordEvidenceArgs, positionalText, readStdin, readValue, } from "./cli-arg-parser.js";
 import { blockedDecisionHandoff, normalizeCodexGoalMode, printJson, printStatus } from "./cli-output.js";
 import { parseSteeringProposal, printSteerResult } from "./cli-steering.js";
 import { buildCodexGoalInstruction } from "./codex-goal-instruction.js";
@@ -29,10 +29,17 @@ function findGoal(plan, goalId) {
 }
 export async function createGoals(repoRoot, argv, json, scope) {
     const briefFile = readValue(argv, "--brief-file");
-    const brief = readValue(argv, "--brief") ?? (briefFile === undefined ? undefined : await readFile(briefFile, "utf8")) ?? (hasFlag(argv, "--from-stdin") ? await readStdin() : undefined) ?? positionalText(argv);
+    const brief = readValue(argv, "--brief") ??
+        (briefFile === undefined ? undefined : await readFile(briefFile, "utf8")) ??
+        (hasFlag(argv, "--from-stdin") ? await readStdin() : undefined) ??
+        positionalText(argv);
     if (!brief.trim())
         throw new UlwLoopError("Missing brief text. Pass --brief, --brief-file, --from-stdin, or positional text.", "ULW_LOOP_BRIEF_REQUIRED");
-    const plan = await createUlwLoopPlan(repoRoot, { brief, codexGoalMode: normalizeCodexGoalMode(readValue(argv, "--codex-goal-mode")), force: hasFlag(argv, "--force") }, scope);
+    const plan = await createUlwLoopPlan(repoRoot, {
+        brief,
+        codexGoalMode: normalizeCodexGoalMode(readValue(argv, "--codex-goal-mode")),
+        force: hasFlag(argv, "--force"),
+    }, scope);
     if (json)
         printJson({ ok: true, plan, summary: summarizeUlwLoopPlan(plan) });
     else
@@ -52,7 +59,14 @@ export async function completeGoals(repoRoot, argv, json, scope) {
     if ("done" in result) {
         const handoff = blockedDecisionHandoff(result.plan);
         if (json)
-            printJson({ ok: true, done: true, blocked: handoff.length > 0, handoff, summary: summarizeUlwLoopPlan(result.plan), plan: result.plan });
+            printJson({
+                ok: true,
+                done: true,
+                blocked: handoff.length > 0,
+                handoff,
+                summary: summarizeUlwLoopPlan(result.plan),
+                plan: result.plan,
+            });
         else
             process.stdout.write(`${handoff || "ulw-loop: all goals complete"}\n`);
         return 0;
@@ -127,7 +141,14 @@ export async function reviewBlockers(repoRoot, argv, json, scope) {
         ...(codexGoalJson === undefined ? {} : { codexGoalJson }),
     }, scope);
     if (json)
-        printJson({ ok: true, plan: result.plan, blockedGoal: result.blockedGoal, goal: result.newGoal, ledgerEntries: result.ledgerEntries, summary: summarizeUlwLoopPlan(result.plan) });
+        printJson({
+            ok: true,
+            plan: result.plan,
+            blockedGoal: result.blockedGoal,
+            goal: result.newGoal,
+            ledgerEntries: result.ledgerEntries,
+            summary: summarizeUlwLoopPlan(result.plan),
+        });
     else
         process.stdout.write(`ulw-loop final review blockers recorded: ${result.blockedGoal.id} -> review_blocked; added ${result.newGoal.id}\n`);
     return 0;

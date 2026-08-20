@@ -6,15 +6,19 @@ import { ulwLoopBriefPath } from "./paths.js";
 import { ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER, UlwLoopError } from "./types.js";
 export function textMentionsUlwLoopPlanArtifact(value) {
     const normalized = (value ?? "").toLowerCase();
-    return normalized.includes(ULW_LOOP_DIR.toLowerCase()) || normalized.includes(ULW_LOOP_GOALS.toLowerCase()) || normalized.includes(ULW_LOOP_LEDGER.toLowerCase());
+    return (normalized.includes(ULW_LOOP_DIR.toLowerCase()) ||
+        normalized.includes(ULW_LOOP_GOALS.toLowerCase()) ||
+        normalized.includes(ULW_LOOP_LEDGER.toLowerCase()));
 }
 export function textMentionsGoalId(value, goalId) {
     return (value ?? "").toLowerCase().includes(goalId.toLowerCase());
 }
 export function textHasCompletionValidationEvidence(value) {
     const normalized = (value ?? "").toLowerCase();
-    const done = /\b(?:planned work|implementation|deliverables?|scope|task|work)\b/.test(normalized) && /\b(?:done|complete|completed|finished|shipped)\b/.test(normalized);
-    const verified = /\b(?:validation|verification|tests?|build|lint|review|quality gate|code-review)\b/.test(normalized) && /\b(?:passed|complete|completed|clean|green|approve|approved|clear)\b/.test(normalized);
+    const done = /\b(?:planned work|implementation|deliverables?|scope|task|work)\b/.test(normalized) &&
+        /\b(?:done|complete|completed|finished|shipped)\b/.test(normalized);
+    const verified = /\b(?:validation|verification|tests?|build|lint|review|quality gate|code-review)\b/.test(normalized) &&
+        /\b(?:passed|complete|completed|clean|green|approve|approved|clear)\b/.test(normalized);
     return done && verified;
 }
 export async function snapshotObjectiveMapsToUlwLoopPlan(repoRoot, snapshotObjective, scope) {
@@ -24,7 +28,10 @@ export async function snapshotObjectiveMapsToUlwLoopPlan(repoRoot, snapshotObjec
     if (actual.length < 24 || !existsSync(ulwLoopBriefPath(repoRoot, scope)))
         return false;
     try {
-        const brief = (await readFile(ulwLoopBriefPath(repoRoot, scope), "utf8")).replace(/\s+/g, " ").trim().toLowerCase();
+        const brief = (await readFile(ulwLoopBriefPath(repoRoot, scope), "utf8"))
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
         return brief.length >= 24 && (brief.includes(actual) || actual.includes(brief));
     }
     catch {

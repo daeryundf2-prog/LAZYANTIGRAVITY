@@ -6,7 +6,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook session-start",
-						"timeout": 10,
+						"timeout": 5,
 						"statusMessage": "LazyAntigravity(0.6.0): Loading Project Rules"
 					}
 				]
@@ -16,7 +16,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/memory/dist/cli.js\" hook session-start",
-						"timeout": 5,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Loading Active Memory"
 					}
 				]
@@ -26,7 +26,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/daemon-bridge/dist/cli.js\" hook session-start",
-						"timeout": 5,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Initializing Ipc Daemon Bridge"
 					}
 				]
@@ -36,7 +36,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ast-index/dist/cli.js\" hook session-start",
-						"timeout": 10,
+						"timeout": 5,
 						"statusMessage": "LazyAntigravity(0.6.0): Pre-Indexing Ast Call Graph"
 					}
 				]
@@ -46,7 +46,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
-						"timeout": 5,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Recording Session Telemetry",
 						"failurePolicy": "FAIL_OPEN"
 					}
@@ -59,7 +59,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Loading Project Rules"
 					}
 				]
@@ -69,7 +69,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/quick-lane/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Quick-Lane Trigger"
 					}
 				]
@@ -79,7 +79,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/adaptive-reasoning/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Scaling Adaptive Reasoning"
 					}
 				]
@@ -89,7 +89,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ultrawork/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Ultrawork Trigger"
 					}
 				]
@@ -99,7 +99,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Ulw-Loop Steering"
 					}
 				]
@@ -112,7 +112,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook pre-tool-use",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Recommending Git Bash Mcp"
 					}
 				]
@@ -125,13 +125,13 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/comment-checker/dist/cli.js\" hook post-tool-use",
-						"timeout": 30,
+						"timeout": 10,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Comments"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-tool-use",
-						"timeout": 25,
+						"timeout": 10,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking LSP Diagnostics"
 					}
 				]
@@ -142,7 +142,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-tool-use",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Matching Project Rules"
 					}
 				]
@@ -155,7 +155,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook post-compact",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Resetting Git Bash Mcp Reminder"
 					}
 				]
@@ -166,7 +166,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-compact",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Resetting Project Rule Cache"
 					}
 				]
@@ -177,7 +177,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-compact",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Resetting LSP Diagnostics Cache"
 					}
 				]
@@ -188,7 +188,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook post-compact",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Restoring Ulw-Loop Context"
 					}
 				]
@@ -200,7 +200,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/ulw-readiness.mjs\"",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Ulw Readiness",
 						"failurePolicy": "FAIL_OPEN"
 					}
@@ -211,7 +211,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook stop",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Start-Work Continuation"
 					}
 				]
@@ -221,7 +221,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/daemon-bridge/dist/cli.js\" hook stop",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Ipc Daemon State"
 					}
 				]
@@ -231,7 +231,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/session-tree/dist/cli.js\" hook stop",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Checkpointing Session Tree"
 					}
 				]
@@ -241,7 +241,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/active-learning/dist/cli.js\" hook stop",
-						"timeout": 5,
+						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.6.0): Evolving Active Rules"
 					}
 				]
@@ -253,7 +253,7 @@
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook subagent-stop",
-						"timeout": 10,
+						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.6.0): Checking Start-Work Continuation"
 					}
 				]

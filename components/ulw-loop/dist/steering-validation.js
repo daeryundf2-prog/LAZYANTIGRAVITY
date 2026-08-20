@@ -1,6 +1,15 @@
 import { ULW_LOOP_STEERING_MUTATION_KINDS, ULW_LOOP_SUCCESS_CRITERION_USER_MODELS } from "./types.js";
 export const SOURCES = ["user_prompt_submit", "finding", "cli"];
-export const PROTECTED = new Set(["aggregateCompletion", "codexObjective", "codexObjectiveAliases", "originalConstraints", "qualityGate", "status", "completedAt", "completionStatus"]);
+export const PROTECTED = new Set([
+    "aggregateCompletion",
+    "codexObjective",
+    "codexObjectiveAliases",
+    "originalConstraints",
+    "qualityGate",
+    "status",
+    "completedAt",
+    "completionStatus",
+]);
 export const isObject = (value) => typeof value === "object" && value !== null;
 export const isPlain = (value) => isObject(value) && !Array.isArray(value);
 export const read = (value, key) => Object.entries(value).find(([name]) => name === key)?.[1];
@@ -43,7 +52,9 @@ export function childValues(proposal) {
     const fromAfter = nested === undefined ? undefined : read(nested, "children");
     return Array.isArray(fromAfter) ? fromAfter : [];
 }
-export const children = (proposal) => childValues(proposal).map(child).filter((item) => item !== null);
+export const children = (proposal) => childValues(proposal)
+    .map(child)
+    .filter((item) => item !== null);
 export const pendingOrder = (proposal) => {
     const direct = texts(proposal, "pendingOrder");
     return direct.length > 0 ? direct : texts(after(proposal) ?? proposal, "pendingGoalIds");
@@ -63,7 +74,8 @@ export function allText(value) {
 }
 export function weakens(value) {
     const valueText = allText(value).toLowerCase();
-    return /\b(skip|bypass|weaken|remove|omit|auto[-\s]?complete|mark complete|complete faster)\b/.test(valueText) && /\b(test|tests|verification|review|quality gate|complete|completion)\b/.test(valueText);
+    return (/\b(skip|bypass|weaken|remove|omit|auto[-\s]?complete|mark complete|complete faster)\b/.test(valueText) &&
+        /\b(test|tests|verification|review|quality gate|complete|completion)\b/.test(valueText));
 }
 export function auditFor(proposal, reasons) {
     const object = isPlain(proposal) ? proposal : undefined;
@@ -71,7 +83,21 @@ export function auditFor(proposal, reasons) {
     const sourceRaw = object === undefined ? undefined : read(object, "source");
     const evidence = object === undefined ? "" : (text(object, "evidence") ?? "");
     const rationale = object === undefined ? "" : (text(object, "rationale") ?? "");
-    const audit = { kind: isKind(kindRaw) ? kindRaw : "annotate_ledger", source: isSource(sourceRaw) ? sourceRaw : "cli", targetGoalIds: object === undefined ? [] : targets(object), evidence, rationale, invariant: { accepted: reasons.length === 0, structuralInvariantAccepted: reasons.length === 0, evidenceBackedNecessity: evidence.length > 0 && rationale.length > 0, noEasierCompletion: !weakens(proposal), rejectedReasons: reasons, reasons } };
+    const audit = {
+        kind: isKind(kindRaw) ? kindRaw : "annotate_ledger",
+        source: isSource(sourceRaw) ? sourceRaw : "cli",
+        targetGoalIds: object === undefined ? [] : targets(object),
+        evidence,
+        rationale,
+        invariant: {
+            accepted: reasons.length === 0,
+            structuralInvariantAccepted: reasons.length === 0,
+            evidenceBackedNecessity: evidence.length > 0 && rationale.length > 0,
+            noEasierCompletion: !weakens(proposal),
+            rejectedReasons: reasons,
+            reasons,
+        },
+    };
     if (object === undefined)
         return audit;
     const criterionId = text(object, "criterionId");

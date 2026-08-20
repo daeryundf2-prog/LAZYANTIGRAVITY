@@ -11,20 +11,38 @@ export async function runCheckpointConsensusStep(repoRoot, runId, fingerprint, g
         prompt: consensusPrompt,
     });
     const updatedEvents = await readRunEvents(repoRoot, runId);
-    const termEvent = updatedEvents.find((e) => (e.type === "quality_gate.consensus_passed" || e.type === "quality_gate.consensus_failed" || e.type === "quality_gate.consensus_rework_required" || e.type === "quality_gate.consensus_inconclusive") &&
+    const termEvent = updatedEvents.find((e) => (e.type === "quality_gate.consensus_passed" ||
+        e.type === "quality_gate.consensus_failed" ||
+        e.type === "quality_gate.consensus_rework_required" ||
+        e.type === "quality_gate.consensus_inconclusive") &&
         e.consensusId === dispatchRes.consensusId);
     if (termEvent) {
         if (termEvent.type === "quality_gate.consensus_passed") {
             return { finalizerAllowed: true };
         }
         if (termEvent.type === "quality_gate.consensus_inconclusive") {
-            await appendRunEvent(repoRoot, runId, "parent.hitl_required", { reason: "Consensus inconclusive: User decision required", qualityInputFingerprint: fingerprint });
-            return { finalizerAllowed: false, goalStatusOverride: "needs_user_decision", blockedReasonOverride: termEvent.reason || "Consensus inconclusive" };
+            await appendRunEvent(repoRoot, runId, "parent.hitl_required", {
+                reason: "Consensus inconclusive: User decision required",
+                qualityInputFingerprint: fingerprint,
+            });
+            return {
+                finalizerAllowed: false,
+                goalStatusOverride: "needs_user_decision",
+                blockedReasonOverride: termEvent.reason || "Consensus inconclusive",
+            };
         }
         if (termEvent.type === "quality_gate.consensus_rework_required") {
             return { finalizerAllowed: false, goalStatusOverride: "in_progress" };
         }
-        return { finalizerAllowed: false, goalStatusOverride: "failed", failedReasonOverride: termEvent.reason || "Consensus failed" };
+        return {
+            finalizerAllowed: false,
+            goalStatusOverride: "failed",
+            failedReasonOverride: termEvent.reason || "Consensus failed",
+        };
     }
-    return { finalizerAllowed: false, goalStatusOverride: "needs_user_decision", blockedReasonOverride: "Consensus could not resolve terminal state" };
+    return {
+        finalizerAllowed: false,
+        goalStatusOverride: "needs_user_decision",
+        blockedReasonOverride: "Consensus could not resolve terminal state",
+    };
 }

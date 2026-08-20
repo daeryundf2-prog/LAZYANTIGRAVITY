@@ -8,7 +8,10 @@ function required(argv: readonly string[], flag: string): string {
 	if (!value) {
 		throw new UlwLoopError(`Missing ${flag}.`, "ULW_LOOP_ARGUMENT_MISSING", { details: { flag } });
 	}
-	if ((flag === "--run-id" || flag === "--agent-id" || flag === "--consensus-id") && !/^[A-Za-z0-9._-]+$/.test(value)) {
+	if (
+		(flag === "--run-id" || flag === "--agent-id" || flag === "--consensus-id") &&
+		!/^[A-Za-z0-9._-]+$/.test(value)
+	) {
 		throw new UlwLoopError(`Invalid ${flag}: must match ^[A-Za-z0-9._-]+$`, "ULW_LOOP_ARGUMENT_INVALID", {
 			details: { flag, value },
 		});

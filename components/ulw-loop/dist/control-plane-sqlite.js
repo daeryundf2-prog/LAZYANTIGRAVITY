@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 export function computePayloadChecksum(payload) {
-    return createHash("sha256").update(JSON.stringify(payload ?? {})).digest("hex");
+    return createHash("sha256")
+        .update(JSON.stringify(payload ?? {}))
+        .digest("hex");
 }
 export function getLedgerWalDir(repoRoot, runId) {
     return join(repoRoot, ".omo", "control-plane", "runs", runId);
