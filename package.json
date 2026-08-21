@@ -18,7 +18,10 @@
 		"components/telemetry",
 		"components/start-work-continuation",
 		"components/ulw-loop",
-		"components/ultrawork"
+		"components/ultrawork",
+		"lsp-tools-mcp",
+		"ast-grep-mcp",
+		"git-bash-mcp"
 	],
 	"dependencies": {
 		"@iarna/toml": "^2.2.5",
@@ -28,6 +31,7 @@
 	"scripts": {
 		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",
 		"check": "npm run build && npm test",
+		"check:all": "npm run build && npm test && npm run test:components",
 		"doctor": "node scripts/lazyantigravity-doctor.mjs",
 		"evidence:map": "node scripts/lazyantigravity-evidence-map.mjs",
 		"hooks:report": "node scripts/lazyantigravity-hooks-report.mjs",
@@ -39,6 +43,7 @@
 		"sync:hooks": "node scripts/sync-hook-status-messages.mjs",
 		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
-		"test": "node --test test/*.test.mjs"
+		"test": "node --test test/*.test.mjs",
+		"test:components": "npm run --workspaces --if-present test"
 	}
 }

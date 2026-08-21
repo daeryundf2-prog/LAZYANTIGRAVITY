@@ -1,0 +1,5 @@
+components/*/dist/** linguist-generated=true
+lsp-tools-mcp/dist/** linguist-generated=true
+ast-grep-mcp/dist/** linguist-generated=true
+git-bash-mcp/dist/** linguist-generated=true
+*.pb linguist-generated=true

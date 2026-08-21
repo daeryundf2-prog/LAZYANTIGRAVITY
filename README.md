@@ -145,7 +145,17 @@ New-Item -ItemType File -Force -Path (Join-Path $dir ".telemetry-opt-in") | Out-
 Disable again with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1` (or `OMO_DISABLE_POSTHOG=1`).  
 `POSTHOG_API_KEY` must be provided by you when opted in; the bundle does not ship a default key.
 
+When enabled, the plugin sends a single `lazyantigravity_daily_active` event per UTC day (PostHog, `https://us.i.posthog.com`). No hardcoded API key is bundled — `DEFAULT_POSTHOG_API_KEY` is empty and `POSTHOG_API_KEY` must be supplied via environment. Collected properties are `platform`, `package_version`, `runtime`, `$os`/`$os_version`/`os_arch`/`os_type`, `cpu_count`/`cpu_model`, `total_memory_gb`, `locale`, `timezone`, `shell`, `ci`, `terminal` and a `sha256(hostname)`-based `distinctId` (or `machine-id.txt`). No code, prompts, or file contents are sent. `API_KEY` is not persisted; daily dedup state is stored at `posthog-activity.json`. See `components/telemetry/src/posthog.ts` `getSharedProperties()` for the exact list.
+
+Telemetry diagnostics are local JSONL rows written under the component data directory as `telemetry-diagnostics.jsonl`. The diagnostics writer is `components/telemetry/src/diagnostics.ts`; it records telemetry failure metadata locally and prunes old or oversized diagnostics. The evidence map verifies this local diagnostics surface by reading the source files, not by making a network call.
+
+Remote MCP servers `grep_app` (`https://mcp.grep.app`) and `context7` (`https://mcp.context7.com/mcp`) are optional HTTP surfaces. They report `offline_risk:true` in `mcp:status` and are not required for local hooks/skills — Gemini/Antigravity core works fully offline.
+
+The README limits its scope to the local files and commands above, including the telemetry controls and diagnostics surfaces they verify.
+
 ## Build
+
+Use the aggregate commands when changing this plugin root:
 
 ```bash
 npm test
