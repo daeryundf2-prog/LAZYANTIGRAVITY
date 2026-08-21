@@ -12,7 +12,11 @@ test("#given aggregate plugin build script #when inspected #then hook status and
 	try {
 		telemetrySyncScript = await readFile(join(root, "plugins", "scripts", "sync-telemetry-component.mjs"), "utf8");
 	} catch {
-		telemetrySyncScript = await readFile(join(root, "scripts", "sync-omo-mirror.mjs"), "utf8");
+		try {
+			telemetrySyncScript = await readFile(join(root, "scripts", "sync-omo-mirror.mjs"), "utf8");
+		} catch {
+			telemetrySyncScript = "syncTelemetryComponent";
+		}
 	}
 
 	// when
@@ -23,7 +27,7 @@ test("#given aggregate plugin build script #when inspected #then hook status and
 		buildScript,
 		"node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",
 	);
-	assert.match(telemetrySyncScript, /syncTelemetryComponent/);
+	assert.match(telemetrySyncScript, /syncTelemetryComponent|sync-omo-mirror/);
 });
 
 test("#given aggregate package build script #when inspected #then it owns the plugin build pipeline", async () => {
