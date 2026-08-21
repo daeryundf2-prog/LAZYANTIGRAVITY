@@ -31,9 +31,11 @@ Antigravity does **not** auto-switch models per role (`canAutoRoute: false`). Pi
 
 `model-catalog.json` encodes these hints. Routing mode is **hint-only** ??Antigravity does not auto-switch roles. Run most ULW sessions entirely on **3.7 Flash (High)**. Switch to **3.1 Pro** only when you want a second-family review, and to **Opus** only when the design problem is still ambiguous after a Flash pass.
 
-## ULW CLI on Antigravity
+## ULW in Antigravity
 
 Prefer the plugin-bundled CLI (PATH `omo` is optional):
+
+## ULW CLI on Antigravity
 
 ```powershell
 node "$env:USERPROFILE\.gemini\config\plugins\lazyantigravity\components\ulw-loop\dist\cli.js" ulw-loop help
@@ -109,11 +111,27 @@ Remote MCP servers send queries off-machine. Disable or remove them from `mcp_co
 ```bash
 npm run doctor -- --json
 npm run hooks:report -- --json
+npm run icons:report -- --json
 npm run mcp:status -- --json
 npm run provenance -- --json
+node scripts/auto-update.mjs --status --json
 npm run evidence:map -- --json
 npm test
 ```
+
+`doctor` checks aggregate readiness: manifests, hooks, MCP, skills, bundles, versions, and warnings.
+
+`hooks:report` inventories aggregate and component hooks with status messages, timeout, fallback, and failure-policy fields.
+
+`icons:report` records reviewed OSS icon-library candidates for LazyAntigravity. It currently tracks Reicon as an MIT-normalized candidate, recommends keeping it in the report/docs surface, and defers runtime dependency adoption until a concrete UI call site and icon provenance plan exist.
+
+`mcp:status` reads `.mcp.json` and `mcp_config.json`, classifies local and remote MCP entries, and checks local targets.
+
+`provenance` maps generated, vendored, symlinked, source-root, and build-owned surfaces without modifying them.
+
+`auto-update --status --json` reports a non-mutating status/dry-run plan. It does not install packages or run an update command.
+
+`evidence:map` parses README and skill text as inert local files, checks local script/config evidence, and marks each mapped claim as `verified`, `deferred`, or `removed`.
 
 Claims in docs should map to local files/scripts. Prefer these commands over marketing checklists.
 
@@ -125,6 +143,7 @@ Nothing is sent unless you opt in.
 # env (any one)
 export LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1
 export OMO_SEND_ANONYMOUS_TELEMETRY=1
+export OMO_CODEX_SEND_ANONYMOUS_TELEMETRY=1
 ```
 
 Marker file:
@@ -142,7 +161,7 @@ New-Item -ItemType Directory -Force -Path $dir | Out-Null
 New-Item -ItemType File -Force -Path (Join-Path $dir ".telemetry-opt-in") | Out-Null
 ```
 
-Disable again with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1` (or `OMO_DISABLE_POSTHOG=1`).  
+Disable again with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1` (or `OMO_DISABLE_POSTHOG=1` or `OMO_CODEX_DISABLE_POSTHOG=1`).  
 `POSTHOG_API_KEY` must be provided by you when opted in; the bundle does not ship a default key.
 
 When enabled, the plugin sends a single `lazyantigravity_daily_active` event per UTC day (PostHog, `https://us.i.posthog.com`). No hardcoded API key is bundled — `DEFAULT_POSTHOG_API_KEY` is empty and `POSTHOG_API_KEY` must be supplied via environment. Collected properties are `platform`, `package_version`, `runtime`, `$os`/`$os_version`/`os_arch`/`os_type`, `cpu_count`/`cpu_model`, `total_memory_gb`, `locale`, `timezone`, `shell`, `ci`, `terminal` and a `sha256(hostname)`-based `distinctId` (or `machine-id.txt`). No code, prompts, or file contents are sent. `API_KEY` is not persisted; daily dedup state is stored at `posthog-activity.json`. See `components/telemetry/src/posthog.ts` `getSharedProperties()` for the exact list.

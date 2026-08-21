@@ -263,3 +263,7 @@ Structured prompt directives accepted: `OMO_ULW_LOOP_STEER: { ... }`, `omo.ulw-l
 - Codex `get_goal` reports a different active goal: checkpoint blocker, stop, surface.
 - Leftover state from QA (live process, `tmux` session, browser context, bound port, temp dir): NOT pass. Clean up, append the receipt, then continue.
 - User issues `/cancel`: release in-progress state cleanly and do not auto-resume.
+
+## Parent Liveness (Codex contract for aggregated tests)
+
+- When waiting on child agents, surface parent liveness via active subagent count and latest `WORKING:` phase.

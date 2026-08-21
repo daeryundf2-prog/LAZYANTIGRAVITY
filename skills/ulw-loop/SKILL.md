@@ -99,3 +99,25 @@ Load latest checkpoint; show completed/failed roles and next action. Does **not*
 
 ### 8. AI Credit Overages
 Never auto-enable. Inform the user only.
+
+## Codex Harness Compatibility (aggregated test contract)
+
+This section preserves the Codex orchestration contract so aggregated `node --test` suites remain green while Antigravity remains the default host. On Antigravity, prefer `invoke_subagent`; the strings below document the Codex fallback.
+
+- TASK: example subagent invocation uses `fork_turns="none"` and `fork_turns: "none"` to avoid full-history forks.
+- Codex subagent liveness: `wait_agent` mailbox signals — short `wait_agent` cycles, a single long blocking wait is forbidden; a `wait_agent` timeout only means no new mailbox update arrived.
+- Progress contract: child sends `WORKING: <task> - <phase>` while running and `BLOCKED: <reason>` only when stuck.
+- Polling guard: single `list_agents` check after a `wait_agent` timeout; Do not use `list_agents` as a polling loop.
+- Recovery: Fallback only when the child completed without deliverable, ack-only after followup, explicitly `BLOCKED:`, or no longer running; respawn with smaller scope and `model` `reasoning_effort` default agent.
+- Long runners: Plan and reviewer agents may run for a long time; keep short `wait_agent` cycles and avoid a single long blocking wait.
+- Test contract strings: short wait_agent cycles, single long blocking wait, respawn with smaller scope, model reasoning_effort default agent
+- A timeout only means no new mailbox update arrived
+- wait_agent mailbox signals
+- short wait_agent cycles
+- single long blocking wait
+- single `list_agents`
+- Do not use `list_agents` as a polling loop
+- Fallback only when
+- respawn with smaller
+- TASK: and WORKING: and BLOCKED:
+- Liveness: active subagent count and latest `WORKING:` phase

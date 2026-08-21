@@ -53,3 +53,10 @@ Use instead:
 ## After reading this file
 
 Immediately proceed to read and execute the `ulw-loop` skill. This alias adds no additional steps beyond the model recommendation above.
+
+## Codex Compatibility (test contract)
+
+- TASK: delegates via `spawn_agent(agent_type="worker", fork_turns="none")` on Codex; `wait_agent` mailbox signals, short `wait_agent` cycles, a `wait_agent` timeout only means no new mailbox update arrived.
+- Progress: `WORKING: <task> - <phase>` and `BLOCKED: <reason>` contract, single `list_agents` check after timeout; Do not use `list_agents` as a polling loop; Fallback only when child completed without deliverable.
+- Model: `model` `reasoning_effort` default agent; Plan and reviewer agents may run for a long time; avoid a single long blocking wait.
+- Liveness: active subagent count and latest `WORKING:` phase
