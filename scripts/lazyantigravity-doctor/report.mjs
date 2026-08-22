@@ -171,6 +171,11 @@ async function inspectSkills(root, context) {
 		const exists = await pathExists(root, manifestPath);
 		if (!exists) {
 			context.warn("skills", "missing_skill_manifest", `${manifestPath} is not present`);
+		} else {
+			const content = await readFile(join(root, manifestPath), "utf8");
+			if (Buffer.byteLength(content, "utf8") > 30000) {
+				context.warn("skills", "instruction_truncation_hazard", `${manifestPath} exceeds 30KB instruction budget and risks model truncation`);
+			}
 		}
 		skills.push({ name: entry.name, manifest: manifestPath, exists });
 	}
