@@ -21,8 +21,12 @@ function walkHooks(value, path = "hooks") {
 }
 
 export async function verifyHookPolicies(path = join(root, "hooks.json")) {
-	const manifest = JSON.parse(await readFile(path, "utf8"));
-	const violations = walkHooks(manifest);
+	const paths = path === join(root, "hooks.json") ? [path, join(root, "hooks", "hooks.json")] : [path];
+	const violations = [];
+	for (const manifestPath of paths) {
+		const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+		violations.push(...walkHooks(manifest, manifestPath));
+	}
 	if (violations.length > 0) throw new Error(violations.join("\n"));
 	return true;
 }

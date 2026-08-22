@@ -11,7 +11,10 @@ export declare class DaemonServer {
     private startTime;
     private token;
     private consumedRequestIds;
+    private nonceLedgerPath;
     constructor(config: DaemonConfig);
+    private loadNonceLedger;
+    private persistNonce;
     start(): Promise<void>;
     stop(): Promise<void>;
     private cleanup;

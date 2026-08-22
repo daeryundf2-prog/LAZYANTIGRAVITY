@@ -1,6 +1,6 @@
-import { chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { join } from "node:path";
+import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
 function ensurePrivateDirectory(path) {
@@ -50,10 +50,35 @@ export class DaemonServer {
     startTime = Date.now();
     token;
     consumedRequestIds = new Set();
+    nonceLedgerPath;
     constructor(config) {
         this.config = config;
         ensureToken(config.tokenPath);
         this.token = readFileSync(config.tokenPath, "utf8").trim();
+        this.nonceLedgerPath = `${config.pidPath}.nonces`;
+        this.loadNonceLedger();
+    }
+    loadNonceLedger() {
+        if (!existsSync(this.nonceLedgerPath))
+            return;
+        try {
+            for (const line of readFileSync(this.nonceLedgerPath, "utf8").split(/\r?\n/)) {
+                const id = line.trim();
+                if (id)
+                    this.consumedRequestIds.add(id);
+            }
+        }
+        catch { /* fail closed at request time if the ledger cannot be read */ }
+    }
+    persistNonce(requestId) {
+        try {
+            appendFileSync(this.nonceLedgerPath, `${requestId}\n`, { encoding: "utf8", mode: 0o600 });
+            chmodSync(this.nonceLedgerPath, 0o600);
+        }
+        catch {
+            this.consumedRequestIds.delete(requestId);
+            throw new Error("Unable to persist mutation nonce");
+        }
     }
     start() {
         return new Promise((resolve, reject) => {
@@ -150,6 +175,7 @@ export class DaemonServer {
                 if (this.consumedRequestIds.has(requestId))
                     return { status: "error", error: "Replay rejected" };
                 this.consumedRequestIds.add(requestId);
+                this.persistNonce(requestId);
             }
             const key = typeof rawKey === "string" ? rawKey : undefined;
             const namespace = typeof rawNamespace === "string" ? rawNamespace : rawNamespace === undefined ? undefined : null;

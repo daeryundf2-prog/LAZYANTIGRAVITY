@@ -1,6 +1,6 @@
-import { chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { join } from "node:path";
+import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer, type Server, type Socket } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
 
@@ -60,11 +60,34 @@ export class DaemonServer {
 	private startTime = Date.now();
 	private token: string;
 	private consumedRequestIds = new Set<string>();
+	private nonceLedgerPath: string;
 
 	constructor(config: DaemonConfig) {
 		this.config = config;
 		ensureToken(config.tokenPath);
 		this.token = readFileSync(config.tokenPath, "utf8").trim();
+		this.nonceLedgerPath = `${config.pidPath}.nonces`;
+		this.loadNonceLedger();
+	}
+
+	private loadNonceLedger(): void {
+		if (!existsSync(this.nonceLedgerPath)) return;
+		try {
+			for (const line of readFileSync(this.nonceLedgerPath, "utf8").split(/\r?\n/)) {
+				const id = line.trim();
+				if (id) this.consumedRequestIds.add(id);
+			}
+		} catch { /* fail closed at request time if the ledger cannot be read */ }
+	}
+
+	private persistNonce(requestId: string): void {
+		try {
+			appendFileSync(this.nonceLedgerPath, `${requestId}\n`, { encoding: "utf8", mode: 0o600 });
+			chmodSync(this.nonceLedgerPath, 0o600);
+		} catch {
+			this.consumedRequestIds.delete(requestId);
+			throw new Error("Unable to persist mutation nonce");
+		}
 	}
 
 	public start(): Promise<void> {
@@ -155,8 +178,9 @@ export class DaemonServer {
 			const { cmd, key: rawKey, value, options: rawOptions, namespace: rawNamespace } = req;
 			const requestId = typeof req["requestId"] === "string" ? req["requestId"] : undefined;
 			if ((cmd === "SET" || cmd === "DEL" || cmd === "CLEAR") && requestId !== undefined) {
-				if (this.consumedRequestIds.has(requestId)) return { status: "error", error: "Replay rejected" };
-				this.consumedRequestIds.add(requestId);
+					if (this.consumedRequestIds.has(requestId)) return { status: "error", error: "Replay rejected" };
+					this.consumedRequestIds.add(requestId);
+					this.persistNonce(requestId);
 			}
 			const key = typeof rawKey === "string" ? rawKey : undefined;
 			const namespace = typeof rawNamespace === "string" ? rawNamespace : rawNamespace === undefined ? undefined : null;
