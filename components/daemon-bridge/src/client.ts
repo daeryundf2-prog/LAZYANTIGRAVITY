@@ -1,5 +1,5 @@
-import { createConnection, Socket } from "node:net";
 import { existsSync, readFileSync } from "node:fs";
+import { createConnection } from "node:net";
 import { DaemonConfig, getDaemonPaths } from "./server.js";
 import { BlackboardEntry } from "./blackboard.js";
 
@@ -11,42 +11,39 @@ export class DaemonClient {
 	}
 
 	public isRunning(): boolean {
-		if (process.platform === "win32") return true; // Probe on connect
+		if (process.platform === "win32") return true;
 		return existsSync(this.config.socketPath);
 	}
 
 	public async send<T = unknown>(command: Record<string, unknown>, timeoutMs = 2000): Promise<T> {
+		const token = readFileSync(this.config.tokenPath, "utf8").trim();
 		return new Promise((resolve, reject) => {
 			const socket = createConnection(this.config.socketPath);
 			let responseData = "";
-
 			const timer = setTimeout(() => {
 				socket.destroy();
 				reject(new Error(`IPC daemon timeout after ${timeoutMs}ms`));
 			}, timeoutMs);
 
 			socket.on("connect", () => {
-				socket.write(`${JSON.stringify(command)}\n`);
-			});
-
-			socket.on("data", (chunk) => {
-				responseData += chunk.toString("utf8");
-				if (responseData.includes("\n")) {
-					clearTimeout(timer);
-					socket.end();
-					try {
-						const res = JSON.parse(responseData.trim());
-						resolve(res as T);
-					} catch (e) {
-						reject(e);
-					}
-				}
-			});
-
-			socket.on("error", (err) => {
+				socket.write(`${JSON.stringify({ ...command, token })}\n`);
+		});
+		socket.on("data", (chunk) => {
+			responseData += chunk.toString("utf8");
+			if (responseData.includes("\n")) {
 				clearTimeout(timer);
-				reject(err);
-			});
+				socket.end();
+				try {
+					resolve(JSON.parse(responseData.trim()) as T);
+				} catch (error) {
+					reject(error);
+				}
+			}
+		});
+		socket.on("error", (error) => {
+			clearTimeout(timer);
+			reject(error);
+		});
 		});
 	}
 

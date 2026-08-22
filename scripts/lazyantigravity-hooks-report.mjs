@@ -145,6 +145,8 @@ function classifyFailurePolicy(policy) {
 	const normalized = policy.trim().toUpperCase();
 	if (normalized === "FAIL_OPEN") return "fail_open";
 	if (normalized === "FAIL_SAFE") return "fail_safe";
+	if (normalized === "FAIL_CLOSED") return "fail_closed";
+	if (normalized === "HITL_REQUIRED") return "hitl_required";
 	return "unknown";
 }
 

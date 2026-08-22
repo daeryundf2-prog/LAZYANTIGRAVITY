@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { SharedBlackboard } from "../dist/blackboard.js";
@@ -32,7 +32,12 @@ test("DaemonServer and DaemonClient exchange IPC commands over local socket", as
 		const server = new DaemonServer(config);
 		await server.start();
 
-		const client = new DaemonClient(config);
+					const client = new DaemonClient(config);
+			if (process.platform !== "win32") {
+				assert.equal(statSync(config.socketPath).mode & 0o777, 0o600);
+				assert.equal(statSync(config.tokenPath).mode & 0o777, 0o600);
+			}
+
 		const status = await client.status();
 		assert.ok(status);
 		assert.equal(status.status, "ok");
@@ -47,6 +52,24 @@ test("DaemonServer and DaemonClient exchange IPC commands over local socket", as
 		const list = await client.list();
 		assert.equal(list.length, 1);
 
+		await server.stop();
+		} finally {
+			rmSync(tempDir, { recursive: true, force: true });
+		}
+	});
+
+
+test("DaemonServer rejects IPC requests with an invalid token", async () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "daemon-ipc-auth-test-"));
+	try {
+		const config = getDaemonPaths(tempDir);
+		const server = new DaemonServer(config);
+		await server.start();
+		const badTokenPath = join(tempDir, "bad.token");
+		writeFileSync(badTokenPath, "invalid-token", { encoding: "utf8", mode: 0o600 });
+		const client = new DaemonClient({ ...config, tokenPath: badTokenPath });
+		const response = await client.send({ cmd: "STATUS" });
+		assert.deepEqual(response, { status: "error", error: "Unauthorized" });
 		await server.stop();
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });

@@ -39,7 +39,7 @@ test("#given aggregate and component hooks #when JSON report is requested #then 
 		assert.equal(typeof hook.timeout, "number");
 		assert.equal(typeof hook.status_message, "string");
 		assert.notEqual(hook.status_message.trim(), "");
-		assert.match(hook.failure_policy, /^(fail_open|fail_safe|none)$/);
+		assert.match(hook.failure_policy, /^(fail_open|fail_safe|fail_closed|hitl_required|none)$/);
 		assert.match(hook.fallback_payload, /^(present|absent)$/);
 		assert.match(hook.product_label_drift, /^(none|missing|legacy|unexpected)$/);
 		if (hook.product_label_drift === "none") {

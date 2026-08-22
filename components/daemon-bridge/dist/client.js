@@ -1,5 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
 import { createConnection } from "node:net";
-import { existsSync } from "node:fs";
 import { getDaemonPaths } from "./server.js";
 export class DaemonClient {
     config;
@@ -8,10 +8,11 @@ export class DaemonClient {
     }
     isRunning() {
         if (process.platform === "win32")
-            return true; // Probe on connect
+            return true;
         return existsSync(this.config.socketPath);
     }
     async send(command, timeoutMs = 2000) {
+        const token = readFileSync(this.config.tokenPath, "utf8").trim();
         return new Promise((resolve, reject) => {
             const socket = createConnection(this.config.socketPath);
             let responseData = "";
@@ -20,7 +21,7 @@ export class DaemonClient {
                 reject(new Error(`IPC daemon timeout after ${timeoutMs}ms`));
             }, timeoutMs);
             socket.on("connect", () => {
-                socket.write(`${JSON.stringify(command)}\n`);
+                socket.write(`${JSON.stringify({ ...command, token })}\n`);
             });
             socket.on("data", (chunk) => {
                 responseData += chunk.toString("utf8");
@@ -28,17 +29,16 @@ export class DaemonClient {
                     clearTimeout(timer);
                     socket.end();
                     try {
-                        const res = JSON.parse(responseData.trim());
-                        resolve(res);
+                        resolve(JSON.parse(responseData.trim()));
                     }
-                    catch (e) {
-                        reject(e);
+                    catch (error) {
+                        reject(error);
                     }
                 }
             });
-            socket.on("error", (err) => {
+            socket.on("error", (error) => {
                 clearTimeout(timer);
-                reject(err);
+                reject(error);
             });
         });
     }
