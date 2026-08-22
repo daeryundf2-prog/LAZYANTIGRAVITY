@@ -39,6 +39,27 @@ function parseChecksums(rawChecksums) {
     }
     return result;
 }
+function parseExecutionBinding(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw))
+        return undefined;
+    const value = raw;
+    const strings = ["requestId", "runId", "sessionId", "toolCallId", "startedAt", "finishedAt", "stdoutFingerprint", "stderrFingerprint"];
+    if (!strings.every((key) => typeof value[key] === "string" && value[key].trim() !== ""))
+        return undefined;
+    if (typeof value["exitCode"] !== "number" || !Number.isInteger(value["exitCode"]))
+        return undefined;
+    return {
+        requestId: value["requestId"],
+        runId: value["runId"],
+        sessionId: value["sessionId"],
+        toolCallId: value["toolCallId"],
+        startedAt: value["startedAt"],
+        finishedAt: value["finishedAt"],
+        exitCode: value["exitCode"],
+        stdoutFingerprint: value["stdoutFingerprint"],
+        stderrFingerprint: value["stderrFingerprint"],
+    };
+}
 function parseCommandAudits(rawAudits) {
     if (!Array.isArray(rawAudits))
         return [];
@@ -113,6 +134,7 @@ export function validateStrictEvidence(evidence) {
             };
         }
     }
+    const executionBinding = parseExecutionBinding(raw["executionBinding"]);
     const envelope = {
         status,
         summary,
@@ -125,6 +147,7 @@ export function validateStrictEvidence(evidence) {
         fileChecksums: parseChecksums(raw["fileChecksums"]),
         commandsRun: Array.isArray(raw["commandsRun"]) ? raw["commandsRun"] : [],
         commandAudits: parseCommandAudits(raw["commandAudits"]),
+        ...(executionBinding !== undefined ? { executionBinding } : {}),
         dryRunSafety: Boolean(raw["dryRunSafety"]),
     };
     return { valid: true, envelope };

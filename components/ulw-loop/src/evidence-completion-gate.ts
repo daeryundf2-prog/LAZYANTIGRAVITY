@@ -23,6 +23,14 @@ export async function assertGroundTruthEvidence(
 	if (!envelope.readRanges?.length || !envelope.fileChecksums?.length || !envelope.commandsRun?.length || !envelope.commandAudits?.length) {
 		throw new UlwLoopError("Completion evidence must include readRanges, fileChecksums, commandsRun, and commandAudits.", "ULW_LOOP_EVIDENCE_INCOMPLETE");
 	}
+	const binding = envelope.executionBinding;
+	if (binding === undefined || binding.exitCode !== 0) {
+		throw new UlwLoopError("Completion evidence must include a Host execution binding with exitCode 0.", "ULW_LOOP_EVIDENCE_BINDING_REQUIRED");
+	}
+	const completedEvent = [...events].reverse().find((event) => event.type === "agent.completed_reported");
+	if (completedEvent === undefined || binding.runId !== completedEvent.runId) {
+		throw new UlwLoopError("Evidence execution binding does not belong to the current run.", "ULW_LOOP_EVIDENCE_BINDING_MISMATCH");
+	}
 	if (claimedEvidence !== undefined) {
 		const claimed = [...claimedEvidence.filesChanged].sort();
 		const attested = [...(envelope.filesChanged ?? [])].sort();

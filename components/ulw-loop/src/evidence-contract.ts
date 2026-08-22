@@ -22,6 +22,18 @@ export interface CommandExecutionAudit {
 	readonly outputSnippet?: string;
 }
 
+export interface ExecutionBinding {
+	readonly requestId: string;
+	readonly runId: string;
+	readonly sessionId: string;
+	readonly toolCallId: string;
+	readonly startedAt: string;
+	readonly finishedAt: string;
+	readonly exitCode: number;
+	readonly stdoutFingerprint: string;
+	readonly stderrFingerprint: string;
+}
+
 export interface StrictEvidenceEnvelope {
 	readonly status: EvidenceStatus;
 	readonly summary: string;
@@ -34,6 +46,7 @@ export interface StrictEvidenceEnvelope {
 	readonly fileChecksums?: readonly FileChecksum[];
 	readonly commandsRun?: readonly string[];
 	readonly commandAudits?: readonly CommandExecutionAudit[];
+	readonly executionBinding?: ExecutionBinding;
 	readonly dryRunSafety?: boolean;
 }
 
@@ -79,6 +92,25 @@ function parseChecksums(rawChecksums: unknown): FileChecksum[] {
 		}
 	}
 	return result;
+}
+
+function parseExecutionBinding(raw: unknown): ExecutionBinding | undefined {
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+	const value = raw as Record<string, unknown>;
+	const strings = ["requestId", "runId", "sessionId", "toolCallId", "startedAt", "finishedAt", "stdoutFingerprint", "stderrFingerprint"];
+	if (!strings.every((key) => typeof value[key] === "string" && (value[key] as string).trim() !== "")) return undefined;
+	if (typeof value["exitCode"] !== "number" || !Number.isInteger(value["exitCode"])) return undefined;
+	return {
+		requestId: value["requestId"] as string,
+		runId: value["runId"] as string,
+		sessionId: value["sessionId"] as string,
+		toolCallId: value["toolCallId"] as string,
+		startedAt: value["startedAt"] as string,
+		finishedAt: value["finishedAt"] as string,
+		exitCode: value["exitCode"] as number,
+		stdoutFingerprint: value["stdoutFingerprint"] as string,
+		stderrFingerprint: value["stderrFingerprint"] as string,
+	};
 }
 
 function parseCommandAudits(rawAudits: unknown): CommandExecutionAudit[] {
@@ -162,6 +194,7 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 		}
 	}
 
+	const executionBinding = parseExecutionBinding(raw["executionBinding"]);
 	const envelope: StrictEvidenceEnvelope = {
 		status,
 		summary,
@@ -174,6 +207,7 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 		fileChecksums: parseChecksums(raw["fileChecksums"]),
 		commandsRun: Array.isArray(raw["commandsRun"]) ? (raw["commandsRun"] as string[]) : [],
 		commandAudits: parseCommandAudits(raw["commandAudits"]),
+		...(executionBinding !== undefined ? { executionBinding } : {}),
 		dryRunSafety: Boolean(raw["dryRunSafety"]),
 	};
 

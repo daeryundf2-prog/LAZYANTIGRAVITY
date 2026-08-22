@@ -36,6 +36,16 @@ function verifyDiskFilesAndHashes(raw, cwd) {
         return "Evidence must contain workspaceFingerprint";
     if (typeof raw["source"] !== "string" || raw["source"].trim() === "")
         return "Evidence must contain source";
+    const binding = raw["executionBinding"];
+    if (!binding || typeof binding !== "object" || Array.isArray(binding))
+        return "Evidence must contain executionBinding";
+    const bindingRecord = binding;
+    for (const key of ["requestId", "runId", "sessionId", "toolCallId", "startedAt", "finishedAt", "stdoutFingerprint", "stderrFingerprint"]) {
+        if (typeof bindingRecord[key] !== "string" || bindingRecord[key].trim() === "")
+            return `Evidence executionBinding missing ${key}`;
+    }
+    if (bindingRecord["exitCode"] !== 0)
+        return "Evidence executionBinding must have exitCode 0";
     const root = resolve(cwd);
     const isInsideRoot = (path) => {
         const rel = relative(root, resolve(path));
@@ -123,6 +133,7 @@ export function evolveRules(cwd = process.cwd(), options = {}) {
             workspaceFingerprint: validation.raw["workspaceFingerprint"],
             fileChecksums: validation.raw["fileChecksums"],
             commandAudits: validation.raw["commandAudits"],
+            executionBinding: validation.raw["executionBinding"],
             content: `[자가학습 데이터·사용자 승인됨] ${safeRule}`,
         };
         appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, { encoding: "utf8", mode: 0o600 });

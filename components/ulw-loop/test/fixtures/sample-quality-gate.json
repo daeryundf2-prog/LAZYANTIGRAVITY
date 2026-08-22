@@ -29,6 +29,18 @@
 			{ "command": "npm test", "exitCode": 0 },
 			{ "command": "npm run build", "exitCode": 0 }
 		],
-		"workspaceFingerprint": "fixture-generated"
+					"workspaceFingerprint": "fixture-generated",
+			"executionBinding": {
+				"requestId": "fixture-request",
+				"runId": "default-run",
+				"sessionId": "fixture-session",
+				"toolCallId": "fixture-tool-call",
+				"startedAt": "2026-05-23T00:00:00.000Z",
+				"finishedAt": "2026-05-23T00:00:01.000Z",
+				"exitCode": 0,
+				"stdoutFingerprint": "fixture-stdout-fingerprint",
+				"stderrFingerprint": "fixture-stderr-fingerprint"
+			}
+
 	}
 }

@@ -17,6 +17,17 @@ export interface CommandExecutionAudit {
     readonly exitCode?: number;
     readonly outputSnippet?: string;
 }
+export interface ExecutionBinding {
+    readonly requestId: string;
+    readonly runId: string;
+    readonly sessionId: string;
+    readonly toolCallId: string;
+    readonly startedAt: string;
+    readonly finishedAt: string;
+    readonly exitCode: number;
+    readonly stdoutFingerprint: string;
+    readonly stderrFingerprint: string;
+}
 export interface StrictEvidenceEnvelope {
     readonly status: EvidenceStatus;
     readonly summary: string;
@@ -29,6 +40,7 @@ export interface StrictEvidenceEnvelope {
     readonly fileChecksums?: readonly FileChecksum[];
     readonly commandsRun?: readonly string[];
     readonly commandAudits?: readonly CommandExecutionAudit[];
+    readonly executionBinding?: ExecutionBinding;
     readonly dryRunSafety?: boolean;
 }
 export interface EvidenceValidationResult {

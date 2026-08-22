@@ -35,6 +35,13 @@ function verifyDiskFilesAndHashes(raw: Record<string, unknown>, cwd: string): st
 	if (!Array.isArray(raw["commandsRun"]) || raw["commandsRun"].length === 0) return "Evidence must contain commandsRun";
 	if (typeof raw["workspaceFingerprint"] !== "string" || raw["workspaceFingerprint"].trim() === "") return "Evidence must contain workspaceFingerprint";
 	if (typeof raw["source"] !== "string" || raw["source"].trim() === "") return "Evidence must contain source";
+	const binding = raw["executionBinding"];
+	if (!binding || typeof binding !== "object" || Array.isArray(binding)) return "Evidence must contain executionBinding";
+	const bindingRecord = binding as Record<string, unknown>;
+	for (const key of ["requestId", "runId", "sessionId", "toolCallId", "startedAt", "finishedAt", "stdoutFingerprint", "stderrFingerprint"]) {
+		if (typeof bindingRecord[key] !== "string" || (bindingRecord[key] as string).trim() === "") return `Evidence executionBinding missing ${key}`;
+	}
+	if (bindingRecord["exitCode"] !== 0) return "Evidence executionBinding must have exitCode 0";
 
 	const root = resolve(cwd);
 	const isInsideRoot = (path: string): boolean => {
@@ -107,6 +114,7 @@ export function evolveRules(cwd: string = process.cwd(), options: EvolveOptions 
 			workspaceFingerprint: validation.raw["workspaceFingerprint"],
 			fileChecksums: validation.raw["fileChecksums"],
 			commandAudits: validation.raw["commandAudits"],
+			executionBinding: validation.raw["executionBinding"],
 			content: `[자가학습 데이터·사용자 승인됨] ${safeRule}`,
 		};
 		appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, { encoding: "utf8", mode: 0o600 });
