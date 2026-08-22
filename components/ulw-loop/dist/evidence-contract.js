@@ -70,10 +70,14 @@ function parseCommandAudits(rawAudits) {
             const command = record["command"].trim();
             const exitCode = typeof record["exitCode"] === "number" ? record["exitCode"] : undefined;
             const outputSnippet = typeof record["outputSnippet"] === "string" ? record["outputSnippet"] : undefined;
+            const stdoutFingerprint = typeof record["stdoutFingerprint"] === "string" ? record["stdoutFingerprint"].trim().toLowerCase() : undefined;
+            const stderrFingerprint = typeof record["stderrFingerprint"] === "string" ? record["stderrFingerprint"].trim().toLowerCase() : undefined;
             result.push({
                 command,
                 ...(exitCode !== undefined ? { exitCode } : {}),
                 ...(outputSnippet !== undefined ? { outputSnippet } : {}),
+                ...(stdoutFingerprint !== undefined ? { stdoutFingerprint } : {}),
+                ...(stderrFingerprint !== undefined ? { stderrFingerprint } : {}),
             });
         }
     }

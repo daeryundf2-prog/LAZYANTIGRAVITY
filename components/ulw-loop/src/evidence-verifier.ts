@@ -107,6 +107,12 @@ export function verifyEvidenceGroundTruth(
 			if (audit.exitCode !== 0) {
 				nonZeroExitCommands.push(`Command "${audit.command}" exited with non-zero code ${audit.exitCode}`);
 			}
+			if (audit.stdoutFingerprint !== undefined && !/^[a-f0-9]{64}$/i.test(audit.stdoutFingerprint)) {
+				nonZeroExitCommands.push(`Invalid stdout fingerprint for "${audit.command}"`);
+			}
+			if (audit.stderrFingerprint !== undefined && !/^[a-f0-9]{64}$/i.test(audit.stderrFingerprint)) {
+				nonZeroExitCommands.push(`Invalid stderr fingerprint for "${audit.command}"`);
+			}
 		}
 	}
 
