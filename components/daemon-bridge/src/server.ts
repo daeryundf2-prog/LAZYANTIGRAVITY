@@ -59,6 +59,7 @@ export class DaemonServer {
 	private config: DaemonConfig;
 	private startTime = Date.now();
 	private token: string;
+	private consumedRequestIds = new Set<string>();
 
 	constructor(config: DaemonConfig) {
 		this.config = config;
@@ -69,11 +70,11 @@ export class DaemonServer {
 	public start(): Promise<void> {
 		return new Promise((resolve, reject) => {
 			if (process.platform !== "win32" && existsSync(this.config.socketPath)) {
-				try {
-					unlinkSync(this.config.socketPath);
-				} catch {
-					// A live daemon or a protected socket must fail at listen below.
+				if (this.isExistingDaemonAlive()) {
+					reject(new Error("An active daemon already owns this socket"));
+					return;
 				}
+				try { unlinkSync(this.config.socketPath); } catch { /* listen reports protected sockets */ }
 			}
 
 			this.server = createServer((socket) => this.handleConnection(socket));
@@ -138,11 +139,25 @@ export class DaemonServer {
 		});
 	}
 
+	private isExistingDaemonAlive(): boolean {
+		try {
+			const pid = Number.parseInt(readFileSync(this.config.pidPath, "utf8").trim(), 10);
+			if (!Number.isInteger(pid) || pid <= 0) return false;
+			process.kill(pid, 0);
+			return true;
+		} catch { return false; }
+	}
+
 	private handleCommand(line: string): unknown {
 		try {
 			const req = JSON.parse(line) as Record<string, unknown>;
 			if (!tokenMatches(this.token, req["token"])) return { status: "error", error: "Unauthorized" };
 			const { cmd, key: rawKey, value, options: rawOptions, namespace: rawNamespace } = req;
+			const requestId = typeof req["requestId"] === "string" ? req["requestId"] : undefined;
+			if ((cmd === "SET" || cmd === "DEL" || cmd === "CLEAR") && requestId !== undefined) {
+				if (this.consumedRequestIds.has(requestId)) return { status: "error", error: "Replay rejected" };
+				this.consumedRequestIds.add(requestId);
+			}
 			const key = typeof rawKey === "string" ? rawKey : undefined;
 			const namespace = typeof rawNamespace === "string" ? rawNamespace : rawNamespace === undefined ? undefined : null;
 			const options = rawOptions === undefined ? undefined : rawOptions && typeof rawOptions === "object" && !Array.isArray(rawOptions) ? rawOptions as { ttlMs?: number; agentId?: string; namespace?: string } : null;

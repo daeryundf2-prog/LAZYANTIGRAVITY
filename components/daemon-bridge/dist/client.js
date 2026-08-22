@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { createConnection } from "node:net";
 import { getDaemonPaths } from "./server.js";
 export class DaemonClient {
@@ -21,7 +22,7 @@ export class DaemonClient {
                 reject(new Error(`IPC daemon timeout after ${timeoutMs}ms`));
             }, timeoutMs);
             socket.on("connect", () => {
-                socket.write(`${JSON.stringify({ ...command, token })}\n`);
+                socket.write(`${JSON.stringify({ ...command, token, requestId: command["requestId"] ?? randomUUID() })}\n`);
             });
             socket.on("data", (chunk) => {
                 responseData += chunk.toString("utf8");

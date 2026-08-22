@@ -10,10 +10,12 @@ export declare class DaemonServer {
     private config;
     private startTime;
     private token;
+    private consumedRequestIds;
     constructor(config: DaemonConfig);
     start(): Promise<void>;
     stop(): Promise<void>;
     private cleanup;
     private handleConnection;
+    private isExistingDaemonAlive;
     private handleCommand;
 }

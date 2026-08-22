@@ -49,6 +49,7 @@ export class DaemonServer {
     config;
     startTime = Date.now();
     token;
+    consumedRequestIds = new Set();
     constructor(config) {
         this.config = config;
         ensureToken(config.tokenPath);
@@ -57,12 +58,14 @@ export class DaemonServer {
     start() {
         return new Promise((resolve, reject) => {
             if (process.platform !== "win32" && existsSync(this.config.socketPath)) {
+                if (this.isExistingDaemonAlive()) {
+                    reject(new Error("An active daemon already owns this socket"));
+                    return;
+                }
                 try {
                     unlinkSync(this.config.socketPath);
                 }
-                catch {
-                    // A live daemon or a protected socket must fail at listen below.
-                }
+                catch { /* listen reports protected sockets */ }
             }
             this.server = createServer((socket) => this.handleConnection(socket));
             this.server.on("error", (err) => reject(err));
@@ -124,12 +127,30 @@ export class DaemonServer {
             }
         });
     }
+    isExistingDaemonAlive() {
+        try {
+            const pid = Number.parseInt(readFileSync(this.config.pidPath, "utf8").trim(), 10);
+            if (!Number.isInteger(pid) || pid <= 0)
+                return false;
+            process.kill(pid, 0);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
     handleCommand(line) {
         try {
             const req = JSON.parse(line);
             if (!tokenMatches(this.token, req["token"]))
                 return { status: "error", error: "Unauthorized" };
             const { cmd, key: rawKey, value, options: rawOptions, namespace: rawNamespace } = req;
+            const requestId = typeof req["requestId"] === "string" ? req["requestId"] : undefined;
+            if ((cmd === "SET" || cmd === "DEL" || cmd === "CLEAR") && requestId !== undefined) {
+                if (this.consumedRequestIds.has(requestId))
+                    return { status: "error", error: "Replay rejected" };
+                this.consumedRequestIds.add(requestId);
+            }
             const key = typeof rawKey === "string" ? rawKey : undefined;
             const namespace = typeof rawNamespace === "string" ? rawNamespace : rawNamespace === undefined ? undefined : null;
             const options = rawOptions === undefined ? undefined : rawOptions && typeof rawOptions === "object" && !Array.isArray(rawOptions) ? rawOptions : null;

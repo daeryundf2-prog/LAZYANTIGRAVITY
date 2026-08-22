@@ -59,6 +59,24 @@ test("DaemonServer and DaemonClient exchange IPC commands over local socket", as
 	});
 
 
+test("DaemonServer rejects replayed mutating request IDs", async () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "daemon-ipc-replay-test-"));
+	try {
+		const config = getDaemonPaths(tempDir);
+		const server = new DaemonServer(config);
+		await server.start();
+		const client = new DaemonClient(config);
+		const command = { cmd: "SET", key: "replay-key", value: "first", requestId: "fixed-request-id" };
+		const first = await client.send(command);
+		assert.equal(first.status, "ok");
+		const replay = await client.send(command);
+		assert.deepEqual(replay, { status: "error", error: "Replay rejected" });
+		await server.stop();
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
 test("DaemonServer rejects IPC requests with an invalid token", async () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "daemon-ipc-auth-test-"));
 	try {
