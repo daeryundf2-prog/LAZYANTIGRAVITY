@@ -38,7 +38,7 @@
 	},
 	"scripts": {
 		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",
-		"check": "npm run build && npm test",
+		"check": "npm run build && npm run verify:hook-policies && npm test",
 		"doctor": "node scripts/lazyantigravity-doctor.mjs",
 		"evidence:map": "node scripts/lazyantigravity-evidence-map.mjs",
 		"hooks:report": "node scripts/lazyantigravity-hooks-report.mjs",
@@ -50,6 +50,8 @@
 		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
 		"test": "node --test test/*.test.mjs && node --test components/daemon-bridge/test/daemon-bridge.test.mjs && npx vitest --run components/ulw-loop/test/checkpoint.test.ts components/ulw-loop/test/evidence-attestation.test.ts",
+		"verify:hook-policies": "node scripts/verify-hook-policies.mjs",
+		"probe:model-capabilities": "node scripts/model-capability-probe.mjs",
 		"verify:reproducible": "node scripts/verify-dist-sync.mjs"
 	}
 }
