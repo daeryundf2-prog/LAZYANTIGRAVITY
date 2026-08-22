@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { validateToolInvocation } from "./tool-policy.js";
 const BASH_TOOL_NAME = "Bash";
 const REMINDER = "On Windows, prefer the OMO git_bash MCP for shell commands before using built-in exec_command. Use exec_command only when git_bash is unavailable or for non-shell operations.";
 export function parsePreToolUsePayload(raw) {
@@ -73,6 +74,10 @@ function preToolUseOutput(raw, options) {
     const payload = parsePreToolUsePayload(raw);
     if (payload === null)
         return "";
+    const policy = validateToolInvocation(payload.tool_name, payload.tool_input);
+    if (!policy.allowed) {
+        return `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: policy.reason ?? "Tool policy denied execution." } })}\n`;
+    }
     return applyGitBashPreToolUseReminder(payload, options);
 }
 function postCompactOutput(raw, options) {

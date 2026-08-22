@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { validateToolInvocation } from "./tool-policy.js";
 
 export interface PreToolUsePayload {
 	readonly cwd: string;
@@ -108,6 +109,10 @@ export async function runGitBashHookCli(
 function preToolUseOutput(raw: string, options: GitBashHookOptions): string {
 	const payload = parsePreToolUsePayload(raw);
 	if (payload === null) return "";
+	const policy = validateToolInvocation(payload.tool_name, payload.tool_input);
+	if (!policy.allowed) {
+		return `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: policy.reason ?? "Tool policy denied execution." } })}\n`;
+	}
 	return applyGitBashPreToolUseReminder(payload, options);
 }
 
