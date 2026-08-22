@@ -116,6 +116,18 @@
 						"statusMessage": "LazyAntigravity(0.6.0): Recommending Git Bash Mcp"
 					}
 				]
+			},
+			{
+				"matcher": ".*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/awt-guard.mjs\"",
+						"timeout": 2,
+						"statusMessage": "LazyAntigravity(0.6.0): Verifying Awt Trajectory Integrity",
+						"failurePolicy": "FAIL_OPEN"
+					}
+				]
 			}
 		],
 		"PostToolUse": [

@@ -34,6 +34,7 @@ const expectedSkills = [
 	"report-bug",
 	"review-work",
 	"rules",
+	"self-audit",
 	"session-persistence",
 	"start-work",
 	"swarm-sync",

@@ -134,6 +134,7 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 	assert.match(text, /Checking Ulw-Loop Steering/);
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), [
 		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute)$",
+		".*",
 	]);
 	assert.doesNotMatch(text, /create_goal/);
 });

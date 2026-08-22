@@ -9,6 +9,13 @@ Conventions for human contributors and AI agents working on this repository.
 - TypeScript 6 strict mode.
 - Biome 2 linting and formatting.
 
+## Omniscient Mode & Two-Step Strike
+- **Assume Agent Correctness**: Proceed decisively in Omniscient Mode without second-guessing routine actions.
+- **Eliminate Attention Dispersion**: Avoid wandering into unrelated files out of self-doubt.
+- **Two-Step Strike**: High-focus generation (Gemini 3.7 Flash) + mechanical error capture (PostToolUse hooks & Oracles).
+- **AWT Trajectory Lock**: Lock to the task contract. If an action drifts by 1 degree, trim and realign immediately.
+- **Anti-Metacognitive Ban**: Never emit self-excusing meta-dialogue ("흥미롭군요", "That's interesting"). Emit factual error stacks and fixes only.
+
 ## Test Runners
 
 Two runner conventions coexist; pick by component type:
