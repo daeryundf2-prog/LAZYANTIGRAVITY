@@ -7,6 +7,7 @@ import { Readable, Writable } from "node:stream";
 import {
 	applyGitBashPostCompactReset,
 	applyGitBashPreToolUseReminder,
+	parsePreToolUsePayload,
 	runGitBashHookCli,
 	type PostCompactPayload,
 	type PreToolUsePayload,
@@ -64,6 +65,25 @@ function captureStdout(): { readonly stdout: Writable; readonly read: () => stri
 	});
 	return { stdout, read: () => captured };
 }
+
+describe("parsePreToolUsePayload", () => {
+	it("normalizes Antigravity camelCase payload aliases", () => {
+		const payload = parsePreToolUsePayload(JSON.stringify({
+			eventName: "PreToolUse",
+			workspaceRoot: "/repo",
+			model: { modelId: "gemini-next" },
+			sessionId: "session-1",
+			toolName: "Bash",
+			toolUseId: "call-1",
+			toolInput: { command: "pwd" },
+			turnId: "turn-1",
+		}));
+		expect(payload).not.toBeNull();
+		expect(payload?.hook_event_name).toBe("PreToolUse");
+		expect(payload?.tool_name).toBe("Bash");
+		expect(payload?.model).toBe("gemini-next");
+	});
+});
 
 describe("applyGitBashPreToolUseReminder", () => {
 	it("#given first Windows Bash call #when hook runs #then emits non-blocking git_bash guidance", () => {

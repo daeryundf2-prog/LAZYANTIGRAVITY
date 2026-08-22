@@ -8,7 +8,8 @@ export function parsePreToolUsePayload(raw) {
         return null;
     try {
         const parsed = JSON.parse(raw);
-        return isPreToolUsePayload(parsed) ? parsed : null;
+        const normalized = normalizeAntigravityHookPayload(parsed);
+        return isPreToolUsePayload(normalized) ? normalized : null;
     }
     catch (error) {
         if (error instanceof SyntaxError)
@@ -100,6 +101,27 @@ function reminderMarkerPath(sessionId, pluginDataRoot) {
 }
 function safePathSegment(value) {
     return value.replace(/[^A-Za-z0-9._-]/g, "_");
+}
+function normalizeAntigravityHookPayload(value) {
+    if (!isRecord(value))
+        return value;
+    const input = value;
+    const tool = isRecord(input["tool"] ?? input["toolCall"] ?? input["tool_call"]) ? (input["tool"] ?? input["toolCall"] ?? input["tool_call"]) : undefined;
+    const normalizedEvent = String(input["hook_event_name"] ?? input["eventName"] ?? input["event_type"] ?? "").replace(/[\s-]/g, "").toLowerCase();
+    const event = normalizedEvent === "pretooluse" || normalizedEvent === "pretool" ? "PreToolUse" : input["hook_event_name"];
+    return {
+        ...input,
+        hook_event_name: event,
+        cwd: input["cwd"] ?? input["workspaceRoot"] ?? input["workspace_root"],
+        model: typeof input["model"] === "string" ? input["model"] : isRecord(input["model"]) ? input["model"]["modelId"] ?? input["model"]["model_id"] : input["model"],
+        permission_mode: input["permission_mode"] ?? input["permissionMode"] ?? "default",
+        session_id: input["session_id"] ?? input["sessionId"],
+        tool_name: input["tool_name"] ?? input["toolName"] ?? tool?.["name"],
+        tool_use_id: input["tool_use_id"] ?? input["toolUseId"] ?? tool?.["id"],
+        tool_input: input["tool_input"] ?? input["toolInput"] ?? tool?.["args"] ?? tool?.["arguments"],
+        transcript_path: input["transcript_path"] ?? input["transcriptPath"] ?? null,
+        turn_id: input["turn_id"] ?? input["turnId"] ?? input["requestId"] ?? input["request_id"],
+    };
 }
 function isPreToolUsePayload(value) {
     if (!isRecord(value))
