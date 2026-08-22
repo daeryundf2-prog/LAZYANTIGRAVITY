@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
@@ -34,6 +35,13 @@ function verifyDiskFilesAndHashes(raw: Record<string, unknown>, cwd: string): st
 	if (!Array.isArray(raw["commandAudits"]) || raw["commandAudits"].length === 0) return "Evidence must contain commandAudits";
 	if (!Array.isArray(raw["commandsRun"]) || raw["commandsRun"].length === 0) return "Evidence must contain commandsRun";
 	if (typeof raw["workspaceFingerprint"] !== "string" || raw["workspaceFingerprint"].trim() === "") return "Evidence must contain workspaceFingerprint";
+	if (typeof raw["branch"] !== "string" || raw["branch"].trim() === "") return "Evidence must contain branch";
+	if (typeof raw["workspaceBinding"] !== "string" || raw["workspaceBinding"].trim() === "") return "Evidence must contain workspaceBinding";
+	let currentBranch = "";
+	try { currentBranch = execFileSync("git", ["branch", "--show-current"], { cwd, encoding: "utf8" }).trim(); } catch { return "Unable to determine current Git branch"; }
+	if (!currentBranch || currentBranch !== raw["branch"]) return `Evidence branch does not match current branch (${currentBranch || "detached"})`;
+	const expectedBinding = createHash("sha256").update(`${currentBranch}:${raw["workspaceFingerprint"]}`, "utf8").digest("hex");
+	if (expectedBinding !== raw["workspaceBinding"]) return "Evidence workspaceBinding does not match current branch and workspace fingerprint";
 	if (typeof raw["source"] !== "string" || raw["source"].trim() === "") return "Evidence must contain source";
 	const binding = raw["executionBinding"];
 	if (!binding || typeof binding !== "object" || Array.isArray(binding)) return "Evidence must contain executionBinding";
