@@ -42,6 +42,11 @@ async function samplePlan(overrides: Partial<UlwLoopPlan> = {}): Promise<UlwLoop
 async function repoWith(seed: UlwLoopPlan): Promise<string> {
 	const repo = await mkdtemp(join(tmpdir(), "ug-checkpoint-"));
 	await mkdir(ulwLoopDir(repo), { recursive: true });
+	await mkdir(join(repo, "src"), { recursive: true });
+	await mkdir(join(repo, "test"), { recursive: true });
+	await writeFile(join(repo, "src", "index.ts"), "index fixture\n", "utf8");
+	await writeFile(join(repo, "src", "auth.ts"), "auth fixture\n", "utf8");
+	await writeFile(join(repo, "test", "auth.test.ts"), "test fixture\n", "utf8");
 	await writePlan(repo, seed);
 	await seedSubagentCompletion(repo);
 	return repo;
@@ -96,24 +101,24 @@ function passGoal(id: string, overrides: Partial<UlwLoopItem> = {}): UlwLoopItem
 describe("checkpointUlwLoop status=complete criteria gate", () => {
 	it("THROWS ulw_loop_criteria_not_all_pass when any criterion is pending", async () => {
 		const repo = await repoWith(await samplePlan({ goals: [goal({ successCriteria: [criterion("C001", "pass"), criterion("C002", "pending"), criterion("C003", "pass")] })] }));
-		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "done" }), "ulw_loop_criteria_not_all_pass");
+		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "done" }), "ulw_loop_criteria_not_all_pass");
 	});
 
 	it("THROWS when any criterion is fail or blocked", async () => {
 		for (const status of ["fail", "blocked"] satisfies UlwLoopSuccessCriterion["status"][]) {
 			const repo = await repoWith(plan([goal({ successCriteria: [criterion("C001", "pass"), criterion("C002", status), criterion("C003", "pass")] })]));
-			await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "done" }), "ulw_loop_criteria_not_all_pass");
+			await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "done" }), "ulw_loop_criteria_not_all_pass");
 		}
 	});
 
 	it("THROWS when criteria list is empty", async () => {
 		const repo = await repoWith(plan([goal({ successCriteria: [] }), goal({ id: "G002", status: "pending" })]));
-		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "done", codexGoalJson: snapshot("active") }), "ulw_loop_criteria_not_all_pass");
+		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "done", codexGoalJson: snapshot("active") }), "ulw_loop_criteria_not_all_pass");
 	});
 
 	it("ACCEPTS complete when ALL criteria pass (with valid snapshot)", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
-		const result = await checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "implementation done and tests passed", codexGoalJson: snapshot("active") });
+		const result = await checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "implementation done and tests passed", codexGoalJson: snapshot("active") });
 		expect(result.goal.status).toBe("complete");
 		expect((await lastLedger(repo)).kind).toBe("goal_completed");
 	});
@@ -122,17 +127,17 @@ describe("checkpointUlwLoop status=complete criteria gate", () => {
 describe("checkpointUlwLoop reconciliation (status=complete)", () => {
 	it("succeeds when snapshot objective matches expected (aggregate active)", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
-		await expect(checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "work complete and validation passed", codexGoalJson: snapshot("active") })).resolves.toMatchObject({ goal: { status: "complete" } });
+		await expect(checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "work complete and validation passed", codexGoalJson: snapshot("active") })).resolves.toMatchObject({ goal: { status: "complete" } });
 	});
 
 	it("throws on mismatched objective", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
-		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "work complete and validation passed", codexGoalJson: snapshot("active", "wrong objective") }), "ulw_loop_codex_snapshot_mismatch");
+		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "work complete and validation passed", codexGoalJson: snapshot("active", "wrong objective") }), "ulw_loop_codex_snapshot_mismatch");
 	});
 
 	it("throws on mismatched status (snapshot complete when expected active)", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
-		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "work complete and validation passed", codexGoalJson: snapshot("complete") }), "ulw_loop_codex_snapshot_mismatch");
+		await expectCode(() => checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "work complete and validation passed", codexGoalJson: snapshot("complete") }), "ulw_loop_codex_snapshot_mismatch");
 	});
 });
 
@@ -144,7 +149,7 @@ describe("checkpointUlwLoop final story", () => {
 
 	it("accepts final story when quality gate JSON includes valid criteriaCoverage", async () => {
 		const repo = await repoWith(plan([passGoal("G001", { status: "complete" }), passGoal("G002")], { activeGoalId: "G002" }));
-		const result = await checkpointUlwLoop(repo, { goalId: "G002", status: "complete", evidence: "final work complete and validation passed", codexGoalJson: snapshot("complete"), qualityGateJson: QUALITY_GATE_PATH });
+		const result = await checkpointUlwLoop(repo, { goalId: "G002", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "final work complete and validation passed", codexGoalJson: snapshot("complete") });
 		expect(result.aggregateCompletion?.status).toBe("complete");
 		expect(result.plan.aggregateCompletion?.status).toBe("complete");
 	});
@@ -157,9 +162,9 @@ describe("checkpointUlwLoop final story", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "final implementation complete and quality gate passed",
 			codexGoalJson: snapshot("complete", taskObjective),
-			qualityGateJson: QUALITY_GATE_PATH,
 		});
 
 		expect(result.aggregateCompletion?.status).toBe("complete");
@@ -174,9 +179,9 @@ describe("checkpointUlwLoop final story", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "final implementation complete and quality gate passed",
 			codexGoalJson: snapshot("active", taskObjective),
-			qualityGateJson: QUALITY_GATE_PATH,
 		});
 
 		expect(result.aggregateCompletion?.status).toBe("complete");
@@ -191,6 +196,7 @@ describe("checkpointUlwLoop final story", () => {
 			checkpointUlwLoop(repo, {
 				goalId: "G001",
 				status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 				evidence: "final implementation complete and quality gate passed",
 				codexGoalJson: snapshot("complete", "unrelated completed task"),
 				qualityGateJson: QUALITY_GATE_PATH,
@@ -246,7 +252,7 @@ describe("checkpointUlwLoop status=blocked", () => {
 describe("checkpointUlwLoop rebrand", () => {
 	it("does not emit legacy brand token in any returned text or ledger payload", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
-		const result = await checkpointUlwLoop(repo, { goalId: "G001", status: "complete", evidence: "implementation done in .omo/ulw-loop/goals.json for G001 and validation passed", codexGoalJson: snapshot("active") });
+		const result = await checkpointUlwLoop(repo, { goalId: "G001", status: "complete", qualityGateJson: QUALITY_GATE_PATH, evidence: "implementation done in .omo/ulw-loop/goals.json for G001 and validation passed", codexGoalJson: snapshot("active") });
 		const forbidden = ["o", "m", "x"].join("");
 		const payload = `${JSON.stringify(result)}\n${await readFile(ulwLoopLedgerPath(repo), "utf8")}`.toLowerCase();
 		expect(payload).not.toContain(forbidden);
@@ -265,6 +271,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "work is done and tested",
 			codexGoalJson: snapshot("active"),
 		});
@@ -287,6 +294,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "work is done without running tests",
 			codexGoalJson: snapshot("active"),
 		});
@@ -313,6 +321,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "work complete",
 			codexGoalJson: snapshot("active"),
 		});
@@ -340,6 +349,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "security auth work complete",
 			codexGoalJson: snapshot("active"),
 		});
@@ -368,6 +378,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "we had to delete old table data to complete this",
 			codexGoalJson: snapshot("active"),
 		});
@@ -395,6 +406,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "done",
 			codexGoalJson: snapshot("active"),
 		});
@@ -418,6 +430,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "done",
 			codexGoalJson: snapshot("active"),
 		});
@@ -444,6 +457,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "done",
 			codexGoalJson: snapshot("active"),
 		});
@@ -471,6 +485,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result1 = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "done",
 			codexGoalJson: snapshot("active"),
 		});
@@ -481,6 +496,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result2 = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "done",
 			codexGoalJson: snapshot("active"),
 		});
@@ -550,6 +566,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "work done",
 			codexGoalJson: snapshot("active"),
 		});
@@ -594,6 +611,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "work done again",
 			codexGoalJson: snapshot("active"),
 		});
@@ -632,6 +650,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		const result = await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "work done again",
 			codexGoalJson: snapshot("active"),
 		});
@@ -655,6 +674,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		await checkpointUlwLoop(repo, {
 			goalId: "G001",
 			status: "complete",
+			qualityGateJson: QUALITY_GATE_PATH,
 			evidence: "done",
 			codexGoalJson: snapshot("active"),
 		});

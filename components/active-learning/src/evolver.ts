@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
 import type { ActiveLearningReport, LearnedGotcha } from "./types.js";
 
@@ -10,141 +10,108 @@ export interface EvolveOptions {
 }
 
 export function getMemoryPath(cwd: string = process.cwd()): string {
-	const p1 = join(cwd, ".omo", "memory");
-	const p2 = join(cwd, ".lazyantigravity", "memory");
+	const omoPath = join(cwd, ".omo", "memory");
+	const lazyPath = join(cwd, ".lazyantigravity", "memory");
+	if (existsSync(omoPath)) return join(omoPath, "facts.jsonl");
+	if (!existsSync(lazyPath)) mkdirSync(lazyPath, { recursive: true, mode: 0o700 });
+	return join(lazyPath, "facts.jsonl");
+}
 
-	if (existsSync(p1)) return join(p1, "facts.jsonl");
-	if (!existsSync(p2)) {
-		mkdirSync(p2, { recursive: true });
-	}
-	return join(p2, "facts.jsonl");
+function resolveEvidenceInput(evidenceInput: string | Record<string, unknown>, cwd: string): Record<string, unknown> {
+	if (typeof evidenceInput !== "string") return evidenceInput;
+	const candidatePath = resolve(cwd, evidenceInput);
+	const raw = existsSync(candidatePath) ? readFileSync(candidatePath, "utf8") : evidenceInput;
+	const parsed: unknown = JSON.parse(raw);
+	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new Error("Evidence must be a JSON object");
+	return parsed as Record<string, unknown>;
 }
 
 function verifyDiskFilesAndHashes(raw: Record<string, unknown>, cwd: string): string | null {
-	if (Array.isArray(raw["readRanges"])) {
-		for (const range of raw["readRanges"]) {
-			if (range && typeof range === "object" && typeof range["file"] === "string") {
-				const filePath = isAbsolute(range["file"]) ? range["file"] : resolve(cwd, range["file"]);
-				if (!existsSync(filePath)) {
-					return `Referenced file in readRanges does not exist on disk: ${range["file"]}`;
-				}
-			}
-		}
-	}
+	const readRanges = raw["readRanges"];
+	const fileChecksums = raw["fileChecksums"];
+	if (!Array.isArray(readRanges) || readRanges.length === 0) return "Evidence must contain readRanges";
+	if (!Array.isArray(fileChecksums) || fileChecksums.length === 0) return "Evidence must contain fileChecksums";
+	if (!Array.isArray(raw["commandAudits"]) || raw["commandAudits"].length === 0) return "Evidence must contain commandAudits";
+	if (!Array.isArray(raw["commandsRun"]) || raw["commandsRun"].length === 0) return "Evidence must contain commandsRun";
+	if (typeof raw["workspaceFingerprint"] !== "string" || raw["workspaceFingerprint"].trim() === "") return "Evidence must contain workspaceFingerprint";
+	if (typeof raw["source"] !== "string" || raw["source"].trim() === "") return "Evidence must contain source";
 
-	if (Array.isArray(raw["fileChecksums"])) {
-		for (const item of raw["fileChecksums"]) {
-			if (item && typeof item === "object" && typeof item["file"] === "string" && typeof item["sha256"] === "string") {
-				const filePath = isAbsolute(item["file"]) ? item["file"] : resolve(cwd, item["file"]);
-				if (!existsSync(filePath)) {
-					return `Checksum file does not exist: ${item["file"]}`;
-				}
-				const actualSha = createHash("sha256").update(readFileSync(filePath)).digest("hex");
-				if (actualSha !== item["sha256"].trim().toLowerCase()) {
-					return `SHA-256 mismatch for ${item["file"]}: expected ${item["sha256"]}, got ${actualSha}`;
-				}
-			}
-		}
+	const root = resolve(cwd);
+	const isInsideRoot = (path: string): boolean => {
+		const rel = relative(root, resolve(path));
+		return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`));
+	};
+	for (const range of readRanges) {
+		if (!range || typeof range !== "object" || typeof range["file"] !== "string") return "Invalid readRanges entry";
+		const file = isAbsolute(range["file"]) ? resolve(range["file"]) : resolve(root, range["file"]);
+		if (!isInsideRoot(file) || !existsSync(file)) return `Referenced file in readRanges is invalid: ${range["file"]}`;
+	}
+	for (const item of fileChecksums) {
+		if (!item || typeof item !== "object" || typeof item["file"] !== "string" || typeof item["sha256"] !== "string") return "Invalid fileChecksums entry";
+		const file = isAbsolute(item["file"]) ? resolve(item["file"]) : resolve(root, item["file"]);
+		if (!isInsideRoot(file) || !existsSync(file)) return `Checksum file is invalid: ${item["file"]}`;
+		const actualSha = createHash("sha256").update(readFileSync(file)).digest("hex");
+		if (actualSha !== item["sha256"].trim().toLowerCase()) return `SHA-256 mismatch for ${item["file"]}`;
+	}
+	for (const audit of raw["commandAudits"] as unknown[]) {
+		if (!audit || typeof audit !== "object") return "Invalid command audit entry";
+		const record = audit as Record<string, unknown>;
+		if (typeof record["command"] !== "string" || record["exitCode"] !== 0) return "Every command audit must have exitCode 0";
 	}
 	return null;
 }
 
-function parseAndValidateEvidence(evidenceInput: string | Record<string, unknown>, cwd: string): {
-	valid: boolean;
-	summary: string;
-	error?: string;
-} {
-	let raw: Record<string, unknown>;
-	if (typeof evidenceInput === "string") {
-		try {
-			const resolvedPath = resolve(cwd, evidenceInput);
-			if (existsSync(resolvedPath)) {
-				raw = JSON.parse(readFileSync(resolvedPath, "utf8"));
-			} else {
-				raw = JSON.parse(evidenceInput);
-			}
-		} catch {
-			return { valid: false, summary: "", error: "Invalid evidence JSON or file not found" };
-		}
-	} else {
-		raw = evidenceInput;
+function parseAndValidateEvidence(evidenceInput: string | Record<string, unknown>, cwd: string): { valid: boolean; summary: string; raw?: Record<string, unknown>; error?: string } {
+	try {
+		const raw = resolveEvidenceInput(evidenceInput, cwd);
+		if (raw["status"] !== "verified") return { valid: false, summary: "", error: `Evidence status must be 'verified' (received '${String(raw["status"])}')` };
+		const gaps = ["unknowns", "inferences", "unreadRanges"].filter((key) => Array.isArray(raw[key]) && raw[key].length > 0);
+		if (gaps.length > 0) return { valid: false, summary: "", error: `Verified evidence contains gaps: ${gaps.join(", ")}` };
+		const diskMismatch = verifyDiskFilesAndHashes(raw, cwd);
+		if (diskMismatch) return { valid: false, summary: "", error: diskMismatch };
+		return { valid: true, summary: typeof raw["summary"] === "string" && raw["summary"].trim() !== "" ? raw["summary"].trim() : "Verified active learning evidence", raw };
+	} catch (error) {
+		return { valid: false, summary: "", error: error instanceof Error ? error.message : String(error) };
 	}
+}
 
-	const status = raw["status"];
-	if (status !== "verified") {
-		return {
-			valid: false,
-			summary: "",
-			error: `Evidence status must be 'verified' (received '${status}'). Inferred or partial evidence cannot promote facts.`,
-		};
-	}
-
-	const unknowns = Array.isArray(raw["unknowns"]) ? raw["unknowns"] : [];
-	const inferences = Array.isArray(raw["inferences"]) ? raw["inferences"] : [];
-	const unreadRanges = Array.isArray(raw["unreadRanges"]) ? raw["unreadRanges"] : [];
-
-	if (unknowns.length > 0 || inferences.length > 0 || unreadRanges.length > 0) {
-		return {
-			valid: false,
-			summary: "",
-			error: `Verified evidence must have zero unknowns, inferences, or unreadRanges (found ${unknowns.length} unknowns, ${inferences.length} inferences, ${unreadRanges.length} unreadRanges).`,
-		};
-	}
-
-	const diskMismatch = verifyDiskFilesAndHashes(raw, cwd);
-	if (diskMismatch) {
-		return { valid: false, summary: "", error: diskMismatch };
-	}
-
-	const summary = typeof raw["summary"] === "string" ? raw["summary"].trim() : "Verified active learning evidence";
-	return { valid: true, summary };
+function sanitizeCandidate(value: string): string | null {
+	const normalized = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+	if (normalized.length < 8 || normalized.length > 500) return null;
+	if (/^(ignore|disregard|forget)\s+(all|any|previous|prior)/i.test(normalized)) return null;
+	return normalized;
 }
 
 export function evolveRules(cwd: string = process.cwd(), options: EvolveOptions = {}): ActiveLearningReport {
 	const events = readFailureEvents(cwd);
 	const gotchas = extractFailurePatterns(events);
 	const memoryFile = getMemoryPath(cwd);
-
 	let existingContent = "";
-	if (existsSync(memoryFile)) {
-		try {
-			existingContent = readFileSync(memoryFile, "utf8");
-		} catch {}
-	}
-
+	try { if (existsSync(memoryFile)) existingContent = readFileSync(memoryFile, "utf8"); } catch {}
 	const promoted: LearnedGotcha[] = [];
-	const shouldPromote = options.approve !== false;
+	const shouldPromote = options.approve === true && options.evidenceJson !== undefined;
+	if (!shouldPromote) return { analyzedEvents: events.length, identifiedPatterns: gotchas.length, promotedGotchas: [] };
 
-	if (shouldPromote) {
-		let evidenceSummary = "Verified telemetry cluster evolution";
-		if (options.evidenceJson) {
-			const validation = parseAndValidateEvidence(options.evidenceJson, cwd);
-			if (!validation.valid) {
-				throw new Error(`Active-learning memory promotion rejected: ${validation.error}`);
-			}
-			evidenceSummary = validation.summary;
-		}
-
-		for (const g of gotchas) {
-			if (g.confidence >= 0.7 && !existingContent.includes(g.pattern)) {
-				const factRecord = {
-					id: g.id,
-					timestamp: Date.now(),
-					category: "gotcha",
-					source: "active-learning",
-					evidenceStatus: "verified",
-					evidenceSummary,
-					content: `[자가학습 Gotcha] ${g.suggestedRule}`,
-				};
-				appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, "utf8");
-				promoted.push(g);
-			}
-		}
+	const validation = parseAndValidateEvidence(options.evidenceJson, cwd);
+	if (!validation.valid || validation.raw === undefined) throw new Error(`Active-learning memory promotion rejected: ${validation.error}`);
+	for (const gotcha of gotchas) {
+		const safeRule = sanitizeCandidate(gotcha.suggestedRule);
+		if (gotcha.confidence < 0.7 || safeRule === null || existingContent.includes(safeRule)) continue;
+		const factRecord = {
+			id: gotcha.id,
+			timestamp: Date.now(),
+			category: "gotcha",
+			source: validation.raw["source"],
+			evidenceStatus: "verified",
+			evidenceSummary: validation.summary,
+			workspaceFingerprint: validation.raw["workspaceFingerprint"],
+			fileChecksums: validation.raw["fileChecksums"],
+			commandAudits: validation.raw["commandAudits"],
+			content: `[자가학습 데이터·사용자 승인됨] ${safeRule}`,
+		};
+		appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, { encoding: "utf8", mode: 0o600 });
+		promoted.push(gotcha);
+		existingContent += `${safeRule}\n`;
 	}
-
-	return {
-		analyzedEvents: events.length,
-		identifiedPatterns: gotchas.length,
-		promotedGotchas: promoted,
-	};
+	return { analyzedEvents: events.length, identifiedPatterns: gotchas.length, promotedGotchas: promoted };
 }

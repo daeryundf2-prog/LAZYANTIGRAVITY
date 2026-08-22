@@ -8,11 +8,27 @@
 	"codeReview": {
 		"recommendation": "APPROVE",
 		"architectStatus": "CLEAR",
-		"evidence": "review synthesis: ship it"
+		"evidence": "review synthesis: UNCONDITIONAL APPROVAL"
 	},
 	"criteriaCoverage": {
 		"totalCriteria": 9,
 		"passCount": 9,
 		"adversarialClassesCovered": ["malformed_input", "prompt_injection", "stale_state"]
+	},
+	"evidenceContract": {
+		"status": "verified",
+		"summary": "Ground-truth fixture evidence",
+		"readRanges": [{ "file": "src/index.ts", "startLine": 1, "endLine": 1 }, { "file": "src/auth.ts", "startLine": 1, "endLine": 1 }, { "file": "test/auth.test.ts", "startLine": 1, "endLine": 1 }],
+		"unreadRanges": [],
+		"unknowns": [],
+		"inferences": [],
+		"filesChanged": ["src/index.ts", "src/auth.ts", "test/auth.test.ts"],
+		"fileChecksums": [{ "file": "src/index.ts", "sha256": "1d420e32395235d5a22d5fcbff43d24fc6b7a01cd6b139c9431e1ff7332c8f3e" }, { "file": "src/auth.ts", "sha256": "e446918aeee7e3bc2872ab9894fe8885460407f7e7e6034ca68edf164c4be310" }, { "file": "test/auth.test.ts", "sha256": "75bb77250cfbf7c4fe0b9cff53de1f7a014395dfedb177bf01dff72437eb628e" }],
+		"commandsRun": ["npm test", "npm run build"],
+		"commandAudits": [
+			{ "command": "npm test", "exitCode": 0 },
+			{ "command": "npm run build", "exitCode": 0 }
+		],
+		"workspaceFingerprint": "fixture-generated"
 	}
 }

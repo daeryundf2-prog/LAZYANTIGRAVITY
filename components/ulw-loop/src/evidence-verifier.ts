@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { LedgerEvent } from "./control-plane-types.js";
 import type { StrictEvidenceEnvelope } from "./evidence-contract.js";
 
@@ -40,11 +40,19 @@ export function verifyEvidenceGroundTruth(
 	const mismatchedFiles: string[] = [];
 	const invalidLineRanges: string[] = [];
 	const nonZeroExitCommands: string[] = [];
-
+	const root = resolve(repoRoot);
+	const isInsideRoot = (targetPath: string): boolean => {
+		const rel = relative(root, targetPath);
+		return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`));
+	};
 	// 1. Verify readRanges against actual disk files and valid line numbers
 	if (evidence.readRanges && evidence.readRanges.length > 0) {
 		for (const range of evidence.readRanges) {
-			const targetPath = isAbsolute(range.file) ? range.file : resolve(repoRoot, range.file);
+			const targetPath = isAbsolute(range.file) ? resolve(range.file) : resolve(root, range.file);
+			if (!isInsideRoot(targetPath)) {
+				mismatchedFiles.push(`Evidence path escapes repository root: ${range.file}`);
+				continue;
+			}
 			if (!existsSync(targetPath)) {
 				mismatchedFiles.push(`Missing referenced file in readRanges: ${range.file}`);
 				continue;
@@ -73,7 +81,11 @@ export function verifyEvidenceGroundTruth(
 	// 2. Verify fileChecksums if provided against real disk SHA-256
 	if (evidence.fileChecksums && evidence.fileChecksums.length > 0) {
 		for (const checksum of evidence.fileChecksums) {
-			const targetPath = isAbsolute(checksum.file) ? checksum.file : resolve(repoRoot, checksum.file);
+			const targetPath = isAbsolute(checksum.file) ? resolve(checksum.file) : resolve(root, checksum.file);
+			if (!isInsideRoot(targetPath)) {
+				mismatchedFiles.push(`Checksum path escapes repository root: ${checksum.file}`);
+				continue;
+			}
 			const actualSha = computeFileSha256(targetPath);
 			if (!actualSha) {
 				mismatchedFiles.push(`Cannot compute hash for missing file: ${checksum.file}`);
@@ -87,8 +99,12 @@ export function verifyEvidenceGroundTruth(
 
 	// 3. Verify command execution audits (must be exitCode 0 if recorded)
 	if (evidence.commandAudits && evidence.commandAudits.length > 0) {
+		const auditedCommands = new Set(evidence.commandAudits.map((audit) => audit.command));
+		for (const command of evidence.commandsRun ?? []) {
+			if (!auditedCommands.has(command)) nonZeroExitCommands.push(`Missing command audit for "${command}"`);
+		}
 		for (const audit of evidence.commandAudits) {
-			if (audit.exitCode !== undefined && audit.exitCode !== 0) {
+			if (audit.exitCode !== 0) {
 				nonZeroExitCommands.push(`Command "${audit.command}" exited with non-zero code ${audit.exitCode}`);
 			}
 		}

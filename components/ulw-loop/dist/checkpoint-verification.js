@@ -1,9 +1,11 @@
 import { runCheckpointConsensusStep } from "./checkpoint-consensus-step.js";
 import { reconcileCheckpointSnapshot } from "./checkpoint-reconciliation.js";
 import { appendRunEvent, readRunEvents } from "./control-plane.js";
+import { assertGroundTruthEvidence } from "./evidence-completion-gate.js";
 import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
+import {} from "./types.js";
 import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline, } from "./verification-pipeline.js";
 export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, args, now, scope) {
     const runId = normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
@@ -45,6 +47,7 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
     const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
     const passEvent = events.find((e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint);
     if (passEvent) {
+        await assertGroundTruthEvidence(repoRoot, args.qualityGateJson, events, evidenceEnvelope);
         return {
             finalizerAllowed: true,
             ...(await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope)),
@@ -179,6 +182,22 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         };
     }
     const reconciled = await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope);
+    try {
+        await assertGroundTruthEvidence(repoRoot, args.qualityGateJson, events, evidenceEnvelope);
+    }
+    catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error(`[debug-ground-truth] ${reason}`);
+        await appendRunEvent(repoRoot, runId, "quality_gate.failed", {
+            reason: `Ground-Truth evidence verification failed: ${reason}`,
+            qualityInputFingerprint: fingerprint,
+        });
+        return {
+            finalizerAllowed: false,
+            goalStatusOverride: "needs_user_decision",
+            blockedReasonOverride: reason,
+        };
+    }
     await appendRunEvent(repoRoot, runId, "quality_gate.completed", { qualityInputFingerprint: fingerprint });
     return { finalizerAllowed: true, ...reconciled };
 }
