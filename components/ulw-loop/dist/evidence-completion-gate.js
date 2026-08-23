@@ -1,6 +1,6 @@
+import { readJsonInput } from "./checkpoint-reconciliation.js";
 import { validateStrictEvidence } from "./evidence-contract.js";
 import { verifyEvidenceGroundTruth } from "./evidence-verifier.js";
-import { readJsonInput } from "./checkpoint-reconciliation.js";
 import { UlwLoopError } from "./types.js";
 export async function assertGroundTruthEvidence(repoRoot, qualityGateJson, events, claimedEvidence) {
     const raw = await readJsonInput(qualityGateJson, repoRoot);
@@ -13,7 +13,10 @@ export async function assertGroundTruthEvidence(repoRoot, qualityGateJson, event
         throw new UlwLoopError(validated.error ?? "Evidence contract validation failed.", "ULW_LOOP_EVIDENCE_INVALID");
     }
     const envelope = validated.envelope;
-    if (!envelope.readRanges?.length || !envelope.fileChecksums?.length || !envelope.commandsRun?.length || !envelope.commandAudits?.length) {
+    if (!envelope.readRanges?.length ||
+        !envelope.fileChecksums?.length ||
+        !envelope.commandsRun?.length ||
+        !envelope.commandAudits?.length) {
         throw new UlwLoopError("Completion evidence must include readRanges, fileChecksums, commandsRun, and commandAudits.", "ULW_LOOP_EVIDENCE_INCOMPLETE");
     }
     const binding = envelope.executionBinding;

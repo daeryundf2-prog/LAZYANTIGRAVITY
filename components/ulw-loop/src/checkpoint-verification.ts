@@ -6,13 +6,14 @@ import { assertGroundTruthEvidence } from "./evidence-completion-gate.js";
 import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv, type UlwLoopScope } from "./paths.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
-import { type UlwLoopItem, type UlwLoopPlan } from "./types.js";
+import type { UlwLoopItem, UlwLoopPlan } from "./types.js";
 import {
 	calculateQualityFingerprint,
 	loadVerificationPolicy,
 	runVerificationPipeline,
 	type VerificationContext,
 } from "./verification-pipeline.js";
+
 export type { CheckpointQualityGateResult };
 export async function runCheckpointQualityGate(
 	repoRoot: string,
@@ -216,8 +217,8 @@ export async function runCheckpointQualityGate(
 	try {
 		await assertGroundTruthEvidence(repoRoot, args.qualityGateJson, events, evidenceEnvelope);
 	} catch (error) {
-					const reason = error instanceof Error ? error.message : String(error);
-			console.error(`[debug-ground-truth] ${reason}`);
+		const reason = error instanceof Error ? error.message : String(error);
+		console.error(`[debug-ground-truth] ${reason}`);
 
 		await appendRunEvent(repoRoot, runId, "quality_gate.failed", {
 			reason: `Ground-Truth evidence verification failed: ${reason}`,

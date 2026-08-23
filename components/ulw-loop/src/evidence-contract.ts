@@ -99,8 +99,18 @@ function parseChecksums(rawChecksums: unknown): FileChecksum[] {
 function parseExecutionBinding(raw: unknown): ExecutionBinding | undefined {
 	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
 	const value = raw as Record<string, unknown>;
-	const strings = ["requestId", "runId", "sessionId", "toolCallId", "startedAt", "finishedAt", "stdoutFingerprint", "stderrFingerprint"];
-	if (!strings.every((key) => typeof value[key] === "string" && (value[key] as string).trim() !== "")) return undefined;
+	const strings = [
+		"requestId",
+		"runId",
+		"sessionId",
+		"toolCallId",
+		"startedAt",
+		"finishedAt",
+		"stdoutFingerprint",
+		"stderrFingerprint",
+	];
+	if (!strings.every((key) => typeof value[key] === "string" && (value[key] as string).trim() !== ""))
+		return undefined;
 	if (typeof value["exitCode"] !== "number" || !Number.isInteger(value["exitCode"])) return undefined;
 	return {
 		requestId: value["requestId"] as string,
@@ -123,16 +133,22 @@ function parseCommandAudits(rawAudits: unknown): CommandExecutionAudit[] {
 			const record = item as Record<string, unknown>;
 			const command = (record["command"] as string).trim();
 			const exitCode = typeof record["exitCode"] === "number" ? record["exitCode"] : undefined;
-				const outputSnippet = typeof record["outputSnippet"] === "string" ? record["outputSnippet"] : undefined;
-				const stdoutFingerprint = typeof record["stdoutFingerprint"] === "string" ? record["stdoutFingerprint"].trim().toLowerCase() : undefined;
-				const stderrFingerprint = typeof record["stderrFingerprint"] === "string" ? record["stderrFingerprint"].trim().toLowerCase() : undefined;
-				result.push({
-					command,
-					...(exitCode !== undefined ? { exitCode } : {}),
-					...(outputSnippet !== undefined ? { outputSnippet } : {}),
-					...(stdoutFingerprint !== undefined ? { stdoutFingerprint } : {}),
-					...(stderrFingerprint !== undefined ? { stderrFingerprint } : {}),
-				});
+			const outputSnippet = typeof record["outputSnippet"] === "string" ? record["outputSnippet"] : undefined;
+			const stdoutFingerprint =
+				typeof record["stdoutFingerprint"] === "string"
+					? record["stdoutFingerprint"].trim().toLowerCase()
+					: undefined;
+			const stderrFingerprint =
+				typeof record["stderrFingerprint"] === "string"
+					? record["stderrFingerprint"].trim().toLowerCase()
+					: undefined;
+			result.push({
+				command,
+				...(exitCode !== undefined ? { exitCode } : {}),
+				...(outputSnippet !== undefined ? { outputSnippet } : {}),
+				...(stdoutFingerprint !== undefined ? { stdoutFingerprint } : {}),
+				...(stderrFingerprint !== undefined ? { stderrFingerprint } : {}),
+			});
 		}
 	}
 	return result;

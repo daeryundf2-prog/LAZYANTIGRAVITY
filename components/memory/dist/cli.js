@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { stdin as processStdin, stdout as processStdout } from "node:process";
+import { searchMemoryFacts } from "./search.js";
 import { formatActiveMemoryContext, getMemoryFilePath, readFacts, saveFact, } from "./store.js";
 const command = process.argv[2];
 const subcommand = process.argv[3];
@@ -53,6 +54,14 @@ else if (command === "remember") {
         process.stderr.write("Usage: omo-memory remember <fact text>\n");
     }
 }
+else if (command === "search") {
+    const query = process.argv.slice(3).join(" ");
+    const result = searchMemoryFacts(process.cwd(), query);
+    console.log(`=== Active Memory Search: "${query}" (${result.matchedFacts.length}/${result.totalFacts} matched) ===`);
+    for (const f of result.matchedFacts) {
+        console.log(`[${new Date(f.timestamp).toISOString()}] (${f.category}) ${f.content}`);
+    }
+}
 else if (command === "list") {
     const facts = readFacts();
     console.log(`=== Active Memory Facts (${facts.length}) ===`);
@@ -61,6 +70,6 @@ else if (command === "list") {
     }
 }
 else {
-    process.stderr.write("Usage: omo-memory hook session-start | remember <text> | list\n");
+    process.stderr.write("Usage: omo-memory hook session-start | remember <text> | search <query> | list\n");
     process.exitCode = 1;
 }

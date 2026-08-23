@@ -5,6 +5,10 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { validateStrictEvidence } from "../components/ulw-loop/dist/evidence-contract.js";
 import { verifyEvidenceGroundTruth, computeFileSha256 } from "../components/ulw-loop/dist/evidence-verifier.js";
+import { auditEgressRequest } from "../components/ulw-loop/dist/network-sandbox.js";
+import { buildHitlDecisionCard, applyHitlDecision } from "../components/ulw-loop/dist/hitl-bridge.js";
+import { searchMemoryFacts } from "../components/memory/dist/search.js";
+import { discoverRuntimeHooks } from "../components/rules/dist/hook-discovery.js";
 import { evolveRules } from "../components/active-learning/dist/evolver.js";
 
 const ROOT = resolve(process.cwd());
@@ -97,7 +101,6 @@ test("P1-3: all TypeScript source modules adhere to <250 LOC ceiling", async () 
 });
 
 test("Evidence-1: validateStrictEvidence enforces verified purity and gap documentation", () => {
-	// 1. Verified with unknowns must be rejected
 	const badVerified = validateStrictEvidence({
 		status: "verified",
 		summary: "All done",
@@ -106,7 +109,6 @@ test("Evidence-1: validateStrictEvidence enforces verified purity and gap docume
 	assert.equal(badVerified.valid, false);
 	assert.ok(badVerified.error?.includes("cannot contain unknowns"));
 
-	// 2. Verified with unreadRanges must be rejected
 	const unreadVerified = validateStrictEvidence({
 		status: "verified",
 		summary: "All done",
@@ -115,7 +117,6 @@ test("Evidence-1: validateStrictEvidence enforces verified purity and gap docume
 	assert.equal(unreadVerified.valid, false);
 	assert.ok(unreadVerified.error?.includes("cannot contain unreadRanges"));
 
-	// 3. Partial without documented gaps must be rejected
 	const badPartial = validateStrictEvidence({
 		status: "partial",
 		summary: "Partial work",
@@ -126,7 +127,6 @@ test("Evidence-1: validateStrictEvidence enforces verified purity and gap docume
 	assert.equal(badPartial.valid, false);
 	assert.ok(badPartial.error?.includes("must explicitly document at least one"));
 
-	// 4. Pure verified must pass
 	const pureVerified = validateStrictEvidence({
 		status: "verified",
 		summary: "Clean verified execution with all tests green",
@@ -180,7 +180,6 @@ test("Evidence-5: verifyEvidenceGroundTruth verifies real file SHA-256 and rejec
 	const realSha = computeFileSha256(join(ROOT, "package.json"));
 	assert.ok(realSha, "Real SHA-256 must be computable");
 
-	// Matched hash passes
 	const matchRes = verifyEvidenceGroundTruth(ROOT, {
 		status: "verified",
 		summary: "Valid file hash",
@@ -188,7 +187,6 @@ test("Evidence-5: verifyEvidenceGroundTruth verifies real file SHA-256 and rejec
 	});
 	assert.equal(matchRes.verified, true);
 
-	// Fabricated hash fails
 	const mismatchRes = verifyEvidenceGroundTruth(ROOT, {
 		status: "verified",
 		summary: "Fake file hash",
@@ -196,4 +194,48 @@ test("Evidence-5: verifyEvidenceGroundTruth verifies real file SHA-256 and rejec
 	});
 	assert.equal(mismatchRes.verified, false);
 	assert.ok(mismatchRes.error?.includes("SHA-256 mismatch"));
+});
+
+test("Security-Egress: auditEgressRequest blocks unauthorized outbound domains and allows whitelisted ones", () => {
+	const allowedRes = auditEgressRequest("https://api.github.com/repos/test");
+	assert.equal(allowedRes.allowed, true);
+	assert.equal(allowedRes.domain, "api.github.com");
+
+	const blockedRes = auditEgressRequest("https://malicious-exfiltration-site.com/leak");
+	assert.equal(blockedRes.allowed, false);
+	assert.ok(blockedRes.reason?.includes("blocked by network sandbox policy"));
+});
+
+test("HITL-Bridge: buildHitlDecisionCard constructs 3-way decision options and applyHitlDecision overrides safely", () => {
+	const sampleGoal = {
+		id: "G001",
+		title: "Test Goal",
+		objective: "Fix auth",
+		status: "needs_user_decision",
+		blockerSignature: "consensus_rework_limit",
+		blockerOccurrenceCount: 3,
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+	};
+
+	const card = buildHitlDecisionCard(sampleGoal, "Consensus iteration limit exceeded");
+	assert.equal(card.availableOptions.length, 3);
+	assert.equal(card.suggestedAction, "retry");
+
+	const plan = { version: 1, goals: [sampleGoal], briefPath: "", goalsPath: "", ledgerPath: "" };
+	const resolvedGoal = applyHitlDecision(plan, "G001", "retry");
+	assert.equal(resolvedGoal.status, "in_progress");
+});
+
+test("Memory-Search: searchMemoryFacts queries facts by substring across content and category", () => {
+	const res = searchMemoryFacts(ROOT, "gotcha");
+	assert.ok(typeof res.totalFacts === "number");
+	assert.ok(Array.isArray(res.matchedFacts));
+});
+
+test("Dynamic-Hook-Discovery: discoverRuntimeHooks detects host runtime capabilities and fail-open timeouts", () => {
+	const report = discoverRuntimeHooks({ ANTIGRAVITY_SESSION_ID: "session-123" });
+	assert.equal(report.runtime, "Antigravity");
+	assert.equal(report.dynamicDiscoveryActive, true);
+	assert.ok(report.capabilities.some((c) => c.event === "SessionStart" && c.supported));
 });

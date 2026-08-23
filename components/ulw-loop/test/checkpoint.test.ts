@@ -196,7 +196,6 @@ describe("checkpointUlwLoop final story", () => {
 			checkpointUlwLoop(repo, {
 				goalId: "G001",
 				status: "complete",
-			qualityGateJson: QUALITY_GATE_PATH,
 				evidence: "final implementation complete and quality gate passed",
 				codexGoalJson: snapshot("complete", "unrelated completed task"),
 				qualityGateJson: QUALITY_GATE_PATH,

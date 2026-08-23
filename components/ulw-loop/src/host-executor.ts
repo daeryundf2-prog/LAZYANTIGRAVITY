@@ -1,5 +1,5 @@
-import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 import type { ExecutionBinding } from "./evidence-contract.js";
 
@@ -47,7 +47,8 @@ export async function executeHostCommand(request: HostExecutionRequest): Promise
 	} catch (error: unknown) {
 		const failure = error as { stdout?: string; stderr?: string; code?: number | string };
 		stdout = typeof failure.stdout === "string" ? failure.stdout : "";
-		stderr = typeof failure.stderr === "string" ? failure.stderr : error instanceof Error ? error.message : String(error);
+		stderr =
+			typeof failure.stderr === "string" ? failure.stderr : error instanceof Error ? error.message : String(error);
 		exitCode = typeof failure.code === "number" ? failure.code : 1;
 	}
 	const finishedAt = new Date().toISOString();

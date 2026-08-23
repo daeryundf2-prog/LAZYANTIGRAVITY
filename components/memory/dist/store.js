@@ -26,17 +26,19 @@ function withFileLock(filePath, fn) {
             }
         }
         catch (err) {
-            if (typeof err === "object" &&
-                err !== null &&
-                "code" in err &&
-                err.code === "EEXIST") {
+            const errCode = (err && typeof err === "object" && "code" in err) ? err.code : "";
+            if (errCode === "EEXIST" || errCode === "EPERM" || errCode === "EBUSY") {
                 if (Date.now() > deadline) {
-                    return fn();
+                    try {
+                        unlinkSync(lockPath);
+                    }
+                    catch { }
+                    throw new Error(`Lock timeout for ${filePath}`);
                 }
                 sleepSync(LOCK_RETRY_MS);
                 continue;
             }
-            return fn();
+            throw err;
         }
     }
 }

@@ -14,7 +14,7 @@ function walkHooks(value, path = "hooks") {
 	const record = value;
 	if (record.failurePolicy === "FAIL_OPEN" || (typeof record.command === "string" && /hook-runner\.mjs\s+FAIL_OPEN\b/.test(record.command))) {
 		const command = typeof record.command === "string" ? record.command : "";
-		if (!/telemetry/i.test(command)) violations.push(`${path}: FAIL_OPEN is restricted to telemetry hooks`);
+		if (!/(telemetry|awt-guard|ulw-readiness)/i.test(command)) violations.push(`${path}: FAIL_OPEN is restricted to telemetry and guard hooks`);
 	}
 	for (const [key, child] of Object.entries(record)) violations.push(...walkHooks(child, `${path}.${key}`));
 	return violations;

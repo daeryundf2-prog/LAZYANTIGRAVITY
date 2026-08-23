@@ -1,5 +1,5 @@
-import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 function fingerprint(value) {
@@ -25,7 +25,8 @@ export async function executeHostCommand(request) {
     catch (error) {
         const failure = error;
         stdout = typeof failure.stdout === "string" ? failure.stdout : "";
-        stderr = typeof failure.stderr === "string" ? failure.stderr : error instanceof Error ? error.message : String(error);
+        stderr =
+            typeof failure.stderr === "string" ? failure.stderr : error instanceof Error ? error.message : String(error);
         exitCode = typeof failure.code === "number" ? failure.code : 1;
     }
     const finishedAt = new Date().toISOString();

@@ -5,7 +5,6 @@ import { assertGroundTruthEvidence } from "./evidence-completion-gate.js";
 import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
-import {} from "./types.js";
 import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline, } from "./verification-pipeline.js";
 export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, args, now, scope) {
     const runId = normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
