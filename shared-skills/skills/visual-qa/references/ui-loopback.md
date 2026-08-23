@@ -61,6 +61,7 @@ CHECKLIST:
 2. **CJK & Typography**: Korean/CJK glyph clipping, unnatural line breaks, baseline drops.
 3. **Color & Contrast**: WCAG AA color contrast ratios, dark mode readability.
 4. **Diagram Precision**: SVG clipping, Mermaid node text overlap, arrow misalignments.
+5. **3D & WebGL Canvas**: Canvas mounting integrity, WebGL context loss, alpha transparency blending, viewport resize response.
 
 OUTPUT FORMAT:
 VERDICT: PERFECT | REMEDIATION_REQUIRED

@@ -91,6 +91,15 @@ bun install
 bun run dev
 ```
 
+### 3D & Interactive WebGL Stack (React + R3F)
+```bash
+bun create vite my-3d-app -- --template react-ts
+cd my-3d-app
+bun add three @types/three @react-three/fiber @react-three/drei framer-motion clsx tailwind-merge lucide-react
+bun add --dev @biomejs/biome typescript
+```
+> Read [threejs-r3f.md](threejs-r3f.md) for the mandatory Single Canvas Multi-View pattern, GPU `dispose()` memory discipline, and Next.js dynamic SSR imports.
+
 ## Lint + format — Biome
 
 Biome replaces ESLint + Prettier with one tool, written in Rust, ~30x faster.

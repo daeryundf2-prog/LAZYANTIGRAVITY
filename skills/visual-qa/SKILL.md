@@ -117,6 +117,7 @@ CHECK EACH:
 4. Code style and implementation quality.
 5. Responsive and resize behavior across viewport sizes (web) or terminal resize (TUI).
 6. Do the user-intended FEATURES actually work: interactions, states, navigation (web); input handling, resize, scroll (TUI)? Trace the code paths.
+7. 3D & WebGL Canvas integrity: does the 3D canvas render properly without WebGL context loss, black screen fallback, or memory leaks? Are 3D elements constrained to container boundaries?
 
 OUTPUT:
 VERDICT: PASS | REVISE | FAIL
@@ -164,6 +165,7 @@ CHECK:
 2. CJK precision:
    - Web: baseline/descender clipping, dropped glyphs (tofu), broken line-breaking, mismatched font metrics between reference and actual.
    - TUI: wide-character column drift (CJK cells counted as 1 instead of 2), box-drawing border misalignment, content overflowing past the terminal width.
+3. 3D & Canvas rendering: verify canvas alpha channel transparency against page background, absence of z-fighting/flickering, and presence of graceful loading states.
 
 OUTPUT:
 VERDICT: PASS | REVISE | FAIL

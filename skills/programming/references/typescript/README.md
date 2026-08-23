@@ -151,6 +151,7 @@ Load on demand — not all at once.
 | Error handling (Result, typed errors, union vs throw) | `error-handling.md` |
 | Bootstrapping a new project (Bun, pnpm, Hono, Vite) | `bootstrap.md` |
 | Hono backend stack (hono-openapi, Scalar, Swagger) | `backend-hono.md` |
+| Three.js & React Three Fiber (Single Canvas, dispose, SSR, Instancing) | `threejs-r3f.md` |
 
 ## No-excuse audit
 
