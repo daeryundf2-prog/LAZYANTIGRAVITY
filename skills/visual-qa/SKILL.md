@@ -30,6 +30,12 @@ In the commands below, `$SKILL_DIR` is this skill's own directory (the folder co
 
 If the change touches both, run both capture tracks and feed both into the passes.
 
+## Empirical Vision & OCR Rules (Anti-Hallucination & Quota Independence)
+
+1. **Mandatory Absolute Paths**: Never pass vague or relative filenames (e.g. `slide-01.png`) when dispatching visual reviews. Without absolute paths (`file:///absolute/path/to/img.png`), models risk hallucinating plausible-sounding contents that do not exist.
+2. **Verbatim Title / Label Quote Proof**: Always instruct the reviewer: *"Quote the exact title and main UI labels verbatim from the image."* Mismatched quotes prove the image was not genuinely inspected.
+3. **Quota Independence**: Vision / OCR inspections consume the text token bucket, NOT the image generation capacity bucket (`gemini-3.1-flash-image`). Even if image generation encounters a 429 limit, visual QA loops continue to function at full capacity.
+
 ## Step 2 - Capture objective reference evidence
 
 ### Web

@@ -43,6 +43,7 @@ const expectedSkills = [
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
+	"vector-diagram",
 	"visual-qa",
 ];
 

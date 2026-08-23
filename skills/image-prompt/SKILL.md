@@ -48,6 +48,8 @@ description: 막연한 요청을 gpt-image-2(Codex `$imagegen`) 완성 프롬프
 7. **이상적 피부 금지** → "natural skin texture, visible pores, subtle film grain".
 8. **실재 상표·인물 참조 금지** — 가상 브랜드/페르소나.
 9. **생성 후 글자 후처리 절대 금지.** 모든 텍스트는 **프롬프트로 이미지 안에서** 렌더한다(따옴표 카피 + 롤라벨 + 자유 작성 존). 생성된 PNG 위에 코드로 글자를 얹는 합성(PIL/Pillow·ImageMagick·SVG/HTML 오버레이·캔버스 캡처 등) 일절 금지 — 폰트·커닝·톤이 원본과 겉돌아 결과물을 망친다. 글자가 틀리면 후처리로 때우지 말고 **프롬프트를 고쳐 재생성**(타이포 구체화 → `2048x2048` + quality high → 카피 수 축소 순).
+10. **산출물 경로 및 Scratch 트랩 관리.** CLI/내장 도구로 이미지 생성 시 산출물은 `cwd`가 아닌 artifacts 디렉토리나 `~/.gemini/antigravity-cli/scratch/`에 저장된다. 생성 후 즉시 `file` 및 `ls -la` 명령어로 파일 존재 및 해상도를 확인하고 목표 경로로 복사/이동한다.
+11. **이미지 용량 버킷 쿼터(5시간 창) 인지.** `gemini-3.1-flash-image`는 5시간 고정 창당 약 12장 수준의 별도 용량 버킷을 사용한다. HTTP 429 발생 시 즉시 무차별 재시도를 하지 말고 `quotaResetTimeStamp`까지 대기하거나, 텍스트 다이어그램은 `$vector-diagram`으로 전환한다.
 
 ## 마스터 템플릿 (포맷 A 기본 6섹션 + 끝 AR)
 
