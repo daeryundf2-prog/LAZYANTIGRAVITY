@@ -27,6 +27,7 @@ export async function dispatchConsensus(repoRoot, runId, qualityInputFingerprint
         traceId,
         traceParent,
         ...(qualityInputFingerprint && { qualityInputFingerprint }),
+        ...(options.prompt && { prompt: options.prompt }),
     });
     for (const persona of ALL_PERSONAS) {
         const agentId = `${persona}-${consensusId.substring(0, 8)}`;

@@ -10,7 +10,7 @@ export { getEnvelopeHash, validateConsensusSchema } from "./consensus-helpers.js
 export { MockLiveConsensusClient, setMockPersonaVerdict } from "./consensus-mock-client.js";
 export { OpenCodeLiveConsensusClient } from "./consensus-opencode-client.js";
 export { ALL_PERSONAS, CONSENSUS_RESULT_SCHEMA } from "./consensus-types.js";
-function getPersonaSystemPrompt(persona, runId, consensusId, agentId) {
+export function getPersonaSystemPrompt(persona, runId, consensusId, agentId) {
     let details = "";
     if (persona === "advocate") {
         details =

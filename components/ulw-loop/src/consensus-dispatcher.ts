@@ -15,7 +15,7 @@ export { OpenCodeLiveConsensusClient } from "./consensus-opencode-client.js";
 export type { DispatchConsensusOptions, LiveConsensusClient } from "./consensus-types.js";
 export { ALL_PERSONAS, CONSENSUS_RESULT_SCHEMA } from "./consensus-types.js";
 
-function getPersonaSystemPrompt(
+export function getPersonaSystemPrompt(
 	persona: ConsensusPersona,
 	runId: string,
 	consensusId: string,

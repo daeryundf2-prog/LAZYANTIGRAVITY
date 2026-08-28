@@ -101,6 +101,7 @@ export interface LedgerEvent {
 	finalizerAllowed?: boolean;
 	missingPersonas?: string[];
 	isMockLive?: boolean;
+	prompt?: string | undefined;
 	traceId?: string | undefined;
 	traceParent?: string | undefined;
 	durationCreateSessionMs?: number | undefined;

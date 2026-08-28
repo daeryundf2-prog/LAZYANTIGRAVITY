@@ -1,6 +1,7 @@
 import { readValue } from "./cli-arg-parser.js";
 import { printJson } from "./cli-output.js";
 import { aggregateConsensus, dispatchConsensus, reportConsensusResult } from "./consensus-dispatcher.js";
+import { getConsensusPending } from "./consensus-pending.js";
 import { UlwLoopError } from "./types.js";
 function required(argv, flag) {
     const value = readValue(argv, flag)?.trim();
@@ -66,6 +67,20 @@ export async function reportConsensusResultCmd(repoRoot, argv, json) {
         printJson({ ok: true, consensusId, agentId });
     else
         process.stdout.write(`Reported consensus result for agent ${agentId} in consensus ${consensusId}.\n`);
+    return 0;
+}
+export async function consensusPendingCmd(repoRoot, argv, json) {
+    const runId = required(argv, "--run-id");
+    const consensusId = readValue(argv, "--consensus-id")?.trim();
+    const report = await getConsensusPending(repoRoot, runId, consensusId || undefined);
+    if (json)
+        printJson({ ok: true, ...report, pendingCount: report.pending.length });
+    else {
+        process.stdout.write(`Consensus ${report.consensusId}: ${report.pending.length} persona(s) pending, ${report.reported.length} reported.\n`);
+        for (const item of report.pending) {
+            process.stdout.write(`\n=== persona: ${item.persona} (agentId: ${item.agentId}) ===\n${item.fullPrompt}\n`);
+        }
+    }
     return 0;
 }
 export async function aggregateConsensusCmd(repoRoot, argv, json) {

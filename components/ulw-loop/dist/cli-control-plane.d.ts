@@ -1,4 +1,4 @@
-export { aggregateConsensusCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
+export { aggregateConsensusCmd, consensusPendingCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
 export declare function initRunCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
 export declare function setRunStateCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
 export declare function dispatchAgentCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;

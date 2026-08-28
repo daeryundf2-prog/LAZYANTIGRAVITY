@@ -195,7 +195,7 @@ test("ast-grep-mcp replace keeps dryRun default and writes only inside the works
 		const preview = callMcp(
 			"ast-grep-mcp",
 			"ast_grep_replace",
-			{ pattern: "const a = 1", rewrite: "const a = 2" },
+			{ pattern: "const a = 1;", rewrite: "const a = 2;" },
 			{ cwd: repo },
 		);
 		assert.equal(preview.dryRun, true);
@@ -204,7 +204,7 @@ test("ast-grep-mcp replace keeps dryRun default and writes only inside the works
 		const applied = callMcp(
 			"ast-grep-mcp",
 			"ast_grep_replace",
-			{ pattern: "const a = 1", rewrite: "const a = 2", dryRun: false },
+			{ pattern: "const a = 1;", rewrite: "const a = 2;", dryRun: false },
 			{ cwd: repo },
 		);
 		assert.equal(applied.dryRun, false);

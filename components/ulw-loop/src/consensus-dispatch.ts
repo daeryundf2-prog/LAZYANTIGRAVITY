@@ -40,6 +40,7 @@ export async function dispatchConsensus(
 		traceId,
 		traceParent,
 		...(qualityInputFingerprint && { qualityInputFingerprint }),
+		...(options.prompt && { prompt: options.prompt }),
 	});
 
 	for (const persona of ALL_PERSONAS) {

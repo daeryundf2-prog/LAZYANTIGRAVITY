@@ -3,6 +3,102 @@ import { createInterface } from "node:readline";
 import { readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
 
+// Real structural matching runs on @ast-grep/napi (tree-sitter) when the
+// optional dependency is installed; otherwise the line-based regex matcher
+// below is used. LAZYANTIGRAVITY_AST_ENGINE=regex forces the fallback.
+const NAPI_LANGUAGE_KEYS = {
+	ts: "TypeScript",
+	tsx: "TypeScript",
+	mts: "TypeScript",
+	cts: "TypeScript",
+	js: "JavaScript",
+	jsx: "JavaScript",
+	mjs: "JavaScript",
+	cjs: "JavaScript",
+	py: "Python",
+	rs: "Rust",
+	go: "Go",
+	json: "Json",
+	css: "Css",
+	html: "Html",
+};
+let napiEnginePromise = null;
+
+async function getNapiEngine() {
+	if (process.env["LAZYANTIGRAVITY_AST_ENGINE"] === "regex") return null;
+	if (napiEnginePromise === null) {
+		// Keep the module namespace object: native napi functions must not be
+		// destructured away from their receiver.
+		napiEnginePromise = import("@ast-grep/napi").then((m) => m).catch(() => null);
+	}
+	return napiEnginePromise;
+}
+
+function napiLanguageKeyForFile(filePath) {
+	const base = filePath.split(/[\\/]/).pop() ?? "";
+	const dot = base.lastIndexOf(".");
+	if (dot === -1) return null;
+	const ext = base.slice(dot + 1).toLowerCase();
+	return NAPI_LANGUAGE_KEYS[ext] ?? null;
+}
+
+// Returns null when structural matching is unavailable for this file, so the
+// caller can fall back to the regex engine.
+function structuralMatches(napi, filePath, source, pattern) {
+	try {
+		const langKey = napiLanguageKeyForFile(filePath);
+		if (!langKey || napi.Lang[langKey] === undefined) return null;
+		const sg = napi.parse(napi.Lang[langKey], source);
+		const nodes = sg.root().findAll(pattern);
+		return nodes.map((node) => {
+			const range = node.range();
+			return {
+				file: filePath,
+				line: range.start.line + 1,
+				column: range.start.column + 1,
+				text: node.text().trim(),
+			};
+		});
+	} catch {
+		return null;
+	}
+}
+
+// Interpolates $NAME metavariables from a pattern match into the rewrite
+// template. Multi-variables ($$$X) are not exposed by the napi node API here,
+// so rewrites referencing them return null and the caller uses the regex
+// engine instead of producing wrong output.
+function interpolateRewrite(node, rewrite) {
+	let out = rewrite;
+	for (const ref of rewrite.matchAll(/\${1,3}[A-Za-z][A-Za-z0-9_]*/g)) {
+		const token = ref[0];
+		if (token.startsWith("$$$")) return null;
+		const matched = node.getMatch(token.slice(1));
+		if (!matched) return null;
+		out = out.split(token).join(matched.text());
+	}
+	return out;
+}
+
+function structuralReplace(napi, filePath, source, pattern, rewrite) {
+	try {
+		const langKey = napiLanguageKeyForFile(filePath);
+		if (!langKey || napi.Lang[langKey] === undefined) return null;
+		const sg = napi.parse(napi.Lang[langKey], source);
+		const nodes = sg.root().findAll(pattern);
+		if (nodes.length === 0) return { updated: null, replacements: 0 };
+		const edits = [];
+		for (const node of nodes) {
+			const interpolated = interpolateRewrite(node, rewrite);
+			if (interpolated === null) return null;
+			edits.push(node.replace(interpolated));
+		}
+		return { updated: sg.root().commitEdits(edits), replacements: edits.length };
+	} catch {
+		return null;
+	}
+}
+
 const LANGUAGE_EXTENSIONS = {
 	typescript: [".ts", ".tsx", ".mts", ".cts"],
 	javascript: [".js", ".jsx", ".mjs", ".cjs"],
@@ -168,8 +264,22 @@ async function runSearch(args) {
 	if (!collected.ok) {
 		return { ok: false, error: collected.error };
 	}
+	const napi = isRegex ? null : await getNapiEngine();
 	const matches = [];
 	for (const file of collected.files) {
+		if (napi) {
+			let content;
+			try {
+				content = readFileSync(file, "utf8");
+			} catch {
+				continue;
+			}
+			const structural = structuralMatches(napi, file, content, rawPattern);
+			if (structural !== null) {
+				matches.push(...structural);
+				continue;
+			}
+		}
 		for (const m of searchInFile(file, rawPattern, isRegex)) matches.push(m);
 	}
 	const cap = matches.slice(0, 500);
@@ -194,6 +304,7 @@ async function runReplace(args) {
 		return { ok: false, error: collected.error };
 	}
 	const re = patternToRegex(rawPattern);
+	const napi = await getNapiEngine();
 	const changedFiles = [];
 
 	for (const file of collected.files) {
@@ -201,10 +312,22 @@ async function runReplace(args) {
 		if (!isInsideRoot(resolve(file), root)) continue;
 		try {
 			const original = readFileSync(file, "utf8");
-			if (re.test(original)) {
+			let updated = null;
+			let replacements = 0;
+			if (napi) {
+				const structural = structuralReplace(napi, file, original, rawPattern, rewrite);
+				if (structural !== null && structural.replacements > 0) {
+					updated = structural.updated;
+					replacements = structural.replacements;
+				}
+			}
+			if (updated === null && re.test(original)) {
 				re.lastIndex = 0;
-				const updated = original.replace(re, rewrite);
-				changedFiles.push({ file, replacements: (original.match(re) || []).length });
+				updated = original.replace(re, rewrite);
+				replacements = (original.match(re) || []).length;
+			}
+			if (updated !== null) {
+				changedFiles.push({ file, replacements });
 				if (!dryRun) {
 					writeFileSync(file, updated, "utf8");
 				}
@@ -225,7 +348,7 @@ async function runReplace(args) {
 const TOOLS = [
 	{
 		name: "ast_grep_search",
-		description: "Search code structurally across workspace files. Supports ast-grep style $ metavariables and optional regex. Matching is line-based; paths must be workspace-relative.",
+		description: "Search code structurally across workspace files. Uses tree-sitter (via the optional @ast-grep/napi dependency) when available, with a line-based regex fallback. Paths must be workspace-relative.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -239,7 +362,7 @@ const TOOLS = [
 	},
 	{
 		name: "ast_grep_replace",
-		description: "Perform structural code replacements across workspace files. dryRun defaults to true; writes are confined to the workspace root.",
+		description: "Perform structural code replacements across workspace files (tree-sitter when @ast-grep/napi is installed, regex fallback). dryRun defaults to true; writes are confined to the workspace root.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -264,7 +387,7 @@ async function handleJsonRpc(message) {
 			result: {
 				protocolVersion: "2024-11-05",
 				capabilities: { tools: {} },
-				serverInfo: { name: "ast-grep-mcp", version: "0.3.1" }
+				serverInfo: { name: "ast-grep-mcp", version: "0.4.0" }
 			}
 		};
 	}

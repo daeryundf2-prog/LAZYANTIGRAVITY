@@ -15,5 +15,8 @@
 	],
 	"scripts": {
 		"build": "node ../scripts/build-mcp-package.mjs"
+	},
+	"optionalDependencies": {
+		"@ast-grep/napi": "^0.45.2"
 	}
 }

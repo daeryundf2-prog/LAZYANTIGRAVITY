@@ -13,7 +13,7 @@ import {
 } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
 
-export { aggregateConsensusCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
+export { aggregateConsensusCmd, consensusPendingCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
 
 function required(argv: readonly string[], flag: string): string {
 	const value = readValue(argv, flag)?.trim();
