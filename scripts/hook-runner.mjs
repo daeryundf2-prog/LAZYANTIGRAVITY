@@ -96,8 +96,10 @@ async function main() {
 				return;
 			}
 
-			// Failure occurred, enforce policy
-			if (policy === "FAIL_OPEN") {
+			// Failure occurred: feed the active-learning feedback loop (best-effort)
+			// BEFORE the process can exit, then enforce the failure policy.
+			const enforcePolicy = () => {
+				if (policy === "FAIL_OPEN") {
 				// Suppress error, exit 0 but write stderr to enable diagnostics
 				process.stderr.write(stderrData);
 				resolve(0);
@@ -142,12 +144,25 @@ async function main() {
 					process.stdout.write(JSON.stringify(denyJson) + "\n");
 					resolve(0);
 				});
-			} else {
-				// Default to FAIL_CLOSED
-				process.stdout.write(stdoutData);
-				process.stderr.write(stderrData);
-				resolve(1);
-			}
+				} else {
+					// Default to FAIL_CLOSED
+					process.stdout.write(stdoutData);
+					process.stderr.write(stderrData);
+					resolve(1);
+				}
+			};
+			import(join(__dirname, "../components/active-learning/dist/recorder.js"))
+				.then(({ recordFailureEvent }) => {
+					const target = commandArgs.length > 0
+						? String(commandArgs[commandArgs.length - 1]).split("/").pop()
+						: command.split("/").pop();
+					recordFailureEvent({
+						toolName: `hook:${target || command}`,
+						errorMessage: stderrData || `hook exited with code ${code}`,
+					}, process.cwd());
+				})
+				.catch(() => {})
+				.finally(enforcePolicy);
 		});
 
 		child.on("error", (err) => {

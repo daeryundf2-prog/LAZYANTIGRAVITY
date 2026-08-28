@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 export function readFailureEvents(cwd = process.cwd()) {
     const possiblePaths = [
@@ -29,6 +29,44 @@ export function readFailureEvents(cwd = process.cwd()) {
             }
             catch { }
         }
+    }
+    // Also consume ulw-loop ledger failures (.omo/ulw-loop/runs/<run>/events.jsonl)
+    // so the learning loop is fed by the quality gates without a cross-component
+    // runtime dependency.
+    const runsDir = join(cwd, ".omo", "ulw-loop", "runs");
+    if (existsSync(runsDir)) {
+        try {
+            for (const run of readdirSync(runsDir, { withFileTypes: true })) {
+                if (!run.isDirectory())
+                    continue;
+                const ledgerPath = join(runsDir, run.name, "events.jsonl");
+                if (!existsSync(ledgerPath))
+                    continue;
+                try {
+                    const lines = readFileSync(ledgerPath, "utf8").split("\n").filter((l) => l.trim().length > 0);
+                    for (const line of lines) {
+                        try {
+                            const ev = JSON.parse(line);
+                            const type = typeof ev.type === "string" ? ev.type : "";
+                            const isFailure = type.includes("failed") || type === "parent.hitl_required";
+                            if (!isFailure)
+                                continue;
+                            events.push({
+                                id: ev.id || `ulw-${run.name}-${events.length}`,
+                                timestamp: ev.timestamp || Date.now(),
+                                eventType: type,
+                                toolName: "ulw-loop",
+                                targetPath: "",
+                                errorMessage: typeof ev.reason === "string" && ev.reason.trim() ? ev.reason : type,
+                            });
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+        }
+        catch { }
     }
     return events;
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { extractFailurePatterns, readFailureEvents } from "./analyzer.js";
 import { evolveRules } from "./evolver.js";
+import { recordFailureEvent } from "./recorder.js";
 const args = process.argv.slice(2);
 const command = args[0];
 function parseArgs(argv) {
@@ -47,6 +48,22 @@ function main() {
             process.exit(1);
         }
     }
+    else if (command === "record") {
+        const flag = (name) => {
+            const index = args.indexOf(name);
+            return index !== -1 ? args[index + 1] : undefined;
+        };
+        const ok = recordFailureEvent({
+            toolName: flag("--tool") || "unknown",
+            errorMessage: flag("--error") || "",
+            targetPath: flag("--file"),
+            eventType: flag("--type"),
+        });
+        if (!ok) {
+            console.error("[active-learning] failed to record the failure event.");
+            process.exit(1);
+        }
+    }
     else if (command === "hook" && args[1] === "stop") {
         // The hook is deliberately analyze-only: rule promotion requires an
         // explicit `evolve --approve --evidence-json ...` invocation with a
@@ -69,7 +86,7 @@ function main() {
     }
     else {
         console.log("LazyAntigravity Active Learning CLI");
-        console.log("Commands: analyze | evolve [--approve --evidence-json <path/json>] | hook stop");
+        console.log("Commands: analyze | evolve [--approve --evidence-json <path/json>] | record --tool <name> --error <msg> | hook stop");
     }
 }
 main();
