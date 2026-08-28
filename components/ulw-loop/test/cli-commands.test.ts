@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -262,13 +264,78 @@ describe("ulwLoopCommand checkpoint", () => {
 		expect(err.join("").toLowerCase()).toContain("criteria");
 	});
 
-	it("ACCEPTS when all criteria pass", async () => {
+	it("ACCEPTS when all criteria pass and the evidence contract verifies", async () => {
 		await createPlan();
 		await passCriterion("G001-goal-a", "C001");
 		await passCriterion("G001-goal-a", "C002");
 		await passCriterion("G001-goal-a", "C003");
 		await seedSubagentCompletion();
 
+		// Completion requires a strict evidence contract whose claims are
+		// verified against the real workspace (evidence-completion-gate.ts).
+		mkdirSync(join(testDir, "src"), { recursive: true });
+		mkdirSync(join(testDir, "test"), { recursive: true });
+		writeFileSync(join(testDir, "src", "auth.ts"), "export const auth = true;\n", "utf8");
+		writeFileSync(join(testDir, "test", "auth.test.ts"), "test('auth', () => {});\n", "utf8");
+		const sha256 = (file: string) => createHash("sha256").update(readFileSync(join(testDir, file))).digest("hex");
+		const evidenceContract = {
+			status: "verified",
+			summary: "implementation done and validation passed",
+			filesChanged: ["src/auth.ts", "test/auth.test.ts"],
+			readRanges: [
+				{ file: "src/auth.ts", startLine: 1, endLine: 1 },
+				{ file: "test/auth.test.ts", startLine: 1, endLine: 1 },
+			],
+			fileChecksums: [
+				{ file: "src/auth.ts", sha256: sha256("src/auth.ts") },
+				{ file: "test/auth.test.ts", sha256: sha256("test/auth.test.ts") },
+			],
+			commandsRun: ["npm test", "npm run build"],
+			commandAudits: [
+				{ command: "npm test", exitCode: 0 },
+				{ command: "npm run build", exitCode: 0 },
+			],
+			executionBinding: {
+				requestId: "req-accept-1",
+				runId: "default-run",
+				sessionId: "session-accept-1",
+				toolCallId: "call-accept-1",
+				startedAt: new Date().toISOString(),
+				finishedAt: new Date().toISOString(),
+				stdoutFingerprint: "a".repeat(64),
+				stderrFingerprint: "b".repeat(64),
+				exitCode: 0,
+			},
+		};
+
+		expect(
+			await ulwLoopCommand([
+				"checkpoint",
+				"--goal-id",
+				"G001-goal-a",
+				"--status",
+				"complete",
+				"--evidence",
+				"implementation done and validation passed",
+				"--codex-goal-json",
+				codexSnapshot(),
+				"--quality-gate-json",
+				JSON.stringify(evidenceContract),
+				"--json",
+			]),
+		).toBe(0);
+		expect(stdoutJson()).toHaveProperty("goal.status", "complete");
+	});
+
+	it("downgrades to needs_user_decision when the evidence contract is missing", async () => {
+		await createPlan();
+		await passCriterion("G001-goal-a", "C001");
+		await passCriterion("G001-goal-a", "C002");
+		await passCriterion("G001-goal-a", "C003");
+		await seedSubagentCompletion();
+
+		// Without --quality-gate-json the completion gate cannot verify ground
+		// truth, so the goal must fail closed into HITL rather than complete.
 		expect(
 			await ulwLoopCommand([
 				"checkpoint",
@@ -283,7 +350,7 @@ describe("ulwLoopCommand checkpoint", () => {
 				"--json",
 			]),
 		).toBe(0);
-		expect(stdoutJson()).toHaveProperty("goal.status", "complete");
+		expect(stdoutJson()).toHaveProperty("goal.status", "needs_user_decision");
 	});
 
 	it("#given failed checkpoint without codex goal json #when recorded through CLI #then marks the goal failed", async () => {

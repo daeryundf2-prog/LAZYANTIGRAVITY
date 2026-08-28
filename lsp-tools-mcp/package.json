@@ -12,5 +12,8 @@
 	"files": [
 		"dist",
 		"package.json"
-	]
+	],
+	"scripts": {
+		"build": "node ../scripts/build-mcp-package.mjs"
+	}
 }

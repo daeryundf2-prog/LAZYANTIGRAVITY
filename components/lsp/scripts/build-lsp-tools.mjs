@@ -45,7 +45,11 @@ function isBuildFresh(inputPath, outputPaths) {
 	return outputPaths.every((path) => statSync(path).mtimeMs >= inputMtime);
 }
 
-if (!force && requiredOutputs.every((path) => existsSync(path))) {
+const hasAllOutputs = requiredOutputs.every((path) => existsSync(path));
+// The committed dist counts as fresh unless package metadata is newer than the
+// outputs; without package metadata the bundled dist is the source of truth.
+const packageMetaFresh = !existsSync(packageJson) || isBuildFresh(packageJson, requiredOutputs);
+if (!force && hasAllOutputs && packageMetaFresh) {
 	console.log("Using bundled lsp-tools-mcp dist.");
 	process.exit(0);
 }

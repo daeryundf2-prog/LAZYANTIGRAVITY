@@ -13,7 +13,10 @@ async function makeFixture() {
 		new URL("./build-lsp-tools.mjs", import.meta.url),
 		join(root, "packages", "omo-codex", "plugin", "components", "lsp", "scripts", "build-lsp-tools.mjs"),
 	);
-	await writeFile(join(root, "packages", "lsp-tools-mcp", "package.json"), "{}\n");
+	await writeFile(
+		join(root, "packages", "lsp-tools-mcp", "package.json"),
+		JSON.stringify({ scripts: { build: "tsc -p ." } }) + "\n",
+	);
 	await writeFile(join(root, "packages", "lsp-tools-mcp", "dist", "cli.js"), "cli\n");
 	const fakeBin = join(root, "bin");
 	await mkdir(fakeBin, { recursive: true });
