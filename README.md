@@ -39,6 +39,12 @@ Five session-start hooks run in under a second and stay silent unless they have 
 | `/init-deep` | Generate hierarchical `AGENTS.md` context for the repo |
 | `/debugging`, `/review-work`, `/visual-qa`, `/report-bug` | Focused workflows for the common jobs |
 
+## ULW CLI on Antigravity
+
+![LazyAntigravity ULW command picker](assets/readme/lazyantigravity-ulw-command.png)
+
+![LazyAntigravity ULW run in progress](assets/readme/lazyantigravity-ulw-running.png)
+
 The agent-side CLI (for scripts or manual runs):
 
 ```bash
