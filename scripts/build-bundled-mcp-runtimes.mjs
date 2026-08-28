@@ -23,6 +23,11 @@ const runtimes = [
 		packageRoot: join(repoPackagesRoot, "git-bash-mcp"),
 		requiredOutputs: ["dist/cli.js"],
 	},
+	{
+		label: "workspace-mcp",
+		packageRoot: join(repoPackagesRoot, "workspace-mcp"),
+		requiredOutputs: ["dist/cli.js"],
+	},
 ];
 
 for (const runtime of runtimes) {

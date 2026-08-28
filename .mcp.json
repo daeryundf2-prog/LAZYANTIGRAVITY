@@ -23,6 +23,14 @@
 				"mcp"
 			],
 			"cwd": "."
+		},
+		"workspace": {
+			"command": "node",
+			"args": [
+				"./workspace-mcp/dist/cli.js",
+				"mcp"
+			],
+			"cwd": "."
 		}
 	}
 }
