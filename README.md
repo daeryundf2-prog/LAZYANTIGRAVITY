@@ -173,7 +173,7 @@ npm run check
 
 ## Honest limitations
 
-- **Consensus gate**: by default `dispatchConsensus` writes ledger events only and the bundled mock client approves everything. Real adversarial review needs `--live` plus an OpenCode-compatible endpoint (`@opencode-ai/sdk` is an optional peer dependency you must provide).
+- **Consensus gate**: without `--live` and an OpenCode-compatible endpoint (`@opencode-ai/sdk` is an optional peer dependency you must provide), checkpoints that require consensus **fail closed** into `needs_user_decision` — they never auto-approve. The bundled mock client exists for tests/dry-runs only.
 - **Symbol index**: `ast-index` is a regex-based heuristic indexer; it can misparse strings, template literals, and multi-line signatures.
 - **Session tree**: snapshots capture the full working tree (including untracked files) via a temporary index, without touching your real index or HEAD. Very large repositories may exceed hook timeouts.
 - **comment-checker**: the hook shells out to the external `@code-yeongyu/comment-checker` binary (declared as an optional dependency). When it is not installed, the hook degrades to `status: "missing"` and performs no comment checks.

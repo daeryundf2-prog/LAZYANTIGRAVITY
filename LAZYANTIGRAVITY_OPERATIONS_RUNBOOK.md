@@ -29,7 +29,18 @@ When submitting work completion via `/ulw checkpoint`, `quality_gate`, or `omo a
   ],
   "commandAudits": [
     { "command": "npm test", "exitCode": 0, "outputSnippet": "All tests passed" }
-  ]
+  ],
+  "executionBinding": {
+    "requestId": "req-1",
+    "runId": "default-run",
+    "sessionId": "session-1",
+    "toolCallId": "call-1",
+    "startedAt": "2026-08-28T00:00:00.000Z",
+    "finishedAt": "2026-08-28T00:01:00.000Z",
+    "stdoutFingerprint": "<64-hex sha256 of stdout>",
+    "stderrFingerprint": "<64-hex sha256 of stderr>",
+    "exitCode": 0
+  }
 }
 ```
 
@@ -43,6 +54,7 @@ The `evidence-verifier` automatically checks four invariants before allowing any
 2. **Line Bounds Accuracy**: `startLine` and `endLine` must not exceed the actual physical line count of the target file.
 3. **SHA-256 Checksum Match**: Disk contents are hashed in real-time and compared against `fileChecksums`.
 4. **Command Execution Zero-Exit**: All recorded commands in `commandAudits` must have exit code `0`.
+5. **Host Execution Binding**: `executionBinding` must reference the current run (`runId`) and carry `exitCode: 0`; without a binding, completion fails closed into `needs_user_decision`.
 
 ---
 

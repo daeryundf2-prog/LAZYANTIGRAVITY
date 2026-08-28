@@ -6,7 +6,7 @@
 | :--- | :--- | :--- |
 | **Full Build & Sync** | `npm run build` | Compile all 15 components, sync MCP runtimes & mirror |
 | **Verify Reproducibility** | `npm run verify:reproducible` | Ensure dist artifacts match TypeScript source 100% |
-| **Run Complete Test Suite**| `npm run check` | Execute all 560+ unit, integration & contract tests |
+| **Run Complete Test Suite**| `npm run check` | Build + hook-policy check + root tests + all 15 component suites |
 | **Search Active Memory** | `node components/memory/dist/cli.js search "auth"` | Search learned gotchas & facts across sessions |
 | **Run Self-Audit Confession**| `node components/ulw-loop/dist/self-audit.js report` | Audit trajectory ledger for drift or fabricated claims |
 | **Atomic Rollback** | `node components/ulw-loop/dist/self-audit.js rollback` | Revert to last verified clean state |
@@ -35,8 +35,10 @@ node -e 'const { validateStrictEvidence } = require("./components/ulw-loop/dist/
 
 ### Situation C: Daemon IPC Socket Stale Lock
 ```bash
-# Clean up stale socket & lock
-rm -f /tmp/lazyantigravity-daemon.sock /tmp/lazyantigravity-daemon.token
+# The socket/pid/token live under the workspace: .lazyantigravity/run/
+# A stale socket is removed automatically on the next `daemon start`.
+# `daemon stop` (or SIGTERM) removes socket and pid files cleanly.
+node components/daemon-bridge/dist/cli.js daemon stop
 ```
 
 ---

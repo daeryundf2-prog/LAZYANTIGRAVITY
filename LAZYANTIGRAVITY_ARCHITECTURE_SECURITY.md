@@ -15,7 +15,7 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
                                │ JSON-RPC / CLI / Hooks
 ┌──────────────────────────────▼──────────────────────────────┐
 │                  LazyAntigravity Core Layer                 │
-│  - Adaptive Thinking Budget & Routing (0 ~ 32k)              │
+│  - Adaptive Thinking Budget Directive & Routing               │
 │  - ULW-Loop State Machine & 3-Gate Quality Verification     │
 │  - Active Memory & Working Facts Store (Atomics.wait Lock)  │
 │  - Multi-Wave Ultra-Research & Claim Ledger Lock            │
@@ -55,7 +55,7 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ### 4.1. 3-Gate Quality Pipeline
 1. **Mechanical Gate**: Verifies automated test execution (`npm test`, `pytest`, `cargo test`, `go test`) whenever source files are modified, and checks LSP diagnostics.
 2. **Semantic Gate**: Enforces non-empty goals/summaries, verifies claim-vs-file consistency, blocks unresolved stagnation, and prevents unapproved model switching.
-3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk changes. Live dispatch requires an explicit `--live` invocation and an OpenCode-compatible endpoint (`@opencode-ai/sdk`, optional peer dependency); without it the gate records ledger events only — the default mock client approves everything and must never be treated as verification.
+3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk changes. Live dispatch requires an explicit `--live` invocation and an OpenCode-compatible endpoint (`@opencode-ai/sdk`, optional peer dependency). Without it the checkpoint **fails closed** into `needs_user_decision` — the bundled mock client exists for tests/dry-runs only and never ships as verification.
 
 ### 4.2. Strict Evidence Verification Contract
 - **Anti-Hallucination Gate**: Mandates explicit classification of evidence into `verified`, `partial`, `not_checked`, or `inference`.
