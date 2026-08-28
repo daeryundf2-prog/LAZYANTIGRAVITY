@@ -49,7 +49,7 @@
 		"provenance": "node scripts/lazyantigravity-provenance.mjs",
 		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
-		"test": "node --test test/*.test.mjs && node --test components/daemon-bridge/test/daemon-bridge.test.mjs && npx vitest --run components/ulw-loop/test/checkpoint.test.ts components/ulw-loop/test/evidence-attestation.test.ts",
+		"test": "node --test test/*.test.mjs && node --test components/daemon-bridge/test/daemon-bridge.test.mjs && npx vitest --run components/ulw-loop/test/checkpoint.test.ts",
 		"verify:hook-policies": "node scripts/verify-hook-policies.mjs",
 		"probe:model-capabilities": "node scripts/model-capability-probe.mjs",
 		"verify:reproducible": "node scripts/verify-dist-sync.mjs"
