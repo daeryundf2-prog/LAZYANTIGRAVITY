@@ -1,17 +1,17 @@
 {
 	"name": "@lazyantigravity/telemetry",
 	"version": "0.1.0",
-	"description": "Codex plugin component that emits omo-codex anonymous daily-active telemetry on SessionStart.",
+	"description": "Antigravity plugin component that emits lazyantigravity opt-in anonymous daily-active telemetry on SessionStart.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/code-yeongyu/oh-my-openagent",
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/code-yeongyu/oh-my-openagent.git"
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
 	},
 	"bugs": {
-		"url": "https://github.com/code-yeongyu/oh-my-openagent/issues"
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	},
 	"keywords": [
 		"antigravity",

@@ -29,16 +29,16 @@ function resolveWritableDirectory(preferredDir, fallbackSuffix) {
 export function getDataDir() {
     const xdgDataHome = process.env["XDG_DATA_HOME"]?.trim();
     if (xdgDataHome) {
-        return resolveWritableDirectory(xdgDataHome, "omo-codex-data");
+        return resolveWritableDirectory(xdgDataHome, "lazyantigravity-data");
     }
     if (process.platform === "win32") {
         const localAppData = process.env["LOCALAPPDATA"]?.trim();
         if (localAppData) {
-            return resolveWritableDirectory(localAppData, "omo-codex-data");
+            return resolveWritableDirectory(localAppData, "lazyantigravity-data");
         }
     }
     const preferredDataDir = path.join(getOsProvider().homedir(), ".local", "share");
-    return resolveWritableDirectory(preferredDataDir, "omo-codex-data");
+    return resolveWritableDirectory(preferredDataDir, "lazyantigravity-data");
 }
 export function getActivityStateDir() {
     return path.join(getDataDir(), CACHE_DIR_NAME);
