@@ -12,14 +12,25 @@ async function main() {
         const server = new DaemonServer(paths);
         await server.start();
         console.log(`[Daemon-Bridge] IPC Daemon started at: ${paths.socketPath} (PID: ${process.pid})`);
-        if (!args.includes("--foreground")) {
-            // Keep process alive if foreground
-        }
+        // The listening socket holds the event loop alive; callers that need a
+        // background daemon spawn this CLI detached (see handleSessionStartHook).
+        const shutdown = async () => {
+            await server.stop();
+            process.exit(0);
+        };
+        process.on("SIGINT", () => void shutdown());
+        process.on("SIGTERM", () => void shutdown());
     }
     else if (command === "daemon" && sub === "stop") {
         try {
-            await client.send({ cmd: "STOP" });
-            console.log("[Daemon-Bridge] Daemon stop signal sent.");
+            const response = await client.send({ cmd: "STOP" });
+            if (response?.status === "ok") {
+                console.log("[Daemon-Bridge] Daemon stopped.");
+            }
+            else {
+                console.error(`[Daemon-Bridge] Daemon stop failed: ${response?.error ?? "unknown error"}`);
+                process.exitCode = 1;
+            }
         }
         catch {
             console.log("[Daemon-Bridge] Daemon is not running.");
@@ -69,7 +80,7 @@ async function main() {
         process.stdout.write(out);
     }
     else if (command === "hook" && sub === "stop") {
-        const out = handleStopHook();
+        const out = await handleStopHook();
         process.stdout.write(out);
     }
     else {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { SharedBlackboard } from "../dist/blackboard.js";
@@ -89,6 +89,31 @@ test("DaemonServer rejects IPC requests with an invalid token", async () => {
 		const response = await client.send({ cmd: "STATUS" });
 		assert.deepEqual(response, { status: "error", error: "Unauthorized" });
 		await server.stop();
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("DaemonServer stops cleanly on the STOP command", async () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "d-stop-"));
+	try {
+		const config = getDaemonPaths(tempDir);
+		const server = new DaemonServer(config);
+		await server.start();
+		const client = new DaemonClient(config);
+
+		const response = await client.send({ cmd: "STOP" });
+		assert.deepEqual(response, { status: "ok", stopping: true });
+		assert.equal(server.isStopRequested(), true);
+
+		// The close/cleanup is asynchronous; poll briefly for the socket removal.
+		const deadline = Date.now() + 2000;
+		while (existsSync(config.socketPath) && Date.now() < deadline) {
+			const spinStart = Date.now();
+			while (Date.now() - spinStart < 20) {}
+		}
+		assert.equal(existsSync(config.socketPath), false, "socket file must be removed after STOP");
+		assert.equal(await client.status(), null, "status must fail after the daemon stopped");
 	} finally {
 		rmSync(tempDir, { recursive: true, force: true });
 	}

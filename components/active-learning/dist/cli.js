@@ -48,14 +48,22 @@ function main() {
         }
     }
     else if (command === "hook" && args[1] === "stop") {
+        // The hook is deliberately analyze-only: rule promotion requires an
+        // explicit `evolve --approve --evidence-json ...` invocation with a
+        // verified evidence envelope, so sessions are never mutated here.
+        let context = "";
         try {
-            evolveRules(cwd);
+            const events = readFailureEvents(cwd);
+            const patterns = extractFailurePatterns(events);
+            if (patterns.length > 0) {
+                context = `Active-learning analysis (read-only): scanned ${events.length} failure event(s), found ${patterns.length} significant cluster(s). Promotion requires an explicit approved evolve run.`;
+            }
         }
         catch { }
         process.stdout.write(JSON.stringify({
             hookSpecificOutput: {
                 hookEventName: "Stop",
-                additionalContext: "",
+                additionalContext: context,
             },
         }));
     }

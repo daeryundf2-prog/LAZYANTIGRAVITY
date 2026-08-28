@@ -123,7 +123,7 @@ export function evolveRules(cwd: string = process.cwd(), options: EvolveOptions 
 			fileChecksums: validation.raw["fileChecksums"],
 			commandAudits: validation.raw["commandAudits"],
 			executionBinding: validation.raw["executionBinding"],
-			content: `[자가학습 데이터·사용자 승인됨] ${safeRule}`,
+			content: `[self-learned · user-approved] ${safeRule}`,
 		};
 		appendFileSync(memoryFile, `${JSON.stringify(factRecord)}\n`, { encoding: "utf8", mode: 0o600 });
 		promoted.push(gotcha);

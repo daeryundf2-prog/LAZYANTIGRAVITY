@@ -1,31 +1,51 @@
 import { spawnSync } from "node:child_process";
-export function runGit(cmdArgs, cwd = process.cwd(), throwOnError = true) {
-    const res = spawnSync("git", cmdArgs, { cwd, encoding: "utf8" });
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+export function runGit(cmdArgs, cwd = process.cwd(), throwOnError = true, extraEnv = {}) {
+    const env = Object.keys(extraEnv).length > 0 ? { ...process.env, ...extraEnv } : process.env;
+    const res = spawnSync("git", cmdArgs, { cwd, encoding: "utf8", env });
     if (res.status !== 0 && throwOnError) {
         throw new Error(res.stderr.trim() || res.stdout.trim() || `Git failed: git ${cmdArgs.join(" ")}`);
     }
     return (res.stdout || "").trim();
 }
 export function createShadowSnapshot(label, cwd = process.cwd()) {
-    // 1. Stage temporary index in memory without touching HEAD
-    const treeSha = runGit(["write-tree"], cwd);
-    // 2. Commit tree with parent HEAD
-    let headSha = "";
+    // Stage the full working tree (including untracked files) into a temporary
+    // index so the user's real index is never touched, then commit that tree as
+    // a shadow ref. Without this, `write-tree` alone would snapshot only the
+    // stale index and silently miss unstaged/untracked edits.
+    const tempIndexDir = mkdtempSync(join(tmpdir(), "lazyantigravity-idx-"));
+    const tempIndex = join(tempIndexDir, "index");
     try {
-        headSha = runGit(["rev-parse", "HEAD"], cwd);
+        const gitEnv = { GIT_INDEX_FILE: tempIndex };
+        const headTree = runGit(["rev-parse", "HEAD^{tree}"], cwd, false, gitEnv);
+        if (headTree) {
+            runGit(["read-tree", headTree], cwd, true, gitEnv);
+        }
+        runGit(["add", "-A", "--", "."], cwd, true, gitEnv);
+        const treeSha = runGit(["write-tree"], cwd, true, gitEnv);
+        // Commit tree with parent HEAD
+        let headSha = "";
+        try {
+            headSha = runGit(["rev-parse", "HEAD"], cwd, false);
+        }
+        catch {
+            headSha = "";
+        }
+        const commitArgs = ["commit-tree", treeSha, "-m", `shadow: ${label}`];
+        if (headSha) {
+            commitArgs.push("-p", headSha);
+        }
+        const commitSha = runGit(commitArgs, cwd);
+        // Save as shadow ref
+        const refName = `refs/lazyantigravity/snapshots/${commitSha.slice(0, 8)}`;
+        runGit(["update-ref", refName, commitSha], cwd);
+        return commitSha;
     }
-    catch {
-        headSha = "";
+    finally {
+        rmSync(tempIndexDir, { recursive: true, force: true });
     }
-    const commitArgs = ["commit-tree", treeSha, "-m", `shadow: ${label}`];
-    if (headSha) {
-        commitArgs.push("-p", headSha);
-    }
-    const commitSha = runGit(commitArgs, cwd);
-    // 3. Save as shadow ref
-    const refName = `refs/lazyantigravity/snapshots/${commitSha.slice(0, 8)}`;
-    runGit(["update-ref", refName, commitSha], cwd);
-    return commitSha;
 }
 export function restoreShadowSnapshot(commitSha, cwd = process.cwd()) {
     // Checkout tree without changing branch

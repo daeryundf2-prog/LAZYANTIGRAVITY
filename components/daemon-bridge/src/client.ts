@@ -12,7 +12,8 @@ export class DaemonClient {
 	}
 
 	public isRunning(): boolean {
-		if (process.platform === "win32") return true;
+		// On Windows the config points at the named-pipe namespace, which only
+		// lists pipes that a live server currently owns.
 		return existsSync(this.config.socketPath);
 	}
 

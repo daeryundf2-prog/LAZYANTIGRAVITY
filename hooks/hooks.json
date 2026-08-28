@@ -254,7 +254,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/active-learning/dist/cli.js\" hook stop",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.6.0): Evolving Active Rules"
+						"statusMessage": "LazyAntigravity(0.6.0): Analyzing Failure Patterns (read-Only)"
 					}
 				]
 			}

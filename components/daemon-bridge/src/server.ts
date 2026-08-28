@@ -61,6 +61,7 @@ export class DaemonServer {
 	private token: string;
 	private consumedRequestIds = new Set<string>();
 	private nonceLedgerPath: string;
+	private stopRequested = false;
 
 	constructor(config: DaemonConfig) {
 		this.config = config;
@@ -114,6 +115,7 @@ export class DaemonServer {
 	}
 
 	public stop(): Promise<void> {
+		this.stopRequested = true;
 		return new Promise((resolve) => {
 			if (this.server) {
 				this.server.close(() => {
@@ -125,6 +127,10 @@ export class DaemonServer {
 				resolve();
 			}
 		});
+	}
+
+	public isStopRequested(): boolean {
+		return this.stopRequested;
 	}
 
 	private cleanup(): void {
@@ -193,6 +199,13 @@ export class DaemonServer {
 				case "DEL": return key === undefined ? { status: "error", error: "key must be a string" } : { status: "ok", deleted: this.blackboard.delete(key) };
 				case "LIST": return namespace === null ? { status: "error", error: "namespace must be a string" } : { status: "ok", entries: this.blackboard.list(namespace) };
 				case "CLEAR": this.blackboard.clear(); return { status: "ok", cleared: true };
+				case "STOP": {
+					this.stopRequested = true;
+					// Close asynchronously so the acknowledgment is written to the
+					// socket first; the process exits once the loop drains.
+					void this.stop();
+					return { status: "ok", stopping: true };
+				}
 				default: return { status: "error", error: `Unknown command: ${String(cmd)}` };
 			}
 		} catch (err: unknown) {

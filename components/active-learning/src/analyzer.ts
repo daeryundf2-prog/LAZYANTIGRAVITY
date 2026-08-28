@@ -55,7 +55,7 @@ export function extractFailurePatterns(events: TelemetryFailureEvent[]): Learned
 			gotchas.push({
 				id: `gotcha-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
 				pattern: key,
-				suggestedRule: `주의: [${val.toolName}] 도구 사용 시 '${val.sampleError.slice(0, 80)}' 오류가 ${val.count}회 반복 발생함. 사전 매개변수 유효성 검사 필수.`,
+				suggestedRule: `Caution: tool [${val.toolName}] failed ${val.count}x with '${val.sampleError.slice(0, 80)}'. Validate parameters up-front before retrying.`,
 				confidence,
 				occurrences: val.count,
 			});

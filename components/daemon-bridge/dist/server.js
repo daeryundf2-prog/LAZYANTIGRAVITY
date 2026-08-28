@@ -51,6 +51,7 @@ export class DaemonServer {
     token;
     consumedRequestIds = new Set();
     nonceLedgerPath;
+    stopRequested = false;
     constructor(config) {
         this.config = config;
         ensureToken(config.tokenPath);
@@ -104,6 +105,7 @@ export class DaemonServer {
         });
     }
     stop() {
+        this.stopRequested = true;
         return new Promise((resolve) => {
             if (this.server) {
                 this.server.close(() => {
@@ -116,6 +118,9 @@ export class DaemonServer {
                 resolve();
             }
         });
+    }
+    isStopRequested() {
+        return this.stopRequested;
     }
     cleanup() {
         if (process.platform !== "win32" && existsSync(this.config.socketPath)) {
@@ -190,6 +195,13 @@ export class DaemonServer {
                 case "CLEAR":
                     this.blackboard.clear();
                     return { status: "ok", cleared: true };
+                case "STOP": {
+                    this.stopRequested = true;
+                    // Close asynchronously so the acknowledgment is written to the
+                    // socket first; the process exits once the loop drains.
+                    void this.stop();
+                    return { status: "ok", stopping: true };
+                }
                 default: return { status: "error", error: `Unknown command: ${String(cmd)}` };
             }
         }

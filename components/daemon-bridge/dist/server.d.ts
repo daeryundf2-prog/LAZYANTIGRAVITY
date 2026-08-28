@@ -12,11 +12,13 @@ export declare class DaemonServer {
     private token;
     private consumedRequestIds;
     private nonceLedgerPath;
+    private stopRequested;
     constructor(config: DaemonConfig);
     private loadNonceLedger;
     private persistNonce;
     start(): Promise<void>;
     stop(): Promise<void>;
+    isStopRequested(): boolean;
     private cleanup;
     private handleConnection;
     private isExistingDaemonAlive;
