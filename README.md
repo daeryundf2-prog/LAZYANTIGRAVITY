@@ -2,207 +2,109 @@
 
 AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).
 
-Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.7 Flash** as the default planner + coding workhorse.
+It gives your coding agent durable workspace memory, evidence-bound work loops with quality gates, sandboxed local tools, and a review pipeline — everything local, no telemetry unless you opt in, no network egress by default. Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.7 Flash**.
 
-[![Antigravity Plugin](https://img.shields.io/badge/Antigravity-Plugin-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://github.com/google-gemini/antigravity)
-[![Gemini 3.7 Flash](https://img.shields.io/badge/Gemini%203.7%20Flash-Plan%20%2B%20Code-00d4ff?style=for-the-badge&logo=google-gemini&logoColor=white)](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-3-7-flash/)
-[![Version](https://img.shields.io/badge/version-0.6.0-black?style=for-the-badge)](./package.json)
-
-## Why this plugin
-
-| Without lazyantigravity | With lazyantigravity |
-| :--- | :--- |
-| Subagents isolated without IPC | **Local IPC Daemon Bridge & In-Memory Blackboard** (token-authed, replay-protected; measured ~0.2 ms set+get round-trip via `npm run bench`) |
-| No code map between sessions | **Pre-emptive Symbol & Call-Graph Indexer** (regex-based and approximate; caches a symbol/call graph for lookups and blast-radius hints) |
-| Linear conversation without undo | **Git-Backed Session Tree Forker** (shadow git snapshots & non-destructive hypothesis branching) |
-| Repetitive errors across sessions | **Active Learning Rule Evolver** (telemetry-driven auto-promotion of `⚠️ [Gotchas]`) |
-| Single agent, single task | **12 workflow skills** (+ 2 aliases) for planning, ULW loops, review, debugging, visual QA |
-| Fixed token budget & bloated context | **Adaptive Thinking Budget & Code Skeletonizer** (keyword-tiered budget directive injected into context + brace-based skeleton preview; the budget is a hint to the model, not an enforced limit) |
-| Parallel multi-agent file collisions | **Dynamic Worktree Swarm** (helper script for isolated git worktrees + squash-merge workflow) |
-| Fake passing tests (False Greens) | **Mutation Testing Gate** (lightweight single-file mutate/run/restore loop; not a Stryker-class engine) |
-| Single-model review blindness | **Dual-Model Consensus Gate** (3-4 adversarial reviewer personas; live dispatch requires `--live` + an OpenCode-compatible endpoint, otherwise ledger events only) |
-| Heavy overhead on simple tasks | **Quick-Lane Fast-Pass** for direct execution without subagent overhead |
-| Context lost across sessions | **Local Active Memory (`facts.jsonl`)** for persistent working memory |
-| Flaky timing failures | **5-Parallel Flaky Guard** stress-runner for deterministic hardening |
-| Visual defects unnoticed | **Headless Visual Loopback** with Gemini 3.7 Native Vision QA |
-| No quality gates | **7 hook events / 25 command hooks** (rules, memory, quick-lane, adaptive-reasoning, daemon, ast-index, session-tree, active-learning) |
-| Manual model guessing | **Pass `Subagents[].Model` on `invoke_subagent`** (session Flash; `flash`/`pro` hints) |
-| Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
-| Weak evidence discipline | **Evidence-bound ULW loop** - claims need local proof |
-
-## Recommended models (Antigravity)
-
-Keep the **session UI** on **Gemini 3.7 Flash (High)**. Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite`). That is an agent hint (`canTierRoute=true`, `hostEnforced=false`). Antigravity does not rewrite the session UI model (`canAutoRoute=false`).
-
-| Role | Recommendation |
-| :--- | :--- |
-| **Session default / planner / worker / researcher** | **Gemini 3.7 Flash (High)** + `Model: "flash"` |
-| Verify / adversarial review | `Model: "pro"` (Gemini 3.1 Pro family hint) |
-| Rapid iterative bug fixes | Gemini 3.7 Flash (Medium) or `Model: "flash_lite"` |
-| Escape hatch (ambiguous, high-stakes design only) | Claude Opus 4.6 (Thinking) via manual UI switch |
-
-`model-catalog.json` encodes these defaults and `antigravity.tierMap`. Run most ULW sessions entirely with a Flash parent and Pro verify lanes.
-
-## ULW CLI on Antigravity
-
-Prefer the plugin-bundled CLI (PATH `omo` is optional):
-
-```powershell
-node "$env:USERPROFILE\.gemini\config\plugins\lazyantigravity\components\ulw-loop\dist\cli.js" ulw-loop help
-```
+## Install
 
 ```bash
-node "$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.js" ulw-loop help
-```
+# macOS / Linux
+mkdir -p ~/.gemini/config/plugins
+cd ~/.gemini/config/plugins
+git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 
-Checkpoints write to `.omo/ulw-loop/checkpoints/` (legacy `.lazycodex/checkpoints/` is still read). Full workflow: `skills/ulw-loop/references/full-workflow.md`.
-
-## Quick start
-
-### Windows PowerShell
-
-```powershell
+# Windows PowerShell
 mkdir $env:USERPROFILE\.gemini\config\plugins -Force
 cd $env:USERPROFILE\.gemini\config\plugins
 git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
 ```
 
-### macOS / Linux
+Restart Antigravity. No build step — compiled artifacts are committed and verified against sources (`npm run verify:reproducible`).
 
-```bash
-mkdir -p ~/.gemini/config/plugins
-cd ~/.gemini/config/plugins
-git clone https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git lazyantigravity
-```
+## What happens in your first session
 
-Restart Antigravity, then use `/ulw` or `/ulw-loop`.
+Five session-start hooks run in under a second and stay silent unless they have something useful to inject: project rules load, your persisted memory loads, the IPC daemon starts, and the symbol index pre-builds. Then:
 
-![LazyAntigravity ULW command picker](assets/readme/lazyantigravity-ulw-command.png)
-
-![LazyAntigravity ULW run in progress](assets/readme/lazyantigravity-ulw-running.png)
+- **Ask a quick question** — a quick-lane classifier skips the heavy orchestration for one-line queries.
+- **Edit a file** — LSP/compiler diagnostics and comment-preservation checks run automatically; clean edits stay silent, real findings are fed back to the agent immediately.
+- **Run `/ulw`** — the agent plans goals with success criteria, executes, and can only report "complete" with evidence that verifies against your actual workspace (file checksums, exit-0 command audits, a host execution binding). Anything unverified fails closed into a human decision, never a fake green.
+- **Come back tomorrow** — decisions and learned gotchas persist in `.lazyantigravity/memory/facts.jsonl` and are searched again next session.
 
 ## Core commands
 
 | Command | Purpose |
 | :--- | :--- |
 | `/ulw` / `ultrawork` | Evidence-bound implement → test → fix loop |
-| `/ulw-loop` | Multi-goal orchestration with checkpoints |
-| `/ulw resume` | Resume after quota/model interruption |
-| `/init-deep` | Generate hierarchical `AGENTS.md` context |
+| `/ulw-loop` | Multi-goal orchestration with checkpoints and resume (`/ulw resume` after quota interrupts) |
+| `/ulw-plan` | Explore-first planning; waits for your explicit approval before producing a plan |
+| `/init-deep` | Generate hierarchical `AGENTS.md` context for the repo |
+| `/debugging`, `/review-work`, `/visual-qa`, `/report-bug` | Focused workflows for the common jobs |
+
+The agent-side CLI (for scripts or manual runs):
+
+```bash
+node "$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.js" ulw-loop status
+# subcommands: create-goals, status, checkpoint, ledger, resume, dispatch-consensus, consensus-pending, ...
+```
+
+## Recommended models (Antigravity)
+
+Keep the **session UI** on **Gemini 3.7 Flash (High)**. Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite`) — that is an agent hint, the host never rewrites your session model.
+
+| Role | Recommendation |
+| :--- | :--- |
+| Session default / planner / worker | **Gemini 3.7 Flash (High)** + `Model: "flash"` |
+| Verify / adversarial review | `Model: "pro"` |
+| Rapid iterative fixes | Flash (Medium) or `Model: "flash_lite"` |
 
 ## What ships in this tree
 
-### Components (15)
+- **15 components** — rules engine, active memory, quick-lane, adaptive reasoning, comment checker, LSP feedback, ULW loop (evidence ledger + checkpoints + consensus), telemetry (opt-in), daemon bridge (token-authed IPC blackboard), symbol index, session tree (shadow-git snapshots), active learning, and helpers.
+- **12 workflow skills + 2 aliases** — every former component-manual skill now lives in its component's README; absorbed workflows are preserved as references inside the skill that owns them.
+- **4 bundled local MCP servers** — `git_bash` (workspace-confined, read-only-by-default git policy, no shell chaining), `ast_grep` (tree-sitter structural search/replace when the optional `@ast-grep/napi` dependency is installed, regex fallback otherwise), `lsp` (compiler diagnostics), `workspace` (memory search, blackboard, session tree). Remote MCP servers ship as opt-in examples only.
 
-1. `adaptive-reasoning` — Keyword-tiered thinking-budget directive & brace-based code skeletonizer
-2. `quick-lane` — Fast-pass low-complexity task execution
-3. `memory` — Local active memory & facts persistence (`facts.jsonl`)
-4. `comment-checker` — Comment preservation after edits
-5. `rules` — Project rule injection
-6. `lsp` — Local LSP-backed MCP tools
-7. `ultrawork` — ULW keyword / directive injection
-8. `ulw-loop` — Goals, evidence, checkpoints
-9. `telemetry` — **Opt-in** daily-active telemetry
-10. `start-work-continuation` — Resume helpers
-11. `git-bash` — Git Bash MCP recommendation hooks
-12. `daemon-bridge` — Token-authed local IPC daemon + blackboard
-13. `ast-index` — Regex-based symbol & call-graph index
-14. `session-tree` — Git-backed session hypothesis tree
-15. `active-learning` — Telemetry-driven rule evolution (evidence-gated)
+## Evidence, not claims
 
-### Skills (12) + aliases (2)
-
-`debugging`, `git-master`, `image-prompt`, `init-deep`, `programming`, `refactor`, `report-bug`, `review-work`, `start-work`, `ulw-loop`, `ulw-plan`, `visual-qa`
-
-Aliases: `ulw` (→ ulw-loop), `lcx-report-bug` (→ report-bug)
-
-Consolidated in 0.7.0: former component-manual skills (comment-checker, lsp, rules,
-active-memory, adaptive-reasoning, active-learning, session-persistence) now live in
-their component READMEs — those behaviors run automatically via hooks. Absorbed
-workflow skills (dual-verify, swarm-sync, flaky-guard, self-audit, hypothesis-tree,
-arch-guard, ultra-research, repo-survey, information-density, frontend-ui-ux,
-ui-loopback, ast-refactor, remove-ai-slops, vector-diagram) are preserved as
-`references/` inside the skill that owns their workflow.
-
-### MCP
-
-**Default (local only):** `ast_grep`, `git_bash`, `lsp`, `workspace`
-
-`workspace` exposes the plugin's workspace state as native tools: `memory_search`,
-`blackboard_get/set/list` (the IPC blackboard), and `session_tree_snapshot/render/fork`
-(fork requires the `LAZYANTIGRAVITY_SESSION_TREE_FORK=1` opt-in). ast_grep uses
-real tree-sitter structural matching when the optional `@ast-grep/napi`
-dependency is installed, with a line-based regex fallback otherwise.
-
-**Local browser tooling (opt-in):** `playwright` ??merge from `mcp_config.playwright.example.json` into `mcp_config.json` / `.mcp.json` when you want real-browser QA. Playwright MCP runs **locally** (no network egress; the browser runs on your machine) and powers the browser channel in `visual-qa` / `ui-loopback`. First run downloads browser binaries (`npx playwright install chromium`).
-
-**Remote helpers (opt-in):** `grep_app`, `context7` ??merge from `mcp_config.remote.example.json` into `mcp_config.json` / `.mcp.json` only if you accept remote query egress. Remote servers are **off by default** so air-gapped and secrets-sensitive sessions stay local.
-
-## Local evidence commands
+Every number and behavior in these docs maps to a command you can run:
 
 ```bash
-npm run doctor -- --json
-npm run hooks:report -- --json
-npm run mcp:status -- --json --probe
-npm run provenance -- --json
-npm run evidence:map -- --json
-npm run bench
-npm test
+npm run check                      # build + hook policies + root tests + all 15 component suites
+npm run verify:reproducible        # committed dist must match sources 100%
+npm run doctor -- --json           # manifest / hook / MCP / skill integrity
+npm run hooks:report -- --json     # every command hook, classified and observable
+npm run mcp:status -- --json       # every local MCP server, classified
+npm run mcp:status -- --probe      # actually handshakes with each local MCP server
+npm run provenance -- --json       # product / generated / vendored provenance
+npm run evidence:map -- --json     # docs claims mapped to their local evidence
+npm run bench                      # measured: daemon IPC set+get p50 0.207ms (n=500); ast-index lookups
 ```
-
-Claims in docs should map to local files/scripts. Prefer these commands over marketing checklists.
 
 ## Telemetry (opt-in)
 
-Nothing is sent unless you opt in.
-
-```bash
-# env (any one)
-export LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1
-export OMO_SEND_ANONYMOUS_TELEMETRY=1
-```
-
-Marker file:
-
-```bash
-# macOS / Linux
-mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}/lazyantigravity"
-touch "${XDG_DATA_HOME:-$HOME/.local/share}/lazyantigravity/.telemetry-opt-in"
-```
-
-```powershell
-# Windows
-$dir = Join-Path $env:LOCALAPPDATA "lazyantigravity"
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-New-Item -ItemType File -Force -Path (Join-Path $dir ".telemetry-opt-in") | Out-Null
-```
-
-Disable again with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1` (or `OMO_DISABLE_POSTHOG=1`).  
-`POSTHOG_API_KEY` must be provided by you when opted in; the bundle does not ship a default key.
-
-When opted in, exactly one event per UTC day is sent (`lazyantigravity_daily_active`) containing: a random persisted machine UUID, package name/version, Node version, OS platform/release/arch, CPU count and model, total RAM (rounded GB), locale, timezone, `$SHELL`, `$TERM_PROGRAM`, and a CI flag. No file paths, prompts, code content, or hostnames are collected.
-
-## Build
-
-```bash
-npm test
-npm run build
-npm run check
-```
+Nothing is sent unless you opt in with `LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1` (or a marker file) **and** provide your own `POSTHOG_API_KEY`. One event per UTC day: a random machine UUID, OS/CPU/RAM metadata, locale, timezone, `$SHELL`, terminal, CI flag. No paths, prompts, code, or hostnames. Disable with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1`.
 
 ## Honest limitations
 
-- **Consensus gate**: two live transports exist — the OpenCode endpoint (`--live`, requires the optional `@opencode-ai/sdk` peer dependency and a server you provide) and the **host-subagent transport** (`ulw-loop consensus-pending` → `invoke_subagent` per persona → `report-consensus-result` × personas → `aggregate-consensus`). Without either, checkpoints that require consensus **fail closed** into `needs_user_decision` — they never auto-approve. The bundled mock client exists for tests/dry-runs only.
-- **Symbol index**: `ast-index` is a regex-based heuristic indexer; it can misparse strings, template literals, and multi-line signatures.
-- **Session tree**: snapshots capture the full working tree (including untracked files) via a temporary index, without touching your real index or HEAD. Very large repositories may exceed hook timeouts.
-- **comment-checker**: the hook shells out to the external `@code-yeongyu/comment-checker` binary (declared as an optional dependency). When it is not installed, the hook degrades to `status: "missing"` and performs no comment checks.
-- **Network sandbox**: `auditEgressRequest` is a library helper used by tests; no hook or MCP server enforces network egress today. Remote MCP servers stay off unless you merge the example configs.
+- **Consensus gate**: two live transports — the OpenCode endpoint (`--live`, optional `@opencode-ai/sdk` peer dependency) and the host-subagent transport (`consensus-pending` → `invoke_subagent` → `report-consensus-result` → `aggregate-consensus`). Without either, checkpoints that require consensus **fail closed** into `needs_user_decision` — never auto-approve.
+- **Symbol index**: regex-based and approximate; it can misparse strings, template literals, and multi-line signatures.
+- **Session tree**: snapshots capture the full working tree (including untracked files) via a temporary index without touching your index or HEAD; very large repos may exceed hook timeouts. `prune [--keep N]` manages ref growth.
+- **comment-checker**: shells out to the external `@code-yeongyu/comment-checker` binary (optional dependency); without it the hook degrades to `status: "missing"`.
+- **Network sandbox**: `auditEgressRequest` is a library helper; nothing enforces egress at runtime today. Remote MCP servers stay off unless you merge the example configs.
+- **Windows**: exercised by a non-blocking CI probe job; the named-pipe IPC paths are implemented but not yet proven green on a Windows runner.
+
+## Development
+
+```bash
+npm install && npm run check   # full gate
+npm test                       # root suites only
+npm run test:components        # per-component suites
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repository rules (dist sync, 250-LOC ceiling, fail-open allowlist, evidence-backed docs) and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Notes on routing
 
 - Antigravity: pass `Subagents[].Model` on `invoke_subagent` (`canTierRoute=true`, `hostEnforced=false`, `routingMode=agent-tier-hint`). There is no `model_tier` field.
-- Session UI model is not auto-rewritten per role (`canAutoRoute=false`)
-- Do not claim the host switched models just because a skill passed `Model`
+- Do not claim the host switched models just because a skill passed `Model`.
 
 ## License
 

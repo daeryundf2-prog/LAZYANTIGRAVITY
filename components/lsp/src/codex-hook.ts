@@ -2,6 +2,7 @@ import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } fro
 
 import { executeLspDiagnostics } from "@code-yeongyu/lsp-tools-mcp/dist/tools.js";
 
+import { formatDiagnosticsText } from "./diagnostics-format.js";
 import {
 	isUnavailableLspDiagnostics,
 	markLspSessionCompacted,
@@ -60,9 +61,12 @@ const CONTEXT_PRESSURE_MARKERS = [
 
 export async function runLspDiagnosticsText(filePath: string): Promise<string> {
 	const result = await executeLspDiagnostics({ filePath, severity: "error" });
-	return result.content.map((block: { text: string }) => block.text).join("\n");
+	return formatDiagnosticsText(result.content.map((block: { text: string }) => block.text).join("\n"));
 }
 
+// The MCP tool returns a JSON envelope; the hook contract expects plain text
+// markers ("No diagnostics found", the unsupported-extension sentence, or bare
+// diagnostic lines). Mapping here is what keeps clean edits silent.
 export async function runLspPostToolUseHook(
 	input: CodexPostToolUseInput,
 	runDiagnostics: DiagnosticsRunner = runLspDiagnosticsText,

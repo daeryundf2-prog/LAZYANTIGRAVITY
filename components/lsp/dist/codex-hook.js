@@ -1,5 +1,6 @@
 import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from "node:fs";
 import { executeLspDiagnostics } from "@code-yeongyu/lsp-tools-mcp/dist/tools.js";
+import { formatDiagnosticsText } from "./diagnostics-format.js";
 import { isUnavailableLspDiagnostics, markLspSessionCompacted, recordLspDiagnosticsObservations, sessionIdFrom, shouldSkipUnavailableLspDiagnostics, } from "./lsp-session-state.js";
 import { extractMutatedFilePaths } from "./mutated-file-paths.js";
 export { extractMutatedFilePaths } from "./mutated-file-paths.js";
@@ -21,8 +22,11 @@ const CONTEXT_PRESSURE_MARKERS = [
 ];
 export async function runLspDiagnosticsText(filePath) {
     const result = await executeLspDiagnostics({ filePath, severity: "error" });
-    return result.content.map((block) => block.text).join("\n");
+    return formatDiagnosticsText(result.content.map((block) => block.text).join("\n"));
 }
+// The MCP tool returns a JSON envelope; the hook contract expects plain text
+// markers ("No diagnostics found", the unsupported-extension sentence, or bare
+// diagnostic lines). Mapping here is what keeps clean edits silent.
 export async function runLspPostToolUseHook(input, runDiagnostics = runLspDiagnosticsText) {
     const sessionId = sessionIdFrom(input);
     const filePaths = extractMutatedFilePaths(input).filter((filePath) => !shouldSkipUnavailableLspDiagnostics(filePath, sessionId));
