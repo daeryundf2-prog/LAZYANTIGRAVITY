@@ -30,6 +30,19 @@ for (const runtime of runtimes) {
 }
 
 function buildRuntime(runtime) {
+	// Packages with a src/ directory are always rebuilt from source so committed
+	// dist artifacts cannot silently drift from src.
+	if (existsSync(join(runtime.packageRoot, "src"))) {
+		const result = spawnSync("npm", ["run", "build"], {
+			cwd: runtime.packageRoot,
+			shell: process.platform === "win32",
+			stdio: "inherit",
+		});
+		if (result.error !== undefined) throw result.error;
+		if (result.status !== 0) process.exit(result.status ?? 1);
+		return;
+	}
+
 	if (hasBundledDist(runtime)) {
 		console.log(`Using bundled ${runtime.label} dist`);
 		return;

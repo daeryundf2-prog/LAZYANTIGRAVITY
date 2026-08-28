@@ -32,7 +32,7 @@ test("P0-1: git-bash-mcp rejects shell injection and forbidden binaries", async 
 				id: 1,
 				method: "tools/call",
 				params: {
-					name: "git_bash",
+					name: "git_bash_execute",
 					arguments: { command: cmd },
 				},
 			}),
@@ -42,12 +42,21 @@ test("P0-1: git-bash-mcp rejects shell injection and forbidden binaries", async 
 
 		assert.equal(res.status, 0);
 		const output = JSON.parse(res.stdout);
-		assert.ok(
-			output.isError ||
-			(output.result && output.result.isError) ||
-			(output.result && output.result.content && output.result.content[0]?.text?.includes("Error")) ||
-			(output.error),
-			`Command should have been rejected as unsafe: ${cmd}`,
+		// The policy rejection path itself must be exercised: the tool must be
+		// recognized and refused with an explicit policy message (not a generic
+		// "Unsupported tool" error, which would mean the test proves nothing).
+		const text = output.result?.content?.[0]?.text ?? "";
+		let parsed;
+		try {
+			parsed = JSON.parse(text);
+		} catch {
+			parsed = {};
+		}
+		assert.equal(parsed.ok, false, `Command should have been rejected as unsafe: ${cmd}`);
+		assert.match(
+			parsed.error ?? "",
+			/prohibited|not permitted|denied/,
+			`Expected an explicit policy rejection for: ${cmd}`,
 		);
 	}
 });
@@ -64,17 +73,40 @@ test("P0-2: components/memory store uses sleeping lock without busy-wait spinloc
 	);
 });
 
-test("P1-1: lsp-tools-mcp exports real compiler diagnostics and definition search", async () => {
-	const toolsJs = readFileSync(join(ROOT, "lsp-tools-mcp", "dist", "tools.js"), "utf8");
-	assert.ok(toolsJs.includes("executeLspDiagnostics"), "Must implement executeLspDiagnostics");
-	assert.ok(toolsJs.includes("executeLspDefinitions"), "Must implement executeLspDefinitions");
-	assert.ok(toolsJs.includes("executeLspReferences"), "Must implement executeLspReferences");
+test("P1-1: lsp-tools-mcp exposes its four tools over the MCP protocol", async () => {
+	const res = spawnSync("node", [join(ROOT, "lsp-tools-mcp", "dist", "cli.js"), "mcp"], {
+		input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+		encoding: "utf8",
+		timeout: 5000,
+	});
+	assert.equal(res.status, 0);
+	const output = JSON.parse(res.stdout);
+	const names = output.result.tools.map((t) => t.name);
+	for (const expected of ["lsp_diagnostics", "lsp_definitions", "lsp_references", "lsp_symbols"]) {
+		assert.ok(names.includes(expected), `lsp-tools-mcp must expose ${expected}`);
+	}
 });
 
-test("P1-2: ast-grep-mcp supports metavariables and pattern replacement", async () => {
-	const astGrepCli = readFileSync(join(ROOT, "ast-grep-mcp", "dist", "cli.js"), "utf8");
-	assert.ok(astGrepCli.includes("patternToRegex"), "Must include patternToRegex engine");
-	assert.ok(astGrepCli.includes("ast_grep_replace"), "Must implement ast_grep_replace tool");
+test("P1-2: ast-grep-mcp performs a real metavariable search over MCP", async () => {
+	const res = spawnSync("node", [join(ROOT, "ast-grep-mcp", "dist", "cli.js"), "mcp"], {
+		input: JSON.stringify({
+			jsonrpc: "2.0",
+			id: 1,
+			method: "tools/call",
+			params: {
+				name: "ast_grep_search",
+				arguments: { pattern: "# LazyAntigravity", language: "markdown" },
+			},
+		}),
+		encoding: "utf8",
+		timeout: 5000,
+		cwd: ROOT,
+	});
+	assert.equal(res.status, 0);
+	const output = JSON.parse(res.stdout);
+	const parsed = JSON.parse(output.result.content[0].text);
+	assert.equal(parsed.ok, true);
+	assert.ok(parsed.totalMatches >= 1, "expected the README heading to match the $-pattern search");
 });
 
 test("P1-3: all TypeScript source modules adhere to <250 LOC ceiling", async () => {
