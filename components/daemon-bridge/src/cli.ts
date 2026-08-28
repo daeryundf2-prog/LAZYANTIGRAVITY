@@ -1,7 +1,11 @@
 #!/usr/bin/env node
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { DaemonServer, getDaemonPaths } from "./server.js";
 import { DaemonClient } from "./client.js";
 import { handleSessionStartHook, handleStopHook } from "./codex-hook.js";
+
+const CLI_PATH = fileURLToPath(import.meta.url);
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -12,6 +16,22 @@ async function main() {
 	const client = new DaemonClient(paths);
 
 	if (command === "daemon" && sub === "start") {
+		if (!args.includes("--foreground")) {
+			// Background start: re-exec this CLI detached with --foreground and
+			// let the parent exit. Foreground mode is what actually serves.
+			if (await client.status()) {
+				console.log("[Daemon-Bridge] Daemon is already running.");
+				return;
+			}
+			const child = spawn(process.execPath, [CLI_PATH, "daemon", "start", "--foreground"], {
+				detached: true,
+				stdio: "ignore",
+				cwd: process.cwd(),
+			});
+			child.unref();
+			console.log(`[Daemon-Bridge] Daemon started in background (PID: ${child.pid}).`);
+			return;
+		}
 		const server = new DaemonServer(paths);
 		await server.start();
 		console.log(`[Daemon-Bridge] IPC Daemon started at: ${paths.socketPath} (PID: ${process.pid})`);
