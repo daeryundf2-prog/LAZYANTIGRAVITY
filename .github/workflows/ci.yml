@@ -39,5 +39,14 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Component test suites
+        run: npm run test:components
+
       - name: Build
         run: npm run build
+
+      - name: Verify hook policies
+        run: npm run verify:hook-policies
+
+      - name: Verify dist reproducibility
+        run: npm run verify:reproducible
