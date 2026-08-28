@@ -16,7 +16,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 | No code map between sessions | **Pre-emptive Symbol & Call-Graph Indexer** (regex-based and approximate; caches a symbol/call graph for lookups and blast-radius hints) |
 | Linear conversation without undo | **Git-Backed Session Tree Forker** (shadow git snapshots & non-destructive hypothesis branching) |
 | Repetitive errors across sessions | **Active Learning Rule Evolver** (telemetry-driven auto-promotion of `⚠️ [Gotchas]`) |
-| Single agent, single task | **35 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
+| Single agent, single task | **12 workflow skills** (+ 2 aliases) for planning, ULW loops, review, debugging, visual QA |
 | Fixed token budget & bloated context | **Adaptive Thinking Budget & Code Skeletonizer** (keyword-tiered budget directive injected into context + brace-based skeleton preview; the budget is a hint to the model, not an enforced limit) |
 | Parallel multi-agent file collisions | **Dynamic Worktree Swarm** (helper script for isolated git worktrees + squash-merge workflow) |
 | Fake passing tests (False Greens) | **Mutation Testing Gate** (lightweight single-file mutate/run/restore loop; not a Stryker-class engine) |
@@ -110,11 +110,19 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 14. `session-tree` — Git-backed session hypothesis tree
 15. `active-learning` — Telemetry-driven rule evolution (evidence-gated)
 
-### Skills (35)
+### Skills (12) + aliases (2)
 
-`active-learning`, `active-memory`, `adaptive-reasoning`, `arch-guard`, `ast-refactor`, `comment-checker`, `debugging`, `dual-verify`, `flaky-guard`, `frontend-ui-ux`, `git-master`, `hypothesis-tree`, `image-prompt`, `information-density`, `init-deep`, `lcx-report-bug`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `repo-survey`, `report-bug`, `review-work`, `rules`, `self-audit`, `session-persistence`, `start-work`, `swarm-sync`, `ui-loopback`, `ultra-research`, `ulw`, `ulw-loop`, `ulw-plan`, `vector-diagram`, `visual-qa`
+`debugging`, `git-master`, `image-prompt`, `init-deep`, `programming`, `refactor`, `report-bug`, `review-work`, `start-work`, `ulw-loop`, `ulw-plan`, `visual-qa`
 
-Aliases: `ulw`, `information-density`, `session-persistence`, `lcx-report-bug`
+Aliases: `ulw` (→ ulw-loop), `lcx-report-bug` (→ report-bug)
+
+Consolidated in 0.7.0: former component-manual skills (comment-checker, lsp, rules,
+active-memory, adaptive-reasoning, active-learning, session-persistence) now live in
+their component READMEs — those behaviors run automatically via hooks. Absorbed
+workflow skills (dual-verify, swarm-sync, flaky-guard, self-audit, hypothesis-tree,
+arch-guard, ultra-research, repo-survey, information-density, frontend-ui-ux,
+ui-loopback, ast-refactor, remove-ai-slops, vector-diagram) are preserved as
+`references/` inside the skill that owns their workflow.
 
 ### MCP
 

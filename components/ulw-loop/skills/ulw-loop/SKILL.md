@@ -94,3 +94,10 @@ Load latest checkpoint; show completed/failed roles and next action. Does **not*
 
 ### 7. AI Credit Overages
 Never auto-enable. Inform the user only.
+
+## References
+
+- [dual-verify](references/dual-verify.md) — consensus gate incl. the host-subagent transport
+- [swarm-sync](references/swarm-sync.md) — worktree isolation for parallel workers
+- [flaky-guard](references/flaky-guard.md) — flaky test stress-running
+- [self-audit](references/self-audit.md) — trajectory audit and rollback

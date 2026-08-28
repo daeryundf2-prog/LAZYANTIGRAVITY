@@ -136,3 +136,8 @@ API는 커스텀이지만 **codex(`$imagegen`) 경로는 6종만** 안전. `auto
 - **`references/photo-vocab.md`** — 카메라·조명·필름·구도·색 어휘(결과 기반) + 국문/영문 혼용 규칙(§8).
 - **`references/style-taxonomy.md`** — 패션 21종 + persona DNA + MASTER_TEMPLATE_V4.
 - 생성·양산: **[codex-imagegen]**. 단일 1장은 그냥 codex 직접.
+
+
+## References
+
+- [vector-diagram](references/vector-diagram.md) — high-DPI vector diagram rendering

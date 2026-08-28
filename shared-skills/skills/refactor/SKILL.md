@@ -641,3 +641,9 @@ $ARGUMENTS
 # Antigravity parallel execution
 
 Do **not** use OpenCode `team_*` tools on Antigravity. Dispatch independent refactor/verify lanes with `invoke_subagent` (see `../references/antigravity-tools.md`). Stay in the parent; re-invoke incomplete lanes. Codex/OpenCode team mode is out of scope for this plugin host.
+
+
+## References
+
+- [ast-refactor](references/ast-refactor.md) — symbol/call-graph-driven refactoring
+- [remove-ai-slops](references/remove-ai-slops.md) — AI slop cleanup checklist

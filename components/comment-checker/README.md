@@ -85,3 +85,18 @@ This plugin runs locally. It sends hook input to the optional local `comment-che
 
 - [pi-comment-checker](https://github.com/code-yeongyu/pi-comment-checker) - source extension this Codex plugin ports.
 - [comment-checker](https://github.com/code-yeongyu/go-claude-code-comment-checker) - native checker binary.
+
+
+## How it works (from the former skills skill)
+
+# Codex Comment Checker
+
+The plugin registers a `PostToolUse` hook for successful `apply_patch`, `write`, `edit`, `multi_edit`, and `multiedit` calls.
+
+When comment-checker reports a warning after a patch, Codex receives blocking feedback and should fix or explain the flagged comment before moving on.
+
+## Scope
+
+- No MCP tool is exposed.
+- Non-edit tools are ignored by this plugin.
+- Missing checker binaries emit no hook output so normal Codex work can continue.

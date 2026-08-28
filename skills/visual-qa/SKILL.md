@@ -286,3 +286,9 @@ Illustrative output (locked field names):
   "summary": "Line 3 overflows 80 cols by 2; borders misaligned at wide-char columns 12-13."
 }
 ```
+
+
+## References
+
+- [ui-loopback](references/ui-loopback.md) — headless browser capture loop
+- [frontend-ui-ux](references/frontend-ui-ux.md) — UI/UX review checklist

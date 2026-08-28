@@ -97,7 +97,7 @@ describe("plugin package metadata", () => {
 
 	it("#given LSP skill guidance #when validating MCP tool instructions #then tool names are not framed as shell commands", () => {
 		// given
-		const skill = readFileSync("skills/lsp/SKILL.md", "utf8");
+		const skill = readFileSync("README.md", "utf8");
 
 		// when
 		const mentionsToolInterface = skill.includes("through the tool interface");

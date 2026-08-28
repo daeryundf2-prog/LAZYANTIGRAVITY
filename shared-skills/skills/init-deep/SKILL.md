@@ -358,3 +358,9 @@ Hierarchy:
 - **Redundancy**: Child never repeats parent
 - **Generic content**: Remove anything that applies to ALL projects
 - **Verbose style**: Telegraphic or die
+
+
+## References
+
+- [repo-survey](references/repo-survey.md) — repository survey procedure
+- [information-density](references/information-density.md) — content density guidelines

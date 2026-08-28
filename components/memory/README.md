@@ -1,7 +1,7 @@
----
-name: active-memory
-description: "로컬 액티브 메모리(Working Facts & Memory) 관리 스킬. 세션 간 프로젝트 핵심 규칙, 빌드 설정, 아키텍처 함정(Gotcha)을 facts.jsonl에 영속화하고 조회합니다."
----
+# memory
+
+
+## How it works (from the former active-memory skill)
 
 # Active-Memory: Local Working Memory & Facts Persistence
 

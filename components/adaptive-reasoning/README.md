@@ -1,7 +1,7 @@
----
-name: adaptive-reasoning
-description: "작업 복잡도 기반 적응형 추론 조절 및 AST 코드 스켈레톤 압축 스킬. 프롬프트 난이도별 Thinking Budget과 최적 모델 티어(flash_lite/flash/pro)를 자동 산정하고, AST 시그니처 추출로 컨텍스트 낭비를 절감합니다."
----
+# adaptive-reasoning
+
+
+## How it works (from the former adaptive-reasoning skill)
 
 # Adaptive-Reasoning: Dynamic Thinking Budget & AST Skeletonizer
 

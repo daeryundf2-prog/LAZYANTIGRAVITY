@@ -5,9 +5,6 @@ import { fileURLToPath } from "node:url";
 import { sharedSkillsRootPath } from "@lazyantigravity/shared-skills";
 
 const componentSkillSources = [
-	["comment-checker", "components/comment-checker/skills/comment-checker"],
-	["lsp", "components/lsp/skills/lsp"],
-	["rules", "components/rules/skills/rules"],
 	["ulw-loop", "components/ulw-loop/skills/ulw-loop"],
 	["ulw-plan", "components/ultrawork/skills/ulw-plan"],
 ];
@@ -33,6 +30,9 @@ async function copyDir(source, destination) {
  */
 export async function syncSkills(root = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))))) {
 	const skillsRoot = join(root, "skills");
+	// skills/ is fully generated: wipe it first so skills removed from their
+	// sources disappear from the aggregate instead of lingering as stale dirs.
+	await rm(skillsRoot, { recursive: true, force: true });
 	await mkdir(skillsRoot, { recursive: true });
 
 	const sharedRoot = sharedSkillsRootPath();

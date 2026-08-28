@@ -1,7 +1,7 @@
----
-name: active-learning
-description: "능동 학습 & 텔레메트리 기반 자가 규칙 진화 스킬. 세션 간 반복된 도구 오류, 린트 실패, 테스트 오류 패턴을 통계적으로 분석하여 주의사항(Gotcha)을 자동 승격하고 최적화합니다."
----
+# active-learning
+
+
+## How it works (from the former active-learning skill)
 
 # Active-Learning: Telemetry-Driven Rule Evolution & Self-Healing Policy
 

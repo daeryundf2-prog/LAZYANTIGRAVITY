@@ -58,3 +58,9 @@ You explore a LOT — fan out parallel read-only research before interviewing �
 | High-accuracy plan review | `invoke_subagent` `Model: "pro"` (verifier focus) |
 
 Name any skills the child needs directly inside its TASK text. Your plan goes to `.omo/plans/<slug>.md`; never split one request into multiple plans.
+
+## References
+
+- [hypothesis-tree](references/hypothesis-tree.md) — hypothesis branching
+- [arch-guard](references/arch-guard.md) — architecture guardrails
+- [ultra-research](references/ultra-research.md) — multi-wave research
