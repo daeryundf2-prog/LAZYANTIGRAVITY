@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# ── windows probe ────────────────────────────────────────────────────────────
+# The plugin carries win32-specific code paths (named-pipe IPC, hook gating).
+# This job is non-blocking until it is known-green on the runner.
+
 permissions:
   contents: read
 
@@ -50,3 +54,30 @@ jobs:
 
       - name: Verify dist reproducibility
         run: npm run verify:reproducible
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  windows-probe:
+    name: windows probe (node 22)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Component test suites
+        run: npm run test:components

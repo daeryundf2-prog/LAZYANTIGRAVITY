@@ -12,7 +12,7 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Subagents isolated without IPC | **Local IPC Daemon Bridge & In-Memory Blackboard** (token-authed, replay-protected local scratchpad over a Unix socket / named pipe) |
+| Subagents isolated without IPC | **Local IPC Daemon Bridge & In-Memory Blackboard** (token-authed, replay-protected; measured ~0.2 ms set+get round-trip via `npm run bench`) |
 | No code map between sessions | **Pre-emptive Symbol & Call-Graph Indexer** (regex-based and approximate; caches a symbol/call graph for lookups and blast-radius hints) |
 | Linear conversation without undo | **Git-Backed Session Tree Forker** (shadow git snapshots & non-destructive hypothesis branching) |
 | Repetitive errors across sessions | **Active Learning Rule Evolver** (telemetry-driven auto-promotion of `⚠️ [Gotchas]`) |
@@ -92,7 +92,7 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 
 ## What ships in this tree
 
-### Components (11)
+### Components (15)
 
 1. `adaptive-reasoning` — Keyword-tiered thinking-budget directive & brace-based code skeletonizer
 2. `quick-lane` — Fast-pass low-complexity task execution
@@ -105,6 +105,10 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 9. `telemetry` — **Opt-in** daily-active telemetry
 10. `start-work-continuation` — Resume helpers
 11. `git-bash` — Git Bash MCP recommendation hooks
+12. `daemon-bridge` — Token-authed local IPC daemon + blackboard
+13. `ast-index` — Regex-based symbol & call-graph index
+14. `session-tree` — Git-backed session hypothesis tree
+15. `active-learning` — Telemetry-driven rule evolution (evidence-gated)
 
 ### Skills (35)
 
@@ -114,7 +118,13 @@ Aliases: `ulw`, `information-density`, `session-persistence`, `lcx-report-bug`
 
 ### MCP
 
-**Default (local only):** `ast_grep`, `git_bash`, `lsp`
+**Default (local only):** `ast_grep`, `git_bash`, `lsp`, `workspace`
+
+`workspace` exposes the plugin's workspace state as native tools: `memory_search`,
+`blackboard_get/set/list` (the IPC blackboard), and `session_tree_snapshot/render/fork`
+(fork requires the `LAZYANTIGRAVITY_SESSION_TREE_FORK=1` opt-in). ast_grep uses
+real tree-sitter structural matching when the optional `@ast-grep/napi`
+dependency is installed, with a line-based regex fallback otherwise.
 
 **Local browser tooling (opt-in):** `playwright` ??merge from `mcp_config.playwright.example.json` into `mcp_config.json` / `.mcp.json` when you want real-browser QA. Playwright MCP runs **locally** (no network egress; the browser runs on your machine) and powers the browser channel in `visual-qa` / `ui-loopback`. First run downloads browser binaries (`npx playwright install chromium`).
 
@@ -125,9 +135,10 @@ Aliases: `ulw`, `information-density`, `session-persistence`, `lcx-report-bug`
 ```bash
 npm run doctor -- --json
 npm run hooks:report -- --json
-npm run mcp:status -- --json
+npm run mcp:status -- --json --probe
 npm run provenance -- --json
 npm run evidence:map -- --json
+npm run bench
 npm test
 ```
 
@@ -173,7 +184,7 @@ npm run check
 
 ## Honest limitations
 
-- **Consensus gate**: without `--live` and an OpenCode-compatible endpoint (`@opencode-ai/sdk` is an optional peer dependency you must provide), checkpoints that require consensus **fail closed** into `needs_user_decision` — they never auto-approve. The bundled mock client exists for tests/dry-runs only.
+- **Consensus gate**: two live transports exist — the OpenCode endpoint (`--live`, requires the optional `@opencode-ai/sdk` peer dependency and a server you provide) and the **host-subagent transport** (`ulw-loop consensus-pending` → `invoke_subagent` per persona → `report-consensus-result` × personas → `aggregate-consensus`). Without either, checkpoints that require consensus **fail closed** into `needs_user_decision` — they never auto-approve. The bundled mock client exists for tests/dry-runs only.
 - **Symbol index**: `ast-index` is a regex-based heuristic indexer; it can misparse strings, template literals, and multi-line signatures.
 - **Session tree**: snapshots capture the full working tree (including untracked files) via a temporary index, without touching your real index or HEAD. Very large repositories may exceed hook timeouts.
 - **comment-checker**: the hook shells out to the external `@code-yeongyu/comment-checker` binary (declared as an optional dependency). When it is not installed, the hook degrades to `status: "missing"` and performs no comment checks.

@@ -42,6 +42,12 @@ function main() {
 	} else if (command === "tree") {
 		const treeView = manager.renderAsciiTree();
 		console.log(treeView);
+	} else if (command === "prune") {
+		const keepIndex = args.indexOf("--keep");
+		const keep = keepIndex !== -1 && Number.isInteger(Number(args[keepIndex + 1])) ? Number(args[keepIndex + 1]) : 20;
+		const result = manager.prune(Math.max(keep, 0));
+		console.log(`[Session-Tree] Kept ${result.kept.length} snapshot ref(s); removed ${result.removed.length}.`);
+		for (const ref of result.removed) console.log(`- removed ${ref}`);
 	} else if (command === "hook" && args[1] === "stop") {
 		const context = buildStopContext(cwd);
 		process.stdout.write(
@@ -54,7 +60,7 @@ function main() {
 		);
 	} else {
 		console.log("LazyAntigravity Session Tree CLI");
-		console.log("Commands: snapshot <label> | fork <nodeId> | tree | hook stop");
+		console.log("Commands: snapshot <label> | fork <nodeId> | tree | prune [--keep N] | hook stop");
 	}
 }
 

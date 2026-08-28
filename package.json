@@ -1,6 +1,6 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "Aggregated Antigravity plugin root for LazyAntigravity components (Gemini 3.7 Flash default).",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
@@ -53,6 +53,7 @@
 		"verify:hook-policies": "node scripts/verify-hook-policies.mjs",
 		"probe:model-capabilities": "node scripts/model-capability-probe.mjs",
 		"verify:reproducible": "node scripts/verify-dist-sync.mjs",
-		"test:components": "node scripts/run-component-tests.mjs"
+		"test:components": "node scripts/run-component-tests.mjs",
+		"bench": "node scripts/bench-ast-index.mjs && node scripts/bench-daemon-rtt.mjs"
 	}
 }

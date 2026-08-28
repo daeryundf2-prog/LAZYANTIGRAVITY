@@ -115,3 +115,27 @@ test("Session-tree stop hook checkpoints only initialized sessions", () => {
 		rmSync(fresh, { recursive: true, force: true });
 	}
 });
+
+test("SessionTreeManager prune keeps the newest snapshot refs", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "st-prune-"));
+	try {
+		initGitRepo(tempDir);
+		const manager = new SessionTreeManager(tempDir);
+		for (let i = 0; i < 5; i++) {
+			writeFileSync(join(tempDir, `f${i}.txt`), `content ${i}`, "utf8");
+			manager.snapshot(`Snapshot ${i}`);
+		}
+		const refCount = () =>
+			spawnSync("git", ["for-each-ref", "refs/lazyantigravity/snapshots/"], { cwd: tempDir, encoding: "utf8" })
+				.stdout.trim().split("\n").filter((l) => l.length > 0).length;
+		assert.equal(refCount(), 5, "precondition: five snapshot refs");
+		const result = manager.prune(2);
+		assert.equal(result.kept.length, 2);
+		assert.equal(result.removed.length, 3);
+		assert.equal(refCount(), 2, "only the newest two refs must survive");
+		// The graph keeps its history even after refs are pruned.
+		assert.equal(manager.renderAsciiTree().split("Snapshot").length - 1, 5);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});

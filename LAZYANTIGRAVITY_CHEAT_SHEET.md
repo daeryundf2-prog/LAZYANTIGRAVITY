@@ -10,6 +10,7 @@
 | **Search Active Memory** | `node components/memory/dist/cli.js search "auth"` | Search learned gotchas & facts across sessions |
 | **Run Self-Audit Confession**| `node components/ulw-loop/dist/self-audit.js report` | Audit trajectory ledger for drift or fabricated claims |
 | **Atomic Rollback** | `node components/ulw-loop/dist/self-audit.js rollback` | Revert to last verified clean state |
+| **Measured Benchmarks** | `npm run bench` | ast-index lookups + daemon IPC round-trip timings |
 
 ---
 

@@ -24,7 +24,7 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ┌──────────────────────────────▼──────────────────────────────┐
 │                    Bundled MCP Subsystem                    │
 │  - lsp-tools-mcp: Multi-lang Compiler Diagnostics & Scope   │
-│  - ast-grep-mcp: Regex Pattern Match & Safe Replace          │
+│  - ast-grep-mcp: Structural Match & Safe Replace             │
 │  - git-bash-mcp: Sandbox Allowlisted Command Runner          │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -55,7 +55,7 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ### 4.1. 3-Gate Quality Pipeline
 1. **Mechanical Gate**: Verifies automated test execution (`npm test`, `pytest`, `cargo test`, `go test`) whenever source files are modified, and checks LSP diagnostics.
 2. **Semantic Gate**: Enforces non-empty goals/summaries, verifies claim-vs-file consistency, blocks unresolved stagnation, and prevents unapproved model switching.
-3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk changes. Live dispatch requires an explicit `--live` invocation and an OpenCode-compatible endpoint (`@opencode-ai/sdk`, optional peer dependency). Without it the checkpoint **fails closed** into `needs_user_decision` — the bundled mock client exists for tests/dry-runs only and never ships as verification.
+3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk changes. Two live transports: the OpenCode endpoint (`--live`, optional `@opencode-ai/sdk` peer dependency) and the host-subagent transport (`consensus-pending` lists the persona prompts, verdicts come back through `report-consensus-result`, `aggregate-consensus` computes the terminal event). Without a live transport the checkpoint **fails closed** into `needs_user_decision` — the bundled mock client exists for tests/dry-runs only and never ships as verification.
 
 ### 4.2. Strict Evidence Verification Contract
 - **Anti-Hallucination Gate**: Mandates explicit classification of evidence into `verified`, `partial`, `not_checked`, or `inference`.

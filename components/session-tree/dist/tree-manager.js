@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { createShadowSnapshot, restoreShadowSnapshot } from "./snapshot.js";
+import { createShadowSnapshot, restoreShadowSnapshot, runGit } from "./snapshot.js";
 export function getTreeStoragePath(cwd = process.cwd()) {
     const treeDir = join(cwd, ".lazyantigravity", "session-tree");
     if (!existsSync(treeDir)) {
@@ -58,6 +58,23 @@ export class SessionTreeManager {
         this.graph.activeNodeId = nodeId;
         this.save();
         return targetNode;
+    }
+    prune(keep) {
+        // Snapshot refs accumulate on every Stop-hook checkpoint; keep only the
+        // newest `keep` shadow refs (the graph in nodes.json keeps its history).
+        const out = runGit(["for-each-ref", "--sort=-committerdate", "--format=%(refname)", "refs/lazyantigravity/snapshots/"], this.cwd, false);
+        const refs = out.split("\n").map((r) => r.trim()).filter((r) => r.length > 0);
+        const removed = [];
+        const kept = [];
+        refs.forEach((ref, index) => {
+            if (index < keep) {
+                kept.push(ref);
+                return;
+            }
+            runGit(["update-ref", "-d", ref], this.cwd, false);
+            removed.push(ref);
+        });
+        return { removed, kept };
     }
     getActiveNode() {
         return this.graph.activeNodeId ? this.graph.nodes[this.graph.activeNodeId] || null : null;
