@@ -15,3 +15,20 @@ test("isQuickLanePrompt skips heavy orchestration prompts", () => {
 	assert.equal(isQuickLanePrompt("ulw-plan 아키텍처 재설계"), false);
 	assert.equal(isQuickLanePrompt("review-work"), false);
 });
+
+test("isQuickLanePrompt handles command forms and mixed-language queries", () => {
+	assert.equal(isQuickLanePrompt("What is a closure?"), true);
+	assert.equal(isQuickLanePrompt("show me the failing tests"), true);
+	assert.equal(isQuickLanePrompt("git log --oneline -5"), true);
+	assert.equal(isQuickLanePrompt("빠른 상태 확인 부탁해"), true);
+	assert.equal(isQuickLanePrompt("요약해 줘"), true);
+});
+
+test("isQuickLanePrompt rejects empty, long, and disguised orchestration prompts", () => {
+	assert.equal(isQuickLanePrompt(""), false);
+	assert.equal(isQuickLanePrompt("   "), false);
+	assert.equal(isQuickLanePrompt("execute plan for the auth migration"), false);
+	assert.equal(isQuickLanePrompt("ulw 이게 맞나?"), false);
+	const longQuestion = `${"please carefully consider ".repeat(4)}and then answer this whole thing, ok?`;
+	assert.equal(isQuickLanePrompt(longQuestion), false, "prompts over 80 chars are not quick-lane");
+});

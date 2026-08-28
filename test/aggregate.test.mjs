@@ -1,10 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { collectCommandHooks, findSpawnAgentTypes, findRoleSpecificSpawnsWithoutForkTurnsNone } from "./aggregate-plugin-fixture.mjs";
 
-test("#given compatibility sentinel #when loaded #then passes successfully", () => {
-	assert.ok(true);
+test("#given the committed hook manifest #when loaded #then every command hook has a command and a positive timeout", async () => {
+	const manifestPath = join(dirname(fileURLToPath(import.meta.url)), "..", "hooks.json");
+	const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+	let commandHooks = 0;
+	for (const groups of Object.values(manifest.hooks)) {
+		for (const group of groups) {
+			for (const hook of group.hooks ?? []) {
+				if (hook.type !== "command") continue;
+				commandHooks++;
+				assert.ok(typeof hook.command === "string" && hook.command.length > 0, "command hook must declare a command");
+				assert.ok(Number.isFinite(hook.timeout) && hook.timeout > 0, "command hook must declare a positive timeout");
+			}
+		}
+	}
+	assert.equal(commandHooks, 25, "expected the documented 25 command hooks");
 });
 
 test("#given hook manifest structure #when collecting command hooks #then filters and formats command handlers", () => {

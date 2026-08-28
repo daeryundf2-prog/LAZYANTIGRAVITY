@@ -12,20 +12,20 @@ Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex
 
 | Without lazyantigravity | With lazyantigravity |
 | :--- | :--- |
-| Subagents isolated without IPC | **Local IPC Daemon Bridge & In-Memory Blackboard** (0.5ms real-time subagent peer communication) |
-| Slow on-demand AST parsing | **Pre-emptive AST & Call-Graph Indexer** (<5ms symbol lookups & blast radius analysis) |
+| Subagents isolated without IPC | **Local IPC Daemon Bridge & In-Memory Blackboard** (token-authed, replay-protected local scratchpad over a Unix socket / named pipe) |
+| No code map between sessions | **Pre-emptive Symbol & Call-Graph Indexer** (regex-based and approximate; caches a symbol/call graph for lookups and blast-radius hints) |
 | Linear conversation without undo | **Git-Backed Session Tree Forker** (shadow git snapshots & non-destructive hypothesis branching) |
 | Repetitive errors across sessions | **Active Learning Rule Evolver** (telemetry-driven auto-promotion of `⚠️ [Gotchas]`) |
-| Single agent, single task | **32 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
-| Fixed token budget & bloated context | **Adaptive Thinking Budget & AST Skeletonizer** (dynamic 0~64k budget + 80% context saving) |
-| Parallel multi-agent file collisions | **Dynamic Worktree Swarm** (isolated branching + atomic squash-merge) |
-| Fake passing tests (False Greens) | **Mutation Testing Gate** (automatic mutant kill score verification) |
-| Single-model review blindness | **Dual-Model Consensus Gate** (Flash fast code + Pro 3-domain adversarial audit) |
+| Single agent, single task | **35 skills** (+ aliases) for ULW, review, memory, visual loopback, refactor |
+| Fixed token budget & bloated context | **Adaptive Thinking Budget & Code Skeletonizer** (keyword-tiered budget directive injected into context + brace-based skeleton preview; the budget is a hint to the model, not an enforced limit) |
+| Parallel multi-agent file collisions | **Dynamic Worktree Swarm** (helper script for isolated git worktrees + squash-merge workflow) |
+| Fake passing tests (False Greens) | **Mutation Testing Gate** (lightweight single-file mutate/run/restore loop; not a Stryker-class engine) |
+| Single-model review blindness | **Dual-Model Consensus Gate** (3-4 adversarial reviewer personas; live dispatch requires `--live` + an OpenCode-compatible endpoint, otherwise ledger events only) |
 | Heavy overhead on simple tasks | **Quick-Lane Fast-Pass** for direct execution without subagent overhead |
 | Context lost across sessions | **Local Active Memory (`facts.jsonl`)** for persistent working memory |
 | Flaky timing failures | **5-Parallel Flaky Guard** stress-runner for deterministic hardening |
 | Visual defects unnoticed | **Headless Visual Loopback** with Gemini 3.7 Native Vision QA |
-| No quality gates | **7 hook events / 24 command hooks** (rules, memory, quick-lane, adaptive-reasoning, daemon, ast-index, session-tree, active-learning) |
+| No quality gates | **7 hook events / 25 command hooks** (rules, memory, quick-lane, adaptive-reasoning, daemon, ast-index, session-tree, active-learning) |
 | Manual model guessing | **Pass `Subagents[].Model` on `invoke_subagent`** (session Flash; `flash`/`pro` hints) |
 | Lost progress on quota interrupts | **Safe-resume checkpoints** via `/ulw resume` |
 | Weak evidence discipline | **Evidence-bound ULW loop** - claims need local proof |
@@ -94,7 +94,7 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 
 ### Components (11)
 
-1. `adaptive-reasoning` — Dynamic Thinking Budget scaling & AST code skeletonizer
+1. `adaptive-reasoning` — Keyword-tiered thinking-budget directive & brace-based code skeletonizer
 2. `quick-lane` — Fast-pass low-complexity task execution
 3. `memory` — Local active memory & facts persistence (`facts.jsonl`)
 4. `comment-checker` — Comment preservation after edits
@@ -106,9 +106,9 @@ Restart Antigravity, then use `/ulw` or `/ulw-loop`.
 10. `start-work-continuation` — Resume helpers
 11. `git-bash` — Git Bash MCP recommendation hooks
 
-### Skills (31)
+### Skills (35)
 
-`active-memory`, `adaptive-reasoning`, `arch-guard`, `ast-refactor`, `comment-checker`, `debugging`, `dual-verify`, `flaky-guard`, `frontend-ui-ux`, `git-master`, `hypothesis-tree`, `image-prompt`, `information-density`, `init-deep`, `lcx-report-bug`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `repo-survey`, `report-bug`, `review-work`, `rules`, `session-persistence`, `start-work`, `swarm-sync`, `ui-loopback`, `ulw`, `ulw-loop`, `ulw-plan`, `visual-qa`
+`active-learning`, `active-memory`, `adaptive-reasoning`, `arch-guard`, `ast-refactor`, `comment-checker`, `debugging`, `dual-verify`, `flaky-guard`, `frontend-ui-ux`, `git-master`, `hypothesis-tree`, `image-prompt`, `information-density`, `init-deep`, `lcx-report-bug`, `lsp`, `programming`, `refactor`, `remove-ai-slops`, `repo-survey`, `report-bug`, `review-work`, `rules`, `self-audit`, `session-persistence`, `start-work`, `swarm-sync`, `ui-loopback`, `ultra-research`, `ulw`, `ulw-loop`, `ulw-plan`, `vector-diagram`, `visual-qa`
 
 Aliases: `ulw`, `information-density`, `session-persistence`, `lcx-report-bug`
 
@@ -161,6 +161,8 @@ New-Item -ItemType File -Force -Path (Join-Path $dir ".telemetry-opt-in") | Out-
 Disable again with `LAZYANTIGRAVITY_TELEMETRY_DISABLE=1` (or `OMO_DISABLE_POSTHOG=1`).  
 `POSTHOG_API_KEY` must be provided by you when opted in; the bundle does not ship a default key.
 
+When opted in, exactly one event per UTC day is sent (`lazyantigravity_daily_active`) containing: a random persisted machine UUID, package name/version, Node version, OS platform/release/arch, CPU count and model, total RAM (rounded GB), locale, timezone, `$SHELL`, `$TERM_PROGRAM`, and a CI flag. No file paths, prompts, code content, or hostnames are collected.
+
 ## Build
 
 ```bash
@@ -168,6 +170,14 @@ npm test
 npm run build
 npm run check
 ```
+
+## Honest limitations
+
+- **Consensus gate**: by default `dispatchConsensus` writes ledger events only and the bundled mock client approves everything. Real adversarial review needs `--live` plus an OpenCode-compatible endpoint (`@opencode-ai/sdk` is an optional peer dependency you must provide).
+- **Symbol index**: `ast-index` is a regex-based heuristic indexer; it can misparse strings, template literals, and multi-line signatures.
+- **Session tree**: snapshots capture the full working tree (including untracked files) via a temporary index, without touching your real index or HEAD. Very large repositories may exceed hook timeouts.
+- **comment-checker**: the hook shells out to the external `@code-yeongyu/comment-checker` binary (declared as an optional dependency). When it is not installed, the hook degrades to `status: "missing"` and performs no comment checks.
+- **Network sandbox**: `auditEgressRequest` is a library helper used by tests; no hook or MCP server enforces network egress today. Remote MCP servers stay off unless you merge the example configs.
 
 ## Notes on routing
 

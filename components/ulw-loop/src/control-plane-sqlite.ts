@@ -4,8 +4,11 @@ import { join } from "node:path";
 import type { EventType, LedgerEvent } from "./control-plane-types.js";
 
 /**
- * Enterprise Transactional Ledger Store (SQLite / WAL Synchronizer)
- * Ensures zero-data-loss atomic state transitions with sub-millisecond checkpointing.
+ * JSON-file-backed append-only ledger store.
+ * Despite the historical file name this is NOT SQLite and has no WAL: every
+ * append rewrites the whole JSON file synchronously. It provides durable,
+ * hash-chained event persistence with envelope integrity checks; atomic
+ * rename-on-write and a real SQLite backend are possible future upgrades.
  */
 
 export interface TransactionalEventEnvelope {

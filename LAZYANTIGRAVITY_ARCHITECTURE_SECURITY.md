@@ -24,8 +24,8 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ┌──────────────────────────────▼──────────────────────────────┐
 │                    Bundled MCP Subsystem                    │
 │  - lsp-tools-mcp: Multi-lang Compiler Diagnostics & Scope   │
-│  - ast-grep-mcp: Tree-sitter Pattern Match & Safe Replace   │
-│  - git-bash-mcp: Shell-Free Allowlisted Command Runner      │
+│  - ast-grep-mcp: Regex Pattern Match & Safe Replace          │
+│  - git-bash-mcp: Sandbox Allowlisted Command Runner          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -34,13 +34,15 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ## 3. Security Architecture & Boundary Invariants
 
 ### 3.1. Sandboxed Command Execution (`git-bash-mcp`)
-- **No-Shell Binding**: All process spawning uses `spawn(binary, args, { shell: false })` to prevent shell injection, piping, and command substitution.
-- **Strict Binary Allowlist**: Only safe operational binaries (`git`, `pwd`, `ls`, `echo`) are whitelisted. General shell runtimes (`sh`, `bash`, `zsh`), interpreter execution (`node`, `python`, `npx`), and credential/file dumpers (`env`, `cat`) are permanently blocked.
-- **Metacharacter Stripping**: Commands containing `;`, `&`, `|`, `$`, `>`, `<`, or newline characters are rejected before execution.
+- **No-Shell Binding**: All process spawning uses `spawnSync(binary, args, { shell: false })` to prevent shell injection, piping, and command substitution.
+- **Strict Binary Allowlist**: Only `git`, `pwd`, `ls`, and `echo` are allowed. General shell runtimes (`sh`, `bash`, `zsh`), interpreter execution (`node`, `python`, `npx`), and credential/file dumpers (`env`, `cat`) are permanently blocked.
+- **Metacharacter Rejection**: Commands containing `;`, `&`, `|`, `` ` ``, `$`, `>`, `<`, `\`, `!` (git alias/config injection), or newline characters are rejected before execution.
+- **Git Subcommand Policy**: Read-only git subcommands (`status`, `log`, `diff`, `show`, ...) are allowed by default; `--no-index`, `--ext-diff`, `--textconv`, `--output`, and pager-spawning flags are rejected. Destructive and network-reaching subcommands (`reset`, `clean`, `push`, `pull`, `fetch`, `clone`, `rebase`, `config`, `update-ref`, ...) are always denied. Local write subcommands (`add`, `commit`, ...) require the `LAZYANTIGRAVITY_GIT_WRITE=1` environment opt-in. Global git flags (`git -c ...`, `git -C ...`) are rejected.
+- **Workspace Confinement**: The tool's working directory and every path-like argument (including those carrying `~` or absolute paths) must resolve inside the workspace root (`LAZYANTIGRAVITY_WORKSPACE_ROOT` or the server's cwd); symlink escapes are refused.
 
 ### 3.2. Subagent & Worktree Swarm Isolation
-- **Ephemeral Git Worktrees**: Parallel subagents execute within isolated worktrees (`.lazyantigravity/worktrees/agent-<id>`), preventing concurrent filesystem write collisions.
-- **Atomic Squash-Merge**: Upon task completion, changes are verified through 3-Gate checks and atomically squashed into the main branch; dirty or failed worktrees are pruned immediately.
+- **Ephemeral Git Worktrees**: The `worktree-swarm` helper script isolates parallel subagents in dedicated git worktrees, preventing concurrent filesystem write collisions. This is helper-script tooling, not an always-on enforced sandbox.
+- **Squash-Merge Workflow**: Completed worktree changes are verified through the quality gates before being squashed back; dirty or failed worktrees are pruned.
 
 ### 3.3. Telemetry & Privacy Governance
 - **Default-Off Opt-In**: Telemetry collection is disabled by default (`LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1` required).
@@ -53,7 +55,7 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ### 4.1. 3-Gate Quality Pipeline
 1. **Mechanical Gate**: Verifies automated test execution (`npm test`, `pytest`, `cargo test`, `go test`) whenever source files are modified, and checks LSP diagnostics.
 2. **Semantic Gate**: Enforces non-empty goals/summaries, verifies claim-vs-file consistency, blocks unresolved stagnation, and prevents unapproved model switching.
-3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk, security-sensitive, or destructive changes.
+3. **Consensus Gate**: Dispatches 3-4 orthogonal reviewer personas (`advocate`, `devils_advocate`, `regression_reviewer`, `security_state_reviewer`) on high-risk changes. Live dispatch requires an explicit `--live` invocation and an OpenCode-compatible endpoint (`@opencode-ai/sdk`, optional peer dependency); without it the gate records ledger events only — the default mock client approves everything and must never be treated as verification.
 
 ### 4.2. Strict Evidence Verification Contract
 - **Anti-Hallucination Gate**: Mandates explicit classification of evidence into `verified`, `partial`, `not_checked`, or `inference`.
@@ -68,5 +70,5 @@ All lifecycle hooks run under `hook-runner.mjs` with `FAIL_OPEN` semantics and t
 ## 5. Concurrency & Performance Discipline
 
 - **Atomics.wait Sleeping Lock**: File-based synchronization uses memory-shared futex sleeping instead of CPU-pegging spinlocks.
-- **WAL Transactional Event Store**: Control-plane event streams are validated with SHA-256 checksums to ensure state consistency.
+- **JSON Ledger with Integrity Checks**: The control-plane event store is a JSON file (not SQLite/WAL) whose envelopes are validated with SHA-256 checksums to ensure state consistency.
 - **250 LOC Ceiling**: All TypeScript source modules adhere strictly to a $<250$ LOC ceiling with Single Responsibility Principle (SRP) decomposition.

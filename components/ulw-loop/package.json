@@ -5,23 +5,9 @@
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
-	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
+	"engines": {
+		"node": ">=20.0.0"
 	},
-	"bugs": {
-		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
-	},
-	"keywords": [
-		"antigravity",
-		"antigravity-plugin",
-		"ulw-loop",
-		"goal-mode",
-		"orchestration",
-		"evidence",
-		"typescript"
-	],
 	"bin": {
 		"lazyantigravity": "./dist/cli.js",
 		"omo": "./dist/cli.js"
@@ -34,6 +20,15 @@
 		"NOTICE",
 		"README.md",
 		"CHANGELOG.md"
+	],
+	"keywords": [
+		"antigravity",
+		"antigravity-plugin",
+		"ulw-loop",
+		"goal-mode",
+		"orchestration",
+		"evidence",
+		"typescript"
 	],
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
@@ -50,7 +45,20 @@
 		"typescript": "^6.0.3",
 		"vitest": "^4.1.5"
 	},
-	"engines": {
-		"node": ">=20.0.0"
+	"peerDependencies": {
+		"@opencode-ai/sdk": "*"
+	},
+	"peerDependenciesMeta": {
+		"@opencode-ai/sdk": {
+			"optional": true
+		}
+	},
+	"homepage": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/daeryundf2-prog/LAZYANTIGRAVITY.git"
+	},
+	"bugs": {
+		"url": "https://github.com/daeryundf2-prog/LAZYANTIGRAVITY/issues"
 	}
 }
