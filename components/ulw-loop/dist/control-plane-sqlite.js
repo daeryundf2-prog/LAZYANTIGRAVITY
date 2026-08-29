@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 export function computePayloadChecksum(payload) {
     return createHash("sha256")
@@ -37,7 +37,10 @@ export async function appendTransactionalEvent(repoRoot, runId, event) {
         event,
     };
     envelopes.push(envelope);
-    writeFileSync(walIndexFile, JSON.stringify(envelopes, null, 2), "utf8");
+    const tmpFile = `${walIndexFile}.tmp`;
+    writeFileSync(tmpFile, JSON.stringify(envelopes, null, 2), "utf8");
+    // Atomic swap: a crash mid-write can never leave a truncated ledger.
+    renameSync(tmpFile, walIndexFile);
     return envelope;
 }
 export function verifyLedgerWalIntegrity(repoRoot, runId) {

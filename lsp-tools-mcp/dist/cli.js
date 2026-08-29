@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline";
+import { resolve, sep } from "node:path";
 import { LSP_TOOLS, executeLspDefinitions, executeLspDiagnostics, executeLspReferences, executeLspSymbols } from "./tools.js";
 
 async function handleJsonRpc(message) {
@@ -97,6 +98,24 @@ async function handleJsonRpc(message) {
 		error: { code: -32601, message: `Method not found: ${method}` }
 	};
 }
+
+
+// Startup guard: if the host launched this server from inside the plugin
+// tree, workspace-scoped tools would silently operate on the plugin instead
+// of the user's project. Warn loudly; do not refuse to run.
+function warnIfWorkspaceLooksLikePluginRoot(name) {
+	const pluginRoot = process.env["PLUGIN_ROOT"];
+	if (!pluginRoot) return;
+	const cwd = resolve(process.cwd());
+	const root = resolve(pluginRoot);
+	if (cwd === root || cwd.startsWith(root + sep)) {
+		process.stderr.write(
+			`[${name}] WARNING: cwd is inside PLUGIN_ROOT (${pluginRoot}); workspace-scoped tools would operate on the plugin tree, not the user's workspace. Set the server "cwd" to the user workspace in mcp_config.json, or set LAZYANTIGRAVITY_WORKSPACE_ROOT.\n`,
+		);
+	}
+}
+
+warnIfWorkspaceLooksLikePluginRoot("lsp-tools-mcp");
 
 async function runMcpServer() {
 	const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: false });

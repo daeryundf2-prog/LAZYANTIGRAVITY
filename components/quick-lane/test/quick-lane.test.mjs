@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { isQuickLanePrompt } from "../dist/classifier.js";
+import { runQuickLaneHook } from "../dist/codex-hook.js";
 
 test("isQuickLanePrompt identifies simple direct queries", () => {
 	assert.equal(isQuickLanePrompt("이 함수 어디에 정의되어 있어?"), true);
@@ -31,4 +32,16 @@ test("isQuickLanePrompt rejects empty, long, and disguised orchestration prompts
 	assert.equal(isQuickLanePrompt("ulw 이게 맞나?"), false);
 	const longQuestion = `${"please carefully consider ".repeat(4)}and then answer this whole thing, ok?`;
 	assert.equal(isQuickLanePrompt(longQuestion), false, "prompts over 80 chars are not quick-lane");
+});
+
+test("runQuickLaneHook injects the directive for host-shaped input", () => {
+	const input = { hook_event_name: "UserPromptSubmit", prompt: "이 함수 어디에 정의되어 있어?", transcript_path: null };
+	const out = JSON.parse(runQuickLaneHook(input));
+	assert.equal(out.hookSpecificOutput.hookEventName, "UserPromptSubmit");
+	assert.ok(out.hookSpecificOutput.additionalContext.length > 0, "quick-lane must inject its directive");
+});
+
+test("runQuickLaneHook stays silent for non-quick prompts and wrong events", () => {
+	assert.equal(runQuickLaneHook({ hook_event_name: "UserPromptSubmit", prompt: "ulw-plan 전체 리팩토링" }), "");
+	assert.equal(runQuickLaneHook({ hook_event_name: "Stop", prompt: "이 함수 어디에 정의되어 있어?" }), "");
 });

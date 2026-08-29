@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 export interface FailureEventInput {
@@ -25,7 +25,9 @@ function rotateIfNeeded(eventsPath: string): void {
 		if (statSync(eventsPath).size <= MAX_FILE_BYTES) return;
 		const lines = readFileSync(eventsPath, "utf8").split("\n").filter((l) => l.trim().length > 0);
 		const kept = lines.slice(-ROTATION_KEEP_LINES);
-		writeFileSync(eventsPath, `${kept.join("\n")}\n`, { encoding: "utf8", mode: 0o600 });
+		const tmpPath = `${eventsPath}.rotating`;
+		writeFileSync(tmpPath, `${kept.join("\n")}\n`, { encoding: "utf8", mode: 0o600 });
+		renameSync(tmpPath, eventsPath);
 	} catch {
 		// If rotation fails, keep appending; recording is best-effort.
 	}

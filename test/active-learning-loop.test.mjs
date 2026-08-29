@@ -52,7 +52,7 @@ test("ulw-loop ledger failures feed the analyzer without a runtime dependency", 
 	}
 });
 
-test("hook-runner records hook failures while still failing open", () => {
+test("hook-runner records hook failures while still failing open", { skip: process.platform === "win32" && "fake npm PATH trick is unix-only" }, () => {
 	const dir = mkdtempSync(join(tmpdir(), "al-hook-"));
 	try {
 		const failingHook = join(dir, "failing-hook.mjs");
