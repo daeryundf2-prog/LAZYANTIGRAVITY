@@ -38,6 +38,11 @@ const codexCompatibilityEndMarkers = [
 	"When translating `load_skills=[...]`, name the skills inside the spawned agent's `message`. If a code block below conflicts with this section, this section wins.\n\n",
 ];
 
+// Windows checkouts may carry CRLF (git autocrlf); drift means content, not EOL.
+function normalizeEol(content) {
+	return content.replace(/\r\n/g, "\n");
+}
+
 function removeCodexCompatibilityGuidance(content) {
 	const start = content.indexOf("## Codex Harness Tool Compatibility\n\n");
 	if (start === -1) return content;
@@ -146,8 +151,8 @@ test("#given shared skill package source #when aggregate Codex shared skills are
 		const sharedContent = await readFile(join(sharedSkillsRoot, skillName, "SKILL.md"), "utf8");
 		const aggregateContent = await readFile(join(aggregateSkillsRoot, skillName, "SKILL.md"), "utf8");
 		assert.equal(
-			removeCodexCompatibilityGuidance(aggregateContent),
-			removeCodexCompatibilityGuidance(sharedContent),
+			normalizeEol(removeCodexCompatibilityGuidance(aggregateContent)),
+			normalizeEol(removeCodexCompatibilityGuidance(sharedContent)),
 			`${skillName} drifted from shared-skills`,
 		);
 	}
@@ -168,8 +173,8 @@ test("#given component skill sources #when aggregate Codex component skills are 
 			const sourceContent = await readFile(join(sourceDir, relativePath), "utf8");
 			const aggregateContent = await readFile(join(aggregateDir, relativePath), "utf8");
 			assert.equal(
-				removeCodexCompatibilityGuidance(aggregateContent),
-				removeCodexCompatibilityGuidance(sourceContent),
+				normalizeEol(removeCodexCompatibilityGuidance(aggregateContent)),
+				normalizeEol(removeCodexCompatibilityGuidance(sourceContent)),
 				`${skillName}/${relativePath} drifted from its component skill source`,
 			);
 		}

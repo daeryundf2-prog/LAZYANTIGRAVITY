@@ -49,7 +49,10 @@ off.
   `windows-probe` job is `continue-on-error`. First probe run (2026-08-29)
   failed on two unix-only test assumptions — now fixed: the ast-grep engine
   tests are environment-aware (optional `@ast-grep/napi` may be absent), and
-  the hook-runner feedback test is unix-gated (fake npm PATH trick).
+  the hook-runner feedback test is unix-gated (fake npm PATH trick). Second
+  run exposed two more: `node --test` on node 20 does not glob
+  `scripts/*.test.mjs` (lsp test script enumerates explicitly now), and the
+  skill drift comparison must EOL-normalize (Windows checkouts carry CRLF).
 - **Fix**: let the probe run, fix what fails, then remove `continue-on-error`
   to make it blocking.
 - **Done when**: `windows-probe` has no `continue-on-error` and passes.
