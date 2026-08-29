@@ -23,7 +23,7 @@ const PLUGIN_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CLI_PATH = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
 
 beforeAll(() => {
-	execFileSync("npm", ["run", "build", "--silent"], { cwd: PLUGIN_ROOT, stdio: "pipe" });
+	execFileSync("npm", ["run", "build", "--silent"], { cwd: PLUGIN_ROOT, stdio: "pipe", shell: process.platform === "win32" });
 });
 
 afterAll(() => {
