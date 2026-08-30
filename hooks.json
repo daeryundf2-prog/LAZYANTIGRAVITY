@@ -58,49 +58,9 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.7.0): Loading Project Rules"
-					}
-				]
-			},
-			{
-				"hooks": [
-					{
-						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/quick-lane/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.7.0): Checking Quick-Lane Trigger"
-					}
-				]
-			},
-			{
-				"hooks": [
-					{
-						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/adaptive-reasoning/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.7.0): Scaling Adaptive Reasoning"
-					}
-				]
-			},
-			{
-				"hooks": [
-					{
-						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/ultrawork/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.7.0): Checking Ultrawork Trigger"
-					}
-				]
-			},
-			{
-				"hooks": [
-					{
-						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook user-prompt-submit",
-						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.7.0): Checking Ulw-Loop Steering"
+						"command": "node \"${PLUGIN_ROOT}/scripts/user-prompt-dispatcher.mjs\"",
+						"timeout": 10,
+						"statusMessage": "LazyAntigravity(0.7.0): Running Userpromptsubmit Hooks (rules, Quick-Lane, Reasoning, Ultrawork, Steering)"
 					}
 				]
 			}

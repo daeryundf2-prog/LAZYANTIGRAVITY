@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 
 import {
 	collectCommandHooks,
@@ -40,7 +41,6 @@ test("#given isolated components #when hooks are inspected #then commands stay i
 		"components/start-work-continuation/dist/cli.js",
 		"components/telemetry/dist/cli.js",
 		"components/ulw-loop/dist/cli.js",
-		"components/ultrawork/dist/cli.js",
 	];
 
 	// then
@@ -50,6 +50,9 @@ test("#given isolated components #when hooks are inspected #then commands stay i
 	// auto-update.mjs is invoked as a CLI (`npm run` + `scripts/auto-update.mjs --status`),
 	// not as a SessionStart hook in the antigravity-only manifest.
 	assert.doesNotMatch(text, /scripts\/auto-update\.mjs/);
+	assert.match(text, /scripts\/user-prompt-dispatcher\.mjs/);
+	const dispatcherSource = await readFile("scripts/user-prompt-dispatcher.mjs", "utf8");
+	assert.match(dispatcherSource, /ultrawork/, "dispatcher must wire the ultrawork handler");
 	assert.doesNotMatch(text, /codex-(comment-checker|lsp|rules|telemetry|ulw-loop|ultrawork)@/);
 	assert.equal(await exists("scripts/migrate-codex-config.mjs"), true);
 });
@@ -131,7 +134,8 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 	assert.match(text, /hook post-compact/);
 	assert.match(text, /Resetting Git Bash Mcp Reminder/);
 	assert.match(text, /components\/ulw-loop\/dist\/cli\.js/);
-	assert.match(text, /Checking Ulw-Loop Steering/);
+	assert.match(text, /Running Userpromptsubmit Hooks/);
+	assert.match(text, /Steering/);
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), [
 		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute)$",
 		".*",
