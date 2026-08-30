@@ -116,14 +116,19 @@ export async function rewindLedger(repoRoot, runId, toEventId, options) {
     if (targetIdx === -1)
         throw new Error(`Event ID ${toEventId} not found in ledger for run ${runId}`);
     if (options?.destructive === true) {
-        const backupsDir = join(runDir, "backups");
-        if (!existsSync(backupsDir))
-            await mkdir(backupsDir, { recursive: true });
-        await writeFile(join(backupsDir, `events-before-rewind-${Date.now()}.jsonl`), `${events.map((e) => JSON.stringify(e)).join("\n")}\n`, "utf8");
-        await writeFile(join(runDir, "events.jsonl"), `${events
-            .slice(0, targetIdx + 1)
-            .map((e) => JSON.stringify(e))
-            .join("\n")}\n`, "utf8");
+        // events.jsonl을 통째로 재작성하는 destructive rewind는 append 경로와
+        // 같은 쓰기 락 안에서 행해야 한다 — 락 없이 쓰면 동시 append와 경합해
+        // 이벤트가 유실될 수 있다.
+        await withLedgerWriteLock(repoRoot, runId, async () => {
+            const backupsDir = join(runDir, "backups");
+            if (!existsSync(backupsDir))
+                await mkdir(backupsDir, { recursive: true });
+            await writeFile(join(backupsDir, `events-before-rewind-${Date.now()}.jsonl`), `${events.map((e) => JSON.stringify(e)).join("\n")}\n`, "utf8");
+            await writeFile(join(runDir, "events.jsonl"), `${events
+                .slice(0, targetIdx + 1)
+                .map((e) => JSON.stringify(e))
+                .join("\n")}\n`, "utf8");
+        });
     }
     else {
         const attemptId = `attempt-${Date.now()}`;

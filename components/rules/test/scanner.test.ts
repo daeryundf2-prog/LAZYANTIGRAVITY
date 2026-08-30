@@ -45,14 +45,23 @@ describe("scanRuleFiles", () => {
 		expect(files.map((file) => file.path)).toEqual([join(root, "alpha.md"), join(root, "beta.md")]);
 	});
 
-	it("#given symlink loop #when scanning #then traversal terminates without duplicate files", () => {
+	it("#given symlink loop #when scanning #then traversal terminates without duplicate files", (ctx) => {
 		// given
 		const root = mkdtempSync(join(tmpdir(), "codex-rules-scanner-"));
 		tempDirectories.push(root);
 		const nested = join(root, "nested");
 		mkdirSync(nested, { recursive: true });
 		writeFileSync(join(root, "root.md"), "Root\n");
-		symlinkSync(root, join(nested, "loop"));
+		try {
+			symlinkSync(root, join(nested, "loop"));
+		} catch (err) {
+			// Windows에서 symlink 생성은 개발자 모드/권한을 요구한다 — 환경 한계
+			// 이지 스캐너 결함이 아니므로 건너뛴다(유닉스 CI에서는 항상 실행).
+			if ((err as NodeJS.ErrnoException).code === "EPERM" || (err as NodeJS.ErrnoException).code === "EACCES") {
+				return ctx.skip("symlink creation requires privilege on this platform");
+			}
+			throw err;
+		}
 
 		// when
 		const files = scanRuleFiles({ rootDir: root });

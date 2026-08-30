@@ -1,8 +1,12 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
-import { join } from "node:path";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { join, resolve } from "node:path";
 import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { createServer } from "node:net";
+import { createConnection, createServer } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
+// 소비된 뮤테이션 논스의 보관 한도. 원장(파일·메모리)이 무한히 자라는 것을 막는다.
+const NONCE_LEDGER_LIMIT = 4096;
+// 단일 커맨드 라인의 최대 길이. 개행 없는 입력이 버퍼를 무한히 밀어넣는 것을 막는다.
+const MAX_LINE_BYTES = 1 << 20;
 function ensurePrivateDirectory(path) {
     mkdirSync(path, { recursive: true, mode: 0o700 });
     try {
@@ -29,7 +33,10 @@ export function getDaemonPaths(cwd = process.cwd()) {
     ensurePrivateDirectory(runDir);
     const isWin = process.platform === "win32";
     const socketPath = isWin
-        ? `\\\\.\\pipe\\lazyantigravity-daemon-${Buffer.from(cwd).toString("hex").slice(0, 16)}`
+        // 네임드파이프 이름은 전역 네임스페이스를 공유하므로 cwd 전체의 해시로
+        // 유도해야 한다. cwd "첫 8바이트"를 쓰면 C:\Users\ 아래의 모든 프로젝트가
+        // 같은 파이프명을 얻어 남의 워크스페이스 데몬과 충돌했다.
+        ? `\\\\.\\pipe\\lazyantigravity-daemon-${createHash("sha256").update(resolve(cwd)).digest("hex").slice(0, 32)}`
         : join(runDir, "daemon.sock");
     const pidPath = join(runDir, "daemon.pid");
     const tokenPath = join(runDir, "daemon.token");
@@ -75,24 +82,59 @@ export class DaemonServer {
         try {
             appendFileSync(this.nonceLedgerPath, `${requestId}\n`, { encoding: "utf8", mode: 0o600 });
             chmodSync(this.nonceLedgerPath, 0o600);
+            this.pruneNonceLedger();
         }
         catch {
             this.consumedRequestIds.delete(requestId);
             throw new Error("Unable to persist mutation nonce");
         }
     }
-    start() {
-        return new Promise((resolve, reject) => {
-            if (process.platform !== "win32" && existsSync(this.config.socketPath)) {
-                if (this.isExistingDaemonAlive()) {
-                    reject(new Error("An active daemon already owns this socket"));
-                    return;
-                }
-                try {
-                    unlinkSync(this.config.socketPath);
-                }
-                catch { /* listen reports protected sockets */ }
+    pruneNonceLedger() {
+        // 논스 원장은 append-only로 무한히 자란다. 한도를 넘기면 최근 절반만
+        // 남기고 원장을 재작성한다(재사용 방지 창은 충분히 유지된다).
+        if (this.consumedRequestIds.size <= NONCE_LEDGER_LIMIT)
+            return;
+        const kept = [...this.consumedRequestIds].slice(-NONCE_LEDGER_LIMIT / 2);
+        this.consumedRequestIds = new Set(kept);
+        writeFileSync(this.nonceLedgerPath, kept.map((id) => `${id}\n`).join(""), { encoding: "utf8", mode: 0o600 });
+        chmodSync(this.nonceLedgerPath, 0o600);
+    }
+    // win32에서 네임드파이프는 "존재 = 살아 있는 서버"다. pid 파일만으로는
+    // 재사용된 pid를 오판할 수 있으므로 실제로 응답하는지 확인한다(토큰 없는
+    // PING도 Unauthorized 응답을 돌려주므로 생존 신호가 된다).
+    probeExistingPipe() {
+        return new Promise((resolve) => {
+            const socket = createConnection(this.config.socketPath);
+            const done = (alive) => {
+                clearTimeout(timer);
+                socket.removeAllListeners();
+                socket.destroy();
+                resolve(alive);
+            };
+            const timer = setTimeout(() => done(false), 500);
+            socket.on("connect", () => {
+                socket.write(`${JSON.stringify({ cmd: "STATUS", token: "" })}\n`);
+            });
+            socket.on("data", () => done(true));
+            socket.on("error", () => done(false));
+        });
+    }
+    async start() {
+        if (process.platform === "win32") {
+            const alive = await this.probeExistingPipe();
+            if (alive)
+                throw new Error("An active daemon already owns this workspace");
+        }
+        else if (existsSync(this.config.socketPath)) {
+            if (this.isExistingDaemonAlive()) {
+                throw new Error("An active daemon already owns this workspace");
             }
+            try {
+                unlinkSync(this.config.socketPath);
+            }
+            catch { /* listen reports protected sockets */ }
+        }
+        await new Promise((resolve, reject) => {
             this.server = createServer((socket) => this.handleConnection(socket));
             this.server.on("error", (err) => reject(err));
             this.server.listen(this.config.socketPath, () => {
@@ -146,6 +188,12 @@ export class DaemonServer {
         let buffer = "";
         socket.on("data", (chunk) => {
             buffer += chunk.toString("utf8");
+            // 개행 없는 입력(또는 비정상 클라이언트)이 버퍼를 무한히 밀어넣지
+            // 못하게 한다 — 라인 단위 프로토콜이니 한도를 넘는 연결은 폐기한다.
+            if (buffer.length > MAX_LINE_BYTES) {
+                socket.destroy();
+                return;
+            }
             let newlineIndex;
             while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
                 const line = buffer.slice(0, newlineIndex).trim();

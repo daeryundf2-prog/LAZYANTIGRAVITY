@@ -1,6 +1,34 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { extname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
+
+// Windows에서 이름만 스폰하면 libuv가 현재 디렉터리(=워크스페이스)를 검색하므로
+// 워크스페이스에 심어둔 python3.exe/go.exe가 실행될 수 있다. PATH에서만 찾아
+// 절대경로로 스폰한다(unix는 그대로 이름 사용).
+function resolveOnPath(name) {
+	if (process.platform !== "win32") return name;
+	for (const dir of (process.env.PATH ?? "").split(";")) {
+		if (!dir) continue;
+		for (const ext of (process.env.PATHEXT ?? ".EXE").split(";")) {
+			const candidate = join(dir, `${name}${ext.trim()}`);
+			if (existsSync(candidate)) return candidate;
+		}
+	}
+	return null;
+}
+
+// Windows의 npx는 .cmd라 shell:false 스폰이 EINVAL로 실패한다(Node ≥20.12).
+// node 실행 파일 기준 npm의 npx-cli.js를 직접 찾아 node로 돌린다 — shell도
+// .cmd도 거치지 않는다.
+function resolveNpxCommand(args) {
+	if (process.platform !== "win32") return { cmd: "npx", args };
+	const npxCli = join(dirname(process.execPath), "node_modules", "npm", "bin", "npx-cli.js");
+	if (existsSync(npxCli)) return { cmd: process.execPath, args: [npxCli, ...args] };
+	const fallback = resolveOnPath("npx");
+	if (!fallback) return null;
+	// npx-cli.js를 못 찾은 경우에만 .cmd를 shell로 감싼다(인자는 고정 리터럴).
+	return { cmd: fallback, args, shell: true };
+}
 
 function escapeRegex(str) {
 	return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -84,10 +112,15 @@ export async function executeLspDiagnostics({ filePath }) {
 
 	if ([".ts", ".tsx", ".js", ".jsx"].includes(ext)) {
 		try {
-			const res = spawnSync("npx", ["--no-install", "tsc", "--noEmit", absolutePath], {
+			const npx = resolveNpxCommand(["--no-install", "tsc", "--noEmit", absolutePath]);
+			if (!npx) {
+				toolAvailable = false;
+				toolNote = "TypeScript compiler (tsc) NOT INSTALLED; diagnostics were not run.";
+			} else {
+			const res = spawnSync(npx.cmd, npx.args, {
 				encoding: "utf8",
 				timeout: 5000,
-				shell: false,
+				shell: npx.shell === true,
 				stdio: ["ignore", "pipe", "pipe"]
 			});
 			const stdout = (res.stdout || "").trim();
@@ -106,13 +139,19 @@ export async function executeLspDiagnostics({ filePath }) {
 					diagnostics.push({ file: filePath, message: output, severity: "error" });
 				}
 			}
+			}
 		} catch {
 			toolAvailable = false;
 			toolNote = "TypeScript compiler (tsc) NOT INSTALLED; diagnostics were not run.";
 		}
 	} else if (ext === ".py") {
 		try {
-			const res = spawnSync("python3", ["-m", "py_compile", absolutePath], {
+			const python3 = resolveOnPath("python3") ?? resolveOnPath("python");
+			if (!python3) {
+				toolAvailable = false;
+				toolNote = "python3 NOT INSTALLED; diagnostics were not run.";
+			} else {
+			const res = spawnSync(python3, ["-m", "py_compile", absolutePath], {
 				encoding: "utf8",
 				timeout: 5000,
 				shell: false,
@@ -127,13 +166,19 @@ export async function executeLspDiagnostics({ filePath }) {
 					diagnostics.push({ file: filePath, message: stderr, severity: "error" });
 				}
 			}
+			}
 		} catch {
 			toolAvailable = false;
 			toolNote = "python3 NOT INSTALLED; diagnostics were not run.";
 		}
 	} else if (ext === ".go") {
 		try {
-			const res = spawnSync("go", ["vet", absolutePath], {
+			const go = resolveOnPath("go");
+			if (!go) {
+				toolAvailable = false;
+				toolNote = "go toolchain NOT INSTALLED; diagnostics were not run.";
+			} else {
+			const res = spawnSync(go, ["vet", absolutePath], {
 				encoding: "utf8",
 				timeout: 5000,
 				shell: false,
@@ -147,6 +192,7 @@ export async function executeLspDiagnostics({ filePath }) {
 				if (stderr) {
 					diagnostics.push({ file: filePath, message: stderr, severity: "error" });
 				}
+			}
 			}
 		} catch {
 			toolAvailable = false;

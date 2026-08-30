@@ -40,8 +40,18 @@ export async function withLedgerWriteLock(repoRoot, runId, fn) {
         return await fn();
     }
     finally {
-        await handle.close();
-        await rm(lockPath, { force: true });
+        // 락 파일 제거와 fd 닫기의 순서는 플랫폼별로 다르다. 유닉스는 열린
+        // fd를 unlink할 수 있으므로 rm을 먼저 한다(크래시로 close가 생략돼도
+        // 락이 남지 않는다). Windows는 열린 파일을 unlink할 수 없으므로 close가
+        // 반드시 먼저여야 한다.
+        if (process.platform === "win32") {
+            await handle.close();
+            await rm(lockPath, { force: true });
+        }
+        else {
+            await rm(lockPath, { force: true });
+            await handle.close();
+        }
     }
 }
 function getRunDir(repoRoot, runId) {

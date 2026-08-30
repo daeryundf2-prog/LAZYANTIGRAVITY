@@ -5,6 +5,65 @@ review. Ordered by user impact. Each item states the evidence, the suggested
 fix, and what "done" means. Pick one, fix it, run `npm run check`, and check it
 off.
 
+## External review pass — 2026-08-30 ✅ (partial)
+
+An external review (scores: code 8, architecture 8, tests 8.5, docs 8.5,
+security 7.5) confirmed four findings and produced the following repairs:
+
+- ✅ **Windows named-pipe name collision** — the pipe name was derived from the
+  first 8 bytes of cwd, so every project under `C:\Users\` shared one pipe and
+  the daemon silently attached to the wrong workspace. Now derived from
+  `sha256(resolve(cwd))`, and `start()` probes the pipe before listening on
+  win32 (stale-pid reuse can no longer wedge startup).
+- ✅ **verify:reproducible scope** — the check now includes the four bundled
+  MCP `dist/` trees and catches untracked dist files (`git diff HEAD` +
+  `ls-files --others`); the README/CONTRIBUTING "100%" claim is now true.
+- ✅ **Windows exe planting** — `git-bash-mcp` and `lsp-tools-mcp` now resolve
+  `git`/`npx`/`python3`/`go` from PATH only (never cwd) and launch `npx` via
+  `node <npm>/bin/npx-cli.js` so the LSP gate works on Windows again.
+- ✅ **Daemon client misreporting** — `status()` now returns `null` for error
+  responses instead of a truthy error object ("IPC daemon alive" lies);
+  nonce ledger is pruned; oversized unterminated IPC lines drop the socket;
+  destructive `rewindLedger` runs under the ledger write lock; corrupted
+  ledger lines are reported on stderr instead of skipped silently; the
+  write-lock is released before the fd close to avoid a TOCTOU window.
+- ✅ **Windows test drift** — `rules` (JSON-escaped path assertions,
+  symlink-privilege skip), `start-work-continuation` (win32 `resolve()` drive
+  letter vs fixture keys), and `lsp` (vitest/.cmd EINVAL spawn, fake npm
+  shim) — `test:components` is now 15/15 on Windows.
+
+New items opened by the review:
+
+### 9. Execution binding is self-reported
+- **Evidence**: `evidence-completion-gate.ts` validates the structure and
+  `exitCode === 0` of a binding the *agent* produced; there is no host-side
+  registry to compare against. Only `fileChecksums`/`readRanges` are verified
+  against the real disk.
+- **Fix**: have the hook runner issue a signed audit record per command it
+  executes and require the gate to reference a record it did not author.
+- **Done when**: a forged `commandAudits` entry fails the gate in a test.
+
+### 10. Windows token ACL
+- **Evidence**: `chmodSync(0o600)` on the daemon token is a no-op on win32;
+  any local process that reads the workspace can use the token. The pipe's
+  default DACL is Everyone-readable.
+- **Fix**: restrict the pipe DACL to the user SID and apply an icacls grant to
+  the token file on win32.
+- **Done when**: a second low-privilege process cannot read the token.
+
+### 11. appendRunEvent is O(n^2)
+- **Evidence**: every append re-reads and re-verifies the whole events.jsonl
+  (`control-plane.ts`). Long runs pay quadratic rewrite cost.
+- **Fix**: cache the last event hash/sequence in memory per run and verify the
+  tail only.
+- **Done when**: bench shows flat per-append cost across a 1k-event run.
+
+### 12. Read paths still write (migration + plan migration append)
+- **Evidence**: `readUlwLoopPlan` performs migration writes and ledger
+  appends. Read-only callers (doctor, status) mutate the run directory.
+- **Fix**: gate migration writes behind an explicit `--migrate` path.
+- **Done when**: doctor/status leave `.lazycodex/runs` untouched.
+
 ## P1 — User-facing, small
 
 ### 1. ✅ DONE (this pass) — ULW CLI: unknown commands hint at the `ulw-loop` prefix

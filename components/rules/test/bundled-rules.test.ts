@@ -12,6 +12,25 @@ import {
 } from "../src/codex-hook.js";
 import { createRuleDiscoveryCache, findRuleCandidates } from "../src/rules/finder.js";
 
+
+// Windows에서 JSON.stringify가 경로의 백슬래시를 이스케이프하므로, 논리적
+// 내용(경로·본문)을 단언할 때는 additionalContext를 디코딩해 비교한다.
+function decodedContext(output: string): string {
+	try {
+		const parsed: unknown = JSON.parse(output);
+		if (parsed !== null && typeof parsed === "object") {
+			const hook = (parsed as Record<string, unknown>)["hookSpecificOutput"];
+			if (hook !== null && typeof hook === "object") {
+				const context = (hook as Record<string, unknown>)["additionalContext"];
+				if (typeof context === "string") return context;
+			}
+		}
+	} catch {
+		// JSON이 아니면 원문을 그대로 쓴다
+	}
+	return output;
+}
+
 interface FixtureOptions {
 	readonly writeProjectDuplicate?: boolean;
 }
@@ -159,7 +178,7 @@ describe("plugin bundled rules", () => {
 
 		// then
 		expect(output).toContain('"hookEventName":"SessionStart"');
-		expect(output).toContain(`- [hephaestus.md]{${bundledRulePath}}`);
+		expect(decodedContext(output)).toContain(`- [hephaestus.md]{${bundledRulePath}}`);
 		expect(output).not.toContain(BUNDLED_BODY);
 	});
 
@@ -175,9 +194,9 @@ describe("plugin bundled rules", () => {
 
 		// then
 		expect(occurrenceCount(output, "- [hephaestus.md]{")).toBe(1);
-		expect(output).toContain(projectRulePath);
+		expect(decodedContext(output)).toContain(projectRulePath);
 		expect(output).not.toContain(SHARED_BODY);
-		expect(output).not.toContain(bundledRulePath);
+		expect(decodedContext(output)).not.toContain(bundledRulePath);
 	});
 
 	it("#given bundled rules disabled #when SessionStart runs #then bundled context is suppressed", async () => {
@@ -239,7 +258,7 @@ describe("plugin bundled rules", () => {
 		});
 
 		// then
-		expect(output).toContain(`- [hephaestus.md]{${bundledRulePath}}`);
+		expect(decodedContext(output)).toContain(`- [hephaestus.md]{${bundledRulePath}}`);
 		expect(output).not.toContain(tailMarker);
 		expect(output).not.toContain("[Truncated. Full:");
 	});
@@ -268,7 +287,7 @@ describe("plugin bundled rules", () => {
 		});
 
 		// then
-		expect(output).toContain(`- [oversized.md]{${projectRulePath}}`);
+		expect(decodedContext(output)).toContain(`- [oversized.md]{${projectRulePath}}`);
 		expect(output).not.toContain(tailMarker);
 		expect(output).not.toContain("[Truncated. Full:");
 	});

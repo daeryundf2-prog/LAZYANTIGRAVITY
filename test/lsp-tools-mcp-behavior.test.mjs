@@ -29,7 +29,14 @@ test("lsp-tools-mcp tolerates regex metacharacters in symbols", () => {
 		assert.equal(res.ok, true, "unescaped symbol must not crash RegExp construction");
 		assert.equal(res.total, 0);
 	} finally {
-		rmSync(dir, { recursive: true, force: true });
+		// Windows에서 방금 죽은 자식 프로세스(tsc 타임아웃)의 핸들이 잠깐
+		// 남아 rmSync가 EPERM로 실패할 수 있다. 정리는 best-effort로 하고
+		// 실패는 무시한다 — 임시 디렉터리는 OS가 회수하며, 테스트 결과와 무관하다.
+		try {
+			rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+		} catch {
+			// best-effort cleanup
+		}
 	}
 });
 
@@ -50,6 +57,13 @@ test("lsp-tools-mcp distinguishes missing diagnostic tooling from a clean file",
 			assert.match(ts.toolNote ?? "", /NOT INSTALLED/, "missing tooling must carry the NOT INSTALLED marker");
 		}
 	} finally {
-		rmSync(dir, { recursive: true, force: true });
+		// Windows에서 방금 죽은 자식 프로세스(tsc 타임아웃)의 핸들이 잠깐
+		// 남아 rmSync가 EPERM로 실패할 수 있다. 정리는 best-effort로 하고
+		// 실패는 무시한다 — 임시 디렉터리는 OS가 회수하며, 테스트 결과와 무관하다.
+		try {
+			rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+		} catch {
+			// best-effort cleanup
+		}
 	}
 });

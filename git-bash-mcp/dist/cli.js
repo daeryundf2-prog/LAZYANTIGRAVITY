@@ -5,6 +5,22 @@ import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve, sep } from "node:path";
 
+// Windows에서 이름만 스폰하면 libuv가 현재 디렉터리(=워크스페이스)를 검색하므로
+// 워크스페이스에 심어둔 git.exe가 실행될 수 있다 — 이 MCP가 막으려는 임의
+// 실행을 워크스페이스 쓰기 권한만으로 우회하는 경로다. PATH에서만 찾아
+// 절대경로로 스폰한다(unix는 그대로 이름 사용).
+function resolveOnPath(name) {
+	if (process.platform !== "win32") return name;
+	for (const dir of (process.env.PATH ?? "").split(";")) {
+		if (!dir) continue;
+		for (const ext of (process.env.PATHEXT ?? ".EXE").split(";")) {
+			const candidate = join(dir, `${name}${ext.trim()}`);
+			if (existsSync(candidate)) return candidate;
+		}
+	}
+	return null;
+}
+
 const TOOLS = [
 	{
 		name: "git_bash_execute",
@@ -338,7 +354,21 @@ async function handleJsonRpc(message) {
 		}
 
 		try {
-			const res = spawnSync(parsed.binary, parsed.args, {
+			const exe = resolveOnPath(parsed.binary);
+			if (!exe) {
+				return {
+					jsonrpc: "2.0",
+					id,
+					result: {
+						content: [{
+							type: "text",
+							text: JSON.stringify({ ok: false, error: `binary not found on PATH: ${parsed.binary}` }, null, 2)
+						}],
+						isError: true
+					}
+				};
+			}
+			const res = spawnSync(exe, parsed.args, {
 				cwd: cwdResult.cwd,
 				encoding: "utf8",
 				timeout: 10000,

@@ -66,7 +66,12 @@ export class DaemonClient {
 
 	public async status(): Promise<{ status: string; pid?: number; uptimeMs?: number; entriesCount?: number } | null> {
 		try {
-			return await this.send({ cmd: "STATUS" });
+			const res = await this.send<{ status: string; pid?: number; uptimeMs?: number; entriesCount?: number }>({ cmd: "STATUS" });
+			// 오류 응답 객체({status:"error"})도 truthy라 호출자가 "daemon alive"로
+			// 오판했다. ok 응답만 살아 있는 것으로 본다.
+			return res && res.status === "ok"
+				? { status: "ok", pid: res.pid, uptimeMs: res.uptimeMs, entriesCount: res.entriesCount }
+				: null;
 		} catch {
 			return null;
 		}

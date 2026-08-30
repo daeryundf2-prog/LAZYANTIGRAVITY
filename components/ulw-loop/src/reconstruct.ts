@@ -16,12 +16,15 @@ export async function readRunEvents(repoRoot: string, runId: string): Promise<Le
 	const content = await readFile(eventsFile, "utf8");
 	const events: LedgerEvent[] = [];
 	const lines = content.split("\n");
-	for (const line of lines) {
+	for (const [i, line] of lines.entries()) {
 		if (line.trim().length === 0) continue;
 		try {
 			events.push(JSON.parse(line) as LedgerEvent);
 		} catch {
-			// Ignore corrupted line
+			// 깨진 줄을 조용히 버리면 체인 어긋남이 재구성 상태에는 티가 나지
+			// 않는다. 건너뛰되 stderr로 눈에 보이게 남긴다(재구성은 계속 —
+			// 무결성 판정은 verify-ledger가 담당).
+			console.error(`[ulw-loop] warning: skipping corrupted ledger line ${i + 1} in ${eventsFile}`);
 		}
 	}
 	return events;

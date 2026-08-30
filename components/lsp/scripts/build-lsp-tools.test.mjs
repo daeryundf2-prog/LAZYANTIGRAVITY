@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
+
+const NPM_BODY = `const { appendFileSync } = require("node:fs");\nappendFileSync(process.env.NPM_FAKE_LOG, process.argv.slice(2).join(" ") + "\\n");\n`;
 
 async function makeFixture() {
 	const root = await mkdtemp(join(tmpdir(), "codex-lsp-build-"));
@@ -21,10 +23,12 @@ async function makeFixture() {
 	const fakeBin = join(root, "bin");
 	await mkdir(fakeBin, { recursive: true });
 	const npmLog = join(root, "npm.log");
-	await writeFile(
-		join(fakeBin, "npm"),
-		`#!/usr/bin/env node\nconst { appendFileSync } = require("node:fs");\nappendFileSync(${JSON.stringify(npmLog)}, process.argv.slice(2).join(" ") + "\\n");\n`,
-	);
+	// 로직은 npm.js에 두고, 유닉스용 shebang 실행 파일과 Windows용 .cmd shim이
+	// 같은 로직을 호출하게 한다 — execSync("npm ...")는 어떤 플랫폼이든 자기
+	// 플랫폼의 실행 파일만 찾는다.
+	await writeFile(join(fakeBin, "npm.js"), NPM_BODY);
+	await writeFile(join(fakeBin, "npm"), `#!/usr/bin/env node\n${NPM_BODY}`);
+	await writeFile(join(fakeBin, "npm.cmd"), `@echo off\r\nnode "%~dp0npm.js" %*\r\n`);
 	await chmod(join(fakeBin, "npm"), 0o755);
 	return { root, npmLog, script: join(root, "packages", "omo-codex", "plugin", "components", "lsp", "scripts", "build-lsp-tools.mjs"), fakeBin };
 }
@@ -32,7 +36,11 @@ async function makeFixture() {
 function runScript(script, fakeBin, args = []) {
 	return spawnSync(process.execPath, [script, ...args], {
 		encoding: "utf8",
-		env: { ...process.env, PATH: `${fakeBin}:${process.env.PATH ?? ""}` },
+		env: {
+			...process.env,
+			NPM_FAKE_LOG: join(fakeBin, "..", "npm.log"),
+			PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
+		},
 	});
 }
 

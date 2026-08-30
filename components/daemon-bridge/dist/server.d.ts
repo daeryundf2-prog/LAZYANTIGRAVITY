@@ -16,6 +16,8 @@ export declare class DaemonServer {
     constructor(config: DaemonConfig);
     private loadNonceLedger;
     private persistNonce;
+    private pruneNonceLedger;
+    private probeExistingPipe;
     start(): Promise<void>;
     stop(): Promise<void>;
     isStopRequested(): boolean;

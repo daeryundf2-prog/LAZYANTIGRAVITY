@@ -1,10 +1,12 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { runStopHook } from "../src/codex-hook.js";
 import type { ReadonlyFileSystem, StopInput } from "../src/types.js";
 
-const WORKSPACE = "/repo";
+// resolve()로 정규화한다 — win32에서 "/repo"는 드라이브 문자가 붙어
+// resolve(cwd, activePlan)과 어긋나 픽스처 조회가 깨진다(유닉스에서는 무차별).
+const WORKSPACE = resolve("/repo");
 const BOULDER_PATH = join(WORKSPACE, ".omo", "boulder.json");
 const PLAN_PATH = join(WORKSPACE, ".omo", "plans", "plan.md");
 const LEDGER_PATH = join(WORKSPACE, ".omo", "start-work", "ledger.jsonl");
