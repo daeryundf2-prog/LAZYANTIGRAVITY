@@ -19,6 +19,11 @@ const locks = new Map<string, Promise<unknown>>();
 
 const RETRY_DELAY_MS = 25;
 const LOCK_TIMEOUT_MS = 10_000;
+// 경합 중 재시도해야 하는 open 오류. EEXIST는 이미 락이 있다는 뜻이고,
+// EPERM/EACCES는 Windows의 삭제-대기 전이(다른 프로세스가 방금 rm한 파일에
+// CREATE_NEW로 진입)나 백신 실시간 스캔이 만드는 일시적 실패다 — 이걸 재시도
+// 하지 않으면 부하가 높은 환경에서 락 획득이 확률적으로 죽는다.
+const RETRYABLE_LOCK_CODES = new Set(["EEXIST", "EPERM", "EACCES"]);
 
 function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -35,15 +40,18 @@ export async function withLedgerWriteLock<T>(repoRoot: string, runId: string, fn
 	const lockPath = join(lockDir, ".write.lock");
 	const deadline = Date.now() + LOCK_TIMEOUT_MS;
 	let handle: Awaited<ReturnType<typeof open>> | undefined;
+	let lastCode = "EEXIST";
 	while (true) {
 		try {
 			handle = await open(lockPath, "wx");
 			break;
 		} catch (error) {
-			if (!hasCode(error, "EEXIST")) throw error;
+			const code = errorCode(error);
+			if (code === undefined || !RETRYABLE_LOCK_CODES.has(code)) throw error;
+			lastCode = code;
 			if (Date.now() > deadline) {
 				throw new UlwLoopError(
-					`Could not acquire ledger write lock ${lockPath} within ${LOCK_TIMEOUT_MS}ms.`,
+					`Could not acquire ledger write lock ${lockPath} within ${LOCK_TIMEOUT_MS}ms (last error: ${lastCode}).`,
 					"ULW_LOOP_LEDGER_LOCK_TIMEOUT",
 				);
 			}
@@ -73,7 +81,11 @@ function getRunDir(repoRoot: string, runId: string): string {
 }
 
 function hasCode(error: unknown, code: string): boolean {
-	return error instanceof Error && "code" in error && error.code === code;
+	return errorCode(error) === code;
+}
+
+function errorCode(error: unknown): string | undefined {
+	return error instanceof Error && "code" in error && typeof error.code === "string" ? error.code : undefined;
 }
 
 function isLegacyEnumeratedAggregateObjective(objective: string | undefined): objective is string {

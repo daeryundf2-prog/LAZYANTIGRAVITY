@@ -86,5 +86,23 @@ describe("Ledger hash-chain integrity", () => {
 		const result = await verifyLedgerIntegrity(testDir, runId);
 		expect(result.valid).toBe(true);
 		expect(result.eventCount).toBe(32);
-	});
+	}, 15000);
+
+	it("keeps the hash chain valid under a heavy write burst", async () => {
+		// Windows에서는 경합 중 open("wx")가 EEXIST 대신 일시적 EPERM/EACCES를
+		// 반환하는 창이 있다(삭제-대기 전이). 락 획득이 이를 재시도하는지를
+		// 경합 강도를 높여 검증한다 — 재시도가 없으면 이 테스트는 부하 아래에서
+		// 확률적으로 실패한다.
+		const runId = "run-chain-burst";
+		const writers = Array.from({ length: 16 }, (_, w) => async () => {
+			for (let i = 0; i < 10; i++) {
+				await appendRunEvent(testDir, runId, "agent.progress", { agentId: `w${w}`, progress: `e${w}-${i}` });
+			}
+		});
+		await Promise.all(writers.map((w) => w()));
+
+		const result = await verifyLedgerIntegrity(testDir, runId);
+		expect(result.valid).toBe(true);
+		expect(result.eventCount).toBe(160);
+	}, 15000);
 });

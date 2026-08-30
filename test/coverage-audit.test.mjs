@@ -5,9 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 // GUARD_PACK_VERSION 1.0.0 — coverage_audit.mjs 계약: 원문 없는 감사는 구조적으로 불가능하다.
-const AUDIT = new URL("../scripts/coverage_audit.mjs", import.meta.url).pathname;
+// fileURLToPath 필수 — Windows에서 URL.pathname은 /C:/... 형태라 모듈 해석이 깨진다
+const AUDIT = fileURLToPath(new URL("../scripts/coverage_audit.mjs", import.meta.url));
 
 const SOURCE = [
 	"# 감사 대상 원문",
