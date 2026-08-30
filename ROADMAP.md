@@ -16,6 +16,8 @@
 
 ### Acceptance suite (2026-08-30): 16/16 PASS, isolated /tmp execution
 
+| 08-30 | **media-mcp (5th server)** | PASS — probe/frames/ocr live (ffmpeg+tesseract), transcribe degrades honestly without whisper, youtube gated behind LAZYANTIGRAVITY_MEDIA_NETWORK=1, path confinement + URL allowlist enforced |
+
 All 0.7.0 features verified live in one session: MCP probe (4 servers,
 tool counts), blackboard fail-open hint + daemon round-trip, MCP
 session_tree_snapshot, fork working-tree restore, prune --keep 2

@@ -1,0 +1,18 @@
+{
+	"name": "@lazyantigravity/media-mcp",
+	"version": "0.1.0",
+	"description": "Media MCP server: ffprobe/ffmpeg frame extraction, tesseract OCR, whisper.cpp transcription, opt-in yt-dlp YouTube fetch.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"lazyantigravity-media": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"package.json"
+	],
+	"scripts": {
+		"build": "node ../scripts/build-mcp-package.mjs"
+	}
+}

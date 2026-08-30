@@ -17,6 +17,7 @@ const expectedSkills = [
 	"image-prompt",
 	"init-deep",
 	"lcx-report-bug",
+	"media-analysis",
 	"programming",
 	"refactor",
 	"report-bug",

@@ -31,6 +31,14 @@
 				"mcp"
 			],
 			"cwd": "."
+		},
+		"media": {
+			"command": "node",
+			"args": [
+				"./media-mcp/dist/cli.js",
+				"mcp"
+			],
+			"cwd": "."
 		}
 	}
 }

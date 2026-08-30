@@ -65,8 +65,8 @@ Keep the **session UI** on **Gemini 3.7 Flash (High)**. Pass `invoke_subagent` `
 ## What ships in this tree
 
 - **15 components** — rules engine, active memory, quick-lane, adaptive reasoning, comment checker, LSP feedback, ULW loop (evidence ledger + checkpoints + consensus), telemetry (opt-in), daemon bridge (token-authed IPC blackboard), symbol index, session tree (shadow-git snapshots), active learning, and helpers.
-- **12 workflow skills + 2 aliases** — every former component-manual skill now lives in its component's README; absorbed workflows are preserved as references inside the skill that owns them.
-- **4 bundled local MCP servers** — `git_bash` (workspace-confined, read-only-by-default git policy, no shell chaining), `ast_grep` (tree-sitter structural search/replace when the optional `@ast-grep/napi` dependency is installed, regex fallback otherwise), `lsp` (compiler diagnostics), `workspace` (memory search, blackboard, session tree). Remote MCP servers ship as opt-in examples only.
+- **13 workflow skills + 2 aliases** — every former component-manual skill now lives in its component's README; absorbed workflows are preserved as references inside the skill that owns them.
+- **5 bundled local MCP servers** — `git_bash` (workspace-confined, read-only-by-default git policy, no shell chaining), `ast_grep` (tree-sitter structural search/replace when the optional `@ast-grep/napi` dependency is installed, regex fallback otherwise), `lsp` (compiler diagnostics), `workspace` (memory search, blackboard, session tree), `media` (ffprobe metadata, ffmpeg frame extraction for native-vision analysis, tesseract OCR kor+eng, whisper.cpp transcription; `media_youtube` via yt-dlp is the one network tool and requires the `LAZYANTIGRAVITY_MEDIA_NETWORK=1` opt-in). Remote MCP servers ship as opt-in examples only.
 
 ## Evidence, not claims
 

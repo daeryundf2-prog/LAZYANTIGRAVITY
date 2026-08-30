@@ -62,6 +62,13 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 ## [0.7.0] - 2026-08-29
 
 ### Added
+- **media MCP server** (`media-mcp`, 5th bundled local server): `media_probe`
+  (ffprobe), `media_frames` (ffmpeg keyframe extraction for native-vision
+  analysis), `media_ocr` (tesseract, kor+eng), `media_transcribe`
+  (whisper.cpp with a ggml model), and `media_youtube` (yt-dlp; the only
+  network tool, gated behind `LAZYANTIGRAVITY_MEDIA_NETWORK=1`, restricted to
+  YouTube hosts, subtitles preferred over STT). Ships with the
+  `media-analysis` skill documenting the pipeline order.
 - **workspace MCP server** (`workspace-mcp`, 4th bundled local server): exposes
   active memory search (`memory_search`), the token-authed IPC blackboard
   (`blackboard_get/set/list`), and the session tree (`session_tree_snapshot`,

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const defaultConfigFiles = [".mcp.json", "mcp_config.json"];
-const bundledRuntimeNames = new Set(["ast-grep-mcp", "git-bash-mcp", "lsp-tools-mcp", "workspace-mcp"]);
+const bundledRuntimeNames = new Set(["ast-grep-mcp", "git-bash-mcp", "lsp-tools-mcp", "workspace-mcp", "media-mcp"]);
 
 try {
 	const options = parseArgs(process.argv.slice(2));
