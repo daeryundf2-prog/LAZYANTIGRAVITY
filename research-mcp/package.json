@@ -1,0 +1,18 @@
+{
+	"name": "@lazyantigravity/research-mcp",
+	"version": "0.1.0",
+	"description": "Research MCP server: web_read, web_search, fetch_json with opt-in network gate and SSRF protection.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"lazyantigravity-research": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"package.json"
+	],
+	"scripts": {
+		"build": "node ../scripts/build-mcp-package.mjs"
+	}
+}

@@ -24,18 +24,26 @@
 			],
 			"cwd": "."
 		},
-		"workspace": {
-			"command": "node",
-			"args": [
-				"./workspace-mcp/dist/cli.js",
-				"mcp"
-			],
-			"cwd": "."
-		},
 		"media": {
 			"command": "node",
 			"args": [
 				"./media-mcp/dist/cli.js",
+				"mcp"
+			],
+			"cwd": "."
+		},
+		"research": {
+			"command": "node",
+			"args": [
+				"./research-mcp/dist/cli.js",
+				"mcp"
+			],
+			"cwd": "."
+		},
+		"workspace": {
+			"command": "node",
+			"args": [
+				"./workspace-mcp/dist/cli.js",
 				"mcp"
 			],
 			"cwd": "."

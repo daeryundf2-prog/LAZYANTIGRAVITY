@@ -6,6 +6,16 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — research MCP server (`research-mcp`, 6th bundled local server)
+
+- **research-mcp** (`research-mcp/`): bundled local MCP server providing `web_read`,
+  `web_search`, and `fetch_json` with SSRF protection (localhost / private IP blocking)
+  and opt-in network gate (`LAZYANTIGRAVITY_RESEARCH_NETWORK=1`).
+- `web_read`: reads web pages as clean markdown via Jina Reader (`r.jina.ai`, keyless) with direct-fetch HTML-strip fallback.
+- `web_search`: multi-provider chain (`Tavily` → `Brave` → `Jina` → `DuckDuckGo`) with honest provider degradation when unconfigured.
+- `fetch_json`: fetches public developer JSON APIs (GitHub, npm, PyPI, arXiv) with hard timeouts and SSRF checks.
+- `test/research-mcp.test.mjs` (5 tests): verifies tools exposure, network gating, SSRF rejection, unconfigured search degradation, and environment-gated live smoke.
+
 ### Added — archify skill (vendored, MIT)
 
 - **archify** (`shared-skills/skills/archify` → materialized `skills/archify`): ported

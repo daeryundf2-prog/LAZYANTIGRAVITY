@@ -33,6 +33,11 @@ const runtimes = [
 		packageRoot: join(repoPackagesRoot, "media-mcp"),
 		requiredOutputs: ["dist/cli.js"],
 	},
+	{
+		label: "research-mcp",
+		packageRoot: join(repoPackagesRoot, "research-mcp"),
+		requiredOutputs: ["dist/cli.js"],
+	},
 ];
 
 for (const runtime of runtimes) {
