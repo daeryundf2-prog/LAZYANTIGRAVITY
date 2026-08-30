@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 semver. Given the 0.x stage, breaking changes may land in minor releases.
 
+## [Unreleased]
+
+### Added — Guard Pack (GUARD_PACK_VERSION 1.0.0, canonical: lazyforensic)
+
+- **stop_claim_guard.mjs** (`scripts/`, wired into `Stop` + `SubagentStop`): the final
+  assistant message making a completion claim (완료/전수/100%/무결점/모두 통과…) without
+  falsifiable evidence (commands run, test counts, artifact paths, commit SHA) gets
+  `{"decision":"block"}` with the exact evidence checklist. Honors `stop_hook_active`
+  (no infinite loops), degrades to no-op on unparseable payloads, and never exits
+  non-zero (no session trapping). Root cause targeted: the deepfake-forensic-radar
+  "100% 전수 일치" self-audit that was actually a circular audit against its own
+  keyword list.
+- **markdown_structure_guard.mjs** (`scripts/`, FAIL_CLOSED on the write-family
+  PostToolUse matcher): detects generation-time content stripping — empty link text
+  `[](...)`, empty bullets `-  : `, empty bold runs, unbalanced `$` math delimiters
+  (inline code and NTFS attribute names like `$MFT` excluded), unclosed code fences,
+  and table column mismatches. Also supports `--check <path…>` for CI/manual sweeps.
+- 14 new node tests (`test/markdown-structure-guard.test.mjs`,
+  `test/stop-claim-guard.test.mjs`) covering block/pass/short-circuit/payload-degrade
+  paths; `scripts/verify-hook-policies.mjs` passes with the new wiring.
+
 ## [0.7.0] - 2026-08-29
 
 ### Added

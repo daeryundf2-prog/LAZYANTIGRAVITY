@@ -145,6 +145,13 @@
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-tool-use",
 						"timeout": 10,
 						"statusMessage": "LazyAntigravity(0.7.0): Checking LSP Diagnostics"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity: Markdown structure guard (스트리핑/빈 링크/표 불일치)",
+						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
 			},
@@ -257,6 +264,17 @@
 						"statusMessage": "LazyAntigravity(0.7.0): Analyzing Failure Patterns (read-Only)"
 					}
 				]
+			},
+			{
+				"matcher": ".*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/stop_claim_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity: Stop claim guard (무근거 완료 선언 차단)"
+					}
+				]
 			}
 		],
 		"SubagentStop": [
@@ -267,6 +285,17 @@
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook subagent-stop",
 						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.7.0): Checking Start-Work Continuation"
+					}
+				]
+			},
+			{
+				"matcher": ".*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/stop_claim_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity: Stop claim guard (무근거 완료 선언 차단)"
 					}
 				]
 			}
