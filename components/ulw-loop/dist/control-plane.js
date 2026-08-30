@@ -1,11 +1,13 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkLeases, heartbeatAgent, registerPoller, validateQualityEvidenceEnvelope, validateResultEnvelope, } from "./control-plane-helpers.js";
 import { withLedgerWriteLock } from "./plan-io.js";
 import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
+import { appendRunEvent } from "./append-run-event.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
+export { appendRunEvent };
 export { checkLeases, heartbeatAgent, readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, registerPoller, repairLedgerFile, stripSensitiveData, validateQualityEvidenceEnvelope, validateResultEnvelope, };
 const DEFAULT_POLICY = {
     subagentLease: {
@@ -63,45 +65,6 @@ export async function loadLeasePolicy(repoRoot) {
         }
     }
     return DEFAULT_POLICY;
-}
-export async function appendRunEvent(repoRoot, runId, type, data) {
-    return withLedgerWriteLock(repoRoot, runId, () => appendRunEventLocked(repoRoot, runId, type, data));
-}
-async function appendRunEventLocked(repoRoot, runId, type, data) {
-    const runDir = getRunDir(repoRoot, runId);
-    if (!existsSync(runDir))
-        await mkdir(runDir, { recursive: true });
-    const existingEvents = await readRunEvents(repoRoot, runId);
-    const lastEvent = existingEvents.length > 0 ? existingEvents[existingEvents.length - 1] : undefined;
-    const prevHash = lastEvent?.hash || "0000000000000000000000000000000000000000000000000000000000000000";
-    const event = {
-        eventId: randomUUID(),
-        timestamp: new Date().toISOString(),
-        type,
-        runId,
-        prevHash,
-        ...data,
-    };
-    const cleanEvent = stripSensitiveData(event);
-    cleanEvent.hash = computeLedgerHash(cleanEvent);
-    const eventsFile = join(runDir, "events.jsonl");
-    await writeFile(eventsFile, `${JSON.stringify(cleanEvent)}\n`, { flag: "a", encoding: "utf8" });
-    try {
-        const { appendTransactionalEvent } = await import("./control-plane-sqlite.js");
-        await appendTransactionalEvent(repoRoot, runId, cleanEvent);
-    }
-    catch { }
-    await reconstructAndSaveState(repoRoot, runId);
-    if (event.agentId) {
-        const agentsDir = join(runDir, "agents");
-        if (!existsSync(agentsDir))
-            await mkdir(agentsDir, { recursive: true });
-        const agentState = await getAgentState(repoRoot, runId, event.agentId);
-        if (agentState) {
-            await writeFile(join(agentsDir, `${safeSegment(event.agentId)}.json`), JSON.stringify(stripSensitiveData(agentState), null, 2), "utf8");
-        }
-    }
-    return cleanEvent;
 }
 export async function getAgentState(repoRoot, runId, agentId) {
     const state = await reconstructStateFromEvents(repoRoot, runId);

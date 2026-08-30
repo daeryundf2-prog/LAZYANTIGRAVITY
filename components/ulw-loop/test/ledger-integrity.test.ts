@@ -2,7 +2,9 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { appendRunEvent, getRunDir, readRunEvents } from "../src/control-plane.ts";
+import { appendRunEvent, computeLedgerHash, getRunDir, readRunEvents, stripSensitiveData } from "../src/control-plane.ts";
+import { reconstructStateFromEvents } from "../src/reconstruct.ts";
+import type { LedgerEvent } from "../src/control-plane-types.ts";
 import { verifyLedgerIntegrity } from "../src/ledger-integrity.ts";
 
 const testDir = join(fileURLToPath(new URL(".", import.meta.url)), "test-ledger-integrity-temp");
@@ -105,4 +107,57 @@ describe("Ledger hash-chain integrity", () => {
 		expect(result.valid).toBe(true);
 		expect(result.eventCount).toBe(160);
 	}, 15000);
+
+	it("incremental append state matches a full replay", async () => {
+		// 캐시 핫패스가 만든 state.json이 전체 재구성 결과와 동일해야 한다.
+		const runId = "run-cache-coherence";
+		for (let i = 0; i < 12; i++) {
+			await appendRunEvent(testDir, runId, "agent.progress", {
+				agentId: i % 2 === 0 ? "a1" : "a2",
+				progress: `e${i}`,
+			});
+		}
+		const savedState = JSON.parse(
+			readFileSync(join(getRunDir(testDir, runId), "state.json"), "utf8"),
+		) as Record<string, unknown>;
+		const replayed = (await reconstructStateFromEvents(testDir, runId)) as unknown as Record<string, unknown>;
+		// updatedAt은 '재구성이 수행된 시각'이지 원장에서 유도되는 값이 아니므로 제외한다.
+		const { updatedAt: _savedUpdatedAt, ...savedRest } = savedState;
+		const { updatedAt: _replayedUpdatedAt, ...replayedRest } = replayed;
+		expect(savedRest).toEqual(replayedRest);
+	});
+
+	it("detects a foreign append that bypassed the in-process cache", async () => {
+		// 다른 프로세스가 원장에 직접 append하면 파일 크기가 변해 캐시가
+		// 무효화되고, 다음 append는 외래 이벤트의 해시에 체인을 연결해야 한다.
+		const runId = "run-cache-foreign";
+		const first = await appendRunEvent(testDir, runId, "run.created", {});
+
+		const foreign = stripSensitiveData({
+			eventId: "foreign-0000-0000-0000-000000000000",
+			timestamp: new Date().toISOString(),
+			type: "agent.progress" as const,
+			runId,
+			prevHash: first.hash ?? "",
+			agentId: "intruder",
+			progress: "written behind the cache",
+		}) as LedgerEvent;
+		foreign.hash = computeLedgerHash(foreign);
+		const { writeFileSync } = await import("node:fs");
+		writeFileSync(
+			join(getRunDir(testDir, runId), "events.jsonl"),
+			`${JSON.stringify(foreign)}
+`,
+			{ flag: "a", encoding: "utf8" },
+		);
+
+		const next = await appendRunEvent(testDir, runId, "agent.progress", {
+			agentId: "a1",
+			progress: "after foreign write",
+		});
+		expect(next.prevHash).toBe(foreign.hash);
+		const result = await verifyLedgerIntegrity(testDir, runId);
+		expect(result.valid).toBe(true);
+		expect(result.eventCount).toBe(3);
+	});
 });

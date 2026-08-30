@@ -32,119 +32,139 @@ export async function readRunEvents(repoRoot, runId) {
 export async function reconstructStateFromEvents(repoRoot, runId, nowOverride) {
     const events = await readRunEvents(repoRoot, runId);
     const policy = await loadLeasePolicy(repoRoot);
-    const subConfig = policy.subagentLease;
+    return stateFromEventsList(events, policy, repoRoot, runId, nowOverride || new Date());
+}
+// 이미 읽은 이벤트 목록으로 상태를 재구성한다 — append 경로가 전체 원장을
+// 한 번만 읽고 재구성까지 같은 패스에서 끝내도록 분리했다.
+export async function stateFromEventsList(events, policy, repoRoot, runId, now) {
     const runState = {
         runId,
         state: "created",
-        updatedAt: new Date().toISOString(),
+        updatedAt: now.toISOString(),
         agents: {},
     };
-    const now = nowOverride || new Date();
     for (const event of events) {
-        const eventTime = new Date(event.timestamp);
-        if (event.type === "run.created")
-            runState.state = "created";
-        else if (event.type === "run.state_changed")
-            runState.state = event.state;
-        else if (event.type === "parent.paused")
-            runState.state = "paused";
-        else if (event.type === "parent.hitl_required") {
-            runState.state = "paused";
-            runState.hitlReason = event.reason || event.hitlReason || "Human intervention required";
-            if (event.hitlId)
-                runState.activeHitlId = event.hitlId;
-            else
-                delete runState.activeHitlId;
+        mutateStateWithEvent(runState, event, policy.subagentLease);
+    }
+    return await finalizeState(runState, repoRoot, runId, now);
+}
+// 직전 상태에 이벤트 하나를 증분 적용한다 — append 핫패스용. 상태 기계는
+// 이벤트별 순차 누적이므로 apply(1) == replay(all)이고, staleness 후처리와
+// poller 복원은 매 재구성마다 전체 상태에 다시 적용되는 후처리라 증분 경로에서
+//도 동일하게 돌린다. 캐시된 base를 오염시키지 않도록 clone해서 쓴다.
+export async function applyEventToState(repoRoot, runId, base, event, nowOverride) {
+    const policy = await loadLeasePolicy(repoRoot);
+    const runState = structuredClone(base);
+    mutateStateWithEvent(runState, event, policy.subagentLease);
+    return await finalizeState(runState, repoRoot, runId, nowOverride || new Date());
+}
+function mutateStateWithEvent(runState, event, subConfig) {
+    const eventTime = new Date(event.timestamp);
+    if (event.type === "run.created")
+        runState.state = "created";
+    else if (event.type === "run.state_changed")
+        runState.state = event.state;
+    else if (event.type === "parent.paused")
+        runState.state = "paused";
+    else if (event.type === "parent.hitl_required") {
+        runState.state = "paused";
+        runState.hitlReason = event.reason || event.hitlReason || "Human intervention required";
+        if (event.hitlId)
+            runState.activeHitlId = event.hitlId;
+        else
+            delete runState.activeHitlId;
+    }
+    else if (event.type === "parent.resumed") {
+        // Do not lift an active human-intervention block on a resumed event that
+        // does not reference the pending hitlId explicitly.
+        if (runState.activeHitlId && event.hitlId !== runState.activeHitlId) {
+            // Invalid or missing hitlId while HITL is active, ignore
         }
-        else if (event.type === "parent.resumed") {
-            // Do not lift an active human-intervention block on a resumed event that
-            // does not reference the pending hitlId explicitly.
-            if (runState.activeHitlId && event.hitlId !== runState.activeHitlId) {
-                // Invalid or missing hitlId while HITL is active, ignore
+        else {
+            if (event.resumeTargetState) {
+                runState.state = event.resumeTargetState;
+            }
+            else if (event.previousState) {
+                runState.state = event.previousState;
             }
             else {
-                if (event.resumeTargetState) {
-                    runState.state = event.resumeTargetState;
-                }
-                else if (event.previousState) {
-                    runState.state = event.previousState;
-                }
-                else {
-                    runState.state = event.state || "working";
-                }
-                delete runState.hitlReason;
-                delete runState.activeHitlId;
+                runState.state = event.state || "working";
             }
-        }
-        else if (event.type === "run.completed") {
-            // HITL pending 상태에서 run.completed 직접 기록 금지 (무시 또는 저장)
-            if (runState.activeHitlId) {
-                // Ignore run.completed if HITL is active
-            }
-            else {
-                runState.state = "completed";
-            }
-        }
-        else if (event.type === "run.failed")
-            runState.state = "failed";
-        else if (event.type === "lineage.branch_created") {
-            runState.state = event.previousState || "working";
-        }
-        if (event.agentId) {
-            const agentId = event.agentId;
-            if (!runState.agents[agentId]) {
-                runState.agents[agentId] = {
-                    agentId,
-                    role: event.role || "",
-                    state: "pending",
-                    dispatchedAt: event.timestamp,
-                    leaseExpiresAt: new Date(eventTime.getTime() + subConfig.defaultLeaseMs).toISOString(),
-                };
-            }
-            const agent = runState.agents[agentId];
-            if (event.type === "agent.dispatched") {
-                agent.state = "dispatched";
-                agent.role = event.role || agent.role;
-                agent.dispatchedAt = event.timestamp;
-                agent.leaseExpiresAt = new Date(eventTime.getTime() + subConfig.defaultLeaseMs).toISOString();
-            }
-            else if (event.type === "agent.claimed") {
-                agent.state = "claimed";
-                agent.claimedAt = event.timestamp;
-                agent.leaseExpiresAt = new Date(eventTime.getTime() + subConfig.defaultLeaseMs).toISOString();
-            }
-            else if (event.type === "agent.heartbeat") {
-                if (["dispatched", "claimed", "running", "stale_candidate"].includes(agent.state))
-                    agent.state = "running";
-                agent.lastHeartbeat = event.timestamp;
-                const nextLease = Math.min(eventTime.getTime() + subConfig.defaultLeaseMs, new Date(agent.dispatchedAt).getTime() + subConfig.maxLeaseMs);
-                agent.leaseExpiresAt = new Date(nextLease).toISOString();
-            }
-            else if (event.type === "agent.progress") {
-                if (["dispatched", "claimed", "running", "stale_candidate"].includes(agent.state))
-                    agent.state = "running";
-                if (event.progress !== undefined)
-                    agent.lastProgress = event.progress;
-                agent.lastProgressAt = event.timestamp;
-                const nextLease = Math.min(eventTime.getTime() + subConfig.defaultLeaseMs + subConfig.staleGraceMs, new Date(agent.dispatchedAt).getTime() + subConfig.maxLeaseMs);
-                agent.leaseExpiresAt = new Date(nextLease).toISOString();
-            }
-            else if (event.type === "agent.completed_reported") {
-                agent.state = "completed_reported";
-                agent.result = event.result;
-            }
-            else if (event.type === "agent.failed_reported") {
-                agent.state = "failed_reported";
-                agent.result = event.result;
-            }
-            else if (event.type === "parent.acknowledged") {
-                agent.state = "acknowledged";
-            }
-            else if (event.type === "parent.rejected") {
-                agent.state = "orphaned";
-            }
+            delete runState.hitlReason;
+            delete runState.activeHitlId;
         }
     }
+    else if (event.type === "run.completed") {
+        // HITL pending 상태에서 run.completed 직접 기록 금지 (무시 또는 저장)
+        if (runState.activeHitlId) {
+            // Ignore run.completed if HITL is active
+        }
+        else {
+            runState.state = "completed";
+        }
+    }
+    else if (event.type === "run.failed")
+        runState.state = "failed";
+    else if (event.type === "lineage.branch_created") {
+        runState.state = event.previousState || "working";
+    }
+    if (event.agentId) {
+        const agentId = event.agentId;
+        if (!runState.agents[agentId]) {
+            runState.agents[agentId] = {
+                agentId,
+                role: event.role || "",
+                state: "pending",
+                dispatchedAt: event.timestamp,
+                leaseExpiresAt: new Date(eventTime.getTime() + subConfig.defaultLeaseMs).toISOString(),
+            };
+        }
+        const agent = runState.agents[agentId];
+        if (event.type === "agent.dispatched") {
+            agent.state = "dispatched";
+            agent.role = event.role || agent.role;
+            agent.dispatchedAt = event.timestamp;
+            agent.leaseExpiresAt = new Date(eventTime.getTime() + subConfig.defaultLeaseMs).toISOString();
+        }
+        else if (event.type === "agent.claimed") {
+            agent.state = "claimed";
+            agent.claimedAt = event.timestamp;
+            agent.leaseExpiresAt = new Date(eventTime.getTime() + subConfig.defaultLeaseMs).toISOString();
+        }
+        else if (event.type === "agent.heartbeat") {
+            if (["dispatched", "claimed", "running", "stale_candidate"].includes(agent.state))
+                agent.state = "running";
+            agent.lastHeartbeat = event.timestamp;
+            const nextLease = Math.min(eventTime.getTime() + subConfig.defaultLeaseMs, new Date(agent.dispatchedAt).getTime() + subConfig.maxLeaseMs);
+            agent.leaseExpiresAt = new Date(nextLease).toISOString();
+        }
+        else if (event.type === "agent.progress") {
+            if (["dispatched", "claimed", "running", "stale_candidate"].includes(agent.state))
+                agent.state = "running";
+            if (event.progress !== undefined)
+                agent.lastProgress = event.progress;
+            agent.lastProgressAt = event.timestamp;
+            const nextLease = Math.min(eventTime.getTime() + subConfig.defaultLeaseMs + subConfig.staleGraceMs, new Date(agent.dispatchedAt).getTime() + subConfig.maxLeaseMs);
+            agent.leaseExpiresAt = new Date(nextLease).toISOString();
+        }
+        else if (event.type === "agent.completed_reported") {
+            agent.state = "completed_reported";
+            agent.result = event.result;
+        }
+        else if (event.type === "agent.failed_reported") {
+            agent.state = "failed_reported";
+            agent.result = event.result;
+        }
+        else if (event.type === "parent.acknowledged") {
+            agent.state = "acknowledged";
+        }
+        else if (event.type === "parent.rejected") {
+            agent.state = "orphaned";
+        }
+    }
+}
+// staleness 후처리 + poller 복원 — 전체 재구성과 증분 적용이 동일하게 거치는 마무리 패스.
+async function finalizeState(runState, repoRoot, runId, now) {
     // Post-processing: check for stale candidates based on lease expiration
     for (const agentId of Object.keys(runState.agents)) {
         const agent = runState.agents[agentId];

@@ -51,12 +51,22 @@ New items opened by the review:
   the token file on win32.
 - **Done when**: a second low-privilege process cannot read the token.
 
-### 11. appendRunEvent is O(n^2)
-- **Evidence**: every append re-reads and re-verifies the whole events.jsonl
-  (`control-plane.ts`). Long runs pay quadratic rewrite cost.
-- **Fix**: cache the last event hash/sequence in memory per run and verify the
-  tail only.
-- **Done when**: bench shows flat per-append cost across a 1k-event run.
+### 11. ✅ DONE (2026-08-30) — appendRunEvent was O(n^2)
+- **Evidence**: every append re-read the whole events.jsonl AND replayed the
+  full state three times (readRunEvents + reconstructAndSaveState +
+  getAgentState), and the control-plane mirror rewrote its whole wal-index.json
+  per append. Cost grew 13 -> 61 ms/append between 100 and 1200 events.
+- **Resolution**: per-run append cache (last event + reconstructed state,
+  validated by ledger file size so any foreign append/rewind/repair falls back
+  to a full reconstruction), single-event incremental state application
+  (`applyEventToState`), and the mirror converted to an append-only JSONL with
+  legacy `wal-index.json` migration. Extracted into `src/append-run-event.ts`
+  to stay under the 250-LOC ceiling.
+- **Measured**: `node scripts/bench-ledger-append.mjs` — 9.85 / 8.98 / 8.84 /
+  8.56 ms per append at 100 / 400 / 800 / 1200 events (flat, -13% drift);
+  burst test 3.5 s -> 2.2 s for 160 events. Coherence tests pin that the
+  cached state equals a full replay and that a foreign append (cache bypass)
+  re-chains correctly.
 
 ### 12. Read paths still write (migration + plan migration append)
 - **Evidence**: `readUlwLoopPlan` performs migration writes and ledger
