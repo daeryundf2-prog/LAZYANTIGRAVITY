@@ -47,7 +47,7 @@ test("lsp-tools-mcp distinguishes missing diagnostic tooling from a clean file",
 		const unsupported = callTool("lsp_diagnostics", { filePath: "data.json" }, dir);
 		assert.equal(unsupported.ok, true);
 		assert.equal(unsupported.toolAvailable, false, "unsupported extensions must not claim a clean bill of health");
-		assert.match(unsupported.toolNote ?? "", /No diagnostics tool configured/);
+		assert.match(unsupported.toolNote ?? "", /No LSP server configured for extension/);
 
 		writeFileSync(join(dir, "mod.ts"), "export const value: number = 1;\n", "utf8");
 		const ts = callTool("lsp_diagnostics", { filePath: "mod.ts" }, dir);

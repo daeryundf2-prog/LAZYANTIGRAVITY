@@ -200,7 +200,9 @@ export async function executeLspDiagnostics({ filePath }) {
 		}
 	} else {
 		toolAvailable = false;
-		toolNote = `No diagnostics tool configured for extension '${ext}'.`;
+		// Historical contract: the lsp hook silently skips extensions it cannot
+		// serve, recognized by this exact prefix (see isCleanDiagnostics).
+		toolNote = `No LSP server configured for extension: '${ext}'`;
 	}
 
 	const payload = { ok: true, filePath, diagnostics, total: diagnostics.length, toolAvailable };

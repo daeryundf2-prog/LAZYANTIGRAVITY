@@ -113,7 +113,10 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 - lsp-tools-mcp: regex-escaped symbols from file content before RegExp
   construction; `lsp_diagnostics` now reports `toolAvailable`/`toolNote`
   (with the `NOT INSTALLED` marker the lsp hook understands) instead of
-  presenting a missing compiler as "no diagnostics".
+  presenting a missing compiler as "no diagnostics". Unsupported
+  extensions (e.g. `.kt` in an Android repo) emit the historical
+  "No LSP server configured for extension:" marker so edits stay silent
+  instead of injecting a notice on every save.
 - daemon-bridge: the `STOP` command was never handled (the daemon kept
   running); SIGINT/SIGTERM now clean up socket/pid files; win32 `isRunning()`
   probed the pipe instead of returning `true`.
