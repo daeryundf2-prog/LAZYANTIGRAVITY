@@ -1,5 +1,22 @@
 # Roadmap — Known Shortcomings & Next Fixes
 
+## Real-session validation log (Antigravity + Gemini 3.7 Flash, production repo)
+
+| Date | Feature | Result |
+| :--- | :--- | :--- |
+| 08-29 | quick-lane (light query bypasses orchestration) | PASS — direct repo answer |
+| 08-29 | /ulw evidence loop, single goal | PASS — checkpoint complete with verifying evidence contract |
+| 08-29 | memory remember/search across sessions | PASS |
+| 08-29 | session-tree snapshot via skill wiring | PASS — nodes.json gained a real node (the bypass fix works) |
+| 08-29 | **session-tree fork rollback** | PASS — unsafe implementation written, fork restored the working tree, removal proven on disk |
+| 08-29 | **consensus host transport, end-to-end** | PASS — checkpoint failed closed into needs_user_decision → consensus-pending (4 personas) → invoke_subagent(Model: pro) × 4 → report-consensus-result × 4 → aggregate-consensus = consensus_passed → checkpoint complete. All four adversarial personas approved a timing-safe token implementation |
+| 08-30 | ledger lock on Windows (EPERM/EACCES retry) | fixed live by the owner's session; O(1) ledger cache landed too |
+
+Open verification: workspace MCP blackboard, git-bash policy matrix, ast-grep
+structural engine, active-learning record→analyze→evolve, daemon lifecycle,
+prune — scripted in the 8-phase acceptance prompt (pending run).
+
+
 Open items carried forward from user-journey simulation (2026-08-29) and code
 review. Ordered by user impact. Each item states the evidence, the suggested
 fix, and what "done" means. Pick one, fix it, run `npm run check`, and check it
