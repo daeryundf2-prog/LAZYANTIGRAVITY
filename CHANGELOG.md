@@ -6,6 +6,32 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — archify skill (vendored, MIT)
+
+- **archify** (`shared-skills/skills/archify` → materialized `skills/archify`): ported
+  from [tt-a1i/archify](https://github.com/tt-a1i/archify) v2.16 (MIT; based on
+  Cocoon-AI/architecture-diagram-generator). Generates validated architecture /
+  workflow / sequence / dataflow / lifecycle diagrams as standalone interactive HTML
+  from typed JSON IR — `bin/archify.mjs validate/deliver/check` receipt pipeline,
+  Node builtins only, zero runtime dependencies.
+- Vendored trim: 7.3MB → 2.2MB, 59 files. Kept runtime-critical pieces (bin, schemas,
+  renderers, scripts/check-render-output+render-examples, assets/template.html, one
+  example per type, brand-marks, migrations, recipes, delta, references, LICENSE).
+  Upstream `test/` and `benchmarks/` stay out of the bundle.
+- **Deliberate deviation**: the upstream `check-update.mjs` remote update checker and
+  its SKILL.md "Update awareness" workflow are removed — vendored skills must not
+  phone home; upgrades happen through this repository. Documented in the skill's
+  SKILL.md vendored-copy note and metadata.
+- Korean trigger keywords appended to the description for Antigravity routing.
+- `test/archify-skill.test.mjs` (9 tests): validates all five bundled example types at
+  showcase quality, deliver → standalone HTML (no external `<script src>`) → `archify
+  check` 0 errors/0 warnings, no update-checker files shipped, shared-skills ↔ skills
+  no drift.
+- Fixed two expected-value tests that the guard pack and archify had moved:
+  `aggregate.test.mjs` command-hook count 25 → 28 (this count was already stale from
+  the previous guard-pack commit — caught by the full root suite run), and
+  `sync-skills.test.mjs` expected skill list now includes `archify`.
+
 ### Added — Guard Pack (GUARD_PACK_VERSION 1.0.0, canonical: lazyforensic)
 
 - **stop_claim_guard.mjs** (`scripts/`, wired into `Stop` + `SubagentStop`): the final

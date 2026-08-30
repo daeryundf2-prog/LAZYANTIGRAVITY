@@ -20,7 +20,7 @@ test("#given the committed hook manifest #when loaded #then every command hook h
 			}
 		}
 	}
-	assert.equal(commandHooks, 25, "expected the documented 25 command hooks");
+	assert.equal(commandHooks, 28, "expected the documented 28 command hooks (guard pack: markdown_structure_guard x1, stop_claim_guard x2)");
 });
 
 test("#given hook manifest structure #when collecting command hooks #then filters and formats command handlers", () => {
