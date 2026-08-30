@@ -62,6 +62,21 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 ## [0.7.0] - 2026-08-29
 
 ### Added
+- **Update staleness notice**: a SessionStart hook performs one short-timeout
+  fetch of the plugin's own origin and warns in-session when the installed
+  clone is behind main (or has diverged) - offline stays silent and
+  `LAZYANTIGRAVITY_UPDATE_CHECK=0` disables it.
+- **`ulw-loop evidence-draft`**: scaffolds a strict evidence envelope from the
+  run ledger (disk-verified readRanges, SHA-256 file checksums,
+  ledger-sourced filesChanged/commandsRun) so agents verify a draft instead of
+  hand-assembling the checkpoint contract. Command audits remain the
+  submitting agent's accountability; the gate still re-verifies every
+  disk-verifiable claim.
+- **media_cleanup**: age/capacity-based pruning of `.lazyantigravity/media/`
+  work dirs (default keep 14 days / 500 MB).
+- **doctor optional capabilities**: detects ffmpeg, tesseract, whisper.cpp,
+  yt-dlp, @ast-grep/napi and @code-yeongyu/comment-checker with install hints
+  (informational - never affects doctor status).
 - **media MCP server** (`media-mcp`, 5th bundled local server): `media_probe`
   (ffprobe), `media_frames` (ffmpeg keyframe extraction for native-vision
   analysis), `media_ocr` (tesseract, kor+eng), `media_transcribe`
@@ -127,6 +142,8 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 - daemon-bridge: the `STOP` command was never handled (the daemon kept
   running); SIGINT/SIGTERM now clean up socket/pid files; win32 `isRunning()`
   probed the pipe instead of returning `true`.
+- session-tree: nodes.json writes are file-locked (concurrent sessions
+  could interleave and corrupt the graph)
 - session-tree: snapshots capture the full working tree (including untracked
   files) via a temporary index; the Stop hook creates auto-checkpoints only
   for sessions already using the tree.
