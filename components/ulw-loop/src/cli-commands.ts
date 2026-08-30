@@ -15,6 +15,7 @@ import {
 	reportConsensusResultCmd,
 	consensusPendingCmd,
 	evidenceDraftCmd,
+	researchClaimsCmd,
 	reportFailedCmd,
 	rewindRunCmd,
 	setRunStateCmd,
@@ -105,9 +106,11 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 			case "report-consensus-result":
 				return await reportConsensusResultCmd(repoRoot, rest, json);
 			case "evidence-draft":
-			return await evidenceDraftCmd(repoRoot, rest, json);
-		case "consensus-pending":
-			return await consensusPendingCmd(repoRoot, rest, json);
+				return await evidenceDraftCmd(repoRoot, rest, json);
+			case "research-claims":
+				return await researchClaimsCmd(repoRoot, rest, json);
+			case "consensus-pending":
+				return await consensusPendingCmd(repoRoot, rest, json);
 		case "aggregate-consensus":
 				return await aggregateConsensusCmd(repoRoot, rest, json);
 			case "verify-ledger":
