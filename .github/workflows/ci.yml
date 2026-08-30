@@ -59,10 +59,9 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   windows-probe:
-    name: windows probe (node 22)
+    name: windows (node 22)
     runs-on: windows-latest
     timeout-minutes: 20
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -146,7 +146,7 @@ New items opened by the review:
   `PLUGIN_ROOT`; covered by `test/mcp-workspace-guard.test.mjs`. A real-launch
   confirmation against Antigravity remains open.
 
-### 5. Windows is implemented but unproven
+### 5. ✅ DONE — Windows proven and blocking
 - **Evidence**: named-pipe IPC, win32 hooks, and path handling exist; the CI
   `windows-probe` job is `continue-on-error`. First probe run (2026-08-29)
   failed on two unix-only test assumptions — now fixed: the ast-grep engine
@@ -157,26 +157,12 @@ New items opened by the review:
   skill drift comparison must EOL-normalize (Windows checkouts carry CRLF).
 - **Fix**: let the probe run, fix what fails, then remove `continue-on-error`
   to make it blocking.
-- **Done when**: `windows-probe` has no `continue-on-error` and passes.
-- **Follow-up**: consider a CI step installing `@ast-grep/napi` into
-  ast-grep-mcp so the structural-engine path is exercised on CI too.
-- **Third probe round (2026-08-29, after the ubuntu fixes) — remaining
-  Windows work, all in `components/rules`**:
-  - `spawnSync npm ENOENT`: npm is `npm.cmd` on Windows — bare
-    `execFileSync/spawnSync("npm", ...)` needs
-    `shell: process.platform === "win32"`. Fixed this pass in
-    `test/codex-hook-post-compact-process.test.ts`; sweep the remaining
-    component tests for the same pattern.
-  - Path-formatting assertions in `rules` tests (`codex-hook.test.ts` ~22,
-    `bundled-rules.test.ts` ~13, `windows-git-bash-bundled-rule.test.ts` ~7,
-    `codex-hook-post-compact-process.test.ts` ~7, `tool-paths.test.ts` ~1):
-    hook output renders rule paths in one separator style while the tests
-    expect the other (e.g. `- [hephaestus.md]{C:\Users\...}`). Normalization
-    belongs either in `src/path-utils.ts` output or in the assertions —
-    decide one convention (recommend: emit platform-native paths, normalize
-    in tests) and align the five test files.
-  - Iterate with the probe: push, read `gh run view --log-failed`, repeat.
-    Probe is left `continue-on-error` until this list is empty.
+- **Resolution**: after the npm shell-gating fix plus the owner's session
+  commits (named-pipe dedupe, spawn hardening, EPERM retry), the
+  `windows-probe` job passed on 2026-08-29 and is now a blocking CI job
+  (`continue-on-error` removed). Follow-up idea kept open: a CI step
+  installing `@ast-grep/napi` into ast-grep-mcp so the structural-engine
+  path is exercised on CI too.
 
 ### 6. Hook fan-out costs 5 node spawns per prompt
 - **Evidence**: hooks.json runs 5 command hooks on SessionStart,
