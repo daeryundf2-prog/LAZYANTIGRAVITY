@@ -12,9 +12,23 @@
 | 08-29 | **consensus host transport, end-to-end** | PASS — checkpoint failed closed into needs_user_decision → consensus-pending (4 personas) → invoke_subagent(Model: pro) × 4 → report-consensus-result × 4 → aggregate-consensus = consensus_passed → checkpoint complete. All four adversarial personas approved a timing-safe token implementation |
 | 08-30 | ledger lock on Windows (EPERM/EACCES retry) | fixed live by the owner's session; O(1) ledger cache landed too |
 
-Open verification: workspace MCP blackboard, git-bash policy matrix, ast-grep
-structural engine, active-learning record→analyze→evolve, daemon lifecycle,
-prune — scripted in the 8-phase acceptance prompt (pending run).
+### Acceptance suite (2026-08-30): 16/16 PASS, isolated /tmp execution
+
+All 0.7.0 features verified live in one session: MCP probe (4 servers,
+tool counts), blackboard fail-open hint + daemon round-trip, MCP
+session_tree_snapshot, fork working-tree restore, prune --keep 2
+(7→2 refs), the full git-bash policy matrix (destructive/network
+denials, binary allowlist, path confinement, metachar rejection,
+GIT_WRITE opt-in), ast-grep fallback + dryRun semantics + absolute-path
+rejection, active-learning record→cluster(95%)→evolve rejection
+messages, daemon background lifecycle with cleanup, and the ULW CLI
+prefix hint. No failures. (Report note: the 4th lsp tool is
+`lsp_symbols`, not "hover" — paraphrase in the agent's report.)
+
+Expected behavior worth noting: memory_search returned 0 facts in the
+isolated /tmp workspace — memory is workspace-scoped by design; the
+session facts from the real repo live in that repo's
+`.lazyantigravity/memory/facts.jsonl`.
 
 
 Open items carried forward from user-journey simulation (2026-08-29) and code
