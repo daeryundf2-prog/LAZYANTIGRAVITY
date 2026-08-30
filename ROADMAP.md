@@ -17,6 +17,7 @@
 ### Acceptance suite (2026-08-30): 16/16 PASS, isolated /tmp execution
 
 | 08-30 | **media-mcp (5th server)** | PASS — probe/frames/ocr live (ffmpeg+tesseract), transcribe degrades honestly without whisper, youtube gated behind LAZYANTIGRAVITY_MEDIA_NETWORK=1, path confinement + URL allowlist enforced |
+| 08-30 | media acceptance run #1 | BLOCKED — the installed plugin clone was stale (pre-media) with an unpushed local session commit; the session correctly reported the media server as absent and worked around it with raw ffmpeg/Pillow/vision. Install clone rebased onto main (the local LOC-streamline commit was dropped as superseded — main already fixed the ceiling via security.ts/state-mutations.ts extraction); probe now shows 5 servers in the install. Re-run pending after Antigravity restart |
 
 All 0.7.0 features verified live in one session: MCP probe (4 servers,
 tool counts), blackboard fail-open hint + daemon round-trip, MCP
