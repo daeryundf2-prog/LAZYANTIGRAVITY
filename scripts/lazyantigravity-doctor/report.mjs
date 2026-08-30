@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -24,7 +26,8 @@ export async function buildDoctorReport(root) {
 		status: context.warnings.length > 0 ? "warn" : "pass",
 		items: context.warnings,
 	};
-	const sections = { manifests, hooks, mcp, skills, bundles, versions, warnings };
+	const optionalCapabilities = inspectOptionalCapabilities(root);
+	const sections = { manifests, hooks, mcp, skills, bundles, versions, optionalCapabilities, warnings };
 
 	return {
 		product: {
@@ -46,6 +49,50 @@ export function hasFailures(report) {
 	return ["manifests", "hooks", "mcp", "skills", "bundles", "versions", "warnings"].some(
 		(section) => report[section]?.status === "fail",
 	);
+}
+
+// Informational only: optional engines that unlock more of the plugin when
+// installed. Missing entries never affect the doctor's overall status.
+function inspectOptionalCapabilities(root) {
+	const binaryChecks = [
+		{ name: "ffmpeg", args: ["-version"], installHint: "brew install ffmpeg | apt install ffmpeg", unlocks: "media_probe, media_frames, media_transcribe" },
+		{ name: "tesseract", args: ["--version"], installHint: "brew install tesseract tesseract-lang | apt install tesseract tesseract-ocr-kor", unlocks: "media_ocr" },
+		{ name: "yt-dlp", args: ["--version"], installHint: "brew install yt-dlp | pip install yt-dlp", unlocks: "media_youtube (needs LAZYANTIGRAVITY_MEDIA_NETWORK=1)" },
+	];
+	const capabilities = [];
+	for (const check of binaryChecks) {
+		let available = false;
+		for (const candidate of [check.name, `LAZYANTIGRAVITY_${check.name.toUpperCase()}_BIN`]) {
+			const bin = candidate.startsWith("LAZYANTIGRAVITY_") ? process.env[candidate] : candidate;
+			if (!bin) continue;
+			const res = spawnSync(bin, check.args, { encoding: "utf8", timeout: 15000 });
+			available = res.status === 0;
+			if (available) break;
+		}
+		capabilities.push({ capability: check.name, available, unlocks: check.unlocks, ...(available ? {} : { installHint: check.installHint }) });
+	}
+	const whisperHint = "build whisper.cpp (github.com/ggml-org/whisper.cpp) | brew install whisper-cpp";
+	let whisperAvailable = false;
+	for (const candidate of ["whisper-cli", "whisper-cpp", "whisper"]) {
+		const res = spawnSync(candidate, ["--help"], { encoding: "utf8", timeout: 15000 });
+		whisperAvailable = res.status === 0;
+		if (whisperAvailable) break;
+	}
+	capabilities.push({ capability: "whisper.cpp", available: whisperAvailable, unlocks: "media_transcribe", ...(whisperAvailable ? {} : { installHint: whisperHint }) });
+	capabilities.push({
+		capability: "@ast-grep/napi (structural ast-grep engine)",
+		available: existsSync(join(root, "ast-grep-mcp", "node_modules", "@ast-grep", "napi", "package.json")),
+		unlocks: "ast_grep structural search/replace",
+		installHint: "cd ast-grep-mcp && npm install",
+	});
+	capabilities.push({
+		capability: "@code-yeongyu/comment-checker",
+		available: existsSync(join(root, "components", "comment-checker", "node_modules", "@code-yeongyu", "comment-checker")) ||
+			existsSync(join(root, "node_modules", "@code-yeongyu", "comment-checker")),
+		unlocks: "comment-checker hook enforcement",
+		installHint: "cd components/comment-checker && npm install",
+	});
+	return { status: "info", capabilities };
 }
 
 async function inspectManifests(root, context, packageJson, pluginJson) {

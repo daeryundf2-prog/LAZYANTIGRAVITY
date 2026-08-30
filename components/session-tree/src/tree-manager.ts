@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SessionTreeGraph, TreeNode } from "./types.js";
 import { createShadowSnapshot, restoreShadowSnapshot, runGit } from "./snapshot.js";
@@ -9,6 +9,40 @@ export function getTreeStoragePath(cwd: string = process.cwd()): string {
 		mkdirSync(treeDir, { recursive: true });
 	}
 	return join(treeDir, "nodes.json");
+}
+
+// Two sessions sharing a workspace race on nodes.json at Stop-hook time; a
+// plain writeFileSync can interleave and corrupt the graph. Exclusive-create
+// lock + bounded wait (with stale-lock steal) mirrors the memory component's
+// file-lock discipline.
+function withFileLock<T>(lockPath: string, fn: () => T): T {
+	const startedAt = Date.now();
+	let fd: number | null = null;
+	for (;;) {
+		try {
+			fd = openSync(lockPath, "wx");
+			break;
+		} catch (error) {
+			const code = (error as NodeJS.ErrnoException).code;
+			if (code !== "EEXIST") throw error;
+			if (Date.now() - startedAt > 5000) {
+				try {
+					unlinkSync(lockPath); // stale lock: steal it
+				} catch {}
+				continue;
+			}
+			const sleeper = new SharedArrayBuffer(4);
+			Atomics.wait(new Int32Array(sleeper), 0, 0, 25);
+		}
+	}
+	try {
+		return fn();
+	} finally {
+		if (fd !== null) closeSync(fd);
+		try {
+			unlinkSync(lockPath);
+		} catch {}
+	}
 }
 
 export class SessionTreeManager {
@@ -34,7 +68,9 @@ export class SessionTreeManager {
 
 	private save(): void {
 		const p = getTreeStoragePath(this.cwd);
-		writeFileSync(p, JSON.stringify(this.graph, null, 2), "utf8");
+		withFileLock(`${p}.lock`, () => {
+			writeFileSync(p, JSON.stringify(this.graph, null, 2), "utf8");
+		});
 	}
 
 	public snapshot(label: string, metadata?: Record<string, unknown>): TreeNode {

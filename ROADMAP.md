@@ -1,5 +1,37 @@
 # Roadmap — Known Shortcomings & Next Fixes
 
+## Usability pass (2026-08-30) — real-user scenarios, all verified
+
+Six gaps surfaced by walking the real user's day-to-day, all code-verified:
+
+1. **✅ Update staleness notice** — the installed clone can lag main (this
+   blocked the first media acceptance run). New SessionStart hook
+   `scripts/update-check.mjs` does one short-timeout fetch of the plugin's own
+   origin and injects "N commits behind / diverged" guidance; offline is
+   silent, `LAZYANTIGRAVITY_UPDATE_CHECK=0` disables.
+2. **✅ Evidence envelope drafter** — the strict checkpoint contract required
+   hand-assembling checksums/line-ranges/audits (observed friction in both
+   real /ulw runs). New `ulw-loop evidence-draft [--run-id] [--goal-id]`
+   scaffolds the envelope from the ledger: disk-verified readRanges and
+   SHA-256 checksums, ledger-sourced filesChanged/commandsRun, placeholder
+   audits the submitting agent remains accountable for.
+3. **✅ Session-tree concurrent-write lock** — nodes.json had a bare
+   writeFileSync; two sessions checkpointing at Stop could interleave. Now
+   exclusive-create lock with bounded wait and stale-lock steal (3-way
+   concurrent snapshot test included).
+4. **✅ media_cleanup** — `.lazyantigravity/media/` grew unbounded; new tool
+   prunes by age (keepDays, default 14) and capacity (maxMb, default 500),
+   oldest-first.
+5. **✅ doctor optional capabilities** — proactive detection of ffmpeg/
+   tesseract/whisper.cpp/yt-dlp/@ast-grep/napi/comment-checker with install
+   hints, so users learn what they CAN enable instead of discovering "NOT
+   INSTALLED" reactively.
+6. **⏳ OPEN — async long transcription**: media_transcribe is synchronous
+   (default cap 1h); a 1h+ video blocks the tool call for the full run.
+   Design: media_transcribe_start returns a jobId and writes progress under
+   .lazyantigravity/media/<job>/, media_transcribe_status polls it. Needs the
+   same workspace confinement as the sync path.
+
 ## Real-session validation log (Antigravity + Gemini 3.7 Flash, production repo)
 
 | Date | Feature | Result |

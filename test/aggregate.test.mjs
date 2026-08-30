@@ -20,7 +20,7 @@ test("#given the committed hook manifest #when loaded #then every command hook h
 			}
 		}
 	}
-	assert.equal(commandHooks, 24, "expected 24 command hooks (28 minus 4: UserPromptSubmit consolidated into one dispatcher)");
+	assert.equal(commandHooks, 25, "expected 25 command hooks (UserPromptSubmit dispatcher + update-check)");
 });
 
 test("#given hook manifest structure #when collecting command hooks #then filters and formats command handlers", () => {

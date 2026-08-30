@@ -139,3 +139,19 @@ test("SessionTreeManager prune keeps the newest snapshot refs", () => {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
 });
+
+test("concurrent sessions can snapshot without corrupting nodes.json", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "st-concurrent-"));
+	try {
+		initGitRepo(tempDir);
+		const cli = new URL("../dist/cli.js", import.meta.url).pathname;
+		const procs = [1, 2, 3].map((i) =>
+			spawnSync("node", [cli, "snapshot", `Concurrent ${i}`], { cwd: tempDir, encoding: "utf8" }),
+		);
+		for (const p of procs) assert.equal(p.status, 0, p.stderr);
+		const graph = JSON.parse(readFileSync(join(tempDir, ".lazyantigravity", "session-tree", "nodes.json"), "utf8"));
+		assert.equal(Object.keys(graph.nodes).length, 3, "all three snapshots must persist intact");
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});

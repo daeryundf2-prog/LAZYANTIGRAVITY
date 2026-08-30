@@ -5,7 +5,7 @@
 // unless the YouTube gate is enabled.
 import { createInterface } from "node:readline";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
 
 // Startup guard (same contract as the other bundled servers).
@@ -320,6 +320,76 @@ async function mediaYoutube(args) {
 	return textResult({ ok: true, subaction, files, nextStep: "Run media_transcribe on the audio file." });
 }
 
+function dirStats(dir) {
+	let bytes = 0;
+	let files = 0;
+	const walk = (d) => {
+		for (const entry of readdirSync(d, { withFileTypes: true })) {
+			const full = join(d, entry.name);
+			if (entry.isDirectory()) walk(full);
+			else {
+				bytes += statSync(full).size;
+				files += 1;
+			}
+		}
+	};
+	walk(dir);
+	return { bytes, files };
+}
+
+function removeDir(dir) {
+	rmSync(dir, { recursive: true, force: true });
+}
+
+// Removes .lazyantigravity/media/<prefix>-<ts> work dirs: everything older
+// than keepDays, then oldest-first until the total fits within maxMb.
+async function mediaCleanup(args) {
+	const mediaDir = join(getWorkspaceRoot(), ".lazyantigravity", "media");
+	if (!existsSync(mediaDir)) {
+		return textResult({ ok: true, deleted: [], freedBytes: 0, note: "no media directory yet." });
+	}
+	const keepDays = Number(args.keepDays) > 0 ? Number(args.keepDays) : 14;
+	const maxMb = Number(args.maxMb) > 0 ? Number(args.maxMb) : 500;
+	const cutoff = Date.now() - keepDays * 86400000;
+	const entries = readdirSync(mediaDir, { withFileTypes: true })
+		.filter((e) => e.isDirectory())
+		.map((e) => {
+			const full = join(mediaDir, e.name);
+			return { name: e.name, path: full, mtime: statSync(full).mtimeMs, ...dirStats(full) };
+		})
+		.sort((a, b) => a.mtime - b.mtime);
+
+	const deleted = [];
+	let freedBytes = 0;
+	for (const entry of entries) {
+		if (entry.mtime < cutoff) {
+			removeDir(entry.path);
+			freedBytes += entry.bytes;
+			deleted.push({ dir: entry.name, reason: `older than ${keepDays}d`, freedBytes: entry.bytes });
+		}
+	}
+	let remaining = entries.filter((e) => existsSync(e.path)).reduce((sum, e) => sum + dirStats(e.path).bytes, 0);
+	const cap = maxMb * 1024 * 1024;
+	for (const entry of entries) {
+		if (remaining <= cap) break;
+		if (!existsSync(entry.path)) continue;
+		const size = dirStats(entry.path).bytes;
+		removeDir(entry.path);
+		remaining -= size;
+		freedBytes += size;
+		deleted.push({ dir: entry.name, reason: `capacity over ${maxMb} MB`, freedBytes: size });
+	}
+	return textResult({
+		ok: true,
+		keepDays,
+		maxMb,
+		deleted,
+		totalDeleted: deleted.length,
+		freedBytes,
+		remainingBytes: remaining,
+	});
+}
+
 const TOOLS = [
 	{
 		name: "media_probe",
@@ -371,6 +441,17 @@ const TOOLS = [
 		}
 	},
 	{
+		name: "media_cleanup",
+		description: "Remove old work dirs under .lazyantigravity/media/ (age and capacity based). Run this periodically during heavy media work.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				keepDays: { type: "number", description: "Delete work dirs older than this many days (default 14)" },
+				maxMb: { type: "number", description: "Cap the media directory total size in MB (default 500)" }
+			}
+		}
+	},
+	{
 		name: "media_youtube",
 		description: "YouTube via yt-dlp: metadata, subtitles (prefer over STT), or audio download. Requires LAZYANTIGRAVITY_MEDIA_NETWORK=1 opt-in.",
 		inputSchema: {
@@ -391,6 +472,7 @@ const TOOL_HANDLERS = {
 	media_ocr: mediaOcr,
 	media_transcribe: mediaTranscribe,
 	media_youtube: mediaYoutube,
+	media_cleanup: mediaCleanup,
 };
 
 async function handleJsonRpc(message) {
@@ -403,7 +485,7 @@ async function handleJsonRpc(message) {
 			result: {
 				protocolVersion: "2024-11-05",
 				capabilities: { tools: {} },
-				serverInfo: { name: "media-mcp", version: "0.1.0" }
+				serverInfo: { name: "media-mcp", version: "0.2.0" }
 			}
 		};
 	}

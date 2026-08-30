@@ -1,5 +1,5 @@
 import { hasFlag, readRepeated, readValue } from "./cli-arg-parser.js";
-import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, dispatchAgentCmd, dispatchConsensusCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, consensusPendingCmd, reportFailedCmd, rewindRunCmd, setRunStateCmd, } from "./cli-control-plane.js";
+import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, dispatchAgentCmd, dispatchConsensusCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, consensusPendingCmd, evidenceDraftCmd, reportFailedCmd, rewindRunCmd, setRunStateCmd, } from "./cli-control-plane.js";
 import { verifyLedgerCmd } from "./cli-ledger.js";
 import { printJson, ULW_LOOP_HELP } from "./cli-output.js";
 import { addGoal, captureEvidence, checkpoint, completeGoals, createGoals, criteria, reviewBlockers, status, steer, } from "./cli-plan-commands.js";
@@ -74,6 +74,8 @@ export async function ulwLoopCommand(argv) {
                 return await dispatchConsensusCmd(repoRoot, rest, json);
             case "report-consensus-result":
                 return await reportConsensusResultCmd(repoRoot, rest, json);
+            case "evidence-draft":
+                return await evidenceDraftCmd(repoRoot, rest, json);
             case "consensus-pending":
                 return await consensusPendingCmd(repoRoot, rest, json);
             case "aggregate-consensus":

@@ -46,7 +46,7 @@ test("media-mcp exposes the five media tools", () => {
 	});
 	assert.equal(res.status, 0);
 	const tools = JSON.parse(res.stdout).result.tools.map((t) => t.name);
-	assert.deepEqual(tools, ["media_probe", "media_frames", "media_ocr", "media_transcribe", "media_youtube"]);
+	assert.deepEqual(tools, ["media_probe", "media_frames", "media_ocr", "media_transcribe", "media_cleanup", "media_youtube"]);
 });
 
 test("media tools reject paths outside the workspace", () => {

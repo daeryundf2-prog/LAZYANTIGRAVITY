@@ -3,6 +3,7 @@ import { printJson } from "./cli-output.js";
 import { appendRunEvent, checkLeases, heartbeatAgent, reconstructStateFromEvents, registerPoller, rewindLedger, validateResultEnvelope, } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
 export { aggregateConsensusCmd, consensusPendingCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
+export { evidenceDraftCmd } from "./cli-evidence-draft-cmd.js";
 function required(argv, flag) {
     const value = readValue(argv, flag)?.trim();
     if (!value) {
