@@ -5,11 +5,13 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 // archify skill (vendored from github.com/tt-a1i/archify, MIT) — port contract:
 // the vendored CLI must validate every bundled example type and deliver a
 // standalone HTML without any runtime dependency or network access.
-const root = new URL("..", import.meta.url).pathname;
+// fileURLToPath 필수 — Windows에서 URL.pathname은 /C:/... 형태라 경로가 깨진다
+const root = fileURLToPath(new URL("..", import.meta.url));
 const SKILL = join(root, "skills", "archify");
 const CLI = join(SKILL, "bin", "archify.mjs");
 

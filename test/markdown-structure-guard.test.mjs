@@ -4,9 +4,11 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 // GUARD_PACK_VERSION 1.0.0 — markdown_structure_guard.mjs 의 훅/CLI 계약 검증
-const GUARD = new URL("../scripts/markdown_structure_guard.mjs", import.meta.url).pathname;
+// fileURLToPath 필수 — Windows에서 URL.pathname은 /C:/... 형태라 모듈 해석이 깨진다
+const GUARD = fileURLToPath(new URL("../scripts/markdown_structure_guard.mjs", import.meta.url));
 
 function runGuard(stdinPayload) {
 	return spawnSync("node", [GUARD], {

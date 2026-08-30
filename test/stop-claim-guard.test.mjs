@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 // GUARD_PACK_VERSION 1.0.0 — stop_claim_guard.mjs 의 Stop 훅 계약 검증
 // 페이로드 규약: codex-hook.js 와 동일 (hook_event_name, stop_hook_active, last_assistant_message)
-const GUARD = new URL("../scripts/stop_claim_guard.mjs", import.meta.url).pathname;
+// fileURLToPath 필수 — Windows에서 URL.pathname은 /C:/... 형태라 모듈 해석이 깨진다
+const GUARD = fileURLToPath(new URL("../scripts/stop_claim_guard.mjs", import.meta.url));
 
 function stopPayload(fields) {
 	return JSON.stringify({
