@@ -47,6 +47,14 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
   `[](...)`, empty bullets `-  : `, empty bold runs, unbalanced `$` math delimiters
   (inline code and NTFS attribute names like `$MFT` excluded), unclosed code fences,
   and table column mismatches. Also supports `--check <path…>` for CI/manual sweeps.
+- **coverage_audit.mjs** (`scripts/`, synced from canonical): refuses to run without
+  `--source` — circular audits ("21/21 전수 일치" against a self-made keyword list)
+  are now structurally impossible. Extracts records from the source document (table
+  rows / bullets / numbered items; header rows excluded), matches them into targets
+  with a strong-key rule (digit-bearing or ≥6-char tokens take precedence), and emits
+  a receipt with per-item source-line → target-location mapping. `--min` relaxes the
+  required coverage rate. Contract rule added to `AGENTS.md`; 4 node tests in
+  `test/coverage-audit.test.mjs`.
 - 14 new node tests (`test/markdown-structure-guard.test.mjs`,
   `test/stop-claim-guard.test.mjs`) covering block/pass/short-circuit/payload-degrade
   paths; `scripts/verify-hook-policies.mjs` passes with the new wiring.

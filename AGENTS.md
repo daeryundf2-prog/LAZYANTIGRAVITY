@@ -15,6 +15,11 @@ Conventions for human contributors and AI agents working on this repository.
 - **Two-Step Strike**: High-focus generation (Gemini 3.7 Flash) + mechanical error capture (PostToolUse hooks & Oracles).
 - **AWT Trajectory Lock**: Lock to the task contract. If an action drifts by 1 degree, trim and realign immediately.
 - **Anti-Metacognitive Ban**: Never emit self-excusing meta-dialogue ("흥미롭군요", "That's interesting"). Emit factual error stacks and fixes only.
+- **Coverage claims require an audit receipt**: Any "전수/100% 커버리지" style audit conclusion must be backed by
+  `node scripts/coverage_audit.mjs --source <원문파일> --target <산출물…> --json <receipt.json>`.
+  Save the source material to a file BEFORE auditing; auditing against a self-made keyword list is a circular
+  audit and is forbidden — the tool refuses to run without `--source`. The receipt keeps a per-item
+  source-line → target-location mapping. (GUARD_PACK_VERSION 1.0.0, canonical: lazyforensic)
 
 ## Test Runners
 
