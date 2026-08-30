@@ -8,8 +8,8 @@
 | **Verify Reproducibility** | `npm run verify:reproducible` | Ensure dist artifacts match TypeScript source 100% |
 | **Run Complete Test Suite**| `npm run check` | Build + hook-policy check + root tests + all 15 component suites |
 | **Search Active Memory** | `node components/memory/dist/cli.js search "auth"` | Search learned gotchas & facts across sessions |
-| **Run Self-Audit Confession**| `node components/ulw-loop/dist/self-audit.js report` | Audit trajectory ledger for drift or fabricated claims |
-| **Atomic Rollback** | `node components/ulw-loop/dist/self-audit.js rollback` | Revert to last verified clean state |
+| **Run Self-Audit Confession**| `node scripts/self-audit.mjs report` | Audit trajectory ledger for drift or fabricated claims |
+| **Atomic Rollback** | `node scripts/self-audit.mjs rollback` | Revert to last verified clean state |
 | **Measured Benchmarks** | `npm run bench` | ast-index lookups + daemon IPC round-trip timings |
 
 ---

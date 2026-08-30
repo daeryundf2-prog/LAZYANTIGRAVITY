@@ -11,6 +11,7 @@
 | 08-29 | **session-tree fork rollback** | PASS — unsafe implementation written, fork restored the working tree, removal proven on disk |
 | 08-29 | **consensus host transport, end-to-end** | PASS — checkpoint failed closed into needs_user_decision → consensus-pending (4 personas) → invoke_subagent(Model: pro) × 4 → report-consensus-result × 4 → aggregate-consensus = consensus_passed → checkpoint complete. All four adversarial personas approved a timing-safe token implementation |
 | 08-30 | ledger lock on Windows (EPERM/EACCES retry) | fixed live by the owner's session; O(1) ledger cache landed too |
+| 08-30 | **orchestration layer, 8 phases** | PASS — multi-goal isolation (no over-completion), context-loss recovery without replanning, resume, steering (steering_accepted/criteria_revised events), full 7-step subagent envelope with SHA-256 chaining, check-leases, blackboard TTL/namespace/cross-process handoff, stagnation guard (3-strike same_error_loop → pause_or_replan), destructive rewind with backup, self-audit. One real defect found and fixed: cheat sheet advertised a nonexistent self-audit path (actual: scripts/self-audit.mjs) |
 
 ### Acceptance suite (2026-08-30): 16/16 PASS, isolated /tmp execution
 
