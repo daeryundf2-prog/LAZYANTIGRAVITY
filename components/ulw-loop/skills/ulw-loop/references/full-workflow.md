@@ -62,6 +62,19 @@ Every worker message MUST carry: goal + exact files in scope; baseline character
 - Never invent state outside `.omo/ulw-loop` artifacts or `lazyantigravity ulw-loop status --json`.
 
 ## Bootstrap
+
+### Baseline snapshot (required when the work mutates the workspace)
+
+Before the first edit, capture a restore point with the session tree — NOT a
+hand-written JSON note:
+
+- Preferred: `session_tree_snapshot` MCP tool (workspace server) with a label.
+- Otherwise: `node "$PLUGIN_ROOT/components/session-tree/dist/cli.js" snapshot "<label>"`.
+
+Verify `.lazyantigravity/session-tree/nodes.json` gained a node. Snapshots
+capture the full working tree (including untracked files) into shadow git refs
+without touching HEAD or the index; `fork <nodeId>` restores, `prune --keep N`
+caps growth.
 Do all three steps before execution. No edits, goal tools, or checkpointing before bootstrap completes.
 
 ### 1. Resolve the ULW CLI (Antigravity-first)

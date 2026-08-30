@@ -1,33 +1,13 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
-import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
+import { ensurePrivateDirectory, ensureToken, tokenMatches } from "./security.js";
 // 소비된 뮤테이션 논스의 보관 한도. 원장(파일·메모리)이 무한히 자라는 것을 막는다.
 const NONCE_LEDGER_LIMIT = 4096;
 // 단일 커맨드 라인의 최대 길이. 개행 없는 입력이 버퍼를 무한히 밀어넣는 것을 막는다.
 const MAX_LINE_BYTES = 1 << 20;
-function ensurePrivateDirectory(path) {
-    mkdirSync(path, { recursive: true, mode: 0o700 });
-    try {
-        chmodSync(path, 0o700);
-    }
-    catch {
-        // The directory may be on a filesystem without chmod support.
-    }
-}
-function ensureToken(path) {
-    if (!existsSync(path)) {
-        const fd = openSync(path, "wx", 0o600);
-        try {
-            writeFileSync(fd, randomBytes(32).toString("hex"), "utf8");
-        }
-        finally {
-            closeSync(fd);
-        }
-    }
-    chmodSync(path, 0o600);
-}
 export function getDaemonPaths(cwd = process.cwd()) {
     const runDir = join(cwd, ".lazyantigravity", "run");
     ensurePrivateDirectory(runDir);
@@ -42,13 +22,6 @@ export function getDaemonPaths(cwd = process.cwd()) {
     const tokenPath = join(runDir, "daemon.token");
     ensureToken(tokenPath);
     return { socketPath, pidPath, tokenPath };
-}
-function tokenMatches(expected, received) {
-    if (typeof received !== "string")
-        return false;
-    const expectedBytes = Buffer.from(expected);
-    const receivedBytes = Buffer.from(received);
-    return expectedBytes.length === receivedBytes.length && timingSafeEqual(expectedBytes, receivedBytes);
 }
 export class DaemonServer {
     server = null;

@@ -79,9 +79,7 @@ export async function rewindLedger(repoRoot, runId, toEventId, options) {
     if (targetIdx === -1)
         throw new Error(`Event ID ${toEventId} not found in ledger for run ${runId}`);
     if (options?.destructive === true) {
-        // events.jsonl을 통째로 재작성하는 destructive rewind는 append 경로와
-        // 같은 쓰기 락 안에서 행해야 한다 — 락 없이 쓰면 동시 append와 경합해
-        // 이벤트가 유실될 수 있다.
+        // destructive rewind(events.jsonl 전체 재작성)는 append와 같은 쓰기 락 안에서 행해야 한다 — 락 없이 쓰면 동시 append와 경합해 이벤트가 유실될 수 있다.
         await withLedgerWriteLock(repoRoot, runId, async () => {
             const backupsDir = join(runDir, "backups");
             if (!existsSync(backupsDir))

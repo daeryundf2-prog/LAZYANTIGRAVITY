@@ -19,6 +19,7 @@ This skill is intentionally compact. The full workflow lives in `references/full
 2. Read **Runtime selection**, **Bootstrap**, **Execution Loop**, and **Manual-QA channels** before running any ULW command or recording evidence.
 3. Resolve the ULW CLI via Bootstrap (PLUGIN_ROOT / Windows PowerShell / `~/.gemini/config/plugins/lazyantigravity/.../cli.js`). If CLI is missing, stop and report — do not hand-edit goal JSON.
 4. If the task has code edits, tests, QA, or commit work, follow the full workflow's delegation and evidence rules. Tests alone never prove done.
+5. If the work mutates the workspace, take a baseline snapshot BEFORE edits: prefer the `session_tree_snapshot` MCP tool (workspace server) when available, otherwise run `node "$PLUGIN_ROOT/components/session-tree/dist/cli.js" snapshot "<label>"`. Verify `.lazyantigravity/session-tree/nodes.json` gained a node — a JSON note written anywhere else is NOT a snapshot and satisfies no criterion.
 
 ## Non-Negotiables
 

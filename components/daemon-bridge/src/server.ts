@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { createConnection, createServer, type Server, type Socket } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
+import { ensurePrivateDirectory, ensureToken, tokenMatches } from "./security.js";
 
 export interface DaemonConfig {
 	socketPath: string;
@@ -14,27 +15,6 @@ export interface DaemonConfig {
 const NONCE_LEDGER_LIMIT = 4096;
 // 단일 커맨드 라인의 최대 길이. 개행 없는 입력이 버퍼를 무한히 밀어넣는 것을 막는다.
 const MAX_LINE_BYTES = 1 << 20;
-
-function ensurePrivateDirectory(path: string): void {
-	mkdirSync(path, { recursive: true, mode: 0o700 });
-	try {
-		chmodSync(path, 0o700);
-	} catch {
-		// The directory may be on a filesystem without chmod support.
-	}
-}
-
-function ensureToken(path: string): void {
-	if (!existsSync(path)) {
-		const fd = openSync(path, "wx", 0o600);
-		try {
-			writeFileSync(fd, randomBytes(32).toString("hex"), "utf8");
-		} finally {
-			closeSync(fd);
-		}
-	}
-	chmodSync(path, 0o600);
-}
 
 export function getDaemonPaths(cwd: string = process.cwd()): DaemonConfig {
 	const runDir = join(cwd, ".lazyantigravity", "run");
@@ -52,13 +32,6 @@ export function getDaemonPaths(cwd: string = process.cwd()): DaemonConfig {
 	ensureToken(tokenPath);
 
 	return { socketPath, pidPath, tokenPath };
-}
-
-function tokenMatches(expected: string, received: unknown): boolean {
-	if (typeof received !== "string") return false;
-	const expectedBytes = Buffer.from(expected);
-	const receivedBytes = Buffer.from(received);
-	return expectedBytes.length === receivedBytes.length && timingSafeEqual(expectedBytes, receivedBytes);
 }
 
 export class DaemonServer {
