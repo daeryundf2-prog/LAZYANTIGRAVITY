@@ -23,6 +23,7 @@ const expectedSkills = [
 	"report-bug",
 	"review-work",
 	"start-work",
+	"ultra-research",
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
