@@ -1,9 +1,17 @@
 import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { basename } from "node:path";
 import { promisify } from "node:util";
 import type { ExecutionBinding } from "./evidence-contract.js";
 
 const execFileAsync = promisify(execFile);
+
+const DEFAULT_ALLOWED_HOST_COMMANDS: readonly string[] = ["node", "git", "npm", "npx", "pnpm"];
+
+function isHostCommandAllowed(command: string, allowed: readonly string[]): boolean {
+	const name = basename(command).replace(/\.exe$/i, "").toLowerCase();
+	return allowed.some((entry) => entry.toLowerCase() === name);
+}
 
 export interface HostExecutionRequest {
 	readonly command: string;
@@ -15,6 +23,7 @@ export interface HostExecutionRequest {
 	readonly toolCallId?: string;
 	readonly timeoutMs?: number;
 	readonly maxBuffer?: number;
+	readonly allowedCommands?: readonly string[];
 }
 
 export interface HostExecutionResult {
@@ -29,6 +38,9 @@ function fingerprint(value: string): string {
 }
 
 export async function executeHostCommand(request: HostExecutionRequest): Promise<HostExecutionResult> {
+	if (!isHostCommandAllowed(request.command, request.allowedCommands ?? DEFAULT_ALLOWED_HOST_COMMANDS)) {
+		throw new Error(`Host command "${request.command}" is not in the allowed command list.`);
+	}
 	const startedAt = new Date().toISOString();
 	const toolCallId = request.toolCallId ?? randomUUID();
 	let stdout = "";
