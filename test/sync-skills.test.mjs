@@ -12,6 +12,7 @@ const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 const expectedSkills = [
 	"archify",
 	"avoid-ai-writing",
+	"boost",
 	"debugging",
 	"git-master",
 	"image-prompt",
