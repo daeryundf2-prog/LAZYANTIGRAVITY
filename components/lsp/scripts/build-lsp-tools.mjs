@@ -63,16 +63,16 @@ if (!existsSync(packageJson)) {
 
 console.log("Installing repository lsp-tools-mcp dependencies...");
 try {
-	execSync("npm ci", { cwd: lspToolsDir, stdio: "inherit" });
+	execSync("npm ci", { cwd: lspToolsDir, stdio: "inherit", shell: process.platform === "win32" });
 } catch {
-	execSync("npm install", { cwd: lspToolsDir, stdio: "inherit" });
+	execSync("npm install", { cwd: lspToolsDir, stdio: "inherit", shell: process.platform === "win32" });
 }
 
 if (existsSync(join(lspToolsDir, "package.json"))) {
 	const pck = JSON.parse(await import("node:fs").then((m) => m.readFileSync(join(lspToolsDir, "package.json"), "utf8")));
 	if (pck.scripts && pck.scripts.build) {
 		console.log("Building repository lsp-tools-mcp...");
-		execSync("npm run build", { cwd: lspToolsDir, stdio: "inherit" });
+		execSync("npm run build", { cwd: lspToolsDir, stdio: "inherit", shell: process.platform === "win32" });
 	}
 }
 
