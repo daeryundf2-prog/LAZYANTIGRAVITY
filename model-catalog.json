@@ -144,7 +144,7 @@
 				"displayName": "Gemini 3.7 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "메인 코더 — 코딩/에이전트 워크호스 (기본 추천)",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
+				"fallbackChain": ["gemini-3.8-flash-high", "gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
 				"availabilitySource": "ui"
 			},
 			"planner": {
@@ -152,7 +152,7 @@
 				"displayName": "Gemini 3.7 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.7 Flash; 모호한 고비용 설계만 Claude Opus로 수동 전환",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-opus-4.6"],
+				"fallbackChain": ["gemini-3.8-flash-high", "gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-opus-4.6"],
 				"availabilitySource": "ui"
 			},
 			"verifier": {
@@ -160,7 +160,7 @@
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
 				"purpose": "교차 모델 검증 — 메인(3.7 Flash)과 다른 패밀리로 편향 방지",
-				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
+				"fallbackChain": ["claude-opus-4.6", "gemini-3.8-flash-high", "gemini-3.7-flash-high"],
 				"availabilitySource": "ui"
 			},
 			"worker": {
@@ -168,7 +168,7 @@
 				"displayName": "Gemini 3.7 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "구현/수정 메인 코더 — 에이전트 루프 기본 엔진",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
+				"fallbackChain": ["gemini-3.8-flash-high", "gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
 				"availabilitySource": "ui"
 			},
 			"researcher": {
@@ -283,6 +283,30 @@
 				"provider": "google",
 				"speed": "fast",
 				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-3.8-flash-low",
+				"displayName": "Gemini 3.8 Flash (Low)",
+				"provider": "google",
+				"speed": "fast",
+				"reasoningLevel": "low",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-3.8-flash-medium",
+				"displayName": "Gemini 3.8 Flash (Medium)",
+				"provider": "google",
+				"speed": "fast",
+				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
+				"provider": "google",
+				"speed": "fast",
+				"reasoningLevel": "high",
 				"availabilitySource": "ui"
 			},
 			{

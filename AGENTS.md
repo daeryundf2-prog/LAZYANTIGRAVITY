@@ -12,7 +12,7 @@ Conventions for human contributors and AI agents working on this repository.
 ## Omniscient Mode & Two-Step Strike
 - **Assume Agent Correctness**: Proceed decisively in Omniscient Mode without second-guessing routine actions.
 - **Eliminate Attention Dispersion**: Avoid wandering into unrelated files out of self-doubt.
-- **Two-Step Strike**: High-focus generation (Gemini 3.7 Flash) + mechanical error capture (PostToolUse hooks & Oracles).
+- **Two-Step Strike**: High-focus generation (Gemini 3.8 / 3.7 Flash) + mechanical error capture (PostToolUse hooks & Oracles).
 - **AWT Trajectory Lock**: Lock to the task contract. If an action drifts by 1 degree, trim and realign immediately.
 - **Anti-Metacognitive Ban**: Never emit self-excusing meta-dialogue ("흥미롭군요", "That's interesting"). Emit factual error stacks and fixes only.
 - **Coverage claims require an audit receipt**: Any "전수/100% 커버리지" style audit conclusion must be backed by

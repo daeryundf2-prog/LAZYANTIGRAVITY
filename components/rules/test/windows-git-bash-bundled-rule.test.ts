@@ -55,7 +55,6 @@ function restoreEnv(name: string, value: string | undefined): void {
 	process.env[name] = value;
 }
 
-
 // Windows에서 JSON.stringify가 경로의 백슬래시를 이스케이프하므로, 논리적
 // 내용(경로·본문)을 단언할 때는 additionalContext를 디코딩해 비교한다.
 function decodedContext(output: string): string {
@@ -100,7 +99,9 @@ describe("Windows Git Bash bundled rule", () => {
 			platform: "win32",
 		});
 
-		expect(occurrenceCount(decodedContext(output), `- [windows-git-bash.md]{${join(process.cwd(), WINDOWS_RULE_PATH)}}`)).toBe(1);
+		expect(
+			occurrenceCount(decodedContext(output), `- [windows-git-bash.md]{${join(process.cwd(), WINDOWS_RULE_PATH)}}`),
+		).toBe(1);
 		expect(output).not.toContain(WINDOWS_GUIDANCE);
 	});
 

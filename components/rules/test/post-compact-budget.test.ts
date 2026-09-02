@@ -60,6 +60,18 @@ describe("post-compact context budget", () => {
 		expect(budget.maxResultChars).toBe(CONFIG.postCompactMaxResultChars);
 	});
 
+	it("#given gemini-3.8-flash with 1M context #when resolving post-compact budget #then keeps configured post-compact cap on moderate transcripts", () => {
+		// given
+		const transcriptPath = writeCompactedTranscript("A".repeat(100_000));
+
+		// when
+		const budget = withPostCompactBudget(CONFIG, { model: "gemini-3.8-flash", transcriptPath });
+
+		// then
+		expect(budget.maxRuleChars).toBe(CONFIG.postCompactMaxRuleChars);
+		expect(budget.maxResultChars).toBe(CONFIG.postCompactMaxResultChars);
+	});
+
 	it("#given pure GPT-5.4 model near the fallback context window #when resolving post-compact budget #then treats it as non-preset metadata", () => {
 		// given
 		const transcriptPath = writeCompactedTranscript("A".repeat(600_000));

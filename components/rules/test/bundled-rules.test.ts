@@ -12,7 +12,6 @@ import {
 } from "../src/codex-hook.js";
 import { createRuleDiscoveryCache, findRuleCandidates } from "../src/rules/finder.js";
 
-
 // Windows에서 JSON.stringify가 경로의 백슬래시를 이스케이프하므로, 논리적
 // 내용(경로·본문)을 단언할 때는 additionalContext를 디코딩해 비교한다.
 function decodedContext(output: string): string {

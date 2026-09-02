@@ -28,6 +28,7 @@ const MODEL_CONTEXT_BUDGETS: readonly ModelContextBudget[] = [
 		contextWindowTokens: 272_000,
 		effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT,
 	},
+	{ slug: "gemini-3.8-flash", contextWindowTokens: 1_000_000, effectivePercent: 90 },
 	{ slug: "gemini-3.7-flash", contextWindowTokens: 1_000_000, effectivePercent: 90 },
 	{ slug: "gemini-3.1-pro", contextWindowTokens: 1_000_000, effectivePercent: 90 },
 	{
