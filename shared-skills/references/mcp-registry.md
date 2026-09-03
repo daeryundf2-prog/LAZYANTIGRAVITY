@@ -19,14 +19,16 @@ This registry documents the available MCP servers configured in `mcp_config.json
   - `lookup_precedent`: Verify landmark Korean Supreme Court rulings and formal precedent case number formats (e.g. `2023다XXXXX`).
 - **Purpose**: Eliminates fake statute article hallucination (`민법 제OO조`) and fake judicial precedent citations.
 
-### 3. Research MCP Server (`research`) - Features 03 & 13
+### 3. Research MCP Server (`research`) - Features 03, 13 & Section 4.1/4.2
 - **Runtime**: `./research-mcp/dist/cli.js`
 - **Tools**:
   - `web_read`: Extract clean markdown from web pages via Jina Reader.
-  - `web_search`: Search provider chain with `dynamic_threshold` (default 0.3) and `grounding_metadata` (supports, chunks).
+  - `web_search`: Search provider chain with `dynamic_threshold` (default 0.3), `mode` (`MODE_DYNAMIC` | `HIGH_FIDELITY`), and `grounding_metadata` (supports, chunks).
   - `fetch_json`: SSRF-protected developer API querying.
   - `cross_lingual_query`: Korean-to-English query expansion targeting 1st-party global sources (RFC, GitHub, official docs, arXiv).
-  - `render_grounding_citations`: Gemini API / research search grounding metadata parser & footnote citation renderer (Section 4.1).
+  - `render_grounding_citations`: Gemini API / research search grounding metadata parser, inline footnote (`[^1]`) citation renderer, and Vertex AI High-Fidelity non-parametric gate (`high_fidelity: true`, `min_coverage: 0.70`).
+- **CLI Runner**:
+  - `scripts/render_grounding_citations.mjs`: Standalone script to render citations with `--high-fidelity` and `--min-coverage` flags.
 
 ### 4. Local Developer MCP Servers
 - `ast_grep`: High-precision AST search and replacement.

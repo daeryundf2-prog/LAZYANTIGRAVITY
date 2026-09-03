@@ -77,6 +77,7 @@ METHOD: Conduct aggressive counter-search (e.g. site:github.com/issues OR site:r
 | **Cross-Lingual Expander** | `cross_lingual_query(query)` | **Keyless (Local)** | 한국어 기술 질문을 영문 공식 1차 출처 검색어로 정밀 확장 |
 | **GitHub REST** | `fetch_json(url)` | **Keyless** | `api.github.com` 레포, 릴리즈, 이슈 직접 조회 |
 | **Public APIs** | `fetch_json(url)` | **Keyless** | npm, PyPI, arXiv (`export.arxiv.org/api/query`) API |
+| **Citation Renderer** | `render_grounding_citations(...)` | **Keyless (Local)** | Gemini 그라운딩 메타데이터 기반 각주(`[^1]`) 렌더링 및 High-Fidelity 검증 |
 | **Media / Subtitles**| `media_youtube(url)` | **Network Gated (`LAZYANTIGRAVITY_MEDIA_NETWORK=1`)** | 컨퍼런스/발표 영상 자막 및 메타데이터 추출 |
 
 #### 2. Advanced Search Operators
@@ -170,6 +171,11 @@ DELIVERABLE: Final unambiguous verdict (VERIFIED / REFUTED / PARTIAL) with groun
 1. [Claim 1 Source] URL - 설명, 신뢰도 등급, 접근일시
 ```
 
+```bash
+# Gemini 검색 메타데이터 기반 인라인 각주 렌더링 및 High-Fidelity 비파라메트릭 검증
+node scripts/render_grounding_citations.mjs --file raw_synthesis.json --format footnote --high-fidelity > SYNTHESIS.md
+```
+
 ---
 
 ## Failure Modes & Hard Rules
@@ -177,3 +183,4 @@ DELIVERABLE: Final unambiguous verdict (VERIFIED / REFUTED / PARTIAL) with groun
 2. **독립 소스 교차 검증 없는 인용 금지**: 1개 블로그 글의 주장은 단독 사실로 취급 금지.
 3. **영문 검색 우선 원칙**: 기술/학술 리서치는 가장 방대한 영문 코퍼스를 우선 스위프.
 4. **기계적 게이트 통과 의무**: `ulw-loop research-claims --enforce` 통과 없이는 합성 보고서 납품 불가.
+5. **High-Fidelity 비파라메트릭 엄격 구속**: 그라운딩 커버리지 70% 미만 시 창작을 금지하고 `[INSUFFICIENT_DATA]`로 기권.

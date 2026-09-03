@@ -198,3 +198,76 @@ test("renderGroundingCitations protects surrogate pair emoji boundaries", () => 
 	assert.match(result.rendered_text, /Alert: 🚨\[\^1\] Incident reported\./);
 });
 
+test("renderGroundingCitations enforces High-Fidelity mode and passes when coverage is high (Section 4.2)", () => {
+	const text = "Fact one is well grounded. Fact two is also well grounded.";
+	const metadata = {
+		grounding_chunks: [
+			{ url: "https://source1.org", title: "Source 1" },
+			{ url: "https://source2.org", title: "Source 2" },
+		],
+		grounding_supports: [
+			{
+				segment: { startIndex: 0, endIndex: 26, text: "Fact one is well grounded." },
+				grounding_chunk_indices: [0],
+				confidence_scores: [0.95],
+			},
+			{
+				segment: { startIndex: 27, endIndex: 58, text: "Fact two is also well grounded." },
+				grounding_chunk_indices: [1],
+				confidence_scores: [0.92],
+			},
+		],
+	};
+
+	const result = renderGroundingCitations({
+		text,
+		grounding_metadata: metadata,
+		high_fidelity: true,
+		min_coverage: 0.70,
+	});
+
+	assert.equal(result.ok, true);
+	assert.equal(result.high_fidelity_passed, true);
+	assert.equal(result.abstention, false);
+	assert.equal(result.grounding_coverage, 1.0);
+	assert.match(result.rendered_text, /\[\^1\]/);
+	assert.match(result.rendered_text, /\[\^2\]/);
+});
+
+test("renderGroundingCitations enforces High-Fidelity mode and abstains when coverage is below threshold (Section 4.2)", () => {
+	const text = "Fact with no source. Fabricated hallucination claim.";
+	const metadata = {
+		grounding_chunks: [],
+		grounding_supports: [],
+	};
+
+	const result = renderGroundingCitations({
+		text,
+		grounding_metadata: metadata,
+		high_fidelity: true,
+		min_coverage: 0.70,
+	});
+
+	assert.equal(result.ok, false);
+	assert.equal(result.high_fidelity_passed, false);
+	assert.equal(result.abstention, true);
+	assert.match(result.rendered_text, /\[INSUFFICIENT_DATA\]/);
+});
+
+test("renderGroundingCitations CLI with --high-fidelity exits 1 when coverage fails", () => {
+	const text = "Unbacked claim.";
+	const meta = JSON.stringify({
+		grounding_chunks: [],
+		grounding_supports: [],
+	});
+
+	const res = spawnSync(process.execPath, [SCRIPT, "--text", text, "--metadata", meta, "--high-fidelity", "--json"], {
+		encoding: "utf8",
+	});
+
+	assert.equal(res.status, 1);
+	const data = JSON.parse(res.stdout);
+	assert.equal(data.ok, false);
+	assert.equal(data.abstention, true);
+});
+

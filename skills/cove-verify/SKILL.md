@@ -31,9 +31,14 @@ flowchart TD
 ### Stage 4: 최종 수정 합성 (Final Verified Output)
 검증된 팩트와 초안을 대조하여, 오류나 과장된 부분을 수정한 **최종 검증 완료 답변**을 작성합니다.
 - 수정된 항목이 있을 경우 답변 말미에 `CoVe Verification Corrections` 요약표를 첨부합니다.
+- **각주 바인딩 & High-Fidelity**: `render_grounding_citations` 도구 또는 CLI를 통해 검증된 검색 결과를 인라인 각주(`[^1]`)로 렌더링하고, High-Fidelity 비파라메트릭 게이트를 적용합니다.
 
 ## CLI 검증 스크립트
 
 ```bash
 node scripts/cove_verify.mjs draft_response.md
+
+# Gemini 검색 그라운딩 메타데이터 기반 각주 렌더링 및 High-Fidelity 비파라메트릭 검증
+node scripts/render_grounding_citations.mjs --file response_with_meta.json --high-fidelity
 ```
+

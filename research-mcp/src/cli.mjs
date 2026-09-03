@@ -288,7 +288,11 @@ async function webSearch(args) {
 	const braveKey = process.env["LAZYANTIGRAVITY_BRAVE_KEY"] || process.env["BRAVE_API_KEY"];
 	const jinaKey = process.env["LAZYANTIGRAVITY_JINA_KEY"] || process.env["JINA_API_KEY"];
 
-	const dynamicThreshold = typeof args.dynamic_threshold === "number" ? Math.max(0.0, Math.min(1.0, args.dynamic_threshold)) : 0.3;
+	const isHighFidelity = args.mode === "HIGH_FIDELITY" || args.high_fidelity === true;
+	const dynamicThreshold = typeof args.dynamic_threshold === "number"
+		? Math.max(0.0, Math.min(1.0, args.dynamic_threshold))
+		: (isHighFidelity ? 0.1 : 0.3);
+	const modeStr = isHighFidelity ? "HIGH_FIDELITY" : (args.mode || "MODE_DYNAMIC");
 	const formatSearchResult = (provider, results) => ({
 		ok: true,
 		query,
@@ -297,7 +301,8 @@ async function webSearch(args) {
 		results,
 		grounding_metadata: {
 			dynamic_threshold: dynamicThreshold,
-			mode: "MODE_DYNAMIC",
+			mode: modeStr,
+			high_fidelity: isHighFidelity,
 			grounding_chunks: results.map((r) => ({ title: r.title, url: r.url })),
 			grounding_supports: results.map((r, i) => ({
 				grounding_chunk_indices: [i],
@@ -534,13 +539,29 @@ function renderGroundingCitations(options) {
 	const minConfidence = typeof options?.min_confidence === "number" ? options.min_confidence : 0.0;
 	const citationFormat = options?.citation_format || "footnote";
 	const heading = options?.heading || "## References / Grounding Sources";
+	const isHighFidelity = options?.high_fidelity === true || options?.mode === "HIGH_FIDELITY";
+	const minCoverage = typeof options?.min_coverage === "number" ? options.min_coverage : 0.70;
 
 	const { web_search_queries, grounding_chunks, grounding_supports } = parseGroundingMetadata(options?.grounding_metadata);
 	if (!rawText.trim()) {
-		return { ok: true, rendered_text: "", footnotes: [], web_search_queries, total_citations: 0, supported_segment_count: 0, grounding_coverage: 0 };
+		return { ok: true, high_fidelity_passed: true, abstention: false, rendered_text: "", footnotes: [], web_search_queries, total_citations: 0, supported_segment_count: 0, grounding_coverage: 0 };
 	}
 	if (grounding_chunks.length === 0 || grounding_supports.length === 0) {
-		return { ok: true, rendered_text: rawText, footnotes: [], web_search_queries, total_citations: 0, supported_segment_count: 0, grounding_coverage: 0 };
+		if (isHighFidelity) {
+			return {
+				ok: false,
+				high_fidelity_passed: false,
+				abstention: true,
+				error: "[INSUFFICIENT_DATA]: High-Fidelity Grounding requires verified grounding chunks and supports. Confabulation blocked.",
+				rendered_text: "[INSUFFICIENT_DATA]: Insufficient grounded facts from primary sources.\n",
+				footnotes: [],
+				web_search_queries,
+				total_citations: 0,
+				supported_segment_count: 0,
+				grounding_coverage: 0,
+			};
+		}
+		return { ok: true, high_fidelity_passed: true, abstention: false, rendered_text: rawText, footnotes: [], web_search_queries, total_citations: 0, supported_segment_count: 0, grounding_coverage: 0 };
 	}
 
 	const validSupports = grounding_supports.filter((s) => {
@@ -645,9 +666,19 @@ function renderGroundingCitations(options) {
 
 	const supportedSegmentCount = mappedSupportCount;
 	const groundingCoverage = Number((supportedSegmentCount / Math.max(grounding_supports.length, 1)).toFixed(2));
+	const highFidelityPassed = !isHighFidelity || (groundingCoverage >= minCoverage && supportedSegmentCount > 0);
+	const abstention = isHighFidelity && !highFidelityPassed;
+
+	let finalText = rendered.trimEnd() + "\n";
+	if (abstention) {
+		finalText = `[INSUFFICIENT_DATA]: High-Fidelity Grounding coverage (${(groundingCoverage * 100).toFixed(1)}% < ${(minCoverage * 100).toFixed(0)}%) is insufficient. Non-parametric answering required.\n`;
+	}
+
 	return {
-		ok: true,
-		rendered_text: rendered.trimEnd() + "\n",
+		ok: !abstention,
+		high_fidelity_passed: highFidelityPassed,
+		abstention,
+		rendered_text: finalText,
 		footnotes,
 		web_search_queries,
 		total_citations: footnotes.length,
@@ -671,6 +702,8 @@ async function renderGroundingCitationsTool(args) {
 		grounding_metadata: metadata,
 		min_confidence: minConfidence,
 		citation_format: format,
+		high_fidelity: Boolean(args?.high_fidelity || args?.mode === "HIGH_FIDELITY"),
+		min_coverage: typeof args?.min_coverage === "number" ? args.min_coverage : 0.70,
 	});
 
 	return textResult(result);
@@ -698,6 +731,8 @@ const TOOLS = [
 				query: { type: "string", description: "Search query string" },
 				maxResults: { type: "number", description: "Maximum results to return (default 10, cap 10)" },
 				dynamic_threshold: { type: "number", description: "Adaptive retrieval threshold (0.0 to 1.0, default 0.3)" },
+				mode: { type: "string", enum: ["MODE_DYNAMIC", "HIGH_FIDELITY"], description: "Grounding mode: MODE_DYNAMIC or HIGH_FIDELITY (strict non-parametric, default MODE_DYNAMIC)" },
+				high_fidelity: { type: "boolean", description: "Enforce strict non-parametric high-fidelity grounding with dynamic_threshold=0.1" },
 			},
 			required: ["query"],
 		},
@@ -744,6 +779,14 @@ const TOOLS = [
 					type: "string",
 					enum: ["footnote", "link"],
 					description: "Citation formatting style: footnote ([^1]) or link ([1](url))",
+				},
+				high_fidelity: {
+					type: "boolean",
+					description: "Enforce Vertex AI High-Fidelity non-parametric grounding mode (abstains if coverage < min_coverage)",
+				},
+				min_coverage: {
+					type: "number",
+					description: "Minimum grounding coverage threshold for high fidelity (default 0.70)",
 				},
 			},
 			required: ["text", "grounding_metadata"],

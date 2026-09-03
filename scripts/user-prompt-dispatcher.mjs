@@ -106,6 +106,18 @@ async function main() {
 </dynamic-search-grounding>`);
 	}
 
+	// Section 4.2: Vertex AI High-Fidelity Grounding Mode (Strict Non-Parametric)
+	const HIGH_FIDELITY_TRIGGER_RE = /(?:--high-fidelity|high-fidelity|high_fidelity|엄격한\s*그라운딩|비파라메트릭|non-parametric)/i;
+	if (HIGH_FIDELITY_TRIGGER_RE.test(promptText)) {
+		contributions.push(`<high-fidelity-grounding>
+# Vertex AI High-Fidelity Grounding Mode Active (Section 4.2)
+- Mode: HIGH_FIDELITY (Strict Non-Parametric)
+- Grounding Gate: Zero Parametric Memory Tolerance. Answer ONLY using explicitly retrieved source chunks or verified evidence. Do not guess or extrapolate.
+- Abstention Policy: If grounding coverage < 70% or supporting quotes cannot be located, strictly output '[INSUFFICIENT_DATA]: Insufficient grounded facts from primary sources' rather than confabulating.
+- Verbatim Verification: Every factual claim must be backed by a verifiable source URI and matching text segment.
+</high-fidelity-grounding>`);
+	}
+
 	// Feature 12: Sandwich Prompting & Document Chunk Tagging (Anti-Lost-in-the-Middle)
 	if (promptText.length > 1200 || (promptText.includes("\n") && promptText.length > 600)) {
 		contributions.push(`<sandwich-prompt-guard>

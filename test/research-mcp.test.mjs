@@ -153,3 +153,33 @@ test("live smoke tests run only when opt-in is explicitly enabled", async () => 
 	assert.equal(json.ok, true);
 	assert.equal(json.data?.name, "whisper.cpp");
 });
+
+test("render_grounding_citations tool supports high_fidelity option and flags insufficient coverage", () => {
+	const res = callTool("render_grounding_citations", {
+		text: "Unverified statement.",
+		grounding_metadata: {
+			grounding_chunks: [],
+			grounding_supports: [],
+		},
+		high_fidelity: true,
+	});
+
+	assert.equal(res.ok, false);
+	assert.equal(res.high_fidelity_passed, false);
+	assert.equal(res.abstention, true);
+	assert.match(res.rendered_text, /\[INSUFFICIENT_DATA\]/);
+});
+
+test("web_search tool populates HIGH_FIDELITY mode in grounding metadata", () => {
+	const res = callTool("web_search", {
+		query: "test query",
+		mode: "HIGH_FIDELITY",
+	}, {
+		LAZYANTIGRAVITY_RESEARCH_NETWORK: "0", // gate check
+	});
+
+	// Even when network is disabled, error is returned cleanly
+	assert.equal(res.ok, false);
+	assert.match(res.error, /LAZYANTIGRAVITY_RESEARCH_NETWORK=1/);
+});
+

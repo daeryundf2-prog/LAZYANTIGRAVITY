@@ -151,6 +151,8 @@ function adjustForSurrogate(str, pos) {
  * @param {object} options.grounding_metadata Grounding metadata object
  * @param {number} [options.min_confidence=0.0] Minimum confidence to include a support
  * @param {string} [options.citation_format="footnote"] 'footnote' ([^1]) or 'link' ([1](url))
+ * @param {boolean} [options.high_fidelity=false] Vertex AI High-Fidelity non-parametric grounding mode
+ * @param {number} [options.min_coverage=0.70] Minimum grounding coverage threshold for high-fidelity mode
  * @param {string} [options.heading="## References / Grounding Sources"] Heading for references
  */
 export function renderGroundingCitations(options) {
@@ -158,6 +160,8 @@ export function renderGroundingCitations(options) {
 	const minConfidence = typeof options?.min_confidence === "number" ? options.min_confidence : 0.0;
 	const citationFormat = options?.citation_format || "footnote";
 	const heading = options?.heading || "## References / Grounding Sources";
+	const isHighFidelity = options?.high_fidelity === true || options?.mode === "HIGH_FIDELITY";
+	const minCoverage = typeof options?.min_coverage === "number" ? options.min_coverage : 0.70;
 
 	const { web_search_queries, grounding_chunks, grounding_supports } = parseGroundingMetadata(
 		options?.grounding_metadata,
@@ -166,6 +170,8 @@ export function renderGroundingCitations(options) {
 	if (!rawText.trim()) {
 		return {
 			ok: true,
+			high_fidelity_passed: true,
+			abstention: false,
 			rendered_text: "",
 			footnotes: [],
 			web_search_queries,
@@ -176,8 +182,24 @@ export function renderGroundingCitations(options) {
 	}
 
 	if (grounding_chunks.length === 0 || grounding_supports.length === 0) {
+		if (isHighFidelity) {
+			return {
+				ok: false,
+				high_fidelity_passed: false,
+				abstention: true,
+				error: "[INSUFFICIENT_DATA]: High-Fidelity Grounding requires verified grounding chunks and supports. Confabulation blocked.",
+				rendered_text: "[INSUFFICIENT_DATA]: Insufficient grounded facts from primary sources.\n",
+				footnotes: [],
+				web_search_queries,
+				total_citations: 0,
+				supported_segment_count: 0,
+				grounding_coverage: 0,
+			};
+		}
 		return {
 			ok: true,
+			high_fidelity_passed: true,
+			abstention: false,
 			rendered_text: rawText,
 			footnotes: [],
 			web_search_queries,
@@ -326,9 +348,19 @@ export function renderGroundingCitations(options) {
 		(supportedSegmentCount / Math.max(grounding_supports.length, 1)).toFixed(2),
 	);
 
+	const highFidelityPassed = !isHighFidelity || (groundingCoverage >= minCoverage && supportedSegmentCount > 0);
+	const abstention = isHighFidelity && !highFidelityPassed;
+
+	let finalText = rendered.trimEnd() + "\n";
+	if (abstention) {
+		finalText = `[INSUFFICIENT_DATA]: High-Fidelity Grounding coverage (${(groundingCoverage * 100).toFixed(1)}% < ${(minCoverage * 100).toFixed(0)}%) is insufficient. Non-parametric answering required.\n`;
+	}
+
 	return {
-		ok: true,
-		rendered_text: rendered.trimEnd() + "\n",
+		ok: !abstention,
+		high_fidelity_passed: highFidelityPassed,
+		abstention,
+		rendered_text: finalText,
 		footnotes,
 		web_search_queries,
 		total_citations: footnotes.length,
@@ -350,6 +382,8 @@ Options:
   --metadata <string>   JSON string of grounding_metadata
   --min-confidence <n>  Minimum confidence score (0.0 to 1.0)
   --format <type>       Citation format: footnote | link (default: footnote)
+  --high-fidelity       Enforce Vertex AI High-Fidelity non-parametric grounding mode
+  --min-coverage <n>    Minimum grounding coverage threshold for high fidelity (default 0.70)
   --json                Output JSON result
 `);
 		process.exit(0);
@@ -360,6 +394,8 @@ Options:
 	let minConf = 0.0;
 	let format = "footnote";
 	let asJson = args.includes("--json");
+	let highFidelity = args.includes("--high-fidelity");
+	let minCoverage = 0.70;
 
 	for (let i = 0; i < args.length; i++) {
 		if (args[i] === "--file" && args[i + 1]) {
@@ -378,6 +414,9 @@ Options:
 			i++;
 		} else if (args[i] === "--format" && args[i + 1]) {
 			format = args[i + 1];
+			i++;
+		} else if (args[i] === "--min-coverage" && args[i + 1]) {
+			minCoverage = Number(args[i + 1]) || 0.70;
 			i++;
 		}
 	}
@@ -398,11 +437,17 @@ Options:
 		grounding_metadata: metadata,
 		min_confidence: minConf,
 		citation_format: format,
+		high_fidelity: highFidelity,
+		min_coverage: minCoverage,
 	});
 
 	if (asJson) {
 		console.log(JSON.stringify(result, null, 2));
 	} else {
 		console.log(result.rendered_text);
+	}
+
+	if (highFidelity && !result.high_fidelity_passed) {
+		process.exit(1);
 	}
 }

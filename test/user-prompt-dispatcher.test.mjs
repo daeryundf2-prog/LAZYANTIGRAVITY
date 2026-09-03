@@ -72,3 +72,13 @@ test("dispatcher injects sandwich prompting & chunk tagging directive for long p
 	assert.ok(ctx.includes("[DOC_ID:"), "DOC_ID guidance expected");
 });
 
+test("dispatcher injects high-fidelity grounding directive when triggered (Section 4.2)", () => {
+	const ctx = runDispatcher({
+		hook_event_name: "UserPromptSubmit",
+		session_id: "acc-test",
+		prompt: "보고서 사실관계를 --high-fidelity 엄격한 그라운딩 모드로 비파라메트릭 검증해줘",
+	});
+	assert.ok(ctx.includes("high-fidelity-grounding"), "high-fidelity grounding directive expected");
+	assert.ok(ctx.includes("Strict Non-Parametric"), "strict non-parametric guidance expected");
+});
+
