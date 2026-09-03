@@ -20,17 +20,24 @@ else {
     process.exitCode = 1;
 }
 async function runHookCli(eventName) {
-    const raw = await readStdin();
-    if (raw.trim().length === 0)
-        return;
-    const parsed = parseHookInput(raw);
-    if (!parsed)
-        return;
-    const pluginDataRoot = process.env["PLUGIN_DATA"];
-    const options = pluginDataRoot === undefined ? {} : { pluginDataRoot };
-    const output = await runHook(eventName, parsed, options);
-    if (output.length > 0) {
-        processStdout.write(output);
+    try {
+        const raw = await readStdin();
+        if (raw.trim().length === 0)
+            return;
+        const parsed = parseHookInput(raw);
+        if (!parsed)
+            return;
+        const pluginDataRoot = process.env["PLUGIN_DATA"];
+        const options = pluginDataRoot === undefined ? {} : { pluginDataRoot };
+        const output = await runHook(eventName, parsed, options);
+        if (output.length > 0) {
+            processStdout.write(output);
+        }
+    }
+    catch (error) {
+        if (process.env["CODEX_RULES_DEBUG"] === "1") {
+            process.stderr.write(`[codex-rules] hook error: ${error}\n`);
+        }
     }
 }
 async function runHook(eventName, parsed, options) {

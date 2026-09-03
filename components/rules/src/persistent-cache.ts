@@ -136,9 +136,24 @@ function readSessionState(cachePath: string): SerializedSessionState {
 function writeSessionState(cachePath: string, state: SerializedSessionState): void {
 	const dir = dirname(cachePath);
 	mkdirSync(dir, { recursive: true });
-	const tmpPath = `${cachePath}.${process.pid}.${Date.now()}.tmp`;
-	writeFileSync(tmpPath, `${JSON.stringify(state)}\n`);
-	renameSync(tmpPath, cachePath);
+	const tmpPath = `${cachePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+	const content = `${JSON.stringify(state)}\n`;
+	writeFileSync(tmpPath, content);
+	try {
+		renameSync(tmpPath, cachePath);
+	} catch {
+		try {
+			writeFileSync(cachePath, content);
+		} catch {
+			// Fail-open on transient file lock collision
+		} finally {
+			try {
+				rmSync(tmpPath, { force: true });
+			} catch {
+				// Ignore temp file cleanup failure
+			}
+		}
+	}
 }
 
 function emptyState(): SerializedSessionState {

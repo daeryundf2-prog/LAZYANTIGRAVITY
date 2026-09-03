@@ -26,16 +26,25 @@ export function withSessionStateLock<T>(cachePath: string, callback: () => T): S
 			try {
 				return callback();
 			} finally {
-				rmSync(lockPath, { recursive: true, force: true });
+				try {
+					rmSync(lockPath, { recursive: true, force: true });
+				} catch {
+					// Ignore transient release collision on Windows
+				}
 			}
 		} catch (error) {
-			if (errorCode(error) === "EEXIST") {
+			const code = errorCode(error);
+			if (code === "EEXIST" || (process.platform === "win32" && (code === "EPERM" || code === "EACCES"))) {
 				// Check for stale lock
 				try {
 					const stat = statSync(lockPath);
 					const age = Date.now() - stat.mtimeMs;
 					if (age > STALE_LOCK_THRESHOLD_MS) {
-						rmSync(lockPath, { recursive: true, force: true });
+						try {
+							rmSync(lockPath, { recursive: true, force: true });
+						} catch {
+							// Stale cleanup failed
+						}
 						continue;
 					}
 				} catch {

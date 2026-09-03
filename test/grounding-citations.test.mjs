@@ -122,3 +122,79 @@ test("renderGroundingCitations CLI runs and outputs markdown footnotes", () => {
 	assert.equal(data.total_citations, 1);
 	assert.match(data.rendered_text, /\[\^1\]/);
 });
+
+test("renderGroundingCitations converts Protobuf UTF-8 byte offsets for CJK text", () => {
+	// "인공지능 모델" is 7 chars, but 19 UTF-8 bytes:
+	// "인공지능" (12 bytes) + " " (1 byte) + "모델" (6 bytes) = 19 bytes.
+	const text = "인공지능 모델이 생성한 텍스트입니다.";
+	const firstSentenceBytes = Buffer.byteLength("인공지능 모델", "utf8"); // 19
+
+	const metadata = {
+		grounding_chunks: [
+			{ url: "https://ai.example.com", title: "AI Model Paper" },
+		],
+		grounding_supports: [
+			{
+				segment: { startIndex: 0, endIndex: firstSentenceBytes, text: "인공지능 모델" }, // byte offset 19, char index 7
+				grounding_chunk_indices: [0],
+			},
+		],
+	};
+
+	const result = renderGroundingCitations({ text, grounding_metadata: metadata });
+	assert.equal(result.ok, true);
+	assert.equal(result.total_citations, 1);
+	assert.match(result.rendered_text, /^인공지능 모델\[\^1\]이 생성한 텍스트입니다\./);
+});
+
+test("renderGroundingCitations coalesces multiple supports at identical positions without duplicates", () => {
+	const text = "Grounded fact statement.";
+	const metadata = {
+		grounding_chunks: [
+			{ url: "https://source1.org", title: "Source 1" },
+			{ url: "https://source2.org", title: "Source 2" },
+		],
+		grounding_supports: [
+			{
+				segment: { startIndex: 0, endIndex: text.length },
+				grounding_chunk_indices: [0],
+			},
+			{
+				segment: { startIndex: 0, endIndex: text.length },
+				grounding_chunk_indices: [1, 0], // includes chunk 0 again
+			},
+		],
+	};
+
+	const result = renderGroundingCitations({ text, grounding_metadata: metadata });
+	assert.equal(result.ok, true);
+	assert.equal(result.total_citations, 2);
+	// Footnotes should be coalesced: [^1][^2], not [^1][^1][^2]
+	assert.match(result.rendered_text, /Grounded fact statement\.\[\^1\]\[\^2\]/);
+	assert.doesNotMatch(result.rendered_text, /\[\^1\]\[\^1\]/);
+});
+
+test("renderGroundingCitations protects surrogate pair emoji boundaries", () => {
+	// "Alert: 🚨 Incident reported."
+	// 🚨 is \uD83D\uDEA8 (surrogate pair, 2 chars)
+	const text = "Alert: 🚨 Incident reported.";
+	const alertIndex = text.indexOf("🚨"); // 7
+	// If an offset improperly lands at alertIndex + 1 (bisecting the surrogate pair):
+	const metadata = {
+		grounding_chunks: [
+			{ url: "https://security.example.com", title: "Sec Notice" },
+		],
+		grounding_supports: [
+			{
+				segment: { startIndex: 0, endIndex: alertIndex + 1 }, // Bisects surrogate!
+				grounding_chunk_indices: [0],
+			},
+		],
+	};
+
+	const result = renderGroundingCitations({ text, grounding_metadata: metadata });
+	assert.equal(result.ok, true);
+	// Should adjust past the full emoji, keeping the emoji intact
+	assert.match(result.rendered_text, /Alert: 🚨\[\^1\] Incident reported\./);
+});
+

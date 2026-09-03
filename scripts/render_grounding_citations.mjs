@@ -105,6 +105,44 @@ export function parseGroundingMetadata(rawMeta) {
 	};
 }
 
+function byteOffsetToCharIndex(str, byteOffset) {
+	if (typeof byteOffset !== "number" || byteOffset <= 0) return 0;
+	const buf = Buffer.from(str, "utf8");
+	if (byteOffset >= buf.length) return str.length;
+	return buf.subarray(0, byteOffset).toString("utf8").length;
+}
+
+function resolveOffsets(rawText, sIdx, eIdx, segText) {
+	if (sIdx < 0 || eIdx <= sIdx) return [sIdx, eIdx];
+	const byteLen = Buffer.byteLength(rawText, "utf8");
+	if (eIdx > rawText.length && eIdx <= byteLen) {
+		return [byteOffsetToCharIndex(rawText, sIdx), byteOffsetToCharIndex(rawText, eIdx)];
+	}
+	if (segText && segText.trim()) {
+		const trimmed = segText.trim();
+		if (eIdx <= rawText.length && rawText.slice(sIdx, eIdx).trim() === trimmed) {
+			return [sIdx, eIdx];
+		}
+		const charStart = byteOffsetToCharIndex(rawText, sIdx);
+		const charEnd = byteOffsetToCharIndex(rawText, eIdx);
+		if (charEnd <= rawText.length && rawText.slice(charStart, charEnd).trim() === trimmed) {
+			return [charStart, charEnd];
+		}
+	}
+	return [sIdx, eIdx];
+}
+
+function adjustForSurrogate(str, pos) {
+	if (pos > 0 && pos < str.length) {
+		const prev = str.charCodeAt(pos - 1);
+		const curr = str.charCodeAt(pos);
+		if (prev >= 0xd800 && prev <= 0xdbff && curr >= 0xdc00 && curr <= 0xdfff) {
+			return pos + 1;
+		}
+	}
+	return pos;
+}
+
 /**
  * Renders verified markdown inline citations and footnotes.
  *
@@ -160,32 +198,47 @@ export function renderGroundingCitations(options) {
 
 	// Track which chunks are actually cited
 	const citedChunkIndices = new Set();
-	const insertions = []; // { pos: insertionPos, chunkIndices: [...] }
+	const posMap = new Map(); // pos -> Set of chunkIndices
+	let mappedSupportCount = 0;
 
 	for (const sup of validSupports) {
 		let insertPos = -1;
+		const [sIdx, eIdx] = resolveOffsets(rawText, sup.startIndex, sup.endIndex, sup.text);
 
-		if (sup.startIndex >= 0 && sup.endIndex > sup.startIndex && sup.endIndex <= rawText.length) {
-			insertPos = sup.endIndex;
+		if (sIdx >= 0 && eIdx > sIdx && eIdx <= rawText.length) {
+			insertPos = eIdx;
 		} else if (sup.text && sup.text.trim()) {
-			// Find text occurrence
-			const foundIdx = rawText.indexOf(sup.text.trim());
+			const searchFrom = sIdx >= 0 && sIdx < rawText.length ? sIdx : 0;
+			let foundIdx = rawText.indexOf(sup.text.trim(), searchFrom);
+			if (foundIdx === -1 && searchFrom > 0) {
+				foundIdx = rawText.indexOf(sup.text.trim(), 0);
+			}
 			if (foundIdx !== -1) {
 				insertPos = foundIdx + sup.text.trim().length;
 			}
 		}
 
 		if (insertPos !== -1) {
+			mappedSupportCount++;
+			insertPos = adjustForSurrogate(rawText, insertPos);
+			if (!posMap.has(insertPos)) {
+				posMap.set(insertPos, new Set());
+			}
 			for (const ci of sup.chunkIndices) {
 				if (ci >= 0 && ci < grounding_chunks.length) {
 					citedChunkIndices.add(ci);
+					posMap.get(insertPos).add(ci);
 				}
 			}
-			insertions.push({
-				pos: insertPos,
-				chunkIndices: sup.chunkIndices.filter((ci) => ci >= 0 && ci < grounding_chunks.length),
-			});
 		}
+	}
+
+	const insertions = [];
+	for (const [pos, cSet] of posMap.entries()) {
+		insertions.push({
+			pos,
+			chunkIndices: Array.from(cSet).sort((a, b) => a - b),
+		});
 	}
 
 	// If no insertions could be mapped by offsets or segment text,
@@ -199,9 +252,10 @@ export function renderGroundingCitations(options) {
 			}
 		}
 		if (citedChunkIndices.size > 0) {
+			mappedSupportCount = validSupports.length;
 			insertions.push({
 				pos: rawText.trimEnd().length,
-				chunkIndices: Array.from(citedChunkIndices),
+				chunkIndices: Array.from(citedChunkIndices).sort((a, b) => a - b),
 			});
 		}
 	}
@@ -267,7 +321,7 @@ export function renderGroundingCitations(options) {
 		}
 	}
 
-	const supportedSegmentCount = insertions.length;
+	const supportedSegmentCount = mappedSupportCount;
 	const groundingCoverage = Number(
 		(supportedSegmentCount / Math.max(grounding_supports.length, 1)).toFixed(2),
 	);
@@ -286,7 +340,7 @@ export function renderGroundingCitations(options) {
 // CLI runner
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
 	const args = process.argv.slice(2);
-	if (args.includes("--help") || args.includes("-h") || args.length === 0) {
+	if (args.includes("--help") || args.includes("-h") || (args.length === 0 && process.stdin.isTTY)) {
 		console.log(`
 Usage: render_grounding_citations.mjs [options]
 
@@ -326,6 +380,17 @@ Options:
 			format = args[i + 1];
 			i++;
 		}
+	}
+
+	if (!text && !metadata && !process.stdin.isTTY) {
+		try {
+			const input = fs.readFileSync(0, "utf8");
+			if (input.trim()) {
+				const parsed = JSON.parse(input);
+				text = parsed.text || "";
+				metadata = parsed.grounding_metadata || parsed.groundingMetadata || null;
+			}
+		} catch {}
 	}
 
 	const result = renderGroundingCitations({
