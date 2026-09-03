@@ -82,3 +82,14 @@ test("dispatcher injects high-fidelity grounding directive when triggered (Secti
 	assert.ok(ctx.includes("Strict Non-Parametric"), "strict non-parametric guidance expected");
 });
 
+test("dispatcher injects Med-Gemini uncertainty-guided search directive on high uncertainty (Section 4.3)", () => {
+	const ctx = runDispatcher({
+		hook_event_name: "UserPromptSubmit",
+		session_id: "acc-test",
+		prompt: "개인정보보호법 조문과 최신 릴리즈 API 보안 취약점 CVE-2024-9999 상세 조사",
+	});
+	assert.ok(ctx.includes("uncertainty-guided-search"), "uncertainty-guided-search directive expected");
+	assert.ok(ctx.includes("Med-Gemini Protocol"), "Med-Gemini protocol header expected");
+});
+
+

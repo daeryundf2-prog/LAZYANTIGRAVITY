@@ -31,4 +31,7 @@ test("#given bundled Hephaestus rules #when inspected #then factual claims requi
 	assert.match(text, /LangExtract Span-Level Grounding & Verbatim Quote/i);
 	assert.match(text, /Thinking Budget 2-Phase Cognitive Decoupling/i);
 	assert.match(text, /Phase 1 \(Thinking Trace\)[\s\S]*Phase 2 \(Response Formulation\)/i);
+	assert.match(text, /Korean Government Agency & Ministry Hallucination Ban/i);
+	assert.match(text, /정보통신부[\s\S]*문화공보부[\s\S]*사이버수사처/i);
 });
+

@@ -44,3 +44,25 @@ flowchart TD
 # 파일 스켈레톤 추출 및 출력
 node ~/.gemini/config/plugins/lazyantigravity/scripts/ast-skeletonizer.mjs src/services/auth.ts
 ```
+
+---
+
+## Med-Gemini Uncertainty-Guided Search (Section 4.3)
+
+Google DeepMind Med-Gemini 연구 기반의 **불확실성 및 다중 경로 엔트로피 측정 기반 검색 트리거(Uncertainty-Guided Search Trigger)**:
+
+1. **에피스테믹 불확실성(Epistemic Uncertainty) 평가**:
+   - 시간 민감 정보(최신 버전/릴리즈), 고위험 법령/판례, CVE 취약점, 수치 벤치마크, 모호성 표현을 감지하여 0.0~1.0 불확실성 점수를 계산.
+   - 점수 >= 0.50 시 자동으로 `<uncertainty-guided-search>` 디렉티브를 주입하여 파라메트릭 메모리 과신을 금지하고 검색 도구 호출을 강제.
+2. **다중 추론 경로 엔트로피(Multi-Path Entropy) 측정**:
+   - 여러 가설/추론 경로(`hypotheses`) 간의 섀넌 엔트로피(Shannon Entropy) 및 상반 결론(Polarity Contradiction)을 측정.
+   - 엔트로피 >= 0.40 또는 상반 결론 감지 시 외부 검색을 즉시 발동하여 타이 브레이킹(Tie-breaking) 및 팩트 그라운딩 수행.
+
+```bash
+# 단일 프롬프트 불확실성 평가
+lazyantigravity-adaptive-reasoning uncertainty "React 19 최신 릴리즈 API 변경점"
+
+# 다중 추론 경로 엔트로피 측정
+lazyantigravity-adaptive-reasoning entropy "가설 1: 성립함" "가설 2: 불성립함 (기각)"
+```
+

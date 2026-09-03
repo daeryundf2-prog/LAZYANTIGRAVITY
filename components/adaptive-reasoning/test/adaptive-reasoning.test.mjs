@@ -172,3 +172,47 @@ test("computeUncertainty triggers external grounding for high uncertainty prompt
 	assert.ok(directive.includes("Uncertainty-Guided Search Trigger"));
 	assert.match(directive, /Overconfidence ban/i);
 });
+
+test("evaluateHypothesisEntropy measures consensus vs divergence across reasoning paths (Section 4.3)", async () => {
+	const { evaluateHypothesisEntropy } = await import("../dist/uncertainty.js");
+
+	// High consensus paths (agreeing)
+	const agreeingPaths = [
+		"결론: 해당 조항은 유효하며 성립한다 (true).",
+		"분석: 조항 요건이 일치하여 유효하다 (true).",
+		"검토: 법리상 유효하며 성립하는 것으로 판단된다 (true).",
+	];
+	const agreeRes = evaluateHypothesisEntropy(agreeingPaths);
+	assert.equal(agreeRes.conflicting, false);
+	assert.equal(agreeRes.triggerSearch, false);
+	assert.ok(agreeRes.entropy <= 0.2);
+	assert.equal(agreeRes.agreementRatio, 1.0);
+
+	// Conflicting paths (divergent polarity)
+	const conflictingPaths = [
+		"가설 1: 보안 취약점이 존재하며 공격 성립이 가능하다 (valid).",
+		"가설 2: 패치가 적용되어 취약점이 부존재하며 공격이 불가하다 (invalid, refuted).",
+	];
+	const conflictRes = evaluateHypothesisEntropy(conflictingPaths);
+	assert.equal(conflictRes.conflicting, true);
+	assert.equal(conflictRes.triggerSearch, true);
+	assert.ok(conflictRes.reasons.some((r) => r.includes("polarity contradiction") || r.includes("entropy")));
+});
+
+test("computeMultiPathUncertainty elevates uncertainty when paths diverge (Section 4.3)", async () => {
+	const { computeMultiPathUncertainty, formatUncertaintyDirective } = await import("../dist/uncertainty.js");
+
+	const paths = [
+		"경로 A: 피고의 고의가 인정됨 (true)",
+		"경로 B: 피고의 과실만 인정되며 고의는 기각됨 (false, refuted)",
+	];
+	const res = computeMultiPathUncertainty("피고의 책임 유무 검토", paths);
+	assert.equal(res.triggerSearch, true);
+	assert.ok(res.entropyEvaluation);
+	assert.equal(res.entropyEvaluation.conflicting, true);
+
+	const directive = formatUncertaintyDirective(res);
+	assert.ok(directive.includes("Multi-Path Entropy"));
+	assert.ok(directive.includes("Section 4.3"));
+});
+
