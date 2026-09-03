@@ -15,6 +15,8 @@ export const ULW_LOOP_HELP = `Usage:
   lazyantigravity ulw-loop resume [--json]
   lazyantigravity ulw-loop dry-run [--scenario <scenario>] [--json]
   lazyantigravity ulw-loop verify-ledger [--json]
+  lazyantigravity ulw-loop cove-verify <draft.md> [--file <path>] [--kb <ref.txt>] [--strict] [--json] [--output <out.md>]
+  lazyantigravity ulw-loop safe-eval <file.md> [--file <path>] [--kb <ref.txt>] [--strict] [--json]
 
 Alias: \`omo ulw-loop\` is accepted. --codex-goal-json is optional (Codex snapshots only).
 All subcommands accept [--session-id <id>] to isolate state under .omo/ulw-loop/<id>/; without it, Codex session env is used when present.`;

@@ -123,4 +123,6 @@ export interface SubagentResultEnvelope {
     blockers: string[];
     nextRecommendedAction: string;
     requiresParentAck: boolean;
+    factualityScore?: number;
+    coveVerified?: boolean;
 }

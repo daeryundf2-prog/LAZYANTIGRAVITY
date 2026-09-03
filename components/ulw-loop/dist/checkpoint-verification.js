@@ -32,6 +32,19 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
     const artifactsGenerated = subResult?.artifactsGenerated || [];
     const completedRoles = subResult ? [subResult.role] : [];
     const acknowledgedRoles = isAck && subResult ? [subResult.role] : [];
+    let qgParsed;
+    if (args.qualityGateJson) {
+        try {
+            qgParsed = JSON.parse(args.qualityGateJson);
+        }
+        catch { }
+    }
+    const factualityScore = typeof subResult?.factualityScore === "number"
+        ? subResult.factualityScore
+        : (typeof qgParsed?.["factualityScore"] === "number" ? qgParsed["factualityScore"] : undefined);
+    const coveVerified = subResult?.coveVerified !== undefined
+        ? subResult.coveVerified
+        : (typeof qgParsed?.["coveVerified"] === "boolean" ? qgParsed["coveVerified"] : undefined);
     const evidenceEnvelope = {
         goal: goal.objective,
         summary: evidence || subResult?.summary || "",
@@ -42,6 +55,8 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         completedRoles,
         acknowledgedRoles,
         dryRunSafety: true,
+        ...(factualityScore !== undefined ? { factualityScore } : {}),
+        ...(coveVerified !== undefined ? { coveVerified } : {}),
     };
     const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
     const passEvent = events.find((e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint);

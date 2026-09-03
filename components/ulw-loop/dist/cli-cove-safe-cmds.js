@@ -17,6 +17,10 @@ function getPluginRoot(repoRoot) {
     return repoRoot;
 }
 export async function coveVerifyCmd(repoRoot, argv, json) {
+    if (hasFlag(argv, "--help") || hasFlag(argv, "-h")) {
+        process.stdout.write("Usage: ulw-loop cove-verify <draft_file.md> [--file <path>] [--kb <ref.txt>] [--strict] [--json] [--output <out.md>]\n");
+        return 0;
+    }
     const file = readValue(argv, "--file") || argv.find((a) => !a.startsWith("-"));
     if (!file) {
         throw new UlwLoopError("Missing draft file argument (or --file <path>)", "ULW_LOOP_ARGUMENT_MISSING");
@@ -50,6 +54,10 @@ export async function coveVerifyCmd(repoRoot, argv, json) {
     return res.status ?? (res.error ? 1 : 0);
 }
 export async function safeEvalCmd(repoRoot, argv, json) {
+    if (hasFlag(argv, "--help") || hasFlag(argv, "-h")) {
+        process.stdout.write("Usage: ulw-loop safe-eval <file.md> [--file <path>] [--kb <reference.txt>] [--strict] [--json]\n");
+        return 0;
+    }
     const file = readValue(argv, "--file") || argv.find((a) => !a.startsWith("-"));
     if (!file) {
         throw new UlwLoopError("Missing file argument (or --file <path>)", "ULW_LOOP_ARGUMENT_MISSING");

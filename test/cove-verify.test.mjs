@@ -111,3 +111,13 @@ test("ulw-loop semantic gate validates requireCoveVerification and coveVerified 
 	});
 	assert.equal(resPassed.status, "passed");
 });
+
+test("ulw-loop cove-verify --help exits 0 with usage guide", async () => {
+	const { spawnSync } = await import("node:child_process");
+	const { fileURLToPath } = await import("node:url");
+	const cliPath = fileURLToPath(new URL("../components/ulw-loop/dist/cli.js", import.meta.url));
+	const res = spawnSync(process.execPath, [cliPath, "ulw-loop", "cove-verify", "--help"], { encoding: "utf8" });
+	assert.equal(res.status, 0);
+	assert.match(res.stdout, /Usage: ulw-loop cove-verify/);
+});
+

@@ -48,7 +48,7 @@ test("lookup_statute retrieves verified civil and PII statute articles", () => {
 });
 
 test("lookup_statute prevents hallucination with [INSUFFICIENT_DATA] on non-existent provisions", () => {
-	const res = callTool("lookup_statute", { statute_name: "민법", article_number: "99999" });
+	const res = callTool("lookup_statute", { statute_name: "민법", article_number: "50" });
 	assert.equal(res.ok, false);
 	assert.equal(res.grounding_status, "UNVERIFIED");
 	assert.match(res.error, /INSUFFICIENT_DATA/);
@@ -99,5 +99,35 @@ test("lookup_precedent verifies digital forensic landmark precedents (2011도107
 	assert.equal(resWarrant.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
 	assert.match(resWarrant.precedent.name, /압수수색/);
 });
+
+test("lookup_statute rejects fabricated out-of-bounds statute articles", () => {
+	const resCivil = callTool("lookup_statute", { statute_name: "민법", article_number: "1500" });
+	assert.equal(resCivil.ok, false);
+	assert.equal(resCivil.grounding_status, "FABRICATED_ARTICLE_OUT_OF_BOUNDS");
+	assert.match(resCivil.error, /현행 민법은 제1조~제1118조/);
+
+	const resPii = callTool("lookup_statute", { statute_name: "개인정보보호법", article_number: "99" });
+	assert.equal(resPii.ok, false);
+	assert.equal(resPii.grounding_status, "FABRICATED_ARTICLE_OUT_OF_BOUNDS");
+	assert.match(resPii.error, /현행 개인정보보호법은 제1조~제76조/);
+});
+
+test("lookup_precedent rejects future year precedents and invalid case codes", () => {
+	const resFuture = callTool("lookup_precedent", { case_number: "2030다12345" });
+	assert.equal(resFuture.ok, false);
+	assert.equal(resFuture.grounding_status, "INVALID_FUTURE_PRECEDENT");
+	assert.match(resFuture.error, /미래 연도 판결 인용/);
+
+	const resPre1948 = callTool("lookup_precedent", { case_number: "1910다12345" });
+	assert.equal(resPre1948.ok, false);
+	assert.equal(resPre1948.grounding_status, "INVALID_PRE_1948_PRECEDENT");
+	assert.match(resPre1948.error, /대한민국 사법부 수립 이전/);
+
+	const resFakeCode = callTool("lookup_precedent", { case_number: "2024쀍12345" });
+	assert.equal(resFakeCode.ok, false);
+	assert.equal(resFakeCode.grounding_status, "INVALID_CASE_CODE");
+	assert.match(resFakeCode.error, /비표준 사건부호/);
+});
+
 
 

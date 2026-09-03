@@ -60,7 +60,7 @@ async function collectSources() {
 	return sources;
 }
 
-const TARGET_KEY_RE = /^(file_path|filepath|target|target_file|targetfile|target_path|targetpath|output|path)$/i;
+const TARGET_KEY_RE = /^(file_path|filepath|path|target|target_file|targetfile|target_path|targetpath|output|file|filename)$/i;
 const PATH_LIKE_RE = /([^\s"'`<>|;&]+[\/\\][^\s"'`<>|;&]+\.json)/i;
 
 function extractTargetFromNode(node, out) {

@@ -83,6 +83,50 @@ const LANDMARK_PRECEDENTS = {
 	}
 };
 
+const STATUTE_BOUNDS = {
+	"민법": 1118,
+	"형법": 372,
+	"개인정보보호법": 76,
+	"정보통신망법": 76,
+	"전자문서법": 37,
+	"부정경쟁방지법": 18,
+	"상법": 935,
+	"민사소송법": 502,
+	"형사소송법": 493,
+	"행정소송법": 46,
+	"근로기준법": 116,
+	"특정금융정보법": 22,
+	"전자상거래법": 45,
+	"자본시장법": 449,
+	"신용정보법": 53,
+	"소비자기본법": 86,
+	"가사소송법": 72,
+	"특허법": 232,
+	"저작권법": 142
+};
+
+const VALID_CASE_CODES = new Set([
+	// 민사
+	"가단", "가합", "가소", "나", "다", "라", "마", "그", "바", "자", "차",
+	// 보전처분 / 민사신청
+	"카", "카단", "카합", "카기", "카담", "카조", "카열", "카경",
+	// 형사
+	"고단", "고합", "고약", "노", "도", "로", "모", "오", "보", "코",
+	// 가사소송 및 가사비송
+	"드", "드단", "드합", "르", "르단", "르합", "므", "스", "으",
+	"느", "느단", "느합", "즈", "즈단", "즈합",
+	// 도산 / 회생 / 파산
+	"회단", "회합", "회개", "개회", "개단", "개합", "하단", "하합", "하면", "개확",
+	// 행정 / 특허
+	"구", "구합", "구단", "누", "두", "루", "무", "허",
+	// 헌법재판소
+	"헌가", "헌나", "헌다", "헌라", "헌마", "헌바", "헌사", "헌아",
+	// 소년보호
+	"푸", "버",
+	// 재심
+	"재가단", "재가합", "재다", "재나", "재도", "재노", "재고단", "재고합"
+]);
+
 function textResult(payload, isError = false) {
 	return {
 		content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
@@ -130,6 +174,18 @@ async function lookupStatute(args) {
 
 	const articleNum = args.article_number ? normalizeArticleNumber(args.article_number) : "";
 	if (articleNum) {
+		const maxArt = STATUTE_BOUNDS[statuteKey];
+		const baseNum = parseInt(articleNum.split("-")[0], 10);
+		if (maxArt && !isNaN(baseNum) && (baseNum < 1 || baseNum > maxArt)) {
+			return textResult({
+				ok: false,
+				statute_name: statuteKey,
+				article_number: articleNum,
+				error: `[법령 조문 날조] ${statuteKey} 제${articleNum}조는 존재하지 않습니다. 현행 ${statuteKey}은 제1조~제${maxArt}조까지만 존재합니다.`,
+				grounding_status: "FABRICATED_ARTICLE_OUT_OF_BOUNDS"
+			}, true);
+		}
+
 		let article = statuteData[articleNum];
 		let resolvedNum = articleNum;
 		if (!article) {
@@ -198,17 +254,44 @@ async function lookupPrecedent(args) {
 	}
 
 	// Validate Korean precedent case number pattern: e.g. 2023다12345, 2020도1234
-	const CASE_NO_RE = /(\d{4})\s*([가-힣]{1,3})\s*(\d+)/;
+	const CASE_NO_RE = /(\d{4})\s*([가-힣]{1,4})\s*(\d+)/;
 	let parsedCase = null;
 	if (rawCase) {
 		const match = rawCase.match(CASE_NO_RE);
 		if (match) {
 			parsedCase = {
-				year: match[1],
+				year: parseInt(match[1], 10),
 				court_code: match[2],
 				serial: match[3],
 				canonical_number: `${match[1]}${match[2]}${match[3]}`
 			};
+		}
+	}
+
+	if (parsedCase) {
+		if (parsedCase.year > 2026) {
+			return textResult({
+				ok: false,
+				case_number: parsedCase.canonical_number,
+				error: `[판례 날조] 미래 연도 판결 인용: ${parsedCase.canonical_number} — 현재 연도(2026년)보다 미래의 사건번호는 날조된 환각입니다.`,
+				grounding_status: "INVALID_FUTURE_PRECEDENT"
+			}, true);
+		}
+		if (parsedCase.year < 1948) {
+			return textResult({
+				ok: false,
+				case_number: parsedCase.canonical_number,
+				error: `[판례 날조] 대한민국 사법부 수립 이전 연도 판결: ${parsedCase.canonical_number} (1948년 이전).`,
+				grounding_status: "INVALID_PRE_1948_PRECEDENT"
+			}, true);
+		}
+		if (!VALID_CASE_CODES.has(parsedCase.court_code)) {
+			return textResult({
+				ok: false,
+				case_number: parsedCase.canonical_number,
+				error: `[판례 부호 의심] 비표준 사건부호 인용: '${parsedCase.court_code}' in ${parsedCase.canonical_number}. 대법원 규격 사건부호가 아닙니다.`,
+				grounding_status: "INVALID_CASE_CODE"
+			}, true);
 		}
 	}
 
@@ -317,7 +400,7 @@ async function main() {
 				process.stdout.write(`${JSON.stringify(response)}\n`);
 			}
 		} catch (err) {
-			process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } })}\n`);
+			process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32700, message: `Parse error: ${err.message}` } })}\n`);
 		}
 	}
 }

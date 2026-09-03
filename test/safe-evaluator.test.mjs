@@ -140,6 +140,61 @@ test("markdown_structure_guard and json_schema_guard recognize TargetFile parame
 	});
 	assert.equal(resJson.status, 1);
 	assert.match(resJson.stderr, /JSON SCHEMA GUARD/);
+
+	// 3. markdown guard with 'file' key
+	const resFile = spawnSync("node", [MD_GUARD], {
+		input: JSON.stringify({ file: brokenMd }),
+		encoding: "utf8",
+	});
+	assert.equal(resFile.status, 1);
+	assert.match(resFile.stderr, /MARKDOWN GUARD/);
+
+	// 4. json guard with 'filename' key
+	const resFilename = spawnSync("node", [JSON_GUARD], {
+		input: JSON.stringify({ filename: brokenJson }),
+		encoding: "utf8",
+	});
+	assert.equal(resFilename.status, 1);
+	assert.match(resFilename.stderr, /JSON SCHEMA GUARD/);
 });
+
+test("ulw-loop safe-eval --help exits 0 with usage guide", () => {
+	const CLI = fileURLToPath(new URL("../components/ulw-loop/dist/cli.js", import.meta.url));
+	const res = spawnSync("node", [CLI, "ulw-loop", "safe-eval", "--help"], { encoding: "utf8" });
+	assert.equal(res.status, 0);
+	assert.match(res.stdout, /Usage: ulw-loop safe-eval/);
+});
+
+test("checkpoint quality gate validates policy with preserved factualityScore", async () => {
+	const { runSemanticGate } = await import("../components/ulw-loop/dist/verification-gates.js");
+	const ctx = {
+		runId: "checkpoint-gate-run",
+		events: [],
+		goal: "Verify factuality score propagation",
+		evidence: {
+			goal: "Verify factuality score propagation",
+			summary: "Passed evaluation",
+			filesChanged: [],
+			commandsRun: [],
+			testResults: [],
+			artifactsGenerated: [],
+			completedRoles: [],
+			acknowledgedRoles: [],
+			dryRunSafety: true,
+			factualityScore: 0.95,
+			coveVerified: true
+		}
+	};
+	const res = runSemanticGate(ctx, {
+		requireTests: false,
+		requireLint: false,
+		requireFactualityScore: true,
+		minFactualityScore: 0.85,
+		requireCoveVerification: true,
+		consensusTriggers: { riskLevelHigh: false, destructiveChange: false, publicRelease: false, securitySensitive: false }
+	});
+	assert.equal(res.status, "passed");
+});
+
 
 
