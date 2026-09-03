@@ -121,6 +121,23 @@ function extractTarget(sources) {
 // 구조 무결성 검사 — "고신뢰 손상 시그니처"만 차단한다 (허위 블록 방지)
 // ---------------------------------------------------------------------------
 
+function maskCodeSpans(lines) {
+	let inFence = false;
+	return lines.map((line) => {
+		if (/^\s*(```|~~~)/.test(line)) {
+			inFence = !inFence;
+			return '·'.repeat(line.length);
+		}
+		if (inFence) {
+			return '·'.repeat(line.length);
+		}
+		if (/^#+\s/.test(line)) {
+			return '·'.repeat(line.length);
+		}
+		return line.replace(/`[^`\n]*`/g, (m) => '·'.repeat(m.length));
+	});
+}
+
 const FINDING_CHECKS = [
 	{
 		id: 'empty_link_text',
@@ -209,6 +226,50 @@ const FINDING_CHECKS = [
 				else flush(i + 1);
 			});
 			flush(lines.length);
+			return hits;
+		},
+	},
+	{
+		id: 'unclosed_evidence_tag',
+		message: '미닫힘 <evidence> 또는 <answer> 태그 — Evidence-First Attributed QA 태그 쌍이 맞지 않는다',
+		run: (lines) => {
+			const maskedText = maskCodeSpans(lines).join('\n');
+			const hits = [];
+			const openEvidence = (maskedText.match(/<evidence>/gi) || []).length;
+			const closeEvidence = (maskedText.match(/<\/evidence>/gi) || []).length;
+			const openAnswer = (maskedText.match(/<answer>/gi) || []).length;
+			const closeAnswer = (maskedText.match(/<\/answer>/gi) || []).length;
+			if (openEvidence !== closeEvidence || openAnswer !== closeAnswer) {
+				hits.push(lines.length);
+			}
+			return hits;
+		},
+	},
+	{
+		id: 'empty_evidence_block',
+		message: '빈 <evidence></evidence> 블록 — 근거 인용 원문이 누락되었다',
+		run: (lines) => {
+			const masked = maskCodeSpans(lines);
+			const full = masked.join('\n');
+			const hits = [];
+			const re = /<evidence>\s*<\/evidence>/gi;
+			let match;
+			while ((match = re.exec(full)) !== null) {
+				const lineNo = full.slice(0, match.index).split('\n').length;
+				hits.push(lineNo);
+			}
+			return hits;
+		},
+	},
+	{
+		id: 'broken_citation_token',
+		message: '깨진 인라인 인용 토큰(【F:...†L...】) 발견 — LangExtract 1:1 바인딩 위반 및 렌더링 손상',
+		run: (lines) => {
+			const masked = maskCodeSpans(lines);
+			const hits = [];
+			masked.forEach((line, i) => {
+				if (/【F:[^】]+†L\d+[^】]*】/.test(line)) hits.push(i + 1);
+			});
 			return hits;
 		},
 	},

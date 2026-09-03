@@ -144,7 +144,7 @@ test("concurrent sessions can snapshot without corrupting nodes.json", () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "st-concurrent-"));
 	try {
 		initGitRepo(tempDir);
-		const cli = new URL("../dist/cli.js", import.meta.url).pathname;
+		const cli = cliPath;
 		const procs = [1, 2, 3].map((i) =>
 			spawnSync("node", [cli, "snapshot", `Concurrent ${i}`], { cwd: tempDir, encoding: "utf8" }),
 		);

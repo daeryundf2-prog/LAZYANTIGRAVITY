@@ -55,10 +55,15 @@ export function computeThinkingBudget(prompt) {
     };
 }
 export function formatThinkingBudgetDirective(decision) {
+    const decouplingSection = decision.level !== "off"
+        ? `\n## 2-Phase Cognitive Decoupling (Anti-Rationalization Protocol)
+- Phase 1 (Thinking Trace): Prohibit post-hoc rationalization. Record ONLY raw data presence/absence, observed facts, and counter-evidence. If a hypothesis fails any observation, discard it immediately.
+- Phase 2 (Response Formulation): Assert ONLY facts and conclusions that survived Phase 1 without contradiction.`
+        : "";
     return `<adaptive-thinking-budget>
 # Adaptive Reasoning Scaling (Gemini 3.7)
 - Recommended Model Tier: Subagents[].Model = "${decision.tier}"
 - Dynamic Thinking Budget: ${decision.budget} tokens (${decision.level.toUpperCase()})
-- Routing Rationale: ${decision.rationale}
+- Routing Rationale: ${decision.rationale}${decouplingSection}
 </adaptive-thinking-budget>`;
 }

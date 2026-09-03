@@ -35,10 +35,11 @@ flowchart TD
 - **250 LOC Ceiling**: 단일 파일 250줄 초과 금지 (모듈 단위 즉시 분리).
 - **TDD (Test-Driven Development)**: 실패하는 테스트를 먼저 작성하고 최소 변경으로 통과.
 
-### Stage 4: Pro-Tier 5-Oracle Gate (Pro 모델 5대 전담 오라클 검증)
+### Stage 4: Pro-Tier Oracle Gate (Pro 모델 전담 오라클 검증)
 - 구현 완료 후, **모든 핵심 검증 오라클을 `Model: "pro"`로 상향**하여 병렬 실행:
   - 🛡️ **Security Oracle (Pro, Blocking)**: 주입 공격, 권한 경계, 경로 탈출 전수 검사
   - 🧠 **Code Quality Oracle (Pro, Blocking)**: 논리 오류, 타입 불변식, 회귀 결함 검사
+  - 🕵️ **fact-mentor Adversarial Oracle (Pro, Blocking)**: 가짜 파일 경로, 버전 날조, 비공식 API 호출 및 허위 벤치마크 수치 전수 반증 감사
   - 🧪 **Hands-on QA Oracle (Pro, Blocking)**: 실제 런타임 실행 및 에지 케이스 결함 입증
   - 👁️ **Visual & CJK Oracle (Flash, Advisory)**: 한글 텍스트 클리핑 및 레이아웃 정합성 검사
   - ⚡ **Performance Oracle (Flash, Advisory)**: 메모리 누수 및 복잡도 병목 검사

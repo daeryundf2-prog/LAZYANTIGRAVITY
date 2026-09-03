@@ -118,9 +118,16 @@
 					},
 					{
 						"type": "command",
-						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node ${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
 						"timeout": 5,
 						"statusMessage": "LazyAntigravity(0.7.0): Markdown Structure Guard (스트리핑/빈 링크/표 불일치)",
+						"failurePolicy": "FAIL_CLOSED"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/json_schema_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Json Schema Guard (스키마 무결성 및 Instructor 자가 수정)",
 						"failurePolicy": "FAIL_CLOSED"
 					}
 				]

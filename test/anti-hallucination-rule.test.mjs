@@ -24,4 +24,11 @@ test("#given bundled Hephaestus rules #when inspected #then factual claims requi
 	assert.match(text, /child-agent[\s\S]*tool-wrapper output[\s\S]*leads/i);
 	assert.match(text, /current observations[\s\S]*memory[\s\S]*completed work[\s\S]*remaining risk/i);
 	assert.match(text, /implemented locally[\s\S]*tests passed[\s\S]*pushed[\s\S]*deployed[\s\S]*production-ready/i);
+	assert.match(text, /Strict Abstention & Fallback Token Protocol/i);
+	assert.match(text, /\[INSUFFICIENT_DATA/i);
+	assert.match(text, /Evidence-First Attributed QA Protocol/i);
+	assert.match(text, /<evidence>/i);
+	assert.match(text, /LangExtract Span-Level Grounding & Verbatim Quote/i);
+	assert.match(text, /Thinking Budget 2-Phase Cognitive Decoupling/i);
+	assert.match(text, /Phase 1 \(Thinking Trace\)[\s\S]*Phase 2 \(Response Formulation\)/i);
 });

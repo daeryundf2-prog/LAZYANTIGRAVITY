@@ -1,23 +1,22 @@
 import { computeThinkingBudget, formatThinkingBudgetDirective } from "./budget-scaler.js";
+import { computeUncertainty, formatUncertaintyDirective } from "./uncertainty.js";
 export function handleUserPromptSubmitHook(inputJson) {
     try {
         const parsed = JSON.parse(inputJson);
         const prompt = parsed.prompt || "";
         const decision = computeThinkingBudget(prompt);
-        // Only inject directive for non-trivial standard/high/deep tasks
-        if (decision.level === "off") {
-            return JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: "UserPromptSubmit",
-                    additionalContext: "",
-                },
-            });
+        const uncertainty = computeUncertainty(prompt);
+        const directives = [];
+        if (decision.level !== "off") {
+            directives.push(formatThinkingBudgetDirective(decision));
         }
-        const directive = formatThinkingBudgetDirective(decision);
+        if (uncertainty.triggerSearch) {
+            directives.push(formatUncertaintyDirective(uncertainty));
+        }
         return JSON.stringify({
             hookSpecificOutput: {
                 hookEventName: "UserPromptSubmit",
-                additionalContext: directive,
+                additionalContext: directives.join("\n\n"),
             },
         });
     }

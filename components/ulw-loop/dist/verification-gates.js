@@ -76,6 +76,14 @@ export function runSemanticGate(ctx, _policy) {
             parentActionRequired: true,
         };
     }
+    if (typeof ctx.evidence.factualityScore === "number" && ctx.evidence.factualityScore < 0.85) {
+        return {
+            stage: "semantic",
+            status: "failed",
+            reason: `SAFE factuality score (${(ctx.evidence.factualityScore * 100).toFixed(1)}%) is below required 85% threshold`,
+            parentActionRequired: true,
+        };
+    }
     const stagnationEvents = ctx.events.filter((e) => e.type === "parent.stagnation_detected");
     if (stagnationEvents.length > 0) {
         const lastStagnationEvent = stagnationEvents[stagnationEvents.length - 1];

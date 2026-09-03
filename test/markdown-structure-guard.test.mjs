@@ -73,3 +73,42 @@ test("--check mode aggregates findings across a directory", () => {
 	assert.equal(res.status, 1, `stderr: ${res.stderr}`);
 	assert.match(res.stderr, /FAIL 1개/);
 });
+
+test("blocks unclosed evidence tag and empty evidence block (Feature 10)", () => {
+	const dir = mkdtempSync(join(tmpdir(), "mdguard-"));
+	const file1 = join(dir, "unclosed.md");
+	writeFileSync(file1, "# Title\n\n<evidence>원문 인용\n<answer>답변</answer>\n", "utf8");
+	const res1 = runGuard(JSON.stringify({ tool_input: { file_path: file1 } }));
+	assert.equal(res1.status, 1);
+	assert.match(res1.stderr, /unclosed_evidence_tag/);
+
+	const file2 = join(dir, "empty_evidence.md");
+	writeFileSync(file2, "# Title\n\n<evidence></evidence>\n<answer>답변</answer>\n", "utf8");
+	const res2 = runGuard(JSON.stringify({ tool_input: { file_path: file2 } }));
+	assert.equal(res2.status, 1);
+	assert.match(res2.stderr, /empty_evidence_block/);
+});
+
+test("blocks broken inline citation tokens (Feature 02 LangExtract)", () => {
+	const dir = mkdtempSync(join(tmpdir(), "mdguard-"));
+	const file = join(dir, "broken_cite.md");
+	writeFileSync(file, "이 내용은 【F:README.md†L10-L15】 에서 발췌되었다.\n", "utf8");
+	const res = runGuard(JSON.stringify({ tool_input: { file_path: file } }));
+	assert.equal(res.status, 1);
+	assert.match(res.stderr, /broken_citation_token/);
+});
+
+test("blocks multiline empty evidence block and allows tags/citations inside inline code", () => {
+	const dir = mkdtempSync(join(tmpdir(), "mdguard-"));
+	const multiEmpty = join(dir, "multi_empty.md");
+	writeFileSync(multiEmpty, "# Title\n\n<evidence>\n\n</evidence>\n<answer>답변</answer>\n", "utf8");
+	const res1 = runGuard(JSON.stringify({ tool_input: { file_path: multiEmpty } }));
+	assert.equal(res1.status, 1);
+	assert.match(res1.stderr, /empty_evidence_block/);
+
+	const codeDoc = join(dir, "doc_with_code.md");
+	writeFileSync(codeDoc, "# Rules\n\nUse `<evidence>` and `【F:README.md†L1-L10】` as examples.\n\n```markdown\n<evidence>\ncode sample\n```\n", "utf8");
+	const res2 = runGuard(JSON.stringify({ tool_input: { file_path: codeDoc } }));
+	assert.equal(res2.status, 0, `stderr: ${res2.stderr}`);
+});
+

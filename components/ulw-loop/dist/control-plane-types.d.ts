@@ -108,6 +108,7 @@ export interface QualityEvidenceEnvelope {
     }>;
     unknowns?: string[];
     inferences?: string[];
+    factualityScore?: number;
 }
 export interface SubagentResultEnvelope {
     runId: string;

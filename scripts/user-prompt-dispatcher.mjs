@@ -10,26 +10,28 @@
  * stderr and is skipped — it never blocks the others (fail-open per handler).
  */
 import { join, resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PLUGIN_ROOT = process.env["PLUGIN_ROOT"]
 	? resolve(process.env["PLUGIN_ROOT"])
 	: dirname(dirname(fileURLToPath(import.meta.url)));
 
-const { runUserPromptSubmitHook: runRulesHook } = await import(
-	join(PLUGIN_ROOT, "components", "rules", "dist", "codex-hook.js")
+const importComponent = (subpath) => import(pathToFileURL(join(PLUGIN_ROOT, subpath)).href);
+
+const { runUserPromptSubmitHook: runRulesHook } = await importComponent(
+	join("components", "rules", "dist", "codex-hook.js")
 );
-const { runQuickLaneHook } = await import(
-	join(PLUGIN_ROOT, "components", "quick-lane", "dist", "codex-hook.js")
+const { runQuickLaneHook } = await importComponent(
+	join("components", "quick-lane", "dist", "codex-hook.js")
 );
-const { handleUserPromptSubmitHook } = await import(
-	join(PLUGIN_ROOT, "components", "adaptive-reasoning", "dist", "codex-hook.js")
+const { handleUserPromptSubmitHook } = await importComponent(
+	join("components", "adaptive-reasoning", "dist", "codex-hook.js")
 );
-const ultrawork = await import(
-	join(PLUGIN_ROOT, "components", "ultrawork", "dist", "codex-hook.js")
+const ultrawork = await importComponent(
+	join("components", "ultrawork", "dist", "codex-hook.js")
 );
-const { applyUserPromptUlwLoopSteering } = await import(
-	join(PLUGIN_ROOT, "components", "ulw-loop", "dist", "codex-hook.js")
+const { applyUserPromptUlwLoopSteering } = await importComponent(
+	join("components", "ulw-loop", "dist", "codex-hook.js")
 );
 
 const RULES_OPTIONS = { pluginDataRoot: process.env["PLUGIN_DATA"] || undefined };
@@ -89,6 +91,29 @@ async function main() {
 		} catch (error) {
 			process.stderr.write(`[user-prompt-dispatcher] handler '${name}' failed (skipped): ${error.message}\n`);
 		}
+	}
+
+	const promptText = payload.prompt || "";
+
+	// Feature 03: Dynamic Search Grounding Adaptive Threshold Controller
+	const FACTUAL_TRIGGER_RE = /(?:version|release|benchmark|cve|최신|버전|성능|릴리즈|공식문서|스펙|spec|api|doc|시세|통계|법령|판례|조문)/i;
+	if (FACTUAL_TRIGGER_RE.test(promptText)) {
+		contributions.push(`<dynamic-search-grounding>
+# Dynamic Search Grounding Active (Adaptive Threshold = 0.3)
+- Mode: MODE_DYNAMIC
+- Dynamic Threshold: 0.3 (Aggressive Grounding)
+- Grounding Instruction: This prompt touches high-stakes factual or version/API information. Do not rely on ungrounded recall. Trigger search or fetch primary sources when verifying version names, library APIs, dates, or specifications.
+</dynamic-search-grounding>`);
+	}
+
+	// Feature 12: Sandwich Prompting & Document Chunk Tagging (Anti-Lost-in-the-Middle)
+	if (promptText.length > 1200 || (promptText.includes("\n") && promptText.length > 600)) {
+		contributions.push(`<sandwich-prompt-guard>
+# Sandwich Prompting & Document Chunk Tagging (Anti-Lost-in-the-Middle)
+- Document Chunking: When analyzing long contexts, tag chunks with [DOC_ID: <id> | SEC: <section>] to preserve position indices.
+- Bipolar Attention Discipline: Pay equal attention to constraints in the beginning and end of long documents; never let middle-context facts fade.
+- Verbatim Quote Binding: All extracted facts and metrics must map directly to verbatim source spans (<= 20 words).
+</sandwich-prompt-guard>`);
 	}
 
 	const output = {

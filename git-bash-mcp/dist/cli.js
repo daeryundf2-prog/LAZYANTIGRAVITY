@@ -11,11 +11,25 @@ import { isAbsolute, join, resolve, sep } from "node:path";
 // 절대경로로 스폰한다(unix는 그대로 이름 사용).
 function resolveOnPath(name) {
 	if (process.platform !== "win32") return name;
-	for (const dir of (process.env.PATH ?? "").split(";")) {
-		if (!dir) continue;
-		for (const ext of (process.env.PATHEXT ?? ".EXE").split(";")) {
+	const pathDirs = (process.env.PATH ?? "").split(";").filter(Boolean);
+	const pathExts = (process.env.PATHEXT ?? ".EXE").split(";");
+	for (const dir of pathDirs) {
+		for (const ext of pathExts) {
 			const candidate = join(dir, `${name}${ext.trim()}`);
 			if (existsSync(candidate)) return candidate;
+		}
+	}
+	// Fallback for companion Git utilities (ls, pwd, etc.) located in Git's usr/bin
+	for (const dir of pathDirs) {
+		const gitCandidate = join(dir, "git.exe");
+		if (existsSync(gitCandidate)) {
+			const gitRoot = resolve(dir, "..");
+			for (const sub of ["usr/bin", "bin"]) {
+				for (const ext of pathExts) {
+					const candidate = join(gitRoot, sub, `${name}${ext.trim()}`);
+					if (existsSync(candidate)) return candidate;
+				}
+			}
 		}
 	}
 	return null;

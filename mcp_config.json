@@ -47,6 +47,22 @@
 				"mcp"
 			],
 			"cwd": "."
+		},
+		"korean_law": {
+			"command": "node",
+			"args": [
+				"./korean-law-mcp/dist/cli.js",
+				"mcp"
+			],
+			"cwd": "."
+		},
+		"notebooklm": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"notebooklm-mcp"
+			],
+			"cwd": "."
 		}
 	}
 }

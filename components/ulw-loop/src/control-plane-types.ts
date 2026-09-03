@@ -166,6 +166,7 @@ export interface QualityEvidenceEnvelope {
 	unreadRanges?: Array<{ file: string; startLine?: number; endLine?: number }>;
 	unknowns?: string[];
 	inferences?: string[];
+	factualityScore?: number;
 }
 
 export interface SubagentResultEnvelope {

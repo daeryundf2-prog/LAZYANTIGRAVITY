@@ -67,3 +67,10 @@ Two runner conventions coexist; pick by component type:
 - Root `npm run build` aggregates: sync-mcp-config, sync-hook-status-messages, build-bundled-mcp-runtimes, sync-skills, sync-telemetry, build-components, materialize-shared-skills, sync-omo-mirror.
 - Hooks live under `components/*/hooks/hooks.json` and are aggregated into the root `hooks.json`.
 - Skills are authored in `shared-skills/skills/*/SKILL.md` and materialized into `skills/`; keep them in sync (`npm run sync:skills`).
+
+## Subagents: `fact-mentor` Adversarial Audit Subagent (Feature 05)
+
+- **Identity**: `fact-mentor` (Pro-tier adversarial falsification oracle, `Model: "pro"`).
+- **Sole Mandate**: Adversarial falsification of executor claims, file paths, SemVer versions, and benchmark metrics.
+- **Trigger**: Dispatched automatically during `skills/review-work` (Phase 1) and `skills/boost` (Stage 4).
+- **Execution Contract**: Operates with `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`. Actively runs tool calls to attempt to disprove assertions. If an unverified path or fake metric is found, issues a blocking FAIL verdict.

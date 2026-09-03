@@ -10,6 +10,7 @@ This plugin defaults to **Google Antigravity** with **Gemini 3.7 Flash (High)** 
 | --- | --- | --- | --- |
 | 🛡️ Security Review | Deep | `Model: "pro"` | **Blocking** (Fail stops release) |
 | 🧠 Code Quality & Logic | Deep | `Model: "pro"` | **Blocking** (Fail stops release) |
+| 🕵️ Fact & Claim Falsification (`fact-mentor`) | Deep | `Model: "pro"` | **Blocking** (Hallucination / fake path stops release) |
 | 👁️ Visual & CJK Fidelity | Multimodal | `Model: "flash"` | **Advisory** (Warning / auto-remediation) |
 | ⚡ Performance & Efficiency | Fast | `Model: "flash"` | **Advisory** (Warning / optimization) |
 | 🧪 Hands-on QA Execution | Tool-Using | `Model: "flash"` | **Blocking** (Broken flows stop release) |
@@ -68,6 +69,18 @@ FILE CONTENTS:
 {FILE_CONTENTS}
 Verify behavioral correctness, off-by-one, race conditions, type safety, unhandled rejections, boundary contracts.
 OUTPUT: <verdict>PASS or FAIL</verdict>, <findings>dimension, severity, suggestion</findings>, <blocking_issues>"""
+    },
+    {
+      TypeName: "self",
+      Role: "fact-mentor Adversarial Falsification Oracle (Pro)",
+      Model: "pro",
+      Prompt: """<review_type>FACT-MENTOR ADVERSARIAL AUDIT (Blocking)</review_type>
+DIFF:
+{DIFF}
+FILE CONTENTS:
+{FILE_CONTENTS}
+Mandate: Sole mission is adversarial falsification. Actively search for fake file paths, unverified SemVer versions, synthesized benchmark statistics, ungrounded external API calls, and broken citations.
+OUTPUT: <verdict>PASS or FAIL</verdict>, <falsified_claims>list of refutations</falsified_claims>, <blocking_issues>"""
     },
     {
       TypeName: "self",
@@ -523,8 +536,9 @@ As each subagent returns, collect its substantive final result. Store each verdi
 | 3. Code Quality | pending | - |
 | 4. Security | pending | - |
 | 5. Context Mining | pending | - |
+| 6. Fact Falsification (`fact-mentor`) | pending | - |
 
-Do NOT deliver the final report until ALL 5 have completed.
+Do NOT deliver the final report until ALL lanes have completed.
 If a lane remains silent after the reliability followup, record it as
 inconclusive and respawn a smaller reviewer/worker for that exact lane.
 
@@ -538,6 +552,7 @@ inconclusive and respawn a smaller reviewer/worker for that exact lane.
 1. **Core Blocking Gates (Must PASS)**:
    - 🛡️ **Security Oracle (Pro)**: Any CRITICAL or HIGH vulnerability = **REVIEW FAILED** (Blocking).
    - 🧠 **Code Quality & Logic Oracle (Pro)**: Any CRITICAL or MAJOR defect = **REVIEW FAILED** (Blocking).
+   - 🕵️ **Fact Falsification Oracle (`fact-mentor`, Pro)**: Any fabricated file path, unverified SemVer, or fake metric = **REVIEW FAILED** (Blocking).
    - 🧪 **Hands-on QA Execution**: Any P0 or broken primary user flow = **REVIEW FAILED** (Blocking).
 2. **Advisory Gates (Warnings allowed)**:
    - 👁️ **Visual & CJK Fidelity Oracle (Flash)**: WARN/FAIL triggers actionable layout/typography remediation notes, but does not block if core logic passed.
@@ -560,12 +575,13 @@ Compile the final report in this format:
 |---|------------|--------------|--------|---------|-------|
 | 1 | 🛡️ Security Review | Pro | Blocking | PASS / FAIL | - |
 | 2 | 🧠 Code Quality & Logic | Pro | Blocking | PASS / FAIL | - |
-| 3 | 🧪 Hands-on QA Execution | Flash | Blocking | PASS / FAIL | - |
-| 4 | 👁️ Visual & CJK Fidelity | Flash | Advisory | PASS / WARN | - |
-| 5 | ⚡ Performance & Efficiency | Flash | Advisory | PASS / WARN | - |
+| 3 | 🕵️ Fact Falsification (`fact-mentor`) | Pro | Blocking | PASS / FAIL | - |
+| 4 | 🧪 Hands-on QA Execution | Flash | Blocking | PASS / FAIL | - |
+| 5 | 👁️ Visual & CJK Fidelity | Flash | Advisory | PASS / WARN | - |
+| 6 | ⚡ Performance & Efficiency | Flash | Advisory | PASS / WARN | - |
 
 ## Blocking Issues (Must Fix)
-[Aggregated from Security, Logic, and QA failures]
+[Aggregated from Security, Logic, Fact-Mentor, and QA failures]
 
 ## Advisory & Optimization Notes
 [Visual/CJK alignments, performance optimizations, naming nits]

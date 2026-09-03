@@ -50,3 +50,25 @@ test("dispatcher is resilient to a malformed handler input shape", () => {
 	const output = JSON.parse(res.stdout);
 	assert.equal(output.hookSpecificOutput.hookEventName, "UserPromptSubmit");
 });
+
+test("dispatcher injects dynamic search grounding directive for factual/version queries (Feature 03)", () => {
+	const ctx = runDispatcher({
+		hook_event_name: "UserPromptSubmit",
+		session_id: "acc-test",
+		prompt: "React 19 버전의 최신 릴리즈 스펙과 공식문서 변경점을 확인해줘",
+	});
+	assert.ok(ctx.includes("dynamic-search-grounding"), "dynamic search grounding directive expected");
+	assert.ok(ctx.includes("Adaptive Threshold = 0.3"), "threshold 0.3 expected");
+});
+
+test("dispatcher injects sandwich prompting & chunk tagging directive for long prompts (Feature 12)", () => {
+	const longText = "DOC SECTION 1:\n" + "x".repeat(700) + "\nDOC SECTION 2:\n" + "y".repeat(700);
+	const ctx = runDispatcher({
+		hook_event_name: "UserPromptSubmit",
+		session_id: "acc-test",
+		prompt: longText,
+	});
+	assert.ok(ctx.includes("sandwich-prompt-guard"), "sandwich prompt guard expected");
+	assert.ok(ctx.includes("[DOC_ID:"), "DOC_ID guidance expected");
+});
+

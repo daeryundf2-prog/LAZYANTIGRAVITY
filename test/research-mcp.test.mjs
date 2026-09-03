@@ -21,7 +21,7 @@ function callTool(name, args, env = {}) {
 	return JSON.parse(output.result.content[0].text);
 }
 
-test("research-mcp exposes the three research tools", () => {
+test("research-mcp exposes the research tools including cross_lingual_query", () => {
 	const res = spawnSync(process.execPath, [SERVER, "mcp"], {
 		input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
 		encoding: "utf8",
@@ -30,7 +30,16 @@ test("research-mcp exposes the three research tools", () => {
 	});
 	assert.equal(res.status, 0, res.stderr);
 	const tools = JSON.parse(res.stdout).result.tools.map((t) => t.name);
-	assert.deepEqual(tools, ["web_read", "web_search", "fetch_json"]);
+	assert.deepEqual(tools, ["web_read", "web_search", "fetch_json", "cross_lingual_query"]);
+});
+
+test("cross_lingual_query expands Korean domain queries into English primary source formulations (Feature 13)", () => {
+	const res = callTool("cross_lingual_query", { query: "환각 억제 및 원자적 사실 동적 검색 그라운딩" });
+	assert.equal(res.ok, true);
+	assert.equal(res.primary_language, "ko");
+	assert.equal(res.target_language, "en");
+	assert.ok(Array.isArray(res.expanded_english_queries));
+	assert.ok(res.expanded_english_queries.some((q) => q.includes("hallucination mitigation") || q.includes("atomic facts")));
 });
 
 test("research tools are gated behind LAZYANTIGRAVITY_RESEARCH_NETWORK=1", () => {

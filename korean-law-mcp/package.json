@@ -1,0 +1,18 @@
+{
+	"name": "@lazyantigravity/korean-law-mcp",
+	"version": "0.1.0",
+	"description": "Korean Law & Statute Grounding MCP server: prevents legal hallucination by retrieving verified Korean statutes and precedent citations.",
+	"type": "module",
+	"packageManager": "npm@11.12.1",
+	"license": "MIT",
+	"bin": {
+		"lazyantigravity-korean-law": "./dist/cli.js"
+	},
+	"files": [
+		"dist",
+		"package.json"
+	],
+	"scripts": {
+		"build": "node ../scripts/build-mcp-package.mjs"
+	}
+}

@@ -147,3 +147,28 @@ test("skeletonizeCode strips single-line function bodies", () => {
 	assert.ok(result.skeleton.includes("function foo() /* ... */"));
 	assert.ok(!result.skeleton.includes("return 1"));
 });
+
+test("formatThinkingBudgetDirective includes 2-Phase Cognitive Decoupling (Feature 11)", async () => {
+	const { formatThinkingBudgetDirective } = await import("../dist/budget-scaler.js");
+	const directive = formatThinkingBudgetDirective({
+		budget: 32768,
+		tier: "flash",
+		level: "high",
+		rationale: "Complex task"
+	});
+	assert.ok(directive.includes("2-Phase Cognitive Decoupling"));
+	assert.ok(directive.includes("Phase 1 (Thinking Trace)"));
+	assert.ok(directive.includes("Phase 2 (Response Formulation)"));
+});
+
+test("computeUncertainty triggers external grounding for high uncertainty prompts (Feature 08)", async () => {
+	const { computeUncertainty, formatUncertaintyDirective } = await import("../dist/uncertainty.js");
+	const res = computeUncertainty("개인정보보호법 제29조와 최신 릴리즈 API 취약점 CVE-2024-1234 조사해줘");
+	assert.equal(res.triggerSearch, true);
+	assert.equal(res.level, "high");
+	assert.ok(res.score >= 0.6);
+
+	const directive = formatUncertaintyDirective(res);
+	assert.ok(directive.includes("Uncertainty-Guided Search Trigger"));
+	assert.match(directive, /Overconfidence ban/i);
+});

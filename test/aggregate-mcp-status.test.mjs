@@ -17,7 +17,7 @@ test("#given aggregate MCP configs #when status JSON is requested #then local se
 	const report = JSON.parse(result.stdout);
 	assert.deepEqual(
 		report.servers.map((server) => server.name).sort(),
-		["ast_grep", "git_bash", "lsp", "media", "research", "workspace"],
+		["ast_grep", "git_bash", "korean_law", "lsp", "media", "notebooklm", "research", "workspace"],
 	);
 
 	for (const server of report.servers) {
@@ -27,7 +27,7 @@ test("#given aggregate MCP configs #when status JSON is requested #then local se
 		assert.equal(typeof server.status, "string", `${server.name} must have status`);
 	}
 
-	for (const name of ["ast_grep", "git_bash", "lsp", "media", "research", "workspace"]) {
+	for (const name of ["ast_grep", "git_bash", "korean_law", "lsp", "media", "notebooklm", "research", "workspace"]) {
 		const server = report.servers.find((entry) => entry.name === name);
 		assert.ok(server, `${name} must be present`);
 		assert.match(server.trust_class, /^local_/);

@@ -74,6 +74,7 @@ METHOD: Conduct aggressive counter-search (e.g. site:github.com/issues OR site:r
 | **Brave Search** | `web_search(query)` | **Keyed (`LAZYANTIGRAVITY_BRAVE_KEY`)** | 독립 웹 인덱스 검색 API |
 | **Jina Search** | `web_search(query)` | **Keyed (`LAZYANTIGRAVITY_JINA_KEY`)** | LLM 친화형 마크다운 검색 |
 | **DuckDuckGo** | `web_search(query)` | **Keyless Fallback** | 키 미설정 시 자동 폴백 (미제공 시 정직한 에러 반환) |
+| **Cross-Lingual Expander** | `cross_lingual_query(query)` | **Keyless (Local)** | 한국어 기술 질문을 영문 공식 1차 출처 검색어로 정밀 확장 |
 | **GitHub REST** | `fetch_json(url)` | **Keyless** | `api.github.com` 레포, 릴리즈, 이슈 직접 조회 |
 | **Public APIs** | `fetch_json(url)` | **Keyless** | npm, PyPI, arXiv (`export.arxiv.org/api/query`) API |
 | **Media / Subtitles**| `media_youtube(url)` | **Network Gated (`LAZYANTIGRAVITY_MEDIA_NETWORK=1`)** | 컨퍼런스/발표 영상 자막 및 메타데이터 추출 |
@@ -86,6 +87,11 @@ METHOD: Conduct aggressive counter-search (e.g. site:github.com/issues OR site:r
 | `intitle:` / `inurl:` | `intitle:"benchmarks" <topic>` | 핵심 제목 일치 |
 | `"exact"` / `-term` | `"<exact error>" -deprecated` | 정밀 문구 매칭 및 노이즈 제거 |
 | `after:` / `before:` | `<topic> after:2025-01-01` | 최신성(Recency) 강제 |
+
+#### 3. Cross-Lingual Grounding Pipeline (Feature 13)
+한국어로 작성된 기술 및 도메인 질문에 대해 2차 번역 블로그의 부정확한 정보를 인용하여 발생하는 환각을 차단합니다:
+1. `cross_lingual_query`를 호출하여 한국어 기술 개념을 글로벌 1차 출처(RFC, GitHub, arXiv, 공식 문서)의 정밀 영문 쿼리로 확장합니다.
+2. 영문 1차 출처에서 팩트를 확인한 후, 그 팩트만을 한국어로 로컬라이징하여 합성 보고서에 바인딩합니다.
 
 ---
 

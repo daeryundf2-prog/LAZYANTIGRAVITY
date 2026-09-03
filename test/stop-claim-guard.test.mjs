@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -76,3 +77,64 @@ test("guard version is pinned", async () => {
 	const text = await readFile(GUARD, "utf8");
 	assert.match(text, /GUARD_PACK_VERSION:\s*1\.0\.0/);
 });
+
+test("passes disciplined strict abstention [INSUFFICIENT_DATA] (Feature 09)", () => {
+	const res = runGuard(
+		stopPayload({
+			last_assistant_message: "일부 작업은 완료했으나 [INSUFFICIENT_DATA: 외부 API 접근 권한 부족]으로 인해 보류했습니다.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	assert.equal(res.stdout.trim(), "{}");
+});
+
+test("blocks fabricated phantom file claims via Fact-Retracing Gate (Feature 15)", async () => {
+	const { writeFileSync, unlinkSync } = await import("node:fs");
+	const transcript = join(process.cwd(), "temp-test-transcript.jsonl");
+	writeFileSync(transcript, JSON.stringify({ event: "tool_use", tool: "run_command", output: "ok" }), "utf8");
+
+	try {
+		const res = runGuard(
+			stopPayload({
+				transcript_path: transcript,
+				last_assistant_message: "모두 완료했습니다. 산출물: nonexistent_phantom_module.ts 작성 완료.",
+			}),
+		);
+		assert.equal(res.status, 0);
+		const out = JSON.parse(res.stdout);
+		assert.equal(out.decision, "block");
+		assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
+		assert.match(out.reason, /nonexistent_phantom_module\.ts/);
+	} finally {
+		try { unlinkSync(transcript); } catch {}
+	}
+});
+
+test("blocks fabricated phantom file claims even when transcript is missing or null", () => {
+	const res = runGuard(
+		stopPayload({
+			transcript_path: null,
+			last_assistant_message: "모두 완료했습니다. 산출물: nonexistent_phantom_file.ts 작성 완료.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+	assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
+	assert.match(out.reason, /nonexistent_phantom_file\.ts/);
+});
+
+test("blocks fabricated Windows backslash and Korean phantom paths", () => {
+	const res = runGuard(
+		stopPayload({
+			transcript_path: null,
+			last_assistant_message: "모두 완료했습니다. 산출물: 가짜_폴더\\가짜_파일.ts 작성 완료.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+	assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
+});
+
+

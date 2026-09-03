@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const defaultConfigFiles = [".mcp.json", "mcp_config.json"];
-const bundledRuntimeNames = new Set(["ast-grep-mcp", "git-bash-mcp", "lsp-tools-mcp", "workspace-mcp", "media-mcp", "research-mcp"]);
+const bundledRuntimeNames = new Set(["ast-grep-mcp", "git-bash-mcp", "lsp-tools-mcp", "workspace-mcp", "media-mcp", "research-mcp", "korean-law-mcp"]);
 
 try {
 	const options = parseArgs(process.argv.slice(2));
@@ -141,12 +141,13 @@ function resolveCommandTarget(definition) {
 	const args = Array.isArray(definition.args) ? definition.args : [];
 	const targetArg = args.find((arg) => typeof arg === "string" && looksLikeLocalPath(arg));
 	if (!targetArg) {
+		const isSystemCommand = ["node", "npx", "uv", "python", "git"].includes(definition.command);
 		return {
-			path: "",
-			configuredPath: "",
-			exists: false,
-			configuredExists: false,
-			trust_class: "local_unknown",
+			path: definition.command,
+			configuredPath: definition.command,
+			exists: isSystemCommand,
+			configuredExists: isSystemCommand,
+			trust_class: isSystemCommand ? "local_system_binary" : "local_unknown",
 		};
 	}
 
@@ -177,6 +178,7 @@ function resolveCommandTarget(definition) {
 }
 
 function looksLikeLocalPath(value) {
+	if (value.startsWith("@")) return false;
 	return value.startsWith(".") || value.startsWith("/") || value.includes("/");
 }
 
@@ -190,8 +192,8 @@ function isBundledComponentPath(path) {
 // Spawns a local stdio server and performs an initialize + tools/list handshake.
 // Opt-in via --probe: launching servers has side effects and is never automatic.
 function probeServer(server) {
-	if (server.trust_class === "remote-third-party" || server.status !== "ok" || !server.target_path) {
-		return { skipped: true, reason: "not a local server with an existing target" };
+	if (server.trust_class === "remote-third-party" || server.trust_class === "local_system_binary" || server.status !== "ok" || !server.target_path) {
+		return { skipped: true, reason: server.trust_class === "local_system_binary" ? "system binary preset requires runtime execution" : "not a local server with an existing target" };
 	}
 	const target = resolve(root, server.target_path);
 	const restArgs = (server.args || []).filter((arg) => !looksLikeLocalPath(arg));
