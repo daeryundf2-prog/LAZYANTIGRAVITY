@@ -432,6 +432,189 @@ async function fetchJson(args) {
 	}
 }
 
+function parseGroundingMetadata(rawMeta) {
+	if (!rawMeta || typeof rawMeta !== "object") {
+		return { web_search_queries: [], grounding_chunks: [], grounding_supports: [] };
+	}
+	const queries = Array.isArray(rawMeta.webSearchQueries)
+		? rawMeta.webSearchQueries
+		: Array.isArray(rawMeta.web_search_queries)
+			? rawMeta.web_search_queries
+			: [];
+	const rawChunks = Array.isArray(rawMeta.groundingChunks)
+		? rawMeta.groundingChunks
+		: Array.isArray(rawMeta.grounding_chunks)
+			? rawMeta.grounding_chunks
+			: [];
+	const chunks = rawChunks.map((c, i) => {
+		let url = "";
+		let title = "";
+		if (c?.web && typeof c.web === "object") {
+			url = c.web.uri || c.web.url || "";
+			title = c.web.title || url;
+		} else if (typeof c === "object" && c !== null) {
+			url = c.url || c.uri || "";
+			title = c.title || url;
+		}
+		return { index: i, url: String(url || "").trim(), title: String(title || url || `Source ${i + 1}`).trim() };
+	});
+	const rawSupports = Array.isArray(rawMeta.groundingSupports)
+		? rawMeta.groundingSupports
+		: Array.isArray(rawMeta.grounding_supports)
+			? rawMeta.grounding_supports
+			: [];
+	const supports = rawSupports.map((s) => {
+		const chunkIndices = Array.isArray(s?.groundingChunkIndices)
+			? s.groundingChunkIndices
+			: Array.isArray(s?.grounding_chunk_indices)
+				? s.grounding_chunk_indices
+				: [];
+		const scores = Array.isArray(s?.confidenceScores)
+			? s.confidenceScores
+			: Array.isArray(s?.confidence_scores)
+				? s.confidence_scores
+				: typeof s?.confidence_score === "number"
+					? [s.confidence_score]
+					: [];
+		const segmentObj = s?.segment || {};
+		const startIndex = typeof segmentObj.startIndex === "number" ? segmentObj.startIndex : typeof segmentObj.start_index === "number" ? segmentObj.start_index : -1;
+		const endIndex = typeof segmentObj.endIndex === "number" ? segmentObj.endIndex : typeof segmentObj.end_index === "number" ? segmentObj.end_index : -1;
+		const segmentText = typeof segmentObj.text === "string" ? segmentObj.text : "";
+		return {
+			startIndex,
+			endIndex,
+			text: segmentText,
+			chunkIndices: chunkIndices.map(Number).filter((n) => !Number.isNaN(n) && n >= 0),
+			confidenceScores: scores.map(Number),
+		};
+	});
+	return { web_search_queries: queries.map(String), grounding_chunks: chunks, grounding_supports: supports };
+}
+
+function renderGroundingCitations(options) {
+	const rawText = typeof options?.text === "string" ? options.text : "";
+	const minConfidence = typeof options?.min_confidence === "number" ? options.min_confidence : 0.0;
+	const citationFormat = options?.citation_format || "footnote";
+	const heading = options?.heading || "## References / Grounding Sources";
+
+	const { web_search_queries, grounding_chunks, grounding_supports } = parseGroundingMetadata(options?.grounding_metadata);
+	if (!rawText.trim()) {
+		return { ok: true, rendered_text: "", footnotes: [], web_search_queries, total_citations: 0, supported_segment_count: 0, grounding_coverage: 0 };
+	}
+	if (grounding_chunks.length === 0 || grounding_supports.length === 0) {
+		return { ok: true, rendered_text: rawText, footnotes: [], web_search_queries, total_citations: 0, supported_segment_count: 0, grounding_coverage: 0 };
+	}
+
+	const validSupports = grounding_supports.filter((s) => {
+		if (s.chunkIndices.length === 0) return false;
+		if (minConfidence <= 0.0) return true;
+		if (s.confidenceScores.length === 0) return true;
+		const avg = s.confidenceScores.reduce((a, b) => a + b, 0) / s.confidenceScores.length;
+		return avg >= minConfidence;
+	});
+
+	const citedChunkIndices = new Set();
+	const insertions = [];
+
+	for (const sup of validSupports) {
+		let insertPos = -1;
+		if (sup.startIndex >= 0 && sup.endIndex > sup.startIndex && sup.endIndex <= rawText.length) {
+			insertPos = sup.endIndex;
+		} else if (sup.text && sup.text.trim()) {
+			const foundIdx = rawText.indexOf(sup.text.trim());
+			if (foundIdx !== -1) insertPos = foundIdx + sup.text.trim().length;
+		}
+		if (insertPos !== -1) {
+			for (const ci of sup.chunkIndices) {
+				if (ci >= 0 && ci < grounding_chunks.length) citedChunkIndices.add(ci);
+			}
+			insertions.push({ pos: insertPos, chunkIndices: sup.chunkIndices.filter((ci) => ci >= 0 && ci < grounding_chunks.length) });
+		}
+	}
+
+	if (insertions.length === 0 && validSupports.length > 0) {
+		for (const sup of validSupports) {
+			for (const ci of sup.chunkIndices) {
+				if (ci >= 0 && ci < grounding_chunks.length) citedChunkIndices.add(ci);
+			}
+		}
+		if (citedChunkIndices.size > 0) {
+			insertions.push({ pos: rawText.trimEnd().length, chunkIndices: Array.from(citedChunkIndices) });
+		}
+	}
+
+	const sortedCitedIndices = Array.from(citedChunkIndices).sort((a, b) => a - b);
+	const chunkToFootnoteNum = new Map();
+	const footnotes = [];
+
+	sortedCitedIndices.forEach((chunkIdx, i) => {
+		const footnoteNum = i + 1;
+		chunkToFootnoteNum.set(chunkIdx, footnoteNum);
+		const chunk = grounding_chunks[chunkIdx];
+		footnotes.push({ footnote_index: footnoteNum, chunk_index: chunkIdx, title: chunk.title, url: chunk.url });
+	});
+
+	insertions.sort((a, b) => b.pos - a.pos);
+
+	let rendered = rawText;
+	for (const ins of insertions) {
+		const footnoteNums = ins.chunkIndices.map((ci) => chunkToFootnoteNum.get(ci)).filter((fn) => fn !== undefined);
+		if (footnoteNums.length === 0) continue;
+		const uniqueFootnotes = Array.from(new Set(footnoteNums)).sort((a, b) => a - b);
+		let tagStr = "";
+		if (citationFormat === "link") {
+			tagStr = uniqueFootnotes.map((fn) => {
+				const fnInfo = footnotes.find((f) => f.footnote_index === fn);
+				return ` [${fn}](${fnInfo?.url || "#"})`;
+			}).join("");
+		} else {
+			tagStr = uniqueFootnotes.map((fn) => `[^${fn}]`).join("");
+		}
+		rendered = rendered.slice(0, ins.pos) + tagStr + rendered.slice(ins.pos);
+	}
+
+	if (footnotes.length > 0) {
+		rendered = rendered.trimEnd() + "\n\n" + heading + "\n\n";
+		if (citationFormat === "link") {
+			for (const fn of footnotes) rendered += `- [${fn.footnote_index}] [${fn.title}](${fn.url})\n`;
+		} else {
+			for (const fn of footnotes) rendered += `[^${fn.footnote_index}]: [${fn.title}](${fn.url})\n`;
+		}
+	}
+
+	const supportedSegmentCount = insertions.length;
+	const groundingCoverage = Number((supportedSegmentCount / Math.max(grounding_supports.length, 1)).toFixed(2));
+	return {
+		ok: true,
+		rendered_text: rendered.trimEnd() + "\n",
+		footnotes,
+		web_search_queries,
+		total_citations: footnotes.length,
+		supported_segment_count: supportedSegmentCount,
+		grounding_coverage: groundingCoverage,
+	};
+}
+
+async function renderGroundingCitationsTool(args) {
+	const text = typeof args?.text === "string" ? args.text : "";
+	const metadata = args?.grounding_metadata || args?.groundingMetadata || null;
+	const minConfidence = typeof args?.min_confidence === "number" ? args.min_confidence : 0.0;
+	const format = typeof args?.citation_format === "string" ? args.citation_format : "footnote";
+
+	if (!metadata || typeof metadata !== "object") {
+		return textResult({ ok: false, error: "grounding_metadata object is required." }, true);
+	}
+
+	const result = renderGroundingCitations({
+		text,
+		grounding_metadata: metadata,
+		min_confidence: minConfidence,
+		citation_format: format,
+	});
+
+	return textResult(result);
+}
+
 const TOOLS = [
 	{
 		name: "web_read",
@@ -481,6 +664,30 @@ const TOOLS = [
 			required: ["query"],
 		},
 	},
+	{
+		name: "render_grounding_citations",
+		description: "Parse Gemini API or research grounding metadata (grounding_chunks, grounding_supports, web_search_queries) and render text with verified markdown inline footnotes ([^1], [^2]) and references section.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				text: { type: "string", description: "Generated response text to annotate with footnotes" },
+				grounding_metadata: {
+					type: "object",
+					description: "Grounding metadata object with grounding_chunks/groundingChunks and grounding_supports/groundingSupports",
+				},
+				min_confidence: {
+					type: "number",
+					description: "Minimum confidence score (0.0 to 1.0) to include a citation (default 0.0)",
+				},
+				citation_format: {
+					type: "string",
+					enum: ["footnote", "link"],
+					description: "Citation formatting style: footnote ([^1]) or link ([1](url))",
+				},
+			},
+			required: ["text", "grounding_metadata"],
+		},
+	},
 ];
 
 const TOOL_HANDLERS = {
@@ -488,6 +695,7 @@ const TOOL_HANDLERS = {
 	web_search: webSearch,
 	fetch_json: fetchJson,
 	cross_lingual_query: crossLingualQuery,
+	render_grounding_citations: renderGroundingCitationsTool,
 };
 
 async function handleJsonRpc(message) {

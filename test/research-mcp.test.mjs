@@ -30,7 +30,43 @@ test("research-mcp exposes the research tools including cross_lingual_query", ()
 	});
 	assert.equal(res.status, 0, res.stderr);
 	const tools = JSON.parse(res.stdout).result.tools.map((t) => t.name);
-	assert.deepEqual(tools, ["web_read", "web_search", "fetch_json", "cross_lingual_query"]);
+	assert.deepEqual(tools, ["web_read", "web_search", "fetch_json", "cross_lingual_query", "render_grounding_citations"]);
+});
+
+test("render_grounding_citations parses Gemini API grounding metadata into markdown footnotes (Section 4.1)", () => {
+	const text = "Gemini 3.8 Flash uses dynamic search grounding to eliminate hallucinations.";
+	const groundingMetadata = {
+		webSearchQueries: ["Gemini 3.8 Flash dynamic search grounding"],
+		groundingChunks: [
+			{
+				web: {
+					uri: "https://ai.google.dev/gemini-api/docs/grounding",
+					title: "Google Gemini Search Grounding Documentation",
+				},
+			},
+		],
+		groundingSupports: [
+			{
+				segment: {
+					startIndex: 0,
+					endIndex: text.length,
+					text: text,
+				},
+				groundingChunkIndices: [0],
+				confidenceScores: [0.95],
+			},
+		],
+	};
+
+	const res = callTool("render_grounding_citations", {
+		text,
+		grounding_metadata: groundingMetadata,
+	});
+
+	assert.equal(res.ok, true);
+	assert.equal(res.total_citations, 1);
+	assert.match(res.rendered_text, /\[\^1\]/);
+	assert.match(res.rendered_text, /\[\^1\]: \[Google Gemini Search Grounding Documentation\]\(https:\/\/ai\.google\.dev\/gemini-api\/docs\/grounding\)/);
 });
 
 test("cross_lingual_query expands Korean domain queries into English primary source formulations (Feature 13)", () => {

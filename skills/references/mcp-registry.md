@@ -26,6 +26,7 @@ This registry documents the available MCP servers configured in `mcp_config.json
   - `web_search`: Search provider chain with `dynamic_threshold` (default 0.3) and `grounding_metadata` (supports, chunks).
   - `fetch_json`: SSRF-protected developer API querying.
   - `cross_lingual_query`: Korean-to-English query expansion targeting 1st-party global sources (RFC, GitHub, official docs, arXiv).
+  - `render_grounding_citations`: Gemini API / research search grounding metadata parser & footnote citation renderer (Section 4.1).
 
 ### 4. Local Developer MCP Servers
 - `ast_grep`: High-precision AST search and replacement.
