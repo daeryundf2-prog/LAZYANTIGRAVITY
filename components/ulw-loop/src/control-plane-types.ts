@@ -167,6 +167,7 @@ export interface QualityEvidenceEnvelope {
 	unknowns?: string[];
 	inferences?: string[];
 	factualityScore?: number;
+	coveVerified?: boolean;
 }
 
 export interface SubagentResultEnvelope {

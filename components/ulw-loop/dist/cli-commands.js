@@ -1,6 +1,7 @@
 import { hasFlag, readRepeated, readValue } from "./cli-arg-parser.js";
 import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, dispatchAgentCmd, dispatchConsensusCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, consensusPendingCmd, evidenceDraftCmd, researchClaimsCmd, reportFailedCmd, rewindRunCmd, setRunStateCmd, } from "./cli-control-plane.js";
 import { verifyLedgerCmd } from "./cli-ledger.js";
+import { coveVerifyCmd, safeEvalCmd } from "./cli-cove-safe-cmds.js";
 import { printJson, ULW_LOOP_HELP } from "./cli-output.js";
 import { addGoal, captureEvidence, checkpoint, completeGoals, createGoals, criteria, reviewBlockers, status, steer, } from "./cli-plan-commands.js";
 import { dryRunCmd } from "./dry-run.js";
@@ -84,6 +85,10 @@ export async function ulwLoopCommand(argv) {
                 return await aggregateConsensusCmd(repoRoot, rest, json);
             case "verify-ledger":
                 return await verifyLedgerCmd(repoRoot, rest, json, scope);
+            case "cove-verify":
+                return await coveVerifyCmd(repoRoot, rest, json);
+            case "safe-eval":
+                return await safeEvalCmd(repoRoot, rest, json);
             default:
                 process.stdout.write(`${ULW_LOOP_HELP}\n`);
                 return 1;

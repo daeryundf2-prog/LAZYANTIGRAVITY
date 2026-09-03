@@ -8,6 +8,7 @@ const ULW_LOOP_SUBCOMMANDS = new Set([
     "heartbeat-agent", "progress-agent", "report-complete", "report-failed", "ack-agent",
     "reject-agent", "check-leases", "register-poller", "rewind", "dispatch-consensus",
     "consensus-pending", "report-consensus-result", "aggregate-consensus",
+    "evidence-draft", "research-claims", "verify-ledger", "cove-verify", "safe-eval",
 ]);
 const TOP_LEVEL_HELP = "Usage:\n  lazyantigravity ulw-loop <subcommand> [args]\n  lazyantigravity hook user-prompt-submit         (Codex UserPromptSubmit hook)\n  lazyantigravity help | --help | -h              (this message)\n\nAlias: `omo` is accepted. Run `lazyantigravity ulw-loop help` for ulw-loop subcommands.\n";
 async function main() {

@@ -4,6 +4,9 @@ export type VerificationStatus = "passed" | "failed" | "skipped" | "required" | 
 export interface VerificationPolicy {
     requireTests: boolean;
     requireLint: boolean;
+    requireFactualityScore?: boolean;
+    minFactualityScore?: number;
+    requireCoveVerification?: boolean;
     consensusTriggers: {
         riskLevelHigh: boolean;
         destructiveChange: boolean;

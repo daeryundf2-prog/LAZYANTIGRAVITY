@@ -9,6 +9,7 @@ const ULW_LOOP_SUBCOMMANDS = new Set([
 	"heartbeat-agent", "progress-agent", "report-complete", "report-failed", "ack-agent",
 	"reject-agent", "check-leases", "register-poller", "rewind", "dispatch-consensus",
 	"consensus-pending", "report-consensus-result", "aggregate-consensus",
+	"evidence-draft", "research-claims", "verify-ledger", "cove-verify", "safe-eval",
 ]);
 
 const TOP_LEVEL_HELP =

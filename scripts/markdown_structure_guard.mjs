@@ -72,7 +72,7 @@ async function collectSources() {
 	return sources;
 }
 
-const TARGET_KEY_RE = /^(file_path|filepath|target|output)$/i;
+const TARGET_KEY_RE = /^(file_path|filepath|path|target|target_file|targetfile|target_path|targetpath|output)$/i;
 const PATH_LIKE_RE = /([^\s"'`<>|;&]+[\/\\][^\s"'`<>|;&]+\.(?:md|html|txt|json))/i;
 const REDIRECT_RE = /(?:>|>>)\s*([^\s|&;]+(?:\.(?:md|html|txt|json)))/i;
 

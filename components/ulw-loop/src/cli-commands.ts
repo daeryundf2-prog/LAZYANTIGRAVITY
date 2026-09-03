@@ -21,6 +21,7 @@ import {
 	setRunStateCmd,
 } from "./cli-control-plane.js";
 import { verifyLedgerCmd } from "./cli-ledger.js";
+import { coveVerifyCmd, safeEvalCmd } from "./cli-cove-safe-cmds.js";
 import { printJson, ULW_LOOP_HELP } from "./cli-output.js";
 import {
 	addGoal,
@@ -115,6 +116,10 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 				return await aggregateConsensusCmd(repoRoot, rest, json);
 			case "verify-ledger":
 				return await verifyLedgerCmd(repoRoot, rest, json, scope);
+			case "cove-verify":
+				return await coveVerifyCmd(repoRoot, rest, json);
+			case "safe-eval":
+				return await safeEvalCmd(repoRoot, rest, json);
 			default:
 				process.stdout.write(`${ULW_LOOP_HELP}\n`);
 				return 1;

@@ -36,7 +36,7 @@ export function runMechanicalGate(ctx, policy) {
         status: "passed",
     };
 }
-export function runSemanticGate(ctx, _policy) {
+export function runSemanticGate(ctx, policy) {
     if (!ctx.evidence) {
         return { stage: "semantic", status: "failed", reason: "Missing evidence envelope", parentActionRequired: true };
     }
@@ -76,11 +76,37 @@ export function runSemanticGate(ctx, _policy) {
             parentActionRequired: true,
         };
     }
-    if (typeof ctx.evidence.factualityScore === "number" && ctx.evidence.factualityScore < 0.85) {
+    const minFactuality = policy?.minFactualityScore ?? 0.85;
+    if (typeof ctx.evidence.factualityScore === "number" && ctx.evidence.factualityScore < minFactuality) {
+        const thresholdStr = (minFactuality * 100) % 1 === 0 ? `${(minFactuality * 100).toFixed(0)}%` : `${(minFactuality * 100).toFixed(1)}%`;
         return {
             stage: "semantic",
             status: "failed",
-            reason: `SAFE factuality score (${(ctx.evidence.factualityScore * 100).toFixed(1)}%) is below required 85% threshold`,
+            reason: `SAFE factuality score (${(ctx.evidence.factualityScore * 100).toFixed(1)}%) is below required ${thresholdStr} threshold`,
+            parentActionRequired: true,
+        };
+    }
+    if (policy?.requireFactualityScore && typeof ctx.evidence.factualityScore !== "number") {
+        return {
+            stage: "semantic",
+            status: "failed",
+            reason: "Policy requires SAFE factuality score, but none was recorded in evidence",
+            parentActionRequired: true,
+        };
+    }
+    if (policy?.requireCoveVerification && ctx.evidence.coveVerified !== true) {
+        return {
+            stage: "semantic",
+            status: "failed",
+            reason: "Policy requires CoVe verification, but evidence was not verified by CoVe",
+            parentActionRequired: true,
+        };
+    }
+    if (ctx.evidence.coveVerified === false) {
+        return {
+            stage: "semantic",
+            status: "failed",
+            reason: "CoVe verification failed: contradictions found during verification",
             parentActionRequired: true,
         };
     }

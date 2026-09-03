@@ -102,7 +102,7 @@
 		],
 		"PostToolUse": [
 			{
-				"matcher": "^(apply_patch|write|Write|edit|Edit|multi_edit|multiedit|MultiEdit|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
+				"matcher": "^(write_to_file|WriteToFile|write_file|WriteFile|apply_patch|write|Write|edit|Edit|multi_edit|multiedit|MultiEdit|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
 				"hooks": [
 					{
 						"type": "command",
@@ -133,7 +133,7 @@
 				]
 			},
 			{
-				"matcher": "^(apply_patch|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
+				"matcher": "^(write_to_file|WriteToFile|write_file|WriteFile|apply_patch|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
 				"hooks": [
 					{
 						"type": "command",

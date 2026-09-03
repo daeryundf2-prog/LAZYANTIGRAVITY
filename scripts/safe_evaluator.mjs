@@ -132,12 +132,18 @@ export function evaluateAtomicFacts(atomicFacts, knowledgeBase = '') {
 
 async function main() {
 	const args = process.argv.slice(2);
-	if (args.length === 0 || args.includes('--help')) {
-		console.log('Usage: node scripts/safe_evaluator.mjs <file.md> [--kb <reference.txt>] [--strict]');
+	if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+		console.log('Usage: node scripts/safe_evaluator.mjs <file.md> [--kb <reference.txt>] [--strict] [--json]');
 		process.exit(0);
 	}
 
-	const filePath = path.resolve(args[0]);
+	const fileArg = args.find((a) => !a.startsWith('-'));
+	if (!fileArg) {
+		console.error('Error: missing file argument');
+		process.exit(1);
+	}
+
+	const filePath = path.resolve(fileArg);
 	if (!fs.existsSync(filePath)) {
 		console.error(`File not found: ${filePath}`);
 		process.exit(1);
@@ -156,8 +162,12 @@ async function main() {
 	const facts = decomposeAtomicFacts(text);
 	const evaluation = evaluateAtomicFacts(facts, kb);
 
-	console.log(`[SAFE EVALUATOR] Total Facts: ${evaluation.total_atomic_facts} | Supported: ${evaluation.supported_count} | Refuted: ${evaluation.refuted_count} | Unclear: ${evaluation.unclear_count}`);
-	console.log(`[SAFE EVALUATOR] Factuality Score: ${(evaluation.factuality_score * 100).toFixed(1)}% | Precision: ${(evaluation.precision * 100).toFixed(1)}%`);
+	if (args.includes('--json')) {
+		console.log(JSON.stringify(evaluation, null, 2));
+	} else {
+		console.log(`[SAFE EVALUATOR] Total Facts: ${evaluation.total_atomic_facts} | Supported: ${evaluation.supported_count} | Refuted: ${evaluation.refuted_count} | Unclear: ${evaluation.unclear_count}`);
+		console.log(`[SAFE EVALUATOR] Factuality Score: ${(evaluation.factuality_score * 100).toFixed(1)}% | Precision: ${(evaluation.precision * 100).toFixed(1)}%`);
+	}
 
 	if (args.includes('--strict') && evaluation.factuality_score < 0.85) {
 		console.error(`[SAFE EVALUATOR] STRICT GATE FAILURE: Factuality score ${(evaluation.factuality_score * 100).toFixed(1)}% is below 85% threshold.`);

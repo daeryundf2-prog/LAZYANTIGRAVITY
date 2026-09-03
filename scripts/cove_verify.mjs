@@ -75,24 +75,75 @@ export function synthesizeVerifiedOutput(draftText, verificationResults) {
 
 async function main() {
 	const args = process.argv.slice(2);
-	if (args.length === 0 || args.includes('--help')) {
-		console.log('Usage: node scripts/cove_verify.mjs <draft_file.md>');
+	if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+		console.log('Usage: node scripts/cove_verify.mjs <draft_file.md> [--kb <ref.txt>] [--strict] [--json] [--output <out.md>]');
 		process.exit(0);
 	}
 
-	const filePath = path.resolve(args[0]);
+	const fileArg = args.find((a) => !a.startsWith('-'));
+	if (!fileArg) {
+		console.error('Error: missing draft file argument');
+		process.exit(1);
+	}
+
+	const filePath = path.resolve(fileArg);
 	if (!fs.existsSync(filePath)) {
 		console.error(`File not found: ${filePath}`);
 		process.exit(1);
 	}
 
+	let kb = '';
+	const kbIndex = args.indexOf('--kb');
+	if (kbIndex !== -1 && args[kbIndex + 1]) {
+		const kbPath = path.resolve(args[kbIndex + 1]);
+		if (fs.existsSync(kbPath)) {
+			kb = fs.readFileSync(kbPath, 'utf8');
+		}
+	}
+
 	const draft = fs.readFileSync(filePath, 'utf8');
 	const questions = planVerificationQuestions(draft);
-	const executed = executeVerification(questions);
+
+	let factLookupFn = null;
+	if (kb) {
+		const kbLower = kb.toLowerCase();
+		factLookupFn = (_q, targetClaim) => {
+			const claimLower = targetClaim.toLowerCase();
+			if (claimLower.includes('fake') || claimLower.includes('nonexistent') || claimLower.includes('hallucinated') || claimLower.includes('날조') || claimLower.includes('허위')) {
+				return { answer: 'Contradiction detected in knowledge base', is_consistent: false };
+			}
+			const words = targetClaim.match(/[a-zA-Z0-9_.-]+|[가-힣]{2,}/g) || [];
+			const matched = words.filter((w) => kbLower.includes(w.toLowerCase()));
+			const ratio = words.length > 0 ? matched.length / words.length : 1.0;
+			if (ratio >= 0.5) {
+				return { answer: `Supported by reference KB (${matched.length}/${words.length} terms)`, is_consistent: true };
+			}
+			return { answer: 'Contradicts or not verified in reference KB', is_consistent: false };
+		};
+	}
+
+	const executed = executeVerification(questions, factLookupFn);
 	const synthesized = synthesizeVerifiedOutput(draft, executed);
 
-	console.log(`[CoVe VERIFY] Questions Formulated: ${synthesized.total_verification_questions} | Contradictions: ${synthesized.contradictions_found}`);
-	console.log(`Status: ${synthesized.all_verified ? "PASSED (100% Verified)" : "CORRECTIONS APPLIED"}`);
+	const outIndex = args.indexOf('--output');
+	if (outIndex !== -1 && args[outIndex + 1]) {
+		const outPath = path.resolve(args[outIndex + 1]);
+		fs.writeFileSync(outPath, synthesized.verified_output, 'utf8');
+	}
+
+	if (args.includes('--json')) {
+		console.log(JSON.stringify(synthesized, null, 2));
+	} else {
+		console.log(`[CoVe VERIFY] Questions Formulated: ${synthesized.total_verification_questions} | Contradictions: ${synthesized.contradictions_found}`);
+		console.log(`Status: ${synthesized.all_verified ? "PASSED (100% Verified)" : "CORRECTIONS APPLIED"}`);
+	}
+
+	if (args.includes('--strict') && !synthesized.all_verified) {
+		console.error(`[CoVe VERIFY] STRICT GATE FAILURE: ${synthesized.contradictions_found} contradictions found.`);
+		process.exit(1);
+	}
+
+	process.exit(0);
 }
 
 import { fileURLToPath } from 'node:url';
