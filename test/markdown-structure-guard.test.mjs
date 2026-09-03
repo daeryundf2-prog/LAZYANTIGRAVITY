@@ -112,3 +112,26 @@ test("blocks multiline empty evidence block and allows tags/citations inside inl
 	assert.equal(res2.status, 0, `stderr: ${res2.stderr}`);
 });
 
+test("supports attributed evidence tags and blocks unclosed attributed tags", () => {
+	const dir = mkdtempSync(join(tmpdir(), "mdguard-"));
+	const good = join(dir, "good_attr.md");
+	writeFileSync(good, "# Valid\n\n<evidence source=\"doc1.md\" id=\"e1\">원문 인용</evidence>\n<answer confidence=\"0.95\">답변</answer>\n", "utf8");
+	const resGood = runGuard(JSON.stringify({ tool_input: { file_path: good } }));
+	assert.equal(resGood.status, 0, `stderr: ${resGood.stderr}`);
+
+	const unclosed = join(dir, "unclosed_attr.md");
+	writeFileSync(unclosed, "# Unclosed\n\n<evidence source=\"doc1.md\">원문 인용\n<answer>답변</answer>\n", "utf8");
+	const resUnclosed = runGuard(JSON.stringify({ tool_input: { file_path: unclosed } }));
+	assert.equal(resUnclosed.status, 1);
+	assert.match(resUnclosed.stderr, /unclosed_evidence_tag/);
+});
+
+test("protects empty links, bullets, and tables inside code fences from false positives", () => {
+	const dir = mkdtempSync(join(tmpdir(), "mdguard-"));
+	const doc = join(dir, "fence_safe.md");
+	writeFileSync(doc, "# Guide\n\n```markdown\n[](https://example.com)\n-  : sample\n| col1 |\n| col1 | col2 |\n```\n", "utf8");
+	const res = runGuard(JSON.stringify({ tool_input: { file_path: doc } }));
+	assert.equal(res.status, 0, `stderr: ${res.stderr}`);
+});
+
+

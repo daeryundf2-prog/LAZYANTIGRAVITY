@@ -131,9 +131,6 @@ function maskCodeSpans(lines) {
 		if (inFence) {
 			return '·'.repeat(line.length);
 		}
-		if (/^#+\s/.test(line)) {
-			return '·'.repeat(line.length);
-		}
 		return line.replace(/`[^`\n]*`/g, (m) => '·'.repeat(m.length));
 	});
 }
@@ -142,11 +139,9 @@ const FINDING_CHECKS = [
 	{
 		id: 'empty_link_text',
 		message: '빈 링크 텍스트 [](...) — 링크 문구가 스트리핑되었다',
-		run: (lines) => {
+		run: (lines, masked) => {
 			const hits = [];
-			lines.forEach((line, i) => {
-				// 인라인 코드 스팬 내용은 문서가 패턴 자체를 인용하는 경우가 있어 제외
-				const prose = line.replace(/`[^`\n]*`/g, '·');
+			masked.forEach((prose, i) => {
 				if (/\[\s*\]\(/.test(prose)) hits.push(i + 1);
 			});
 			return hits;
@@ -155,9 +150,9 @@ const FINDING_CHECKS = [
 	{
 		id: 'empty_bullet_before_colon',
 		message: '빈 불릿 "-  : 본문" — 불릿 라벨(굵은 글씨/링크/인라인 코드)이 스트리핑되었다',
-		run: (lines) => {
+		run: (lines, masked) => {
 			const hits = [];
-			lines.forEach((line, i) => {
+			masked.forEach((line, i) => {
 				if (/^[ \t]*[-*+][ \t]+:[ \t]/.test(line)) hits.push(i + 1);
 			});
 			return hits;
@@ -168,7 +163,7 @@ const FINDING_CHECKS = [
 	{
 		id: 'orphan_math_delimiter',
 		message: '줄에서 $ 구분자가 홀수 개 — 인라인 수식이 잘렸을 가능성 (가격/변수 표기 의도면 \\$ 로 이스케이프)',
-		run: (lines) => {
+		run: (lines, masked) => {
 			// 판정 순서가 중요하다: (1) 코드스팬 제거 → (2) 균형 잡힌 $...$ 쌍 제거 →
 			// (3) 전대문자 토큰(NTFS $MFT, 템플릿 $ARGUMENTS, 플레이스홀더 $X)·가격($9/월) 제외 →
 			// (4) 잔여 $ 가 홀수면 손상. 토큰 제외를 쌍 제거보다 먼저 하면 정상 수식의
@@ -206,10 +201,10 @@ const FINDING_CHECKS = [
 	{
 		id: 'table_column_mismatch',
 		message: '표 열 개수 불일치 — 행에서 셀이 잘려나갔다',
-		run: (lines) => {
+		run: (lines, masked) => {
 			const hits = [];
 			let block = [];
-			const flush = (endLine) => {
+			const flush = () => {
 				if (block.length >= 2) {
 					const cellCount = (row) => row.replace(/\\\|/g, '·').split('|').length - 2;
 					const header = cellCount(block[0][0]);
@@ -221,24 +216,24 @@ const FINDING_CHECKS = [
 				}
 				block = [];
 			};
-			lines.forEach((line, i) => {
+			masked.forEach((line, i) => {
 				if (/^\s*\|.*\|\s*$/.test(line)) block.push([line, i + 1]);
-				else flush(i + 1);
+				else flush();
 			});
-			flush(lines.length);
+			flush();
 			return hits;
 		},
 	},
 	{
 		id: 'unclosed_evidence_tag',
 		message: '미닫힘 <evidence> 또는 <answer> 태그 — Evidence-First Attributed QA 태그 쌍이 맞지 않는다',
-		run: (lines) => {
-			const maskedText = maskCodeSpans(lines).join('\n');
+		run: (lines, masked) => {
+			const maskedText = masked.join('\n');
 			const hits = [];
-			const openEvidence = (maskedText.match(/<evidence>/gi) || []).length;
-			const closeEvidence = (maskedText.match(/<\/evidence>/gi) || []).length;
-			const openAnswer = (maskedText.match(/<answer>/gi) || []).length;
-			const closeAnswer = (maskedText.match(/<\/answer>/gi) || []).length;
+			const openEvidence = (maskedText.match(/<evidence(?:\s+[^>]*)?>/gi) || []).length;
+			const closeEvidence = (maskedText.match(/<\/evidence\s*>/gi) || []).length;
+			const openAnswer = (maskedText.match(/<answer(?:\s+[^>]*)?>/gi) || []).length;
+			const closeAnswer = (maskedText.match(/<\/answer\s*>/gi) || []).length;
 			if (openEvidence !== closeEvidence || openAnswer !== closeAnswer) {
 				hits.push(lines.length);
 			}
@@ -248,11 +243,10 @@ const FINDING_CHECKS = [
 	{
 		id: 'empty_evidence_block',
 		message: '빈 <evidence></evidence> 블록 — 근거 인용 원문이 누락되었다',
-		run: (lines) => {
-			const masked = maskCodeSpans(lines);
+		run: (lines, masked) => {
 			const full = masked.join('\n');
 			const hits = [];
-			const re = /<evidence>\s*<\/evidence>/gi;
+			const re = /<evidence(?:\s+[^>]*)?>\s*<\/evidence\s*>/gi;
 			let match;
 			while ((match = re.exec(full)) !== null) {
 				const lineNo = full.slice(0, match.index).split('\n').length;
@@ -264,8 +258,7 @@ const FINDING_CHECKS = [
 	{
 		id: 'broken_citation_token',
 		message: '깨진 인라인 인용 토큰(【F:...†L...】) 발견 — LangExtract 1:1 바인딩 위반 및 렌더링 손상',
-		run: (lines) => {
-			const masked = maskCodeSpans(lines);
+		run: (lines, masked) => {
 			const hits = [];
 			masked.forEach((line, i) => {
 				if (/【F:[^】]+†L\d+[^】]*】/.test(line)) hits.push(i + 1);
@@ -277,10 +270,11 @@ const FINDING_CHECKS = [
 
 function scanMarkdown(text) {
 	const lines = text.split(/\r?\n/);
+	const masked = maskCodeSpans(lines);
 	const findings = [];
 	for (const check of FINDING_CHECKS) {
 		try {
-			const hits = check.run(lines);
+			const hits = check.run(lines, masked);
 			if (hits.length > 0) findings.push({ id: check.id, message: check.message, lines: hits.slice(0, 8) });
 		} catch {
 			// 개별 검사 실패는 전체 게이트를 죽이지 않는다

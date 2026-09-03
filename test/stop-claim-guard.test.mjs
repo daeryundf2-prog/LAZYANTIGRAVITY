@@ -40,7 +40,7 @@ test("blocks grand completion claim without evidence", () => {
 test("passes claim backed by test counts and artifact paths", () => {
 	const res = runGuard(
 		stopPayload({
-			last_assistant_message: "모두 반영했습니다. uv run pytest → 98 passed, 산출물은 skills/x/SKILL.md, 커밋 1464e7a.",
+			last_assistant_message: "모두 반영했습니다. uv run pytest → 98 passed, 산출물은 skills/boost/SKILL.md, 커밋 1464e7a.",
 		}),
 	);
 	assert.equal(res.status, 0);
@@ -136,5 +136,33 @@ test("blocks fabricated Windows backslash and Korean phantom paths", () => {
 	assert.equal(out.decision, "block");
 	assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
 });
+
+test("blocks fabricated Windows absolute drive paths via Fact-Retracing Gate", () => {
+	const res = runGuard(
+		stopPayload({
+			transcript_path: null,
+			last_assistant_message: "모두 완료했습니다. pytest 10 passed. 산출물: C:\\phantom_drive\\fake_artifact.ts 작성 완료.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+	assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
+	assert.match(out.reason, /fake_artifact\.ts/);
+});
+
+test("retraces Korean particle attached file claims", () => {
+	const res = runGuard(
+		stopPayload({
+			transcript_path: null,
+			last_assistant_message: "모두 수정했습니다. 산출물은 nonexistent_particle_file.py 파일입니다.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+	assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
+});
+
 
 

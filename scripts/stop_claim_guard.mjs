@@ -107,10 +107,12 @@ async function main() {
 			}
 		}
 
-		const claimedFileMatches = message.matchAll(/(?:생성|작성|수정|추가|산출물|created|written|generated|file|path)\s*[:=]?\s*[`"']?([a-zA-Z0-9_./\\가-힣-]+\.(?:ts|js|mjs|py|go|rs|json|md))[`"']?/gi);
+		const claimedFileMatches = message.matchAll(/(?:(?:생성|작성|수정|추가|산출물)(?:은|는|이|가|로|으로)?|(?:created|written|generated|file|path))\s*[:=]?\s*[`"']?([a-zA-Z0-9_.:/\\가-힣-]+\.(?:ts|js|mjs|py|go|rs|json|md))[`"']?/gi);
 		for (const match of claimedFileMatches) {
 			const claimedPath = match[1];
-			const fullPath = path.resolve(payload.cwd || process.cwd(), claimedPath);
+			const fullPath = path.isAbsolute(claimedPath)
+				? path.normalize(claimedPath)
+				: path.resolve(payload.cwd || process.cwd(), claimedPath);
 			const existsOnDisk = fs.existsSync(fullPath);
 			const existsInTranscript = transcriptContent ? transcriptContent.includes(claimedPath) : false;
 

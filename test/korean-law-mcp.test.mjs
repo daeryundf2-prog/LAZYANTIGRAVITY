@@ -77,3 +77,27 @@ test("lookup_precedent rejects invalid case number format with [INSUFFICIENT_DAT
 	assert.match(res.error, /INSUFFICIENT_DATA/);
 });
 
+test("lookup_statute supports Trade Secrets Act (부정경쟁방지법)", () => {
+	const resArt2 = callTool("lookup_statute", { statute_name: "부정경쟁방지법", article_number: "2" });
+	assert.equal(resArt2.ok, true);
+	assert.equal(resArt2.grounding_status, "VERIFIED_PRIMARY_STATUTE");
+	assert.match(resArt2.text, /영업비밀/);
+
+	const resArt18 = callTool("lookup_statute", { statute_name: "영업비밀보호법", article_number: "18" });
+	assert.equal(resArt18.ok, true);
+	assert.match(resArt18.text, /벌칙/);
+});
+
+test("lookup_precedent verifies digital forensic landmark precedents (2011도10797, 2021도11170)", () => {
+	const resEvidence = callTool("lookup_precedent", { case_number: "2011도10797" });
+	assert.equal(resEvidence.ok, true);
+	assert.equal(resEvidence.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
+	assert.match(resEvidence.precedent.name, /전자증거/);
+
+	const resWarrant = callTool("lookup_precedent", { case_number: "2021도11170" });
+	assert.equal(resWarrant.ok, true);
+	assert.equal(resWarrant.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
+	assert.match(resWarrant.precedent.name, /압수수색/);
+});
+
+
