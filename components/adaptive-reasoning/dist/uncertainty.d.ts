@@ -29,3 +29,24 @@ export declare function computeUncertainty(prompt: string): UncertaintyEvaluatio
  */
 export declare function computeMultiPathUncertainty(prompt: string, reasoningPaths?: string[]): UncertaintyEvaluation;
 export declare function formatUncertaintyDirective(evaluation: UncertaintyEvaluation): string;
+/**
+ * Enterprise Factuality Generation Configuration (Section 4.1 & 8)
+ * Enforces zero-temperature deterministic inference and tight dynamic search threshold.
+ */
+export declare const FACTUALITY_GENERATION_CONFIG: {
+    temperature: number;
+    topP: number;
+    topK: number;
+    dynamicSearchThreshold: number;
+};
+export interface HighFidelityEvaluation {
+    grounded: boolean;
+    overlapRatio: number;
+    missingEntities: string[];
+    verdict: "PASS" | "FAIL";
+}
+/**
+ * Vertex AI High-Fidelity Non-Parametric Mode Verifier (Section 4.2)
+ * Ensures generated assertions strictly bind to source context tokens.
+ */
+export declare function evaluateHighFidelityGrounding(sourceDocument: string, modelResponse: string, minOverlapThreshold?: number): HighFidelityEvaluation;

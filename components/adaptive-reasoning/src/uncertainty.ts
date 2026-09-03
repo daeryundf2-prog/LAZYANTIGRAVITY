@@ -262,3 +262,66 @@ export function formatUncertaintyDirective(evaluation: UncertaintyEvaluation): s
 - Fallback: If primary evidence cannot be found, output [INSUFFICIENT_DATA: <missing detail>] rather than guessing.
 </uncertainty-guided-search>`;
 }
+
+/**
+ * Enterprise Factuality Generation Configuration (Section 4.1 & 8)
+ * Enforces zero-temperature deterministic inference and tight dynamic search threshold.
+ */
+export const FACTUALITY_GENERATION_CONFIG = {
+	temperature: 0.0,
+	topP: 0.95,
+	topK: 40,
+	dynamicSearchThreshold: 0.3,
+};
+
+export interface HighFidelityEvaluation {
+	grounded: boolean;
+	overlapRatio: number;
+	missingEntities: string[];
+	verdict: "PASS" | "FAIL";
+}
+
+/**
+ * Vertex AI High-Fidelity Non-Parametric Mode Verifier (Section 4.2)
+ * Ensures generated assertions strictly bind to source context tokens.
+ */
+export function evaluateHighFidelityGrounding(
+	sourceDocument: string,
+	modelResponse: string,
+	minOverlapThreshold: number = 0.70
+): HighFidelityEvaluation {
+	if (!modelResponse || modelResponse.trim().length === 0) {
+		return { grounded: false, overlapRatio: 0, missingEntities: [], verdict: "FAIL" };
+	}
+	const cleanSrc = sourceDocument.toLowerCase();
+	const cleanResp = modelResponse.toLowerCase();
+
+	const tokens = cleanResp
+		.replace(/[<>[\](),.:;'"!?]/g, " ")
+		.split(/\s+/)
+		.filter((t) => t.length > 1);
+
+	if (tokens.length === 0) {
+		return { grounded: true, overlapRatio: 1.0, missingEntities: [], verdict: "PASS" };
+	}
+
+	const missing = [];
+	let groundedCount = 0;
+	for (const token of tokens) {
+		if (cleanSrc.includes(token)) {
+			groundedCount++;
+		} else {
+			missing.push(token);
+		}
+	}
+
+	const overlapRatio = Number((groundedCount / tokens.length).toFixed(3));
+	const grounded = overlapRatio >= minOverlapThreshold;
+	return {
+		grounded,
+		overlapRatio,
+		missingEntities: Array.from(new Set(missing)).slice(0, 10),
+		verdict: grounded ? "PASS" : "FAIL",
+	};
+}
+

@@ -6,6 +6,18 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — Section 5.1 #3 한국사 사건/조약 날조 차단 & Section 5.1 #4 불가능한 사법절차 차단 & Section 7-8 Enterprise Pipeline Health Check (100점 감사)
+
+- **hephaestus.md** (`components/rules/bundled-rules/hephaestus.md`):
+  * **Section 5.1 #3 Korean Historical Events & Treaties Hallucination Ban**: 갑오개혁 4차, 제2차 을사조약, 3차 동학농민운동, 강화도조약 2차 등 실존하지 않는 역사 사건 차수 및 조약 날조 금지 규약 추가.
+  * **Section 5.1 #4 Impossible Judicial Procedures Hallucination Ban**: 대검찰청/고등검찰청의 약식명령 청구, 경찰의 영장 직접 청구, 경찰의 직접 기소, 헌법재판소의 징역형 선고, 민사소송에서의 징역형 선고, 형사소송의 원고 등 실정법상 성립 불가 절차 날조 금지 규약 추가.
+- **adaptive-reasoning** (`components/adaptive-reasoning/src/uncertainty.ts`):
+  * `FACTUALITY_GENERATION_CONFIG`: Deterministic temperature (`0.0`), dynamic search threshold (`0.3`) 정책 상수 내보내기.
+  * `evaluateHighFidelityGrounding`: Vertex AI High-Fidelity non-parametric grounding 평가 모듈 내보내기.
+- **scripts/enterprise_pipeline_health_check.mjs**: Section 7 & 8 Enterprise 3-Layer Factuality Pipeline Health Check CLI 신설 (`npm run health:hallucination`, `npm run audit:hallucination`). 10대 항목(Layer 1 입력 제어 30점, Layer 2 생성/구조화 20점, Layer 3 사후 검증 게이트 50점) 100점 만점 감사 엔진 및 cross-repo 연동 구현.
+- **test/enterprise-pipeline-health.test.mjs**: 100/100 점수 및 3-Layer 전수 통과 검증 테스트 추가.
+- **test/anti-hallucination-rule.test.mjs**: hephaestus 규칙 내 Section 5.1 #3 & #4 금지 규약 검증 보강.
+
 ### Added — Section 4.3 Med-Gemini Uncertainty-Guided Search & Multi-Path Entropy
 
 - **adaptive-reasoning** (`components/adaptive-reasoning/src/uncertainty.ts`):

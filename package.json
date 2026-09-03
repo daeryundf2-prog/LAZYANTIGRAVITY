@@ -54,6 +54,8 @@
 		"probe:model-capabilities": "node scripts/model-capability-probe.mjs",
 		"verify:reproducible": "node scripts/verify-dist-sync.mjs",
 		"test:components": "node scripts/run-component-tests.mjs",
+		"audit:hallucination": "node scripts/enterprise_pipeline_health_check.mjs",
+		"health:hallucination": "node scripts/enterprise_pipeline_health_check.mjs",
 		"bench": "node scripts/bench-ast-index.mjs && node scripts/bench-daemon-rtt.mjs"
 	}
 }

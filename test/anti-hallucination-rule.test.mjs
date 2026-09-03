@@ -33,5 +33,12 @@ test("#given bundled Hephaestus rules #when inspected #then factual claims requi
 	assert.match(text, /Phase 1 \(Thinking Trace\)[\s\S]*Phase 2 \(Response Formulation\)/i);
 	assert.match(text, /Korean Government Agency & Ministry Hallucination Ban/i);
 	assert.match(text, /정보통신부[\s\S]*문화공보부[\s\S]*사이버수사처/i);
+	assert.match(text, /Korean Historical Events & Treaties Hallucination Ban/i);
+	assert.match(text, /갑오개혁 4차[\s\S]*을사조약[\s\S]*동학농민운동/i);
+	assert.match(text, /Impossible Judicial Procedures Hallucination Ban/i);
+	assert.match(text, /약식명령[\s\S]*대검찰청/i);
+	assert.match(text, /영장 직접 청구/i);
+	assert.match(text, /헌법재판소[\s\S]*징역형/i);
+	assert.match(text, /형사소송[\s\S]*원고/i);
 });
 
