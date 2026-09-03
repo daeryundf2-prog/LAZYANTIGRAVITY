@@ -43,6 +43,9 @@ node scripts/cove_verify.mjs draft_response.md --kb verified_reference.txt --hig
 
 # Gemini 검색 그라운딩 메타데이터 기반 각주 렌더링 및 High-Fidelity 비파라메트릭 검증
 node scripts/render_grounding_citations.mjs --file response_with_meta.json --high-fidelity
+
+# Enterprise 3-Layer 사실성 파이프라인 종합 헬스체크 (100점 감사)
+npm run health:hallucination
 ```
 
 

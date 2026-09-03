@@ -1,6 +1,6 @@
 ---
 name: safe-evaluator
-description: "SAFE (Search-Augmented Factuality Evaluator): Google DeepMind atomic fact decomposition and search-grounded verification skill. Evaluates long-form text factuality, breaks claims into individual atomic propositions, issues search queries, computes SAFE F1 score, and enforces factuality gates. Triggers: safe-evaluator, safe-fact-checker, atomic-fact-check, 팩트체크, 원자적사실검증."
+description: "SAFE (Search-Augmented Factuality Evaluator): Google DeepMind atomic fact decomposition and search-grounded verification skill. Evaluates long-form text factuality, breaks claims into individual atomic propositions, issues search queries, computes SAFE F1 score, and enforces factuality gates. Triggers: safe-evaluator, safe-fact-checker, atomic-fact-check, 팩트체크, 원자적사실검증, health:hallucination, enterprise-pipeline-health."
 ---
 
 # SAFE: Search-Augmented Factuality Evaluator
@@ -59,4 +59,7 @@ node scripts/safe_evaluator.mjs report.md --kb verified_reference.txt --high-fid
 
 # High-Fidelity 비파라메트릭 각주 검증 병행 (Section 4.2)
 node scripts/render_grounding_citations.mjs --file report_with_meta.json --high-fidelity
+
+# Enterprise 3-Layer 사실성 파이프라인 종합 헬스체크 (100점 감사)
+npm run health:hallucination
 ```

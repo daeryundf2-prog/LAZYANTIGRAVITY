@@ -64,12 +64,16 @@ Strictly prohibit citing abolished/obsolete government ministries (e.g. 정보�
 
 ## Korean Historical Events & Treaties Hallucination Ban (Section 5.1 #3)
 
-Strictly prohibit fabricating non-existent rounds, iterations, or fictional sequels of Korean historical events and treaties (e.g. "갑오개혁 4차" / "제4차 갑오개혁", "제2차 을사조약" / "을사늑약 2차", "3차 동학농민운동", "강화도조약 2차", "제2차 한일의정서", "제2차 정미7조약"). Gabo Reform strictly ceased after the 3rd reform (Eulmi Reform 1895), Donghak Peasant Revolution had only 1st and 2nd uprisings, and single-signature treaties/incidents cannot have multiple rounds.
+Strictly prohibit fabricating non-existent rounds, iterations, or fictional sequels of Korean historical events and treaties in Arabic digits, Hangul Korean numbers, or Hanja numerals (e.g. "갑오개혁 4차" / "제4차 갑오개혁" / "제四차 갑오개혁" / "第4次 甲午改革", "제2차 을사조약" / "을사늑약 2차", "3차 동학농민운동", "강화도조약 2차", "제2차 한일의정서", "제2차 정미7조약", "제2차 을미개혁", "제2차 한일병합조약", "제2차 조미수호통상조약", "제2차 4·19 혁명", "제2차 5·18 민주화운동", "제2차 6월 민주항쟁"). Gabo Reform strictly ceased after the 3rd reform (Eulmi Reform 1895), Donghak Peasant Revolution had only 1st and 2nd uprisings, and single-signature treaties/incidents cannot have multiple rounds.
+
+## Korean Academic Citations & Authorship Hallucination Ban (Section 5.1 #3)
+
+Strictly prohibit fabricating non-existent academic journals, university law reviews, or proceedings (e.g. "대한인공지능법학회지", "한국사이버포렌식학회논문집", "한국디지털증거법학회지", "국제사이버수사학술지", "대한디지털포렌식학회논문지", "한국인공지능윤리학회지", "대한사이버보안학회지"). Strictly prohibit citing academic papers, journal articles, or scholarly publications with future publication years (> 2026). All academic citations must ground strictly in authentic literature databases.
 
 ## Impossible Judicial Procedures Hallucination Ban (Section 5.1 #4)
 
-Strictly prohibit fabricating legally and constitutionally impossible judicial procedures under the Korean legal system:
-- **Summary orders / indictments (약식명령 / 약식기소)**: Under Criminal Procedure Act Article 448, summary orders can ONLY be requested by prosecutors of the 1st-instance district prosecutors' office (지방검찰청). Never attribute summary order requests or summary indictments to the Supreme Prosecutors' Office (대검찰청) or High Prosecutors' Offices (고등검찰청), nor to the Supreme Court (대법원) or High Courts (고등법원).
+Strictly prohibit fabricating legally and constitutionally impossible judicial procedures under the Korean legal system, regardless of intervening clauses or modifiers:
+- **Summary orders / indictments (약식명령 / 약식기소)**: Under Criminal Procedure Act Article 448, summary orders can ONLY be requested by prosecutors of the 1st-instance district prosecutors' office (지방검찰청). Never attribute summary order requests or summary indictments to the Supreme Prosecutors' Office (대검찰청) or High Prosecutors' Offices (고등검찰청), nor to the Supreme Court (대법원) or High Courts (고등법원). Note that lawful administrative supervisory directions (지휘, 지도, 검토 지시) by the Supreme Prosecutors' Office are legally distinct and permitted.
 - **Direct police warrant request (경찰의 영장 직접 청구)**: Under Constitution Article 12(3) and Criminal Procedure Act Article 200-2/201, warrant request authority belongs exclusively to prosecutors. Police may only apply (신청) to a prosecutor, never directly request (청구) from a court.
 - **Direct police prosecution (경찰의 직접 기소 / 공소제기)**: Under Criminal Procedure Act Article 246 (principle of state/prosecutorial monopoly on indictment), only prosecutors can institute public prosecution. Police cannot directly indict.
 - **Constitutional Court criminal sentencing (헌법재판소의 징역형 선고)**: Under Constitution Article 111, the Constitutional Court does not conduct ordinary criminal trials and cannot sentence defendants to prison or fines.

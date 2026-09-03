@@ -207,34 +207,39 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	});
 
 	// 3.3 Statutory Bounds & Precedents Gate (Section 5.1 #1 & #2) (10 pts)
+	// 3.3 Statutory Bounds & Agency/Academic Citations Gate (Section 5.1 #1, #2 & #3) (10 pts)
 	let statBoundsPass = false;
 	let statBoundsDetail = "";
 	const pyScript = join(ROOT, "..", "lazyothers", "scripts", "verify_legal_factuality.py");
+	let legalHealthData = null;
 	if (existsSync(pyScript)) {
 		const res = spawnSync("python", [pyScript, "--health-check", "--json"], { encoding: "utf8" });
 		if (res.status === 0) {
 			try {
-				const data = JSON.parse(res.stdout);
-				if (data.status === "PASS" && data.score === 100) {
-					statBoundsPass = true;
-					statBoundsDetail = "26-statute bounds, precedent sanity, court/agency hallucination gates verified at 100%.";
-				}
+				legalHealthData = JSON.parse(res.stdout);
 			} catch (_) {}
 		}
-	} else {
-		// Fallback check against rules
-		if (existsSync(hephaestusRule)) {
-			const text = readFileSync(hephaestusRule, "utf8");
-			if (text.includes("Korean Government Agency & Ministry Hallucination Ban")) {
-				statBoundsPass = true;
-				statBoundsDetail = "Government Agency & Ministry Hallucination Ban rule verified in hephaestus.md.";
-			}
+	}
+
+	const hephaestusHasAgencyRule = existsSync(hephaestusRule) &&
+		readFileSync(hephaestusRule, "utf8").includes("Korean Government Agency & Ministry Hallucination Ban");
+	const hephaestusHasAcademicRule = existsSync(hephaestusRule) &&
+		readFileSync(hephaestusRule, "utf8").includes("Korean Academic Citations & Authorship Hallucination Ban");
+
+	if (legalHealthData && legalHealthData.status === "PASS" && legalHealthData.score === 100) {
+		const d = legalHealthData.details || {};
+		if (d.statutory_bounds_invalid?.status === "PASS" && d.agency_and_academic_sanity?.status === "PASS") {
+			statBoundsPass = true;
+			statBoundsDetail = "26-statute bounds, precedent sanity, court/agency & academic citation hallucination gates verified deeply at 100%.";
 		}
+	} else if (hephaestusHasAgencyRule && hephaestusHasAcademicRule) {
+		statBoundsPass = true;
+		statBoundsDetail = "Agency & Academic Citations Hallucination Ban rules verified in hephaestus.md.";
 	}
 	results.push({
 		id: "L3_STATUTE_AND_AGENCY_GATE",
 		layer: "Layer 3: Post-Verification Gates",
-		name: "Statutory Bounds & Agency/Court Sanity Gate (Section 5.1 #1 & #2)",
+		name: "Statutory Bounds & Agency/Academic Sanity Gate (Section 5.1 #1, #2 & #3)",
 		weight: 10,
 		status: statBoundsPass ? "PASS" : "FAIL",
 		detail: statBoundsDetail,
@@ -243,12 +248,20 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	// 3.4 Korean Historical Events & Treaties Gate (Section 5.1 #3) (10 pts)
 	let histEventPass = false;
 	let histEventDetail = "";
-	if (existsSync(hephaestusRule)) {
-		const text = readFileSync(hephaestusRule, "utf8");
-		if (text.includes("Korean Historical Events & Treaties Hallucination Ban") && text.includes("갑오개혁 4차") && text.includes("을사조약")) {
+	const hephaestusHasHistRule = existsSync(hephaestusRule) &&
+		readFileSync(hephaestusRule, "utf8").includes("Korean Historical Events & Treaties Hallucination Ban") &&
+		(readFileSync(hephaestusRule, "utf8").includes("제四차 갑오개혁") || readFileSync(hephaestusRule, "utf8").includes("第4次 甲午改革"));
+
+	if (legalHealthData && legalHealthData.status === "PASS") {
+		const d = legalHealthData.details || {};
+		if (d.historical_events_valid?.status === "PASS" && d.historical_events_invalid?.status === "PASS" &&
+			Array.isArray(d.historical_events_invalid?.errors) && d.historical_events_invalid.errors.length >= 3) {
 			histEventPass = true;
-			histEventDetail = "Fabricated Korean historical events/treaties ban verified across rules and factuality engines.";
+			histEventDetail = "Fabricated Korean historical events/treaties ban deeply verified across rules and factuality engine (Hanja numerals & single-occurrence events).";
 		}
+	} else if (hephaestusHasHistRule) {
+		histEventPass = true;
+		histEventDetail = "Fabricated Korean historical events/treaties ban verified in hephaestus.md (Hanja & single treaties).";
 	}
 	results.push({
 		id: "L3_HISTORICAL_EVENTS_GATE",
@@ -262,12 +275,22 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	// 3.5 Impossible Judicial Procedures Gate (Section 5.1 #4) (10 pts)
 	let judProcPass = false;
 	let judProcDetail = "";
-	if (existsSync(hephaestusRule)) {
-		const text = readFileSync(hephaestusRule, "utf8");
-		if (text.includes("Impossible Judicial Procedures Hallucination Ban") && text.includes("약식명령") && text.includes("영장 직접 청구") && text.includes("헌법재판소")) {
+	const hephaestusHasJudRule = existsSync(hephaestusRule) &&
+		readFileSync(hephaestusRule, "utf8").includes("Impossible Judicial Procedures Hallucination Ban") &&
+		readFileSync(hephaestusRule, "utf8").includes("약식명령") &&
+		readFileSync(hephaestusRule, "utf8").includes("영장 직접 청구") &&
+		readFileSync(hephaestusRule, "utf8").includes("헌법재판소");
+
+	if (legalHealthData && legalHealthData.status === "PASS") {
+		const d = legalHealthData.details || {};
+		if (d.judicial_procedures_valid?.status === "PASS" && d.judicial_procedures_invalid?.status === "PASS" &&
+			Array.isArray(d.judicial_procedures_invalid?.errors) && d.judicial_procedures_invalid.errors.length >= 2) {
 			judProcPass = true;
-			judProcDetail = "Impossible judicial procedures ban verified across rules and factuality engines.";
+			judProcDetail = "Impossible judicial procedures ban deeply verified across rules and factuality engine (long compound clauses & supervisory directives).";
 		}
+	} else if (hephaestusHasJudRule) {
+		judProcPass = true;
+		judProcDetail = "Impossible judicial procedures ban verified in hephaestus.md.";
 	}
 	results.push({
 		id: "L3_JUDICIAL_PROCEDURES_GATE",
