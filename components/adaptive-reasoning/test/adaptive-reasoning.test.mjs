@@ -216,3 +216,16 @@ test("computeMultiPathUncertainty elevates uncertainty when paths diverge (Secti
 	assert.ok(directive.includes("Section 4.3"));
 });
 
+test("evaluateHypothesisEntropy triggers on substantive semantic divergence with same polarity (Section 4.3)", async () => {
+	const { evaluateHypothesisEntropy } = await import("../dist/uncertainty.js");
+
+	const divergentHypotheses = [
+		"원인은 메모리 누수 100건으로 확인되었습니다 pass",
+		"원인은 데이터베이스 교착상태 100건으로 확인되었습니다 pass",
+	];
+	const res = evaluateHypothesisEntropy(divergentHypotheses);
+	assert.ok(res.entropy >= 0.5, `Entropy should be >= 0.5, got ${res.entropy}`);
+	assert.equal(res.triggerSearch, true);
+	assert.equal(res.conflicting, true);
+});
+

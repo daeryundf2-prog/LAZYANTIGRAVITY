@@ -9,7 +9,7 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 ### Added — Section 4.3 Med-Gemini Uncertainty-Guided Search & Multi-Path Entropy
 
 - **adaptive-reasoning** (`components/adaptive-reasoning/src/uncertainty.ts`):
-  Implemented `evaluateHypothesisEntropy` (Shannon entropy and direct polarity contradiction measurement across multiple reasoning paths) and `computeMultiPathUncertainty` (blending prompt epistemic uncertainty with path entropy).
+  Implemented `evaluateHypothesisEntropy` (Shannon entropy, semantic token overlap clustering, and direct polarity contradiction measurement across multiple reasoning paths) and `computeMultiPathUncertainty` (blending prompt epistemic uncertainty with path entropy).
 - Added CLI subcommands `uncertainty <prompt>` and `entropy <paths...>` to `lazyantigravity-adaptive-reasoning`.
 - Added `<uncertainty-guided-search>` directive injection in `scripts/user-prompt-dispatcher.mjs` on high uncertainty queries.
 - Updated `components/adaptive-reasoning/README.md` and unit tests in `adaptive-reasoning.test.mjs` and `user-prompt-dispatcher.test.mjs`.

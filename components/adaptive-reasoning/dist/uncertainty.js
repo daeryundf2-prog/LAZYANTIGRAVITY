@@ -58,29 +58,72 @@ export function evaluateHypothesisEntropy(hypotheses) {
             negCount++;
     }
     const hasDirectPolarityConflict = posCount > 0 && negCount > 0;
-    // 2. Cluster conclusions by normalized text signature
-    const clusterCounts = new Map();
+    // 2. Cluster conclusions by substantive semantic overlap and verdict
+    function stemKorean(w) {
+        return w.replace(/(판단된다|것으로|것이다|되었습니다|되었습니|됩니다|되었다|하다|하는|한다|하고|하며|하여|하게|되는|된다|되어|에서|으로|에게|은|는|이|가|을|를|의|에|로|와|과|도|만|다|라|하|되)$/g, "");
+    }
+    const STOP_WORDS = new Set([
+        "있습니다", "합니다", "입니다", "것입니다", "대해", "위해", "통해", "의해", "원인은", "원인",
+        "확인", "검증", "결과", "결론", "분석", "검토", "판단", "발생", "해당",
+        "the", "this", "that", "with", "from", "for", "and", "pass", "fail", "true", "false"
+    ]);
+    const clusters = [];
     for (const path of validPaths) {
-        let key = path.toLowerCase().replace(/\s+/g, " ");
-        // Normalize key numbers and verdicts
-        const numbers = (path.match(/\b\d+(?:\.\d+)?\b/g) || []).join(",");
         const hasPos = POSITIVE_VERDICTS.test(path);
         const hasNeg = NEGATIVE_VERDICTS.test(path);
         const verdictTag = hasPos && !hasNeg ? "POS" : hasNeg && !hasPos ? "NEG" : "NEUTRAL";
-        const clusterKey = `${verdictTag}#nums:${numbers}#len:${Math.round(path.length / 30)}`;
-        clusterCounts.set(clusterKey, (clusterCounts.get(clusterKey) || 0) + 1);
+        const rawWords = path
+            .toLowerCase()
+            .replace(/[^\w\s가-힣]/g, " ")
+            .split(/\s+/)
+            .filter((w) => w.length >= 2 && !/^\d+/.test(w));
+        const tokens = new Set();
+        for (const w of rawWords) {
+            const s = stemKorean(w);
+            if (s.length >= 2 && !STOP_WORDS.has(s)) {
+                tokens.add(s);
+            }
+        }
+        let matchedCluster = null;
+        for (const cl of clusters) {
+            if (cl.verdictTag !== verdictTag)
+                continue;
+            if (cl.tokens.size === 0 && tokens.size === 0) {
+                matchedCluster = cl;
+                break;
+            }
+            const intersection = [...tokens].filter((t) => cl.tokens.has(t)).length;
+            const union = new Set([...cl.tokens, ...tokens]).size;
+            const jaccard = union > 0 ? intersection / union : 1.0;
+            if (jaccard >= 0.2) {
+                matchedCluster = cl;
+                break;
+            }
+        }
+        if (matchedCluster) {
+            matchedCluster.count++;
+            for (const t of tokens)
+                matchedCluster.tokens.add(t);
+        }
+        else {
+            clusters.push({
+                verdictTag,
+                tokens: new Set(tokens),
+                count: 1
+            });
+        }
     }
     // 3. Compute Shannon entropy: H = - sum(p * log2(p))
     const total = validPaths.length;
     let shannon = 0;
     let maxCount = 0;
-    for (const count of clusterCounts.values()) {
-        if (count > maxCount)
-            maxCount = count;
-        const p = count / total;
+    for (const cl of clusters) {
+        if (cl.count > maxCount)
+            maxCount = cl.count;
+        const p = cl.count / total;
         shannon -= p * Math.log2(p);
     }
-    const maxPossibleEntropy = Math.log2(Math.max(clusterCounts.size, 2));
+    const maxPossibleEntropy = Math.log2(Math.max(clusters.length, 2));
     let normalizedEntropy = maxPossibleEntropy > 0 ? shannon / maxPossibleEntropy : 0;
     normalizedEntropy = Math.min(1.0, Math.max(0.0, Number(normalizedEntropy.toFixed(2))));
     const agreementRatio = Number((maxCount / total).toFixed(2));
