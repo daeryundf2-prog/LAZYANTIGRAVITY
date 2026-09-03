@@ -38,7 +38,11 @@ flowchart TD
 ```bash
 node scripts/cove_verify.mjs draft_response.md
 
+# 1차 참조 KB 기반 High-Fidelity 엄격 모순 차단 검증
+node scripts/cove_verify.mjs draft_response.md --kb verified_reference.txt --high-fidelity
+
 # Gemini 검색 그라운딩 메타데이터 기반 각주 렌더링 및 High-Fidelity 비파라메트릭 검증
 node scripts/render_grounding_citations.mjs --file response_with_meta.json --high-fidelity
 ```
+
 

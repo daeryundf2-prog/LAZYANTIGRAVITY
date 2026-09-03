@@ -76,7 +76,7 @@ export function synthesizeVerifiedOutput(draftText, verificationResults) {
 async function main() {
 	const args = process.argv.slice(2);
 	if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
-		console.log('Usage: node scripts/cove_verify.mjs <draft_file.md> [--kb <ref.txt>] [--strict] [--json] [--output <out.md>]');
+		console.log('Usage: node scripts/cove_verify.mjs <draft_file.md> [--kb <ref.txt>] [--strict] [--high-fidelity] [--json] [--output <out.md>]');
 		process.exit(0);
 	}
 
@@ -99,6 +99,12 @@ async function main() {
 		if (fs.existsSync(kbPath)) {
 			kb = fs.readFileSync(kbPath, 'utf8');
 		}
+	}
+
+	const isHighFidelity = args.includes('--high-fidelity');
+	if (isHighFidelity && !kb) {
+		console.error('[CoVe VERIFY] High-Fidelity mode requires a verified reference knowledge base (--kb).');
+		process.exit(1);
 	}
 
 	const draft = fs.readFileSync(filePath, 'utf8');
@@ -138,7 +144,7 @@ async function main() {
 		console.log(`Status: ${synthesized.all_verified ? "PASSED (100% Verified)" : "CORRECTIONS APPLIED"}`);
 	}
 
-	if (args.includes('--strict') && !synthesized.all_verified) {
+	if ((isHighFidelity || args.includes('--strict')) && !synthesized.all_verified) {
 		console.error(`[CoVe VERIFY] STRICT GATE FAILURE: ${synthesized.contradictions_found} contradictions found.`);
 		process.exit(1);
 	}

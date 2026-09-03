@@ -107,7 +107,7 @@ async function main() {
 	}
 
 	// Section 4.2: Vertex AI High-Fidelity Grounding Mode (Strict Non-Parametric)
-	const HIGH_FIDELITY_TRIGGER_RE = /(?:--high-fidelity|high-fidelity|high_fidelity|엄격한\s*그라운딩|비파라메트릭|non-parametric)/i;
+	const HIGH_FIDELITY_TRIGGER_RE = /(?:--high-fidelity|high-fidelity|high_fidelity|엄격한\s*그라운딩|비파라메트릭|non-parametric|하이\s*피델리티|strict[\s_-]*grounding)/i;
 	if (HIGH_FIDELITY_TRIGGER_RE.test(promptText)) {
 		contributions.push(`<high-fidelity-grounding>
 # Vertex AI High-Fidelity Grounding Mode Active (Section 4.2)

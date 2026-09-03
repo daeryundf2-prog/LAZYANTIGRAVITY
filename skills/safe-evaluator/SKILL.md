@@ -54,6 +54,9 @@ node scripts/safe_evaluator.mjs report.md --kb verified_reference.txt
 # 85% 미달 시 FAIL_CLOSED 차단
 node scripts/safe_evaluator.mjs report.md --strict
 
+# High-Fidelity 엄격 비파라메트릭 검증 (참조 KB 필수 대조 및 85%+ 무모순 게이트)
+node scripts/safe_evaluator.mjs report.md --kb verified_reference.txt --high-fidelity
+
 # High-Fidelity 비파라메트릭 각주 검증 병행 (Section 4.2)
 node scripts/render_grounding_citations.mjs --file report_with_meta.json --high-fidelity
 ```

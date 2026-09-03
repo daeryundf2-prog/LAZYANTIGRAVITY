@@ -121,3 +121,30 @@ test("ulw-loop cove-verify --help exits 0 with usage guide", async () => {
 	assert.match(res.stdout, /Usage: ulw-loop cove-verify/);
 });
 
+test("cove_verify CLI with --high-fidelity requires --kb and fails if missing or contradictory", async () => {
+	const { spawnSync } = await import("node:child_process");
+	const { mkdtempSync, writeFileSync } = await import("node:fs");
+	const { tmpdir } = await import("node:os");
+	const { join } = await import("node:path");
+	const { fileURLToPath } = await import("node:url");
+
+	const SCRIPT = fileURLToPath(new URL("../scripts/cove_verify.mjs", import.meta.url));
+	const dir = mkdtempSync(join(tmpdir(), "cove-hf-"));
+	const draftFile = join(dir, "draft.md");
+	writeFileSync(draftFile, "Node.js v24 is the current runtime version.\n", "utf8");
+
+	// 1. Fails without --kb
+	const resNoKb = spawnSync(process.execPath, [SCRIPT, draftFile, "--high-fidelity"], { encoding: "utf8" });
+	assert.equal(resNoKb.status, 1);
+	assert.match(resNoKb.stderr, /High-Fidelity mode requires a verified reference knowledge base/);
+
+	// 2. Passes with matching --kb
+	const kbFile = join(dir, "kb.txt");
+	writeFileSync(kbFile, "Official notice: Node.js v24 is the current runtime version released.", "utf8");
+	const resWithKb = spawnSync(process.execPath, [SCRIPT, draftFile, "--kb", kbFile, "--high-fidelity", "--json"], { encoding: "utf8" });
+	assert.equal(resWithKb.status, 0);
+	const data = JSON.parse(resWithKb.stdout);
+	assert.equal(data.all_verified, true);
+});
+
+

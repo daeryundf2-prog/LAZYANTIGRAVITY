@@ -271,3 +271,31 @@ test("renderGroundingCitations CLI with --high-fidelity exits 1 when coverage fa
 	assert.equal(data.abstention, true);
 });
 
+test("renderGroundingCitations rejects partial hallucinations in High-Fidelity mode based on text span coverage", () => {
+	const text = "Alpha fact is grounded. Beta sentence is completely fabricated hallucination without sources.";
+	const metadata = {
+		grounding_chunks: [{ url: "https://alpha.org", title: "Alpha Spec" }],
+		grounding_supports: [
+			{
+				segment: { startIndex: 0, endIndex: 23, text: "Alpha fact is grounded." },
+				grounding_chunk_indices: [0],
+				confidence_scores: [0.95],
+			},
+		],
+	};
+
+	const res = renderGroundingCitations({
+		text,
+		grounding_metadata: metadata,
+		high_fidelity: true,
+		min_coverage: 0.70,
+	});
+
+	assert.equal(res.ok, false);
+	assert.equal(res.high_fidelity_passed, false);
+	assert.equal(res.abstention, true);
+	assert.ok(res.grounding_coverage < 0.50);
+	assert.match(res.rendered_text, /\[INSUFFICIENT_DATA\]/);
+});
+
+

@@ -18,7 +18,7 @@ function getPluginRoot(repoRoot) {
 }
 export async function coveVerifyCmd(repoRoot, argv, json) {
     if (hasFlag(argv, "--help") || hasFlag(argv, "-h")) {
-        process.stdout.write("Usage: ulw-loop cove-verify <draft_file.md> [--file <path>] [--kb <ref.txt>] [--strict] [--json] [--output <out.md>]\n");
+        process.stdout.write("Usage: ulw-loop cove-verify <draft_file.md> [--file <path>] [--kb <ref.txt>] [--strict] [--high-fidelity] [--json] [--output <out.md>]\n");
         return 0;
     }
     const file = readValue(argv, "--file") || argv.find((a) => !a.startsWith("-"));
@@ -37,6 +37,8 @@ export async function coveVerifyCmd(repoRoot, argv, json) {
         childArgs.push("--kb", resolve(repoRoot, kb));
     if (hasFlag(argv, "--strict"))
         childArgs.push("--strict");
+    if (hasFlag(argv, "--high-fidelity"))
+        childArgs.push("--high-fidelity");
     if (json || hasFlag(argv, "--json"))
         childArgs.push("--json");
     const output = readValue(argv, "--output");
@@ -55,7 +57,7 @@ export async function coveVerifyCmd(repoRoot, argv, json) {
 }
 export async function safeEvalCmd(repoRoot, argv, json) {
     if (hasFlag(argv, "--help") || hasFlag(argv, "-h")) {
-        process.stdout.write("Usage: ulw-loop safe-eval <file.md> [--file <path>] [--kb <reference.txt>] [--strict] [--json]\n");
+        process.stdout.write("Usage: ulw-loop safe-eval <file.md> [--file <path>] [--kb <reference.txt>] [--strict] [--high-fidelity] [--json]\n");
         return 0;
     }
     const file = readValue(argv, "--file") || argv.find((a) => !a.startsWith("-"));
@@ -74,6 +76,8 @@ export async function safeEvalCmd(repoRoot, argv, json) {
         childArgs.push("--kb", resolve(repoRoot, kb));
     if (hasFlag(argv, "--strict"))
         childArgs.push("--strict");
+    if (hasFlag(argv, "--high-fidelity"))
+        childArgs.push("--high-fidelity");
     if (json || hasFlag(argv, "--json"))
         childArgs.push("--json");
     const res = spawnSync(process.execPath, childArgs, {

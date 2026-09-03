@@ -133,7 +133,7 @@ export function evaluateAtomicFacts(atomicFacts, knowledgeBase = '') {
 async function main() {
 	const args = process.argv.slice(2);
 	if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
-		console.log('Usage: node scripts/safe_evaluator.mjs <file.md> [--kb <reference.txt>] [--strict] [--json]');
+		console.log('Usage: node scripts/safe_evaluator.mjs <file.md> [--kb <reference.txt>] [--strict] [--high-fidelity] [--json]');
 		process.exit(0);
 	}
 
@@ -159,6 +159,12 @@ async function main() {
 		}
 	}
 
+	const isHighFidelity = args.includes('--high-fidelity');
+	if (isHighFidelity && !kb) {
+		console.error('[SAFE EVALUATOR] High-Fidelity mode requires a verified reference knowledge base (--kb). Non-parametric verification failed.');
+		process.exit(1);
+	}
+
 	const facts = decomposeAtomicFacts(text);
 	const evaluation = evaluateAtomicFacts(facts, kb);
 
@@ -167,6 +173,11 @@ async function main() {
 	} else {
 		console.log(`[SAFE EVALUATOR] Total Facts: ${evaluation.total_atomic_facts} | Supported: ${evaluation.supported_count} | Refuted: ${evaluation.refuted_count} | Unclear: ${evaluation.unclear_count}`);
 		console.log(`[SAFE EVALUATOR] Factuality Score: ${(evaluation.factuality_score * 100).toFixed(1)}% | Precision: ${(evaluation.precision * 100).toFixed(1)}%`);
+	}
+
+	if (isHighFidelity && (evaluation.factuality_score < 0.85 || evaluation.refuted_count > 0)) {
+		console.error(`[SAFE EVALUATOR] HIGH-FIDELITY GATE FAILURE: Factuality score ${(evaluation.factuality_score * 100).toFixed(1)}% is below 85% threshold or contains refuted facts (${evaluation.refuted_count}).`);
+		process.exit(1);
 	}
 
 	if (args.includes('--strict') && evaluation.factuality_score < 0.85) {

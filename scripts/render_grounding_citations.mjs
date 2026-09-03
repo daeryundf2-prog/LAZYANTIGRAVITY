@@ -218,30 +218,41 @@ export function renderGroundingCitations(options) {
 		return avg >= minConfidence;
 	});
 
-	// Track which chunks are actually cited
+	// Track which chunks are actually cited and covered character ranges
 	const citedChunkIndices = new Set();
 	const posMap = new Map(); // pos -> Set of chunkIndices
+	const coveredIntervals = [];
 	let mappedSupportCount = 0;
 
 	for (const sup of validSupports) {
 		let insertPos = -1;
+		let spanStart = -1;
+		let spanEnd = -1;
 		const [sIdx, eIdx] = resolveOffsets(rawText, sup.startIndex, sup.endIndex, sup.text);
 
 		if (sIdx >= 0 && eIdx > sIdx && eIdx <= rawText.length) {
 			insertPos = eIdx;
+			spanStart = sIdx;
+			spanEnd = eIdx;
 		} else if (sup.text && sup.text.trim()) {
+			const trimmed = sup.text.trim();
 			const searchFrom = sIdx >= 0 && sIdx < rawText.length ? sIdx : 0;
-			let foundIdx = rawText.indexOf(sup.text.trim(), searchFrom);
+			let foundIdx = rawText.indexOf(trimmed, searchFrom);
 			if (foundIdx === -1 && searchFrom > 0) {
-				foundIdx = rawText.indexOf(sup.text.trim(), 0);
+				foundIdx = rawText.indexOf(trimmed, 0);
 			}
 			if (foundIdx !== -1) {
-				insertPos = foundIdx + sup.text.trim().length;
+				insertPos = foundIdx + trimmed.length;
+				spanStart = foundIdx;
+				spanEnd = foundIdx + trimmed.length;
 			}
 		}
 
 		if (insertPos !== -1) {
 			mappedSupportCount++;
+			if (spanStart >= 0 && spanEnd > spanStart) {
+				coveredIntervals.push([spanStart, spanEnd]);
+			}
 			insertPos = adjustForSurrogate(rawText, insertPos);
 			if (!posMap.has(insertPos)) {
 				posMap.set(insertPos, new Set());
@@ -344,9 +355,38 @@ export function renderGroundingCitations(options) {
 	}
 
 	const supportedSegmentCount = mappedSupportCount;
-	const groundingCoverage = Number(
-		(supportedSegmentCount / Math.max(grounding_supports.length, 1)).toFixed(2),
-	);
+	const mappingRate = grounding_supports.length > 0
+		? mappedSupportCount / grounding_supports.length
+		: 0;
+
+	let groundingCoverage = 0;
+	if (coveredIntervals.length > 0) {
+		coveredIntervals.sort((a, b) => a[0] - b[0]);
+		const merged = [];
+		for (const intv of coveredIntervals) {
+			if (merged.length === 0) {
+				merged.push([...intv]);
+			} else {
+				const last = merged[merged.length - 1];
+				if (intv[0] <= last[1]) {
+					last[1] = Math.max(last[1], intv[1]);
+				} else {
+					merged.push([...intv]);
+				}
+			}
+		}
+
+		let coveredNonWs = 0;
+		for (const [start, end] of merged) {
+			const slice = rawText.slice(Math.max(0, start), Math.min(rawText.length, end));
+			coveredNonWs += slice.replace(/\s/g, "").length;
+		}
+		const totalNonWs = rawText.replace(/\s/g, "").length;
+		const charCoverage = totalNonWs > 0 ? coveredNonWs / totalNonWs : 0;
+		groundingCoverage = Number(Math.min(charCoverage, mappingRate > 0 ? mappingRate : 1.0).toFixed(2));
+	} else if (insertions.length > 0) {
+		groundingCoverage = Number(mappingRate.toFixed(2));
+	}
 
 	const highFidelityPassed = !isHighFidelity || (groundingCoverage >= minCoverage && supportedSegmentCount > 0);
 	const abstention = isHighFidelity && !highFidelityPassed;

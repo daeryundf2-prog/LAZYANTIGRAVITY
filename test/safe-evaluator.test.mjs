@@ -196,5 +196,23 @@ test("checkpoint quality gate validates policy with preserved factualityScore", 
 	assert.equal(res.status, "passed");
 });
 
+test("safe_evaluator CLI with --high-fidelity requires --kb and fails if missing or low factuality", () => {
+	const SCRIPT = fileURLToPath(new URL("../scripts/safe_evaluator.mjs", import.meta.url));
+	const dir = mkdtempSync(join(tmpdir(), "safe-hf-"));
+	const docFile = join(dir, "doc.md");
+	writeFileSync(docFile, "React 19 was released in 2024.\n", "utf8");
 
+	// 1. Fails without --kb
+	const resNoKb = spawnSync("node", [SCRIPT, docFile, "--high-fidelity"], { encoding: "utf8" });
+	assert.equal(resNoKb.status, 1);
+	assert.match(resNoKb.stderr, /High-Fidelity mode requires a verified reference knowledge base/);
 
+	// 2. Passes with matching --kb
+	const kbFile = join(dir, "kb.txt");
+	writeFileSync(kbFile, "Official release: React 19 was released in December 2024.", "utf8");
+	const resWithKb = spawnSync("node", [SCRIPT, docFile, "--kb", kbFile, "--high-fidelity", "--json"], { encoding: "utf8" });
+	assert.equal(resWithKb.status, 0);
+	const data = JSON.parse(resWithKb.stdout);
+	assert.equal(data.supported_count, 1);
+	assert.equal(data.refuted_count, 0);
+});
