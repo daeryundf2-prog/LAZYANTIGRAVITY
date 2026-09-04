@@ -12,7 +12,7 @@ async function readAntigravityCatalog() {
 	return catalog.antigravity;
 }
 
-test("#given bundled model catalog #when antigravity availableModels inspected #then Gemini 3.5 Flash tiers are absent and Gemini 3.7 Flash tiers are present (3.7-only)", async () => {
+test("#given bundled model catalog #when antigravity availableModels inspected #then Gemini 3.5 Flash is absent and Gemini 3.8/3.7 Flash tiers are present", async () => {
 	const antigravity = await readAntigravityCatalog();
 	const available = antigravity.availableModels;
 	assert.equal(Array.isArray(available), true, "availableModels must be an array");
@@ -21,24 +21,26 @@ test("#given bundled model catalog #when antigravity availableModels inspected #
 	for (const tier of ["low", "medium", "high"]) {
 		const dropped = `gemini-3.5-flash-${tier}`;
 		assert.equal(byId.has(dropped), false, `expected ${dropped} to be dropped (3.5 Flash removed)`);
-		const id = `gemini-3.7-flash-${tier}`;
-		assert.ok(byId.has(id), `expected ${id} to be present in availableModels (3.7-only)`);
-		const entry = byId.get(id);
-		assert.equal(entry.provider, "google", `${id}.provider`);
-		assert.equal(entry.speed, "fast", `${id}.speed`);
-		assert.equal(entry.reasoningLevel, tier, `${id}.reasoningLevel`);
-		assert.equal(entry.availabilitySource, "ui", `${id}.availabilitySource`);
+		for (const family of ["3.8", "3.7"]) {
+			const id = `gemini-${family}-flash-${tier}`;
+			assert.ok(byId.has(id), `expected ${id} to be present in availableModels`);
+			const entry = byId.get(id);
+			assert.equal(entry.provider, "google", `${id}.provider`);
+			assert.equal(entry.speed, "fast", `${id}.speed`);
+			assert.equal(entry.reasoningLevel, tier, `${id}.reasoningLevel`);
+			assert.equal(entry.availabilitySource, "ui", `${id}.availabilitySource`);
+		}
 	}
 });
 
-test("#given bundled model catalog #when antigravity roles inspected #then no role recommends Gemini 3.5/3.6 Flash as its primary modelId (upgrade to 3.7 holds)", async () => {
+test("#given bundled model catalog #when antigravity roles inspected #then no role recommends Gemini 3.5/3.6 Flash as its primary modelId (upgrade to 3.8 holds)", async () => {
 	const antigravity = await readAntigravityCatalog();
 	const roles = antigravity.roles ?? {};
 	for (const [roleName, role] of Object.entries(roles)) {
 		assert.ok(role.modelId, `role ${roleName} must have a modelId`);
 		assert.match(
 			role.modelId,
-			/^gemini-3\.7-flash|^gemini-3\.1-pro|^claude-|^gpt-oss/,
+			/^gemini-3\.[78]-flash|^gemini-3\.1-pro|^claude-|^gpt-oss/,
 			`role ${roleName} modelId=${role.modelId} must not recommend a 3.5/3.6 Flash tier`,
 		);
 		assert.doesNotMatch(
@@ -49,14 +51,14 @@ test("#given bundled model catalog #when antigravity roles inspected #then no ro
 	}
 });
 
-test("#given bundled model catalog #when antigravity roles inspected #then Gemini 3.7 Flash is plan+code default (planner/default/worker/current)", async () => {
+test("#given bundled model catalog #when antigravity roles inspected #then Gemini 3.8 Flash is plan+code default (planner/default/worker/current)", async () => {
 	const antigravity = await readAntigravityCatalog();
-	assert.equal(antigravity.current?.model, "gemini-3.7-flash-high");
-	assert.equal(antigravity.roles?.planner?.modelId, "gemini-3.7-flash-high");
-	assert.equal(antigravity.roles?.default?.modelId, "gemini-3.7-flash-high");
-	assert.equal(antigravity.roles?.worker?.modelId, "gemini-3.7-flash-high");
-	assert.equal(antigravity.roles?.researcher?.modelId, "gemini-3.7-flash-high");
-	assert.equal(antigravity.roles?.fast?.modelId, "gemini-3.7-flash-medium");
+	assert.equal(antigravity.current?.model, "gemini-3.8-flash-high");
+	assert.equal(antigravity.roles?.planner?.modelId, "gemini-3.8-flash-high");
+	assert.equal(antigravity.roles?.default?.modelId, "gemini-3.8-flash-high");
+	assert.equal(antigravity.roles?.worker?.modelId, "gemini-3.8-flash-high");
+	assert.equal(antigravity.roles?.researcher?.modelId, "gemini-3.8-flash-high");
+	assert.equal(antigravity.roles?.fast?.modelId, "gemini-3.8-flash-medium");
 	assert.equal(antigravity.roles?.verifier?.modelId, "gemini-3.1-pro-high");
 	assert.equal(antigravity.canAutoRoute, false);
 	assert.equal(antigravity.canTierRoute, true);
@@ -91,7 +93,7 @@ test("#given ulw-loop skill pack #when antigravity workflow inspected #then spaw
 	assert.doesNotMatch(skill, /## Codex Tool Mapping\n\n\| Workflow intent \| Codex tool \|/);
 	assert.match(workflow, /PLUGIN_ROOT/);
 	assert.match(workflow, /Windows PowerShell/);
-	assert.match(workflow, /gemini-3\.7|Gemini 3\.7 Flash/);
+	assert.match(workflow, /gemini-3\.8|Gemini 3\.8 Flash/);
 	assert.match(workflow, /invoke_subagent/);
 	assert.doesNotMatch(workflow, /Codex-only goal table/);
 	assert.doesNotMatch(workflow, /spawn_agent\/wait_agent/);

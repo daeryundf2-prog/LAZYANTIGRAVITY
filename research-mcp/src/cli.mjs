@@ -827,7 +827,7 @@ const TOOLS = [
 				},
 				high_fidelity: {
 					type: "boolean",
-					description: "Enforce Vertex AI High-Fidelity non-parametric grounding mode (abstains if coverage < min_coverage)",
+					description: "Enforce local High-Fidelity non-parametric grounding mode (abstains if coverage < min_coverage; no Vertex API)",
 				},
 				min_coverage: {
 					type: "number",

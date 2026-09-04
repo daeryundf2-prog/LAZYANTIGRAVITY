@@ -15,10 +15,8 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 const AGGREGATE_EXPECTED_LABELS = new Map([
 	["hooks/hooks.json:SessionStart:0:0", "Loading Project Rules"],
-	["hooks/hooks.json:SessionStart:1:0", "Recording Session Telemetry"],
-	["hooks/hooks.json:UserPromptSubmit:0:0", "Loading Project Rules"],
-	["hooks/hooks.json:UserPromptSubmit:1:0", "Checking Ultrawork Trigger"],
-	["hooks/hooks.json:UserPromptSubmit:2:0", "Checking Ulw-Loop Steering"],
+	["hooks/hooks.json:SessionStart:4:0", "Recording Session Telemetry"],
+	["hooks/hooks.json:UserPromptSubmit:0:0", "Running Userpromptsubmit Hooks (rules, Quick-Lane, Reasoning, Ultrawork, Steering)"],
 	["hooks/hooks.json:PreToolUse:0:0", "Recommending Git Bash Mcp"],
 	["hooks/hooks.json:PostToolUse:0:0", "Checking Comments"],
 	["hooks/hooks.json:PostToolUse:0:1", "Checking LSP Diagnostics"],

@@ -1,11 +1,11 @@
 ---
 name: hypothesis-tree
-description: "직교 3대 가설 동시 반증 디버깅 스킬. Gemini 3.7 하이브리드 추론으로 상호 배타적 가설을 세우고 Flash 병렬 반증 + Pro 오라클 판정으로 1턴 만에 근본 원인을 격리합니다."
+description: "직교 3대 가설 동시 반증 디버깅 스킬. Gemini 3.8 하이브리드 추론으로 상호 배타적 가설을 세우고 Flash 병렬 반증 + Pro 오라클 판정으로 1턴 만에 근본 원인을 격리합니다."
 ---
 
 # Hypothesis-Tree: Parallel Falsification & Invariant Root-Cause Isolation
 
-Gemini 3.7 Flash의 논리 분기(Branching CoT)와 초저지연 병렬성을 활용하여 복잡한 버그, 침묵 실패(Silent Failure), 동시성 레이스 컨디션에 대해 직교하는 3대 가설을 수립하고, 단일 턴에 병렬 반증(Falsification)하여 진짜 근본 원인(Root Cause)을 규명하는 디버깅 스킬입니다.
+Gemini 3.8 Flash의 논리 분기(Branching CoT)와 초저지연 병렬성을 활용하여 복잡한 버그, 침묵 실패(Silent Failure), 동시성 레이스 컨디션에 대해 직교하는 3대 가설을 수립하고, 단일 턴에 병렬 반증(Falsification)하여 진짜 근본 원인(Root Cause)을 규명하는 디버깅 스킬입니다.
 
 ```mermaid
 flowchart TD

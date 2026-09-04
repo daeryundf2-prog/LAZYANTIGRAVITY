@@ -77,7 +77,7 @@
 		],
 		"PreToolUse": [
 			{
-				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute)$",
+				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
 				"hooks": [
 					{
 						"type": "command",
@@ -140,6 +140,25 @@
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-tool-use",
 						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.7.0): Matching Project Rules"
+					}
+				]
+			},
+			{
+				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Markdown Structure Guard (bash 리다이렉트 쓰기 포함)",
+						"failurePolicy": "FAIL_CLOSED"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/json_schema_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Json Schema Guard (bash 리다이렉트 쓰기 포함)",
+						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
 			}

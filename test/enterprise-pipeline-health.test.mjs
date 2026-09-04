@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runEnterpriseHealthCheck } from "../scripts/enterprise_pipeline_health_check.mjs";
+import { runEnterpriseHealthCheck, resolveSiblingRoot } from "../scripts/enterprise_pipeline_health_check.mjs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 
 test("#given enterprise pipeline health check #when executed #then all 3 layers pass with 100/100 score", async () => {
 	const report = await runEnterpriseHealthCheck({ crossRepo: false });
@@ -31,5 +34,15 @@ test("#given enterprise pipeline health check with cross-repo #when executed #th
 	if (report.cross_repo.lazyothers) {
 		assert.equal(report.cross_repo.lazyothers.status, "PASS");
 		assert.equal(report.cross_repo.lazyothers.score, 100);
+	}
+});
+
+test("#given sibling plugin dirs #when resolveSiblingRoot runs #then hyphenless lazyforensic wins", () => {
+	const root = dirname(dirname(fileURLToPath(import.meta.url)));
+	const found = resolveSiblingRoot(root, ["lazyforensic", "lazyforensic-"]);
+	const expected = resolve(root, "..", "lazyforensic");
+	if (existsSync(expected)) {
+		assert.equal(found, expected);
+		assert.ok(existsSync(join(found, "scripts", "verify_report.py")));
 	}
 });

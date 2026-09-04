@@ -42,7 +42,9 @@ export async function buildReport(configFiles = defaultConfigFiles, probe = fals
 			server.probe = probeServer(server);
 		}
 	}
-	const remoteServers = entries.filter((server) => server.trust_class === "remote-third-party").map((server) => server.name);
+	const remoteServers = entries
+		.filter((server) => server.trust_class === "remote-third-party" || server.trust_class === "remote-npx")
+		.map((server) => server.name);
 	return {
 		configs: configs.map(({ path, server_count }) => ({ path, server_count })),
 		servers: entries,
@@ -141,7 +143,16 @@ function resolveCommandTarget(definition) {
 	const args = Array.isArray(definition.args) ? definition.args : [];
 	const targetArg = args.find((arg) => typeof arg === "string" && looksLikeLocalPath(arg));
 	if (!targetArg) {
-		const isSystemCommand = ["node", "npx", "uv", "python", "git"].includes(definition.command);
+		if (definition.command === "npx") {
+			return {
+				path: "",
+				configuredPath: Array.isArray(definition.args) ? definition.args.join(" ") : "npx",
+				exists: false,
+				configuredExists: false,
+				trust_class: "remote-npx",
+			};
+		}
+		const isSystemCommand = ["node", "uv", "python", "git"].includes(definition.command);
 		return {
 			path: definition.command,
 			configuredPath: definition.command,
@@ -192,8 +203,20 @@ function isBundledComponentPath(path) {
 // Spawns a local stdio server and performs an initialize + tools/list handshake.
 // Opt-in via --probe: launching servers has side effects and is never automatic.
 function probeServer(server) {
-	if (server.trust_class === "remote-third-party" || server.trust_class === "local_system_binary" || server.status !== "ok" || !server.target_path) {
-		return { skipped: true, reason: server.trust_class === "local_system_binary" ? "system binary preset requires runtime execution" : "not a local server with an existing target" };
+	if (
+		server.trust_class === "remote-third-party" ||
+		server.trust_class === "remote-npx" ||
+		server.trust_class === "local_system_binary" ||
+		server.status !== "ok" ||
+		!server.target_path
+	) {
+		return {
+			skipped: true,
+			reason:
+				server.trust_class === "local_system_binary"
+					? "system binary preset requires runtime execution"
+					: "not a local server with an existing target",
+		};
 	}
 	const target = resolve(root, server.target_path);
 	const restArgs = (server.args || []).filter((arg) => !looksLikeLocalPath(arg));

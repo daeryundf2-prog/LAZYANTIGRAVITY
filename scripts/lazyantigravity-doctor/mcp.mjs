@@ -14,6 +14,19 @@ export async function mcpServerEntry(root, context, configPath, name, server) {
 		context.fail("mcp", "invalid_mcp_server", `${configPath}:${name} must define command or url`);
 		return { name, status: "fail", trust_class: "invalid", command_or_type: null };
 	}
+	if (server.command === "npx") {
+		context.warn("mcp", "remote_npx_mcp", `${configPath}:${name} uses npx and is not a bundled local server`);
+		return {
+			name,
+			status: "warn",
+			trust_class: "remote-npx",
+			command_or_type: "npx",
+			args: Array.isArray(server.args) ? server.args : [],
+			cwd: server.cwd ?? ".",
+			target: null,
+			target_exists: null,
+		};
+	}
 
 	const target = localMcpTarget(server);
 	const targetExists = target === null ? null : await pathExists(root, target);

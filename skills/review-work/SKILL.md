@@ -4,7 +4,7 @@ description: "Post-implementation review orchestrator. Launches 5 parallel backg
 ---
 ## Antigravity Multi-Tier Oracle Mapping (default)
 
-This plugin defaults to **Google Antigravity** with **Gemini 3.7 Flash (High)** as parent orchestrator.
+This plugin defaults to **Google Antigravity** with **Gemini 3.8 Flash (High)** as parent orchestrator.
 
 | Oracle / Lane | Tier | Model | Policy |
 | --- | --- | --- | --- |

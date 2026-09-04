@@ -153,7 +153,7 @@ test("Dimension 6: Multimodal visual-qa & frontend-ui-ux Integration", async () 
 	const vqaContent = await readFile(join(root, "skills", "visual-qa", "SKILL.md"), "utf8");
 	const feContent = await readFile(join(root, "shared-skills", "skills", "visual-qa", "references", "frontend-ui-ux.md"), "utf8");
 
-	assert.match(vqaContent, /Pass C - Gemini 3.7 Flash vision pre-screen/i, "visual-qa must feature Pass C");
+	assert.match(vqaContent, /Pass C - Gemini 3.8 Flash vision pre-screen/i, "visual-qa must feature Pass C");
 	assert.match(vqaContent, /Model:\s*"flash"/, "Pass C must route to Model: flash");
 	assert.match(vqaContent, /CJK glyph state|CJK/i, "visual-qa must check CJK precision");
 	assert.match(feContent, /Multimodal Vision QA/i, "frontend-ui-ux must include Multimodal Vision QA protocol");

@@ -73,7 +73,7 @@ digraph Architecture {
 
     Client [label="클라이언트 (GJC/Codex)"];
     Harness [label="LazyAntigravity 하네스"];
-    Engine [label="Gemini 3.7 Flash"];
+    Engine [label="Gemini 3.8 Flash"];
 
     Client -> Harness [label="요청 위임"];
     Harness -> Engine [label="AWT 궤도 락"];

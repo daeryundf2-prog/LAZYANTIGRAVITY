@@ -33,7 +33,7 @@ You are mid-flight on a Prometheus work plan. The turn just ended without finish
 - Cleanup receipt is mandatory. Leftover PIDs / tmux / browser / ports / temp dirs = BLOCKED, not PASS.
 - The worktree path (if set in boulder.json) governs every file edit and command.
 - session_ids you write to boulder.json MUST be prefixed: `antigravity:`, `gemini:`, or `codex:`.
-- Prefer Gemini 3.7 Flash (High) as the session model unless verifying on 3.1 Pro.
+- Prefer Gemini 3.8 Flash (High) as the session model unless verifying on 3.1 Pro.
 
 # Stop conditions for THIS turn
 

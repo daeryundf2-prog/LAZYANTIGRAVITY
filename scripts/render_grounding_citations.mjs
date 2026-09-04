@@ -151,7 +151,7 @@ function adjustForSurrogate(str, pos) {
  * @param {object} options.grounding_metadata Grounding metadata object
  * @param {number} [options.min_confidence=0.0] Minimum confidence to include a support
  * @param {string} [options.citation_format="footnote"] 'footnote' ([^1]) or 'link' ([1](url))
- * @param {boolean} [options.high_fidelity=false] Vertex AI High-Fidelity non-parametric grounding mode
+ * @param {boolean} [options.high_fidelity=false] Local High-Fidelity non-parametric grounding mode (no Vertex API)
  * @param {number} [options.min_coverage=0.70] Minimum grounding coverage threshold for high-fidelity mode
  * @param {string} [options.heading="## References / Grounding Sources"] Heading for references
  */
@@ -422,7 +422,7 @@ Options:
   --metadata <string>   JSON string of grounding_metadata
   --min-confidence <n>  Minimum confidence score (0.0 to 1.0)
   --format <type>       Citation format: footnote | link (default: footnote)
-  --high-fidelity       Enforce Vertex AI High-Fidelity non-parametric grounding mode
+  --high-fidelity       Enforce local High-Fidelity non-parametric grounding mode (no Vertex API)
   --min-coverage <n>    Minimum grounding coverage threshold for high fidelity (default 0.70)
   --json                Output JSON result
 `);

@@ -46,7 +46,7 @@ export interface HighFidelityEvaluation {
     verdict: "PASS" | "FAIL";
 }
 /**
- * Vertex AI High-Fidelity Non-Parametric Mode Verifier (Section 4.2)
- * Ensures generated assertions strictly bind to source context tokens.
+ * Local High-Fidelity non-parametric grounding verifier (Section 4.2).
+ * Token-overlap gate only. No Vertex API call.
  */
 export declare function evaluateHighFidelityGrounding(sourceDocument: string, modelResponse: string, minOverlapThreshold?: number): HighFidelityEvaluation;

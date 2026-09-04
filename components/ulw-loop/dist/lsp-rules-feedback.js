@@ -106,7 +106,7 @@ export function generateReworkSuggestions(lspDiagnostics, rulesViolations) {
         suggestions.push(`- Rule violation: ${rule}. Align code with workspace AST patterns using ast_grep_search to find similar structures.`);
     }
     if (lspDiagnostics.length >= 3) {
-        suggestions.push(`- WARNING: ${lspDiagnostics.length} LSP errors detected. Consider switching to Gemini 3.7 Flash (Medium) for rapid iterative bug fixes before re-attempting the checkpoint.`);
+        suggestions.push(`- WARNING: ${lspDiagnostics.length} LSP errors detected. Consider switching to Gemini 3.8 Flash (Medium) for rapid iterative bug fixes before re-attempting the checkpoint.`);
     }
     return suggestions.join("\n");
 }

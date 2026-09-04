@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import {
 	collectCommandHooks,
@@ -8,6 +9,7 @@ import {
 	hookLocation,
 	readComponentHookManifests,
 	readJson,
+	root,
 } from "./aggregate-plugin-fixture.mjs";
 
 test("#given runtime hook manifests #when identity labels are inspected #then LazyAntigravity is the product identity", async () => {
@@ -120,6 +122,12 @@ test("#given hook status messages #when inspected #then labels describe OMO resp
 	assert.deepEqual(genericStatusMessages, []);
 });
 
+test("#given runtime hook manifests #when compared #then root hooks.json and hooks/hooks.json are identical", async () => {
+	const rootHooks = await readFile(join(root, "hooks.json"), "utf8");
+	const aggregateHooks = await readFile(join(root, "hooks", "hooks.json"), "utf8");
+	assert.equal(aggregateHooks, rootHooks);
+});
+
 test("#given aggregate OMO plugin is enabled #when hooks are inspected #then shell guidance and ulw-loop guard are registered", async () => {
 	// given
 	const hooks = await readJson("hooks/hooks.json");
@@ -137,9 +145,15 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 	assert.match(text, /Running Userpromptsubmit Hooks/);
 	assert.match(text, /Steering/);
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), [
-		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute)$",
+		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
 		".*",
 	]);
+	const postToolUseMatchers = (hooks.hooks.PostToolUse ?? []).map((group) => group.matcher ?? "");
+	assert.ok(postToolUseMatchers.some((matcher) => /write_file|WriteToFile/.test(matcher)));
+	assert.ok(postToolUseMatchers.some((matcher) => /Bash/.test(matcher)));
+	assert.match(text, /markdown_structure_guard/);
+	assert.match(text, /json_schema_guard/);
+	assert.match(text, /stop_claim_guard/);
 	assert.doesNotMatch(text, /create_goal/);
 });
 

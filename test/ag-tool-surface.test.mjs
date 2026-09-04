@@ -61,15 +61,15 @@ test("#given AG hooks #when PreToolUse inspected #then create_goal matcher is ab
 	assert.ok(matchers.some((matcher) => /Bash/i.test(matcher ?? "")));
 });
 
-test("#given model catalog #when top-level current is read #then Gemini 3.7 Flash High is the default hint", async () => {
+test("#given model catalog #when top-level current is read #then Gemini 3.8 Flash High is the default hint", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
-	assert.equal(catalog.current.model, "gemini-3.7-flash-high");
+	assert.equal(catalog.current.model, "gemini-3.8-flash-high");
 	assert.equal(catalog.antigravity.canAutoRoute, false);
 	assert.equal(catalog.antigravity.canTierRoute, true);
 	assert.equal(catalog.antigravity.hostEnforced, false);
 	assert.equal(catalog.antigravity.routingMode, "agent-tier-hint");
 	assert.equal(catalog.antigravity.tierMap.verifier, "pro");
-	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
+	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.8-flash-high");
 	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
 	assert.match(catalog.perRoleRouting.antigravity.mechanism, /Subagents\[\]\.Model/);
 	assert.doesNotMatch(catalog.perRoleRouting.antigravity.mechanism, /model_tier \(flash/);

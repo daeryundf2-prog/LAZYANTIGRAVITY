@@ -32,7 +32,7 @@ Six gaps surfaced by walking the real user's day-to-day, all code-verified:
    .lazyantigravity/media/<job>/, media_transcribe_status polls it. Needs the
    same workspace confinement as the sync path.
 
-## Real-session validation log (Antigravity + Gemini 3.7 Flash, production repo)
+## Real-session validation log (Antigravity + Gemini 3.8 Flash, production repo)
 
 | Date | Feature | Result |
 | :--- | :--- | :--- |

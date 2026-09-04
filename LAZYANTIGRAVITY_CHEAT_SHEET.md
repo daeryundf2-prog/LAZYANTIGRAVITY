@@ -45,6 +45,6 @@ node components/daemon-bridge/dist/cli.js daemon stop
 ---
 
 ## 🎯 3. Model Routing Matrix
-- **Plan, Code & Fast Refactor**: Gemini 3.7 Flash (`Model: "flash"`)
+- **Plan, Code & Fast Refactor**: Gemini 3.8 Flash (`Model: "flash"`)
 - **Adversarial Audit & Security Gate**: Gemini 3.1 Pro (`Model: "pro"`)
 - **Small Lint & Format Checks**: `Model: "flash_lite"`

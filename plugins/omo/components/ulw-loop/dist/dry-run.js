@@ -39,7 +39,7 @@ export async function dryRunCmd(repoRoot, argv, json) {
         writeCheckpoint,
         writeLedger,
         platform: "Antigravity",
-        selectedModel: "Gemini 3.7 Flash (High)",
+        selectedModel: "Gemini 3.8 Flash (High)",
         userResumeCommand: "/ulw resume",
         internalResumeCommand: "omo ulw-loop resume",
         wouldSwitchModel: false,

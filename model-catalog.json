@@ -1,15 +1,15 @@
 {
-	"version": "2026-08-14.antigravity-gemini37-ag-first",
-	"_legacyFlatNote": "Top-level current/roles mirror Antigravity Gemini 3.7 Flash defaults. Legacy Codex readers should prefer the codex section. Antigravity adapters should prefer the antigravity section via modelCatalogKey.",
+	"version": "2026-09-04.antigravity-gemini38-ag-first",
+	"_legacyFlatNote": "Top-level current/roles mirror Antigravity Gemini 3.8 Flash defaults. Legacy Codex readers should prefer the codex section. Antigravity adapters should prefer the antigravity section via modelCatalogKey.",
 	"current": {
-		"model": "gemini-3.7-flash-high",
+		"model": "gemini-3.8-flash-high",
 		"model_context_window": 1048576,
 		"model_reasoning_effort": "high",
 		"plan_mode_reasoning_effort": "high"
 	},
 	"roles": {
 		"default": {
-			"model": "gemini-3.7-flash-high",
+			"model": "gemini-3.8-flash-high",
 			"model_context_window": 1048576,
 			"model_reasoning_effort": "high",
 			"plan_mode_reasoning_effort": "high"
@@ -19,7 +19,7 @@
 			"model_reasoning_effort": "high"
 		},
 		"worker": {
-			"model": "gemini-3.7-flash-high",
+			"model": "gemini-3.8-flash-high",
 			"model_reasoning_effort": "high"
 		}
 	},
@@ -133,66 +133,97 @@
 			"fallback": "flash_lite"
 		},
 		"current": {
-			"model": "gemini-3.7-flash-high",
+			"model": "gemini-3.8-flash-high",
 			"model_context_window": 1048576,
 			"model_reasoning_effort": "high",
 			"plan_mode_reasoning_effort": "high"
 		},
 		"roles": {
 			"default": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "메인 코더 — 코딩/에이전트 워크호스 (기본 추천)",
-				"fallbackChain": ["gemini-3.8-flash-high", "gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high",
+					"claude-sonnet-4.6"
+				],
 				"availabilitySource": "ui"
 			},
 			"planner": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
-				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.7 Flash; 모호한 고비용 설계만 Claude Opus로 수동 전환",
-				"fallbackChain": ["gemini-3.8-flash-high", "gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-opus-4.6"],
+				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.8 Flash; 모호한 고비용 설계만 Claude Opus로 수동 전환",
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high",
+					"claude-opus-4.6"
+				],
 				"availabilitySource": "ui"
 			},
 			"verifier": {
 				"modelId": "gemini-3.1-pro-high",
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
-				"purpose": "교차 모델 검증 — 메인(3.7 Flash)과 다른 패밀리로 편향 방지",
-				"fallbackChain": ["claude-opus-4.6", "gemini-3.8-flash-high", "gemini-3.7-flash-high"],
+				"purpose": "교차 모델 검증 — 메인(3.8 Flash)과 다른 패밀리로 편향 방지",
+				"fallbackChain": [
+					"claude-opus-4.6",
+					"gemini-3.8-flash-high",
+					"gemini-3.7-flash-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"worker": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "구현/수정 메인 코더 — 에이전트 루프 기본 엔진",
-				"fallbackChain": ["gemini-3.8-flash-high", "gemini-3.7-flash-medium", "gemini-3.1-pro-high", "claude-sonnet-4.6"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high",
+					"claude-sonnet-4.6"
+				],
 				"availabilitySource": "ui"
 			},
 			"researcher": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "코드베이스 탐색/조사 — 1M 컨텍스트 + 속도",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-low"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-low"
+				],
 				"availabilitySource": "ui"
 			},
 			"surveyor": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "전수 레포지토리 서베이 / 블래스트 라디우스 분석 — 1M 컨텍스트 전수 분석",
-				"fallbackChain": ["gemini-3.1-pro-high", "gemini-3.7-flash-medium"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.1-pro-high",
+					"gemini-3.8-flash-medium"
+				],
 				"availabilitySource": "ui"
 			},
 			"ast-refactor": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "구조적 AST 리팩토링 — Tree-sitter & AST-grep 패턴 매칭 및 치환",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"dual-verify": {
@@ -200,23 +231,35 @@
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
 				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
-				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
+				"fallbackChain": [
+					"claude-opus-4.6",
+					"gemini-3.8-flash-high",
+					"gemini-3.7-flash-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"ui-loopback": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "실시간 UI 렌더링 및 시각 자가 교정 — 네이티브 멀티모달 비전 루프백",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"adaptive-reasoning": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "적응형 추론 조절 — 작업 난이도별 Thinking Budget 및 모델 티어 자동 산정",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-low"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-low"
+				],
 				"availabilitySource": "ui"
 			},
 			"hypothesis-tree": {
@@ -224,23 +267,35 @@
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
 				"purpose": "직교 3대 가설 동시 반증 디버깅 — 논리 분기 및 불변식 락킹",
-				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
+				"fallbackChain": [
+					"claude-opus-4.6",
+					"gemini-3.8-flash-high",
+					"gemini-3.7-flash-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"swarm-sync": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "분산 서브에이전트 파일 소유권 분할 및 원자적 머지 — 병렬 충돌 방지",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"flaky-guard": {
-				"modelId": "gemini-3.7-flash-high",
-				"displayName": "Gemini 3.7 Flash (High)",
+				"modelId": "gemini-3.8-flash-high",
+				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
 				"purpose": "간헐적 실패(Flaky) 테스트 자가 치유 — 고속 병렬 스트레스 런 및 결정론적 리팩토링",
-				"fallbackChain": ["gemini-3.7-flash-medium", "gemini-3.1-pro-high"],
+				"fallbackChain": [
+					"gemini-3.7-flash-high",
+					"gemini-3.8-flash-medium",
+					"gemini-3.1-pro-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"arch-guard": {
@@ -248,23 +303,34 @@
 				"displayName": "Gemini 3.1 Pro (High)",
 				"reasoningLevel": "high",
 				"purpose": "클린 아키텍처 계층 검증 — 1M 전역 import 그래프 및 AST 의존성 드리프트 차단",
-				"fallbackChain": ["claude-opus-4.6", "gemini-3.7-flash-high"],
+				"fallbackChain": [
+					"claude-opus-4.6",
+					"gemini-3.8-flash-high",
+					"gemini-3.7-flash-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"fast": {
-				"modelId": "gemini-3.7-flash-medium",
-				"displayName": "Gemini 3.7 Flash (Medium)",
+				"modelId": "gemini-3.8-flash-medium",
+				"displayName": "Gemini 3.8 Flash (Medium)",
 				"reasoningLevel": "medium",
 				"purpose": "빠른 단순 작업 / 반복 버그픽스",
-				"fallbackChain": ["gemini-3.7-flash-low", "gemini-3.7-flash-high"],
+				"fallbackChain": [
+					"gemini-3.7-flash-medium",
+					"gemini-3.8-flash-low",
+					"gemini-3.8-flash-high"
+				],
 				"availabilitySource": "ui"
 			},
 			"fallback": {
-				"modelId": "gemini-3.7-flash-low",
-				"displayName": "Gemini 3.7 Flash (Low)",
+				"modelId": "gemini-3.8-flash-low",
+				"displayName": "Gemini 3.8 Flash (Low)",
 				"reasoningLevel": "low",
 				"purpose": "최종 폴백 — 쿼터/비용 절약용",
-				"fallbackChain": ["gpt-oss-120b"],
+				"fallbackChain": [
+					"gemini-3.7-flash-low",
+					"gpt-oss-120b"
+				],
 				"availabilitySource": "ui"
 			}
 		},
@@ -359,7 +425,7 @@
 			}
 		],
 		"managedProfiles": [],
-		"_modelIdNote": "Antigravity는 모델 ID를 외부에 노출하지 않음. 여기서 사용한 modelId는 UI displayName에서 추론한 규칙 기반 ID임 (예: 'Gemini 3.7 Flash (High)' → 'gemini-3.7-flash-high'). 실제 내부 API model ID가 다를 수 있으며, 이 경우 model-catalog는 추천/힌트 용도로만 사용됨."
+		"_modelIdNote": "Antigravity는 모델 ID를 외부에 노출하지 않음. 여기서 사용한 modelId는 UI displayName에서 추론한 규칙 기반 ID임 (예: 'Gemini 3.8 Flash (High)' → 'gemini-3.8-flash-high'). 실제 내부 API model ID가 다를 수 있으며, 이 경우 model-catalog는 추천/힌트 용도로만 사용됨."
 	},
 	"perRoleRouting": {
 		"codex": {

@@ -20,7 +20,7 @@
 	"interface": {
 		"displayName": "LazyAntigravity",
 		"shortDescription": "Unified local Antigravity components",
-		"longDescription": "LazyAntigravity exposes local Rules, Comment Checker, LSP, Ultrawork, and ulw-loop as one plugin namespace. Default coding model hint: Gemini 3.7 Flash.",
+		"longDescription": "LazyAntigravity exposes local Rules, Comment Checker, LSP, Ultrawork, and ulw-loop as one plugin namespace. Default coding model hint: Gemini 3.8 Flash.",
 		"developerName": "daeryundf2-prog",
 		"category": "Developer Tools",
 		"capabilities": [

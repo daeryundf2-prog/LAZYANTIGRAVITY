@@ -5,7 +5,7 @@ description: "AST-grep MCP 기반 구조적 대규모 리팩토링 스킬. 정�
 
 # AST-Refactor: Structural AST Pattern Refactoring
 
-Gemini 3.7 Flash의 코드 구문 구조(AST) 이해력과 `ast-grep-mcp` 도구를 결합하여, 단순 텍스트 정규식 치환의 한계를 극복하고 안전한 대규모 구문 단위 리팩토링을 수행합니다.
+Gemini 3.8 Flash의 코드 구문 구조(AST) 이해력과 `ast-grep-mcp` 도구를 결합하여, 단순 텍스트 정규식 치환의 한계를 극복하고 안전한 대규모 구문 단위 리팩토링을 수행합니다.
 
 ## Antigravity Tool Mapping
 

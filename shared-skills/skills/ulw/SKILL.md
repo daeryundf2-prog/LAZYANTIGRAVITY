@@ -18,7 +18,7 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 ## Antigravity Routing Semantics (inherited from ulw-loop)
 
 - **Lane hints**: pass `invoke_subagent` `Subagents[].Model` (`canTierRoute=true`, `hostEnforced=false`) - `flash` for plan/code/research, `pro` for verify, `flash_lite` for tiny chores.
-- **Session UI**: stay on Gemini 3.8 / 3.7 Flash (High). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
+- **Session UI**: stay on Gemini 3.8 Flash (High). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
 - **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, pass `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`.
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.
 - **Resume Guidance**: If execution is interrupted due to quota limits, switch the model manually in the Antigravity UI dropdown and type `/ulw resume`.
@@ -28,9 +28,9 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocation, output this message **exactly once**:
 
 > **Antigravity Recommended Model Configuration Guide**
-> - **Session default (plan + code + research)**: Gemini 3.8 / 3.7 Flash (High) + `Model: "flash"`
+> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High) + `Model: "flash"`
 > - **Verify / adversarial lanes**: `Model: "pro"`
-> - **Rapid iterative bug fixes**: Gemini 3.8 / 3.7 Flash (Medium) or `Model: "flash_lite"`
+> - **Rapid iterative bug fixes**: Gemini 3.8 Flash (Medium) or `Model: "flash_lite"`
 > - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
 >
 > *Antigravity routes lanes with model tiers. Prefer a Flash parent session for the whole run.*

@@ -11,7 +11,7 @@ Use this skill when the user asks for `ulw-loop`, `ulw`, durable goal execution,
 
 This skill is intentionally compact. The full workflow lives in `references/full-workflow.md`. Read only the sections needed for the current phase, then execute them exactly.
 
-**Default host for LazyAntigravity:** Google Antigravity + Gemini 3.7 Flash (High).
+**Default host for LazyAntigravity:** Google Antigravity + Gemini 3.8 Flash (High).
 
 ## Required First Steps
 
@@ -40,7 +40,7 @@ This skill is intentionally compact. The full workflow lives in `references/full
   - verify / adversarial review → `Model: "pro"`
   - tiny repetitive chores → `Model: "flash_lite"`
   - inherit parent → `Model: "inherit"`
-- Session UI stays on **Gemini 3.7 Flash (High)** for the parent. Prefer tier routing over switching the whole session UI. Manual UI switch to Gemini 3.1 Pro is optional when you want the parent itself on Pro.
+- Session UI stays on **Gemini 3.8 Flash (High)** for the parent. Prefer tier routing over switching the whole session UI. Manual UI switch to Gemini 3.1 Pro is optional when you want the parent itself on Pro.
 - Use `git-master` for git-tracked edits: inspect recent and touched-path commit history, then commit each verified work unit atomically.
 
 ## Antigravity Tool Mapping
@@ -49,14 +49,14 @@ This skill is intentionally compact. The full workflow lives in `references/full
 | --- | --- |
 | Plan / research / implement / QA | `invoke_subagent` with role envelope + TASK/DELIVERABLE/SCOPE/VERIFY |
 | ULW state / evidence / checkpoint | `lazyantigravity ulw-loop …` after Bootstrap resolves CLI to `node …/ulw-loop/dist/cli.js` |
-| Model routing | Session UI = Gemini 3.7 Flash (High); lane tier = `flash` / `pro` / `flash_lite` / `inherit` |
+| Model routing | Session UI = Gemini 3.8 Flash (High); lane tier = `flash` / `pro` / `flash_lite` / `inherit` |
 
 Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 
 > **Antigravity Recommended Model Configuration Guide**
-> - **Session default (plan + code + research)**: Gemini 3.7 Flash (High)
+> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High)
 > - **Verify / adversarial lanes**: `invoke_subagent` with `Model: "pro"` (Gemini 3.1 Pro family hint)
-> - **Rapid iterative bug fixes**: Gemini 3.7 Flash (Medium) or `Model: "flash_lite"`
+> - **Rapid iterative bug fixes**: Gemini 3.8 Flash (Medium) or `Model: "flash_lite"`
 > - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
 >
 > *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`).*
@@ -74,18 +74,18 @@ Saved in: `.omo/ulw-loop/checkpoints/ulw-{timestamp}.json` (legacy `.lazycodex/c
 
 ### 3. Antigravity Safety Flow
 If rate limit/quota is detected:
-- Stop immediately; save checkpoint; recommend fallback models (3.7 Medium → 3.1 Pro → Opus escape hatch → Sonnet); user switches UI model; `/ulw resume`.
+- Stop immediately; save checkpoint; recommend fallback models (3.7 High → 3.7 Medium → 3.1 Pro → Opus escape hatch → Sonnet); user switches UI model; `/ulw resume`.
 
 Fallback sequence (exact):
-- **When Gemini 3.7 Flash (High) is limited**: Medium → 3.1 Pro → Opus → Sonnet
-- **When Gemini 3.7 Flash (Medium) is limited**: High → 3.1 Pro → Sonnet
+- **When Gemini 3.8 Flash (High) is limited**: 3.7 Flash → Medium → 3.1 Pro → Opus → Sonnet
+- **When Gemini 3.8 Flash (Medium) is limited**: High → 3.7 Flash → 3.1 Pro → Sonnet
 - **When Gemini 3.1 Pro (High) is limited**: 3.7 High → 3.7 Medium → Opus
 - **When Claude Opus is limited** (escape hatch only): 3.7 High → 3.7 Medium → 3.1 Pro
 - **When Claude Sonnet is limited**: 3.7 High → 3.7 Medium → 3.1 Pro
 - **When all exhausted**: wait for refresh or suggest enabling AI Credit Overages manually
 
 ### 4. Compact Mode
-Switch UI to Gemini 3.7 Flash (High) for ~1M context (about 3.5x larger than typical GPT-5.5/Claude windows). Summarize logs; slice files; compress outputs; save artifacts to disk.
+Switch UI to Gemini 3.8 Flash (High) for ~1M context (about 3.5x larger than typical GPT-5.5/Claude windows). Summarize logs; slice files; compress outputs; save artifacts to disk.
 
 ### 5. Batch Mode
 Split patches; verify each batch; checkpoint often.

@@ -5,7 +5,7 @@ description: "클린 아키텍처 의존성 드리프트 차단 스킬. 1M 컨�
 
 # Arch-Guard: Clean Architecture Boundary & Dependency Drift Enforcer
 
-Gemini 3.7 Flash의 1M 컨텍스트 전역 분석과 AST Import Graph 분석을 결합하여, 모듈 간 불법적인 결합도 증가 및 아키텍처 계층 위반(Architecture Drift)을 실시간으로 감시하고 차단하는 스킬입니다.
+Gemini 3.8 Flash의 1M 컨텍스트 전역 분석과 AST Import Graph 분석을 결합하여, 모듈 간 불법적인 결합도 증가 및 아키텍처 계층 위반(Architecture Drift)을 실시간으로 감시하고 차단하는 스킬입니다.
 
 ```mermaid
 flowchart TD

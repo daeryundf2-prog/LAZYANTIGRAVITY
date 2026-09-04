@@ -1,6 +1,6 @@
 # Antigravity tool mapping (shared)
 
-LazyAntigravity defaults to **Google Antigravity** + **Gemini 3.7 Flash (High)**.
+LazyAntigravity defaults to **Google Antigravity** + **Gemini 3.8 Flash (High)**.
 
 ## Do
 
@@ -38,7 +38,7 @@ ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=S
 )
 ```
 
-`Workspace` is optional. Embed role focus inside TASK text when useful (explorer / researcher / implementer / QA / reviewer). Keep the session UI on Gemini 3.7 Flash (High). For verify lanes pass `Model: "pro"` instead of switching the whole session. Passing `Model` is an agent hint (`hostEnforced=false`); do not claim the child model changed unless host `modelName` differs.
+`Workspace` is optional. Embed role focus inside TASK text when useful (explorer / researcher / implementer / QA / reviewer). Keep the session UI on Gemini 3.8 Flash (High). For verify lanes pass `Model: "pro"` instead of switching the whole session. Passing `Model` is an agent hint (`hostEnforced=false`); do not claim the child model changed unless host `modelName` differs.
 
 ## Do not
 

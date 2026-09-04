@@ -4,13 +4,11 @@ This registry documents the available MCP servers configured in `mcp_config.json
 
 ## Grounding & Factuality MCP Servers
 
-### 1. NotebookLM MCP Server (`notebooklm`) - Feature 04
+### 1. NotebookLM MCP Server (`notebooklm`) — opt-in only
+- **Not in the default `mcp_config.json`.** Merge from `mcp_config.remote.example.json` if you accept `npx -y notebooklm-mcp` network install.
 - **Command**: `npx -y notebooklm-mcp`
-- **Purpose**: Zero-hallucination document and codebase Q&A grounded by Google NotebookLM.
-- **Workflow**:
-  1. Synchronize project documents, whitepapers, or contracts into NotebookLM.
-  2. Queries routed to `notebooklm` enforce citation footnotes bound strictly to the notebook corpus.
-  3. Prohibits parametric guessing when answering questions from internal documentation.
+- **Trust class**: `remote-npx` (third-party download, not a bundled local server).
+- **Purpose**: Document Q&A grounded by Google NotebookLM after explicit opt-in.
 
 ### 2. Korean Law & Statute MCP Server (`korean_law`) - Feature 14
 - **Runtime**: `./korean-law-mcp/dist/cli.js`
@@ -26,7 +24,7 @@ This registry documents the available MCP servers configured in `mcp_config.json
   - `web_search`: Search provider chain with `dynamic_threshold` (default 0.3), `mode` (`MODE_DYNAMIC` | `HIGH_FIDELITY`), and `grounding_metadata` (supports, chunks).
   - `fetch_json`: SSRF-protected developer API querying.
   - `cross_lingual_query`: Korean-to-English query expansion targeting 1st-party global sources (RFC, GitHub, official docs, arXiv).
-  - `render_grounding_citations`: Gemini API / research search grounding metadata parser, inline footnote (`[^1]`) citation renderer, and Vertex AI High-Fidelity non-parametric gate (`high_fidelity: true`, `min_coverage: 0.70`).
+  - `render_grounding_citations`: Gemini API / research search grounding metadata parser, inline footnote (`[^1]`) citation renderer, and local High-Fidelity non-parametric gate (`high_fidelity: true`, `min_coverage: 0.70`; no Vertex API call).
 - **CLI Runner**:
   - `scripts/render_grounding_citations.mjs`: Standalone script to render citations with `--high-fidelity` and `--min-coverage` flags.
 

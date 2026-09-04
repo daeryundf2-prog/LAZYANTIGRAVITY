@@ -1,6 +1,6 @@
 ---
 name: dual-verify
-description: "Gemini 3.7 Flash(초고속 생성) + Pro(적대적 3대 영역 합의 판정) 듀얼 모델 합의 게이트 및 계층형 자체 치유(Self-Healing) 스킬."
+description: "Gemini 3.8 Flash(초고속 생성) + Pro(적대적 3대 영역 합의 판정) 듀얼 모델 합의 게이트 및 계층형 자체 치유(Self-Healing) 스킬."
 ---
 
 # Dual-Verify: 2-Pass Real-Time Co-Verification

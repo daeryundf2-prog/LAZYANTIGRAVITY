@@ -54,7 +54,7 @@ describe("saveRoleCheckpoint & findLatestRoleCheckpoint", () => {
 		const checkpoint1 = {
 			taskId: "task-1",
 			platform: "Antigravity" as const,
-			selectedModel: "Gemini 3.7 Flash",
+			selectedModel: "Gemini 3.8 Flash",
 			completedRoles: ["planner"],
 			currentRole: "researcher",
 			failedRole: "researcher",
@@ -96,7 +96,7 @@ describe("saveRoleCheckpoint & findLatestRoleCheckpoint", () => {
 		const checkpoint2 = {
 			taskId: "task-2",
 			platform: "Antigravity" as const,
-			selectedModel: "Gemini 3.7 Flash",
+			selectedModel: "Gemini 3.8 Flash",
 			completedRoles: ["planner"],
 			currentRole: "researcher",
 			nextRecommendedAction: "None",
@@ -125,7 +125,7 @@ describe("saveRoleCheckpoint & findLatestRoleCheckpoint", () => {
 			"--platform",
 			"Antigravity",
 			"--selected-model",
-			"Gemini 3.7 Flash",
+			"Gemini 3.8 Flash",
 			"--completed-roles",
 			"planner,researcher",
 			"--current-role",

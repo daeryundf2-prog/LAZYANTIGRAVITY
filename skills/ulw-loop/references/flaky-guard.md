@@ -5,7 +5,7 @@ description: "간헐적 실패(Flaky) 테스트 자가 치유 스킬. 5개 병�
 
 # Flaky-Guard: Self-Healing Non-Deterministic Test Hardener
 
-Gemini 3.7 Flash의 초저지연 병렬 실행력과 `flaky-stress-runner.mjs`를 활용하여 테스트 스위트를 5개 동시 병렬 프로세스로 20회 고속 스트레스 런하고, 비동기 타이밍 의존성(`setTimeout`, microtask 미대기, 포트 경합)으로 인해 간헐적으로 실패하는 Flaky Test를 자동으로 포착하여 결정론적(Deterministic) 구조로 자가 치유하는 스킬입니다.
+Gemini 3.8 Flash의 초저지연 병렬 실행력과 `flaky-stress-runner.mjs`를 활용하여 테스트 스위트를 5개 동시 병렬 프로세스로 20회 고속 스트레스 런하고, 비동기 타이밍 의존성(`setTimeout`, microtask 미대기, 포트 경합)으로 인해 간헐적으로 실패하는 Flaky Test를 자동으로 포착하여 결정론적(Deterministic) 구조로 자가 치유하는 스킬입니다.
 
 ```mermaid
 flowchart TD

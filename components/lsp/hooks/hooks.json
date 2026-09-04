@@ -2,7 +2,7 @@
 	"hooks": {
 		"PostToolUse": [
 			{
-				"matcher": "^(apply_patch|Write|Edit|MultiEdit|multi_edit|write|edit|multiedit)$",
+				"matcher": "^(write_to_file|WriteToFile|write_file|WriteFile|apply_patch|Write|Edit|MultiEdit|multi_edit|write|edit|multiedit|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
 				"hooks": [
 					{
 						"type": "command",

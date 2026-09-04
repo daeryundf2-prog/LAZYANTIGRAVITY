@@ -84,7 +84,7 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 
 After modifying any frontend/UI file (HTML, CSS, templates, React/Vue components):
 1. **Render & Capture**: Capture the live rendered view or screenshot of the component/page using browser tooling (Playwright, Puppeteer, or local browser render).
-2. **Vision Pre-Screen (Pass C)**: Dispatch Gemini 3.7 Flash with the screenshot artifact to check:
+2. **Vision Pre-Screen (Pass C)**: Dispatch Gemini 3.8 Flash with the screenshot artifact to check:
    - CJK typography wrapping, baseline drops, or glyph clipping
    - Grid and flexbox alignment anomalies, overflow, or awkward whitespace
    - Contrast ratio and aesthetic coherence

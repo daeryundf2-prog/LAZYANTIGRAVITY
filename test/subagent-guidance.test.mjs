@@ -41,7 +41,7 @@ test("#given ultrawork directive #when inspected #then Antigravity verifier lane
 
 	assert.doesNotMatch(text, /any `gpt-5\.2`\s+xhigh reviewer/);
 	assert.match(text, /invoke_subagent/);
-	assert.match(text, /Gemini 3\.7 Flash/);
+	assert.match(text, /Gemini 3\.8 Flash/);
 	assert.doesNotMatch(text, /spawn_agent\(agent_type=/);
 	assert.doesNotMatch(text, /Call `create_goal`/);
 	assert.match(text, /Do not invent foreign goal APIs/);

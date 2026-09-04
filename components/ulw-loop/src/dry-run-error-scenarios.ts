@@ -34,8 +34,8 @@ function happyPath(ctx: DryRunContext, state: DryRunState): void {
 	if (!ctx.json) {
 		process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: happy-path)...\n`);
 		process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
-		process.stdout.write(`  - Gemini 3.7 Flash (High) - session default (plan + code)\n`);
-		process.stdout.write(`  - Gemini 3.7 Flash (Medium) - rapid iterative fixes\n`);
+		process.stdout.write(`  - Gemini 3.8 Flash (High) - session default (plan + code)\n`);
+		process.stdout.write(`  - Gemini 3.8 Flash (Medium) - rapid iterative fixes\n`);
 		process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
 		process.stdout.write(`  - Claude Opus 4.6 (Thinking) - escape hatch only\n`);
 		process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner)\n`);
@@ -51,13 +51,13 @@ async function quotaOpusExhausted(ctx: DryRunContext, state: DryRunState): Promi
 	state.completedRoles = ["planner", "researcher"];
 	state.failedRole = "worker";
 	state.errorType = "model_rate_limited";
-	state.nextRecommendedAction = "Switch to Gemini 3.7 Flash (High) in Antigravity UI and run /ulw resume";
+	state.nextRecommendedAction = "Switch to Gemini 3.8 Flash (High) in Antigravity UI and run /ulw resume";
 
 	if (!ctx.json) {
 		process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: quota-opus-exhausted)...\n`);
 		process.stdout.write(`[Dry-Run] Antigravity Model Recommendation:\n`);
-		process.stdout.write(`  - Gemini 3.7 Flash (High) - session default (plan + code)\n`);
-		process.stdout.write(`  - Gemini 3.7 Flash (Medium) - rapid iterative fixes\n`);
+		process.stdout.write(`  - Gemini 3.8 Flash (High) - session default (plan + code)\n`);
+		process.stdout.write(`  - Gemini 3.8 Flash (Medium) - rapid iterative fixes\n`);
 		process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
 		process.stdout.write(`  - Claude Opus 4.6 (Thinking) - escape hatch only\n`);
 		process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner) - SUCCESS\n`);
@@ -68,7 +68,7 @@ async function quotaOpusExhausted(ctx: DryRunContext, state: DryRunState): Promi
 		process.stdout.write(`[Dry-Run] Error: model_rate_limited (Claude Opus 4.6 Thinking quota exhausted)\n`);
 		process.stdout.write(`[Dry-Run] Quota/Rate limit detected in Antigravity: Immediately stopping loop.\n`);
 		process.stdout.write(
-			`[Dry-Run] Fallback Recommendation: Switch to Gemini 3.7 Flash (High) in Antigravity UI and run /ulw resume.\n`,
+			`[Dry-Run] Fallback Recommendation: Switch to Gemini 3.8 Flash (High) in Antigravity UI and run /ulw resume.\n`,
 		);
 		process.stdout.write(`[Dry-Run] Automatic model switching: Disabled (wouldSwitchModel: false)\n`);
 	}
@@ -81,7 +81,7 @@ async function contextWindowExceeded(ctx: DryRunContext, state: DryRunState): Pr
 	state.completedRoles = ["planner"];
 	state.failedRole = "researcher";
 	state.errorType = "context_window_exceeded";
-	state.nextRecommendedAction = "Switch to Gemini 3.7 Flash (High) and run /ulw resume in Compact Mode";
+	state.nextRecommendedAction = "Switch to Gemini 3.8 Flash (High) and run /ulw resume in Compact Mode";
 
 	if (!ctx.json) {
 		process.stdout.write(`[Dry-Run] Initializing ulw-loop workflow (scenario: context-window-exceeded)...\n`);

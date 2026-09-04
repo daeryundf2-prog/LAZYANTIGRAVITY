@@ -61,7 +61,7 @@ export function formatThinkingBudgetDirective(decision) {
 - Phase 2 (Response Formulation): Assert ONLY facts and conclusions that survived Phase 1 without contradiction.`
         : "";
     return `<adaptive-thinking-budget>
-# Adaptive Reasoning Scaling (Gemini 3.7)
+# Adaptive Reasoning Scaling (Gemini 3.8)
 - Recommended Model Tier: Subagents[].Model = "${decision.tier}"
 - Dynamic Thinking Budget: ${decision.budget} tokens (${decision.level.toUpperCase()})
 - Routing Rationale: ${decision.rationale}${decouplingSection}

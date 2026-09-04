@@ -77,7 +77,7 @@
 		],
 		"PreToolUse": [
 			{
-				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute)$",
+				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
 				"hooks": [
 					{
 						"type": "command",
@@ -102,7 +102,7 @@
 		],
 		"PostToolUse": [
 			{
-				"matcher": "^(apply_patch|write|Write|edit|Edit|multi_edit|multiedit|MultiEdit|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
+				"matcher": "^(write_to_file|WriteToFile|write_file|WriteFile|apply_patch|write|Write|edit|Edit|multi_edit|multiedit|MultiEdit|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
 				"hooks": [
 					{
 						"type": "command",
@@ -115,17 +115,50 @@
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-tool-use",
 						"timeout": 10,
 						"statusMessage": "LazyAntigravity(0.7.0): Checking LSP Diagnostics"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Markdown Structure Guard (스트리핑/빈 링크/표 불일치)",
+						"failurePolicy": "FAIL_CLOSED"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/json_schema_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Json Schema Guard (스키마 무결성 및 Instructor 자가 수정)",
+						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
 			},
 			{
-				"matcher": "^(apply_patch|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
+				"matcher": "^(write_to_file|WriteToFile|write_file|WriteFile|apply_patch|search_replace|SearchReplace|str_replace|StrReplace|replace_file_content|ReplaceFileContent)$",
 				"hooks": [
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-tool-use",
 						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.7.0): Matching Project Rules"
+					}
+				]
+			},
+			{
+				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Markdown Structure Guard (bash 리다이렉트 쓰기 포함)",
+						"failurePolicy": "FAIL_CLOSED"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/json_schema_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Json Schema Guard (bash 리다이렉트 쓰기 포함)",
+						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
 			}
@@ -227,6 +260,17 @@
 						"statusMessage": "LazyAntigravity(0.7.0): Analyzing Failure Patterns (read-Only)"
 					}
 				]
+			},
+			{
+				"matcher": ".*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/stop_claim_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Stop Claim Guard (무근거 완료 선언 차단)"
+					}
+				]
 			}
 		],
 		"SubagentStop": [
@@ -237,6 +281,17 @@
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook subagent-stop",
 						"timeout": 3,
 						"statusMessage": "LazyAntigravity(0.7.0): Checking Start-Work Continuation"
+					}
+				]
+			},
+			{
+				"matcher": ".*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/stop_claim_guard.mjs\"",
+						"timeout": 5,
+						"statusMessage": "LazyAntigravity(0.7.0): Stop Claim Guard (무근거 완료 선언 차단)"
 					}
 				]
 			}

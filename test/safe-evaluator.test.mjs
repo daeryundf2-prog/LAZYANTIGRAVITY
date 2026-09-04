@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { decomposeAtomicFacts, evaluateAtomicFacts, generateVerificationQuery } from "../scripts/safe_evaluator.mjs";
 
 test("decomposeAtomicFacts splits complex sentences into atomic propositions (Feature 01)", () => {
-	const text = "Gemini 3.7은 사고 모드를 지원한다. 또한 200만 토큰 컨텍스트를 제공한다.";
+	const text = "Gemini 3.8은 사고 모드를 지원한다. 또한 200만 토큰 컨텍스트를 제공한다.";
 	const facts = decomposeAtomicFacts(text);
 	assert.ok(facts.length >= 2);
 	assert.ok(facts.some((f) => f.proposition.includes("사고 모드")));
@@ -87,7 +87,7 @@ test("safe_evaluator CLI outputs JSON with --json flag", () => {
 	const SCRIPT = fileURLToPath(new URL("../scripts/safe_evaluator.mjs", import.meta.url));
 	const dir = mkdtempSync(join(tmpdir(), "safe-json-"));
 	const testFile = join(dir, "doc.md");
-	writeFileSync(testFile, "Gemini 3.7 supports thinking mode.\nIt has 2M tokens context.\n", "utf8");
+	writeFileSync(testFile, "Gemini 3.8 supports thinking mode.\nIt has 2M tokens context.\n", "utf8");
 
 	const res = spawnSync("node", [SCRIPT, testFile, "--json"], { encoding: "utf8" });
 	assert.equal(res.status, 0);

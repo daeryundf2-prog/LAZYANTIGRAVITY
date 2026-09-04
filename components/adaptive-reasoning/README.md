@@ -5,7 +5,7 @@
 
 # Adaptive-Reasoning: Dynamic Thinking Budget & AST Skeletonizer
 
-Gemini 3.7 Flash/Pro의 하이브리드 추론 능력을 극대화하기 위해, 작업 복잡도에 따라 Thinking Budget(0, 8k, 32k, 64k)과 모델 티어(Tier 1/2/3)를 동적으로 스케일링하고, 대용량 파일은 AST 스켈레토나이저로 함수 본문을 제거하여 컨텍스트를 80% 압축하는 스킬입니다.
+Gemini 3.8 Flash/Pro의 하이브리드 추론 능력을 극대화하기 위해, 작업 복잡도에 따라 Thinking Budget(0, 8k, 32k, 64k)과 모델 티어(Tier 1/2/3)를 동적으로 스케일링하고, 대용량 파일은 AST 스켈레토나이저로 함수 본문을 제거하여 컨텍스트를 80% 압축하는 스킬입니다.
 
 ```mermaid
 flowchart TD

@@ -1,11 +1,11 @@
 ---
 name: ultra-research
-description: "Gemini 3.7 Flash 다중 Wave 병렬 탐색과 Insane-Search 멀티채널 기법, Claim Ledger 데이터 플로우 잠금 기반 심층 리서치 및 사실 교차 검증 스킬. Triggers: ultra-research, ultraresearch, insane-search, insane-research, deep-research."
+description: "Gemini 3.8 Flash 다중 Wave 병렬 탐색과 Insane-Search 멀티채널 기법, Claim Ledger 데이터 플로우 잠금 기반 심층 리서치 및 사실 교차 검증 스킬. Triggers: ultra-research, ultraresearch, insane-search, insane-research, deep-research."
 ---
 
 # Ultra-Research: Multi-Wave Parallel Discovery & Insane-Search Fact Gate
 
-Gemini 3.7 Flash의 초저지연 병렬성과 1M 컨텍스트, 그리고 **Insane-Search의 12종 멀티채널 검색 기법**과 **Claim Ledger 기계적 게이트(`ulw-loop research-claims --enforce`)**를 결합하여, 단순 검색을 넘어선 학술·기술·시장 심층 리서치와 철저한 사실 교차 검증을 수행하는 엔터프라이즈급 리서치 파이프라인입니다.
+Gemini 3.8 Flash의 초저지연 병렬성과 1M 컨텍스트, 그리고 **Insane-Search의 12종 멀티채널 검색 기법**과 **Claim Ledger 기계적 게이트(`ulw-loop research-claims --enforce`)**를 결합하여, 단순 검색을 넘어선 학술·기술·시장 심층 리서치와 철저한 사실 교차 검증을 수행하는 엔터프라이즈급 리서치 파이프라인입니다.
 
 ```mermaid
 flowchart TD
@@ -112,7 +112,7 @@ METHOD: Conduct aggressive counter-search (e.g. site:github.com/issues OR site:r
 #### `claim-ledger.md` 레코드 포맷:
 | Claim | Risk Level | Sources (2+ Domains) | Counter-Search Result | Primary Source | Status |
 |---|---|---|---|---|:---:|
-| [Claim 1] Gemini 3.7 Flash supports dynamic 64k thinking budget | High | https://ai.google.dev, https://blog.google | Search for counter: verified in official docs | https://ai.google.dev/gemini-api/docs/models/gemini-3.7-flash | `VERIFIED` |
+| [Claim 1] Gemini 3.8 Flash supports dynamic 64k thinking budget | High | https://ai.google.dev, https://blog.google | Search for counter: verified in official docs | https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash | `VERIFIED` |
 | [Claim 2] Library X crashes on Node 22 ESM | High | https://github.com/lib/issues/1, https://stackoverflow.com/q/2 | Refuted in release v2.4.1 fix | https://github.com/lib/releases/tag/v2.4.1 | `REFUTED` |
 
 ---

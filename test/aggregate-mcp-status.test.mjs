@@ -17,7 +17,7 @@ test("#given aggregate MCP configs #when status JSON is requested #then local se
 	const report = JSON.parse(result.stdout);
 	assert.deepEqual(
 		report.servers.map((server) => server.name).sort(),
-		["ast_grep", "git_bash", "korean_law", "lsp", "media", "notebooklm", "research", "workspace"],
+		["ast_grep", "git_bash", "korean_law", "lsp", "media", "research", "workspace"],
 	);
 
 	for (const server of report.servers) {
@@ -27,7 +27,7 @@ test("#given aggregate MCP configs #when status JSON is requested #then local se
 		assert.equal(typeof server.status, "string", `${server.name} must have status`);
 	}
 
-	for (const name of ["ast_grep", "git_bash", "korean_law", "lsp", "media", "notebooklm", "research", "workspace"]) {
+	for (const name of ["ast_grep", "git_bash", "korean_law", "lsp", "media", "research", "workspace"]) {
 		const server = report.servers.find((entry) => entry.name === name);
 		assert.ok(server, `${name} must be present`);
 		assert.match(server.trust_class, /^local_/);
@@ -73,4 +73,36 @@ test("#given missing configured MCP target with runtime fallback #when status JS
 	assert.equal(server.configured_target_exists, false);
 	assert.equal(server.fallback_target_path, "ast-grep-mcp/dist/cli.js");
 	assert.equal(server.fallback_target_exists, true);
+});
+
+test("#given npx MCP server #when status JSON is requested #then it is remote-npx not local-bundled", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "lazyantigravity-mcp-npx-"));
+	const configPath = join(tempDir, "mcp_config.json");
+	writeFileSync(
+		configPath,
+		JSON.stringify({
+			mcpServers: {
+				notebooklm: {
+					command: "npx",
+					args: ["-y", "notebooklm-mcp"],
+					cwd: ".",
+				},
+			},
+		}),
+	);
+
+	const result = spawnSync("node", ["scripts/lazyantigravity-mcp-status.mjs", "--json", "--config", configPath], {
+		cwd: root,
+		encoding: "utf8",
+	});
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+
+	const report = JSON.parse(result.stdout);
+	assert.equal(report.servers.length, 1);
+	const [server] = report.servers;
+	assert.equal(server.name, "notebooklm");
+	assert.equal(server.trust_class, "remote-npx");
+	assert.equal(server.command_or_type, "npx");
+	assert.equal(report.risks.no_remote_mode, false);
+	assert.equal(report.risks.offline_remote_count, 1);
 });

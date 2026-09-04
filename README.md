@@ -2,7 +2,7 @@
 
 AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).
 
-It gives your coding agent durable workspace memory, evidence-bound work loops with quality gates, sandboxed local tools, and a review pipeline — everything local, no telemetry unless you opt in, no network egress by default. Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.7 Flash**.
+It gives your coding agent durable workspace memory, evidence-bound work loops with quality gates, sandboxed local tools, and a review pipeline — everything local, no telemetry unless you opt in, no network egress by default. Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.8 Flash**.
 
 ## Install
 
@@ -54,11 +54,11 @@ node "$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.
 
 ## Recommended models (Antigravity)
 
-Keep the **session UI** on **Gemini 3.7 Flash (High)**. Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite`) — that is an agent hint, the host never rewrites your session model.
+Keep the **session UI** on **Gemini 3.8 Flash (High)**. Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite`) — that is an agent hint, the host never rewrites your session model.
 
 | Role | Recommendation |
 | :--- | :--- |
-| Session default / planner / worker | **Gemini 3.7 Flash (High)** + `Model: "flash"` |
+| Session default / planner / worker | **Gemini 3.8 Flash (High)** + `Model: "flash"` |
 | Verify / adversarial review | `Model: "pro"` |
 | Rapid iterative fixes | Flash (Medium) or `Model: "flash_lite"` |
 
@@ -66,7 +66,7 @@ Keep the **session UI** on **Gemini 3.7 Flash (High)**. Pass `invoke_subagent` `
 
 - **15 components** — rules engine, active memory, quick-lane, adaptive reasoning, comment checker, LSP feedback, ULW loop (evidence ledger + checkpoints + consensus), telemetry (opt-in), daemon bridge (token-authed IPC blackboard), symbol index, session tree (shadow-git snapshots), active learning, and helpers.
 - **13 workflow skills + 2 aliases** — every former component-manual skill now lives in its component's README; absorbed workflows are preserved as references inside the skill that owns them.
-- **6 bundled local MCP servers** — `git_bash` (workspace-confined, read-only-by-default git policy, no shell chaining), `ast_grep` (tree-sitter structural search/replace when the optional `@ast-grep/napi` dependency is installed, regex fallback otherwise), `lsp` (compiler diagnostics), `workspace` (memory search, blackboard, session tree), `media` (ffprobe metadata, ffmpeg frame extraction for native-vision analysis, tesseract OCR kor+eng, whisper.cpp transcription; `media_youtube` via yt-dlp is the one network tool and requires the `LAZYANTIGRAVITY_MEDIA_NETWORK=1` opt-in), `research` (web_read via Jina Reader/direct fetch, web_search via provider chain Tavily/Brave/Jina/DuckDuckGo, fetch_json for public APIs with SSRF protection; requires `LAZYANTIGRAVITY_RESEARCH_NETWORK=1`). Remote MCP servers ship as opt-in examples only.
+- **7 bundled local MCP servers** — `git_bash` (workspace-confined, read-only-by-default git policy, no shell chaining), `ast_grep` (tree-sitter structural search/replace when the optional `@ast-grep/napi` dependency is installed, regex fallback otherwise), `lsp` (compiler diagnostics), `workspace` (memory search, blackboard, session tree), `media` (ffprobe metadata, ffmpeg frame extraction for native-vision analysis, tesseract OCR kor+eng, whisper.cpp transcription; `media_youtube` via yt-dlp is the one network tool and requires the `LAZYANTIGRAVITY_MEDIA_NETWORK=1` opt-in), `research` (web_read via Jina Reader/direct fetch, web_search via provider chain Tavily/Brave/Jina/DuckDuckGo, fetch_json for public APIs with SSRF protection; requires `LAZYANTIGRAVITY_RESEARCH_NETWORK=1`), `korean_law` (local statute/precedent lookup). Remote MCP servers (`notebooklm` via `npx`, grep_app, context7) ship in `mcp_config.remote.example.json` only. `npx` servers are classified `remote-npx`, never `local-bundled`.
 
 ## Evidence, not claims
 

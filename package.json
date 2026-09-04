@@ -1,7 +1,7 @@
 {
 	"name": "lazyantigravity",
 	"version": "0.7.0",
-	"description": "Aggregated Antigravity plugin root for LazyAntigravity components (Gemini 3.7 Flash default).",
+	"description": "Aggregated Antigravity plugin root for LazyAntigravity components (Gemini 3.8 Flash default).",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",

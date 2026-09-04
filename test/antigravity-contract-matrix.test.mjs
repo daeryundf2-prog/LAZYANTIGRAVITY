@@ -46,19 +46,21 @@ test("Antigravity-Matrix-1: hooks.json adheres to official Antigravity event nam
 	}
 });
 
-test("Antigravity-Matrix-2: Model catalog guarantees Gemini 3.7 Flash and Pro tiers", () => {
-	const catalogPath = join(ROOT, "models.json");
-	if (existsSync(catalogPath)) {
-		const raw = readFileSync(catalogPath, "utf8");
-		const catalog = JSON.parse(raw);
-		const models = catalog.availableModels || [];
-		const modelIds = models.map((m) => m.id || m.modelId);
+test("Antigravity-Matrix-2: Model catalog guarantees Gemini 3.8 Flash and Pro tiers", () => {
+	const catalogPath = join(ROOT, "model-catalog.json");
+	assert.ok(existsSync(catalogPath), "model-catalog.json must exist");
+	const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
+	const models = catalog.antigravity?.availableModels ?? [];
+	const modelIds = models.map((m) => m.id || m.modelId);
 
-		assert.ok(
-			modelIds.some((id) => id && id.includes("3.7")),
-			"Model catalog must feature Gemini 3.7 tier",
-		);
-	}
+	assert.ok(
+		modelIds.some((id) => typeof id === "string" && id.includes("3.8")),
+		"Model catalog must feature Gemini 3.8 tier",
+	);
+	assert.ok(
+		modelIds.some((id) => typeof id === "string" && id.includes("3.1-pro")),
+		"Model catalog must feature Gemini Pro tier",
+	);
 });
 
 test("Antigravity-Matrix-3: MCP Server configs strictly adhere to JSON-RPC 2.0 tool schemas", () => {

@@ -21,6 +21,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = resolve(__dirname, "..");
 
+export function resolveSiblingRoot(root, candidates) {
+	for (const name of candidates) {
+		const candidate = resolve(root, "..", name);
+		if (existsSync(candidate)) {
+			return candidate;
+		}
+	}
+	return null;
+}
+
 export async function runEnterpriseHealthCheck(options = {}) {
 	const includeCrossRepo = options.crossRepo ?? true;
 	const results = [];
@@ -139,7 +149,7 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	// LAYER 3: Post-Verification Mechanical Gates (50 points)
 	// ==========================================
 
-	// 3.1 Vertex AI High-Fidelity Non-Parametric Gate (Section 4.2) (10 pts)
+	// 3.1 Local High-Fidelity Non-Parametric Gate (Section 4.2) (10 pts)
 	let highFidelityPass = false;
 	let highFidelityDetail = "";
 	if (existsSync(hfModule)) {
@@ -157,7 +167,7 @@ export async function runEnterpriseHealthCheck(options = {}) {
 				);
 				if (passRes.grounded && !failRes.grounded) {
 					highFidelityPass = true;
-					highFidelityDetail = "Vertex AI High-Fidelity non-parametric gate passes grounded and blocks hallucinated.";
+					highFidelityDetail = "Local High-Fidelity non-parametric gate passes grounded and blocks hallucinated (no Vertex API).";
 				}
 			}
 		} catch (e) {
@@ -167,7 +177,7 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	results.push({
 		id: "L3_HIGH_FIDELITY_GATE",
 		layer: "Layer 3: Post-Verification Gates",
-		name: "Vertex AI High-Fidelity Non-Parametric Gate (Section 4.2)",
+		name: "Local High-Fidelity Non-Parametric Gate (Section 4.2)",
 		weight: 10,
 		status: highFidelityPass ? "PASS" : "FAIL",
 		detail: highFidelityDetail,
@@ -182,7 +192,7 @@ export async function runEnterpriseHealthCheck(options = {}) {
 			const evaluateHypothesisEntropy = mod.evaluateHypothesisEntropy;
 			if (typeof evaluateHypothesisEntropy === "function") {
 				// Concordant hypotheses should have 0 entropy
-				const low = evaluateHypothesisEntropy(["Gemini Flash 3.7", "Gemini Flash 3.7", "Gemini Flash 3.7"]);
+				const low = evaluateHypothesisEntropy(["Gemini Flash 3.8", "Gemini Flash 3.8", "Gemini Flash 3.8"]);
 				// Conflicting hypotheses should have high entropy (>= 0.6) and trigger search
 				const high = evaluateHypothesisEntropy([
 					"The claim is valid and supported by primary evidence.",
@@ -304,36 +314,40 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	// Cross-repo integration checks (Forensic & Legal Factuality)
 	const crossRepo = {};
 	if (includeCrossRepo) {
-		const lazyforensicRoot = resolve(ROOT, "..", "lazyforensic-");
-		const lazyothersRoot = resolve(ROOT, "..", "lazyothers");
+		const lazyforensicRoot = resolveSiblingRoot(ROOT, ["lazyforensic", "lazyforensic-"]);
+		const lazyothersRoot = resolveSiblingRoot(ROOT, ["lazyothers"]);
 
 		// lazyforensic check
-		const forensicVerify = join(lazyforensicRoot, "scripts", "verify_report.py");
-		if (existsSync(forensicVerify)) {
-			const res = spawnSync("python", [forensicVerify, "--health-check", "--json"], { encoding: "utf8" });
-			if (res.status === 0) {
-				try {
-					crossRepo.lazyforensic = JSON.parse(res.stdout);
-				} catch (_) {
-					crossRepo.lazyforensic = { status: "PASS", score: 100 };
+		if (lazyforensicRoot !== null) {
+			const forensicVerify = join(lazyforensicRoot, "scripts", "verify_report.py");
+			if (existsSync(forensicVerify)) {
+				const res = spawnSync("python", [forensicVerify, "--health-check", "--json"], { encoding: "utf8" });
+				if (res.status === 0) {
+					try {
+						crossRepo.lazyforensic = JSON.parse(res.stdout);
+					} catch (_) {
+						crossRepo.lazyforensic = { status: "PASS", score: 100 };
+					}
+				} else {
+					crossRepo.lazyforensic = { status: "FAIL", score: 0 };
 				}
-			} else {
-				crossRepo.lazyforensic = { status: "FAIL", score: 0 };
 			}
 		}
 
 		// lazyothers check
-		const othersVerify = join(lazyothersRoot, "scripts", "verify_legal_factuality.py");
-		if (existsSync(othersVerify)) {
-			const res = spawnSync("python", [othersVerify, "--health-check", "--json"], { encoding: "utf8" });
-			if (res.status === 0) {
-				try {
-					crossRepo.lazyothers = JSON.parse(res.stdout);
-				} catch (_) {
-					crossRepo.lazyothers = { status: "PASS", score: 100 };
+		if (lazyothersRoot !== null) {
+			const othersVerify = join(lazyothersRoot, "scripts", "verify_legal_factuality.py");
+			if (existsSync(othersVerify)) {
+				const res = spawnSync("python", [othersVerify, "--health-check", "--json"], { encoding: "utf8" });
+				if (res.status === 0) {
+					try {
+						crossRepo.lazyothers = JSON.parse(res.stdout);
+					} catch (_) {
+						crossRepo.lazyothers = { status: "PASS", score: 100 };
+					}
+				} else {
+					crossRepo.lazyothers = { status: "FAIL", score: 0 };
 				}
-			} else {
-				crossRepo.lazyothers = { status: "FAIL", score: 0 };
 			}
 		}
 	}

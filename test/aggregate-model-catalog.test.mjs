@@ -8,7 +8,7 @@ import { root } from "./aggregate-plugin-fixture.mjs";
 test("#given bundled model catalog #when inspected #then Antigravity Flash defaults are pinned at top-level and antigravity section", async () => {
 	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
 
-	assert.equal(catalog.current.model, "gemini-3.7-flash-high");
+	assert.equal(catalog.current.model, "gemini-3.8-flash-high");
 	assert.equal(catalog.current.model_context_window, 1048576);
 	assert.equal(catalog.current.model_reasoning_effort, "high");
 	assert.equal(catalog.current.plan_mode_reasoning_effort, "high");
@@ -18,14 +18,14 @@ test("#given bundled model catalog #when inspected #then Antigravity Flash defau
 		model_reasoning_effort: "high",
 	});
 	assert.deepEqual(catalog.roles.worker, {
-		model: "gemini-3.7-flash-high",
+		model: "gemini-3.8-flash-high",
 		model_reasoning_effort: "high",
 	});
 	assert.equal(catalog.antigravity.canTierRoute, true);
 	assert.equal(catalog.antigravity.hostEnforced, false);
 	assert.equal(catalog.antigravity.routingMode, "agent-tier-hint");
 	assert.equal(catalog.antigravity.tierMap.verifier, "pro");
-	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.7-flash-high");
+	assert.equal(catalog.antigravity.roles.default.modelId, "gemini-3.8-flash-high");
 	assert.equal(catalog.perRoleRouting.antigravity.supported, false);
 	assert.equal(catalog.perRoleRouting.antigravity.routingMode, "agent-tier-hint");
 });

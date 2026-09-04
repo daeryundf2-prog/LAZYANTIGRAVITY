@@ -55,14 +55,6 @@
 				"mcp"
 			],
 			"cwd": "."
-		},
-		"notebooklm": {
-			"command": "npx",
-			"args": [
-				"-y",
-				"notebooklm-mcp"
-			],
-			"cwd": "."
 		}
 	}
 }

@@ -6,6 +6,24 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Fixed — aggregate hook mirror and High-Fidelity branding leftovers
+
+- `hooks/hooks.json` now matches root `hooks.json` (write aliases, markdown/json guards, Stop claim guard). PostToolUse also covers shell redirects. PreToolUse shell matcher includes `execute_command`.
+- `evaluateHighFidelityGrounding` JSDoc no longer says Vertex AI. The gate is local token overlap.
+
+- Component `git-bash` / `comment-checker` / `lsp` hook matchers now include Antigravity write/shell aliases (`write_file`, `WriteToFile`, `execute_command`, …) so standalone component manifests cannot skip AG tools.
+
+### Changed — session default Gemini 3.8 Flash
+
+- `model-catalog.json` current/roles now hint `gemini-3.8-flash-high`. Gemini 3.7 Flash stays in `availableModels` and fallback chains.
+- Agent-facing skills, Hephaestus, README, dry-run copy, and runtime-adapter defaults follow the 3.8 session hint. Host still does not rewrite the session UI model (`canTierRoute`, `hostEnforced=false`).
+
+### Fixed — Gemini/Antigravity 4-hole audit
+
+- Default `mcp_config.json` no longer ships `npx -y notebooklm-mcp`. NotebookLM lives in `mcp_config.remote.example.json`. Doctor and `mcp:status` classify `npx` as `remote-npx`, never `local-bundled`.
+- Cross-repo health check looks up sibling `lazyforensic` then `lazyforensic-`.
+- High-Fidelity gate copy no longer claims a Vertex API call.
+
 ### Added — Section 5.1 #3 한국사 사건/조약/학술논문 날조 차단 & Section 5.1 #4 불가능한 사법절차 차단 & Section 7-8 Enterprise Pipeline Health Check (100점 감사)
 
 - **hephaestus.md** (`components/rules/bundled-rules/hephaestus.md`):

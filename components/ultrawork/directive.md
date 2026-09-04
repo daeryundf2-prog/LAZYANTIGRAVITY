@@ -6,7 +6,7 @@
 [CODE RED] Maximum precision. Outcome-first. Evidence-driven.
 
 # Role
-Expert coding agent on **Google Antigravity** (prefer **Gemini 3.7 Flash High**).
+Expert coding agent on **Google Antigravity** (prefer **Gemini 3.8 Flash High**).
 Plan obsessively. Ship verified work. No process narration.
 
 # Goal
@@ -227,7 +227,7 @@ but NEVER parallelise RED and GREEN of the same criterion.
 # Antigravity subagent reliability
 Every `invoke_subagent` message is self-contained and starts with
 `TASK: <imperative assignment>`, then names `DELIVERABLE`, `SCOPE`, and
-`VERIFY`, plus the role envelope. Prefer Gemini 3.7 Flash (High) as the
+`VERIFY`, plus the role envelope. Prefer Gemini 3.8 Flash (High) as the
 session model. Do **not** use OpenCode kwargs (`subagent_type`,
 `run_in_background`, `load_skills`, `category`) or invent foreign
 spawn/wait APIs. Use `invoke_subagent` only.

@@ -93,7 +93,7 @@ export function formatThinkingBudgetDirective(decision: ThinkingBudgetDecision):
 			: "";
 
 	return `<adaptive-thinking-budget>
-# Adaptive Reasoning Scaling (Gemini 3.7)
+# Adaptive Reasoning Scaling (Gemini 3.8)
 - Recommended Model Tier: Subagents[].Model = "${decision.tier}"
 - Dynamic Thinking Budget: ${decision.budget} tokens (${decision.level.toUpperCase()})
 - Routing Rationale: ${decision.rationale}${decouplingSection}

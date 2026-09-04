@@ -1,7 +1,7 @@
 # LazyAntigravity Architecture & Security Model
 
 ## 1. Executive Summary
-LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestration layer designed for Google Antigravity and Gemini 3.7 Flash / Pro hybrid execution. This document details the architectural topology, security boundaries, isolation mechanics, and governance invariants enforced across the platform.
+LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestration layer designed for Google Antigravity and Gemini 3.8 Flash / Pro hybrid execution. This document details the architectural topology, security boundaries, isolation mechanics, and governance invariants enforced across the platform.
 
 ---
 
@@ -10,7 +10,7 @@ LazyAntigravity is a high-performance, enterprise-grade multi-agent orchestratio
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Google Antigravity IDE                   │
-│   (Gemini 3.7 Flash High / Gemini 3.7 Pro Adversarial)      │
+│   (Gemini 3.8 Flash High / Gemini 3.1 Pro Adversarial)      │
 └──────────────────────────────┬──────────────────────────────┘
                                │ JSON-RPC / CLI / Hooks
 ┌──────────────────────────────▼──────────────────────────────┐

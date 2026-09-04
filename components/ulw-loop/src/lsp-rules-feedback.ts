@@ -119,7 +119,7 @@ export function generateReworkSuggestions(lspDiagnostics: string[], rulesViolati
 	}
 	if (lspDiagnostics.length >= 3) {
 		suggestions.push(
-			`- WARNING: ${lspDiagnostics.length} LSP errors detected. Consider switching to Gemini 3.7 Flash (Medium) for rapid iterative bug fixes before re-attempting the checkpoint.`,
+			`- WARNING: ${lspDiagnostics.length} LSP errors detected. Consider switching to Gemini 3.8 Flash (Medium) for rapid iterative bug fixes before re-attempting the checkpoint.`,
 		);
 	}
 	return suggestions.join("\n");

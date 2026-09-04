@@ -6,6 +6,14 @@
 		},
 		"context7": {
 			"url": "https://mcp.context7.com/mcp"
+		},
+		"notebooklm": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"notebooklm-mcp"
+			],
+			"cwd": "."
 		}
 	}
 }
