@@ -153,6 +153,7 @@ function adjustForSurrogate(str, pos) {
  * @param {string} [options.citation_format="footnote"] 'footnote' ([^1]) or 'link' ([1](url))
  * @param {boolean} [options.high_fidelity=false] Local High-Fidelity non-parametric grounding mode (no Vertex API)
  * @param {number} [options.min_coverage=0.70] Minimum grounding coverage threshold for high-fidelity mode
+ * @param {number} [options.max_gap_ratio=0.25] Max unsupported contiguous gap (fraction of non-ws chars) for high-fidelity mode
  * @param {string} [options.heading="## References / Grounding Sources"] Heading for references
  */
 export function renderGroundingCitations(options) {
@@ -162,6 +163,7 @@ export function renderGroundingCitations(options) {
 	const heading = options?.heading || "## References / Grounding Sources";
 	const isHighFidelity = options?.high_fidelity === true || options?.mode === "HIGH_FIDELITY";
 	const minCoverage = typeof options?.min_coverage === "number" ? options.min_coverage : 0.70;
+	const maxGapRatio = typeof options?.max_gap_ratio === "number" ? options.max_gap_ratio : 0.25;
 
 	const { web_search_queries, grounding_chunks, grounding_supports } = parseGroundingMetadata(
 		options?.grounding_metadata,
@@ -388,12 +390,75 @@ export function renderGroundingCitations(options) {
 		groundingCoverage = Number(mappingRate.toFixed(2));
 	}
 
-	const highFidelityPassed = !isHighFidelity || (groundingCoverage >= minCoverage && supportedSegmentCount > 0);
+	// Coverage Dilution guard: a fabricated claim padded behind grounded filler must
+	// not hide behind the global ratio. Two checks:
+	//  1. Sentence-level: any *uncovered* sentence with >= MIN_SENTENCE_CONTENT
+	//     non-ws chars fails (catches short-but-critical fabrications in long docs).
+	//  2. Ratio: the largest uncovered contiguous block exceeds max_gap_ratio of the
+	//     document (catches distributed multi-sentence fabrication).
+	// Sentence-level only applies when offset-mapped coverage exists; the text-search
+	// fallback path (no coveredIntervals) degrades to the ratio check on mappingRate.
+	let maxUncoveredGapRatio = 0;
+	let uncoveredSentenceCount = 0;
+	{
+		const totalNonWs = rawText.replace(/\s/g, "").length;
+		if (totalNonWs > 0) {
+			const covered = new Uint8Array(rawText.length);
+			for (const [start, end] of coveredIntervals) {
+				for (let i = Math.max(0, start); i < Math.min(rawText.length, end); i++) covered[i] = 1;
+			}
+			// Largest uncovered contiguous run (ratio)
+			let gapRun = 0;
+			let maxGapRun = 0;
+			for (let i = 0; i < rawText.length; i++) {
+				if (/\s/.test(rawText[i])) continue;
+				if (covered[i]) {
+					gapRun = 0;
+				} else {
+					gapRun++;
+					if (gapRun > maxGapRun) maxGapRun = gapRun;
+				}
+			}
+			maxUncoveredGapRatio = Number(Math.min(1, maxGapRun / totalNonWs).toFixed(2));
+			// Sentence-level: zero coverage across the whole sentence
+			if (coveredIntervals.length > 0) {
+				const sentences = rawText.split(/(?<=[.!?…])\s+|\n+/);
+				for (const sent of sentences) {
+					const nonWs = sent.replace(/\s/g, "");
+					if (nonWs.length < 20) continue; // connective tissue / headers exempt
+					let hasCover = false;
+					const base = rawText.indexOf(sent);
+					if (base !== -1) {
+						for (let i = base; i < base + sent.length; i++) {
+							if (covered[i]) {
+								hasCover = true;
+								break;
+							}
+						}
+					}
+					if (!hasCover) uncoveredSentenceCount++;
+				}
+			}
+		}
+	}
+
+	const highFidelityPassed =
+		!isHighFidelity ||
+		(groundingCoverage >= minCoverage &&
+			supportedSegmentCount > 0 &&
+			maxUncoveredGapRatio <= maxGapRatio &&
+			uncoveredSentenceCount === 0);
 	const abstention = isHighFidelity && !highFidelityPassed;
 
 	let finalText = rendered.trimEnd() + "\n";
 	if (abstention) {
-		finalText = `[INSUFFICIENT_DATA]: High-Fidelity Grounding coverage (${(groundingCoverage * 100).toFixed(1)}% < ${(minCoverage * 100).toFixed(0)}%) is insufficient. Non-parametric answering required.\n`;
+		if (groundingCoverage >= minCoverage && uncoveredSentenceCount > 0) {
+			finalText = `[INSUFFICIENT_DATA]: ${uncoveredSentenceCount} sentence(s) have no grounding support. Uncovered claims blocked (dilution guard).\n`;
+		} else if (groundingCoverage >= minCoverage && maxUncoveredGapRatio > maxGapRatio) {
+			finalText = `[INSUFFICIENT_DATA]: Largest ungrounded block ${(maxUncoveredGapRatio * 100).toFixed(1)}% > ${(maxGapRatio * 100).toFixed(0)}% of document. Diluted ungrounded claims blocked.\n`;
+		} else {
+			finalText = `[INSUFFICIENT_DATA]: High-Fidelity Grounding coverage (${(groundingCoverage * 100).toFixed(1)}% < ${(minCoverage * 100).toFixed(0)}%) is insufficient. Non-parametric answering required.\n`;
+		}
 	}
 
 	return {
@@ -406,6 +471,8 @@ export function renderGroundingCitations(options) {
 		total_citations: footnotes.length,
 		supported_segment_count: supportedSegmentCount,
 		grounding_coverage: groundingCoverage,
+		max_uncovered_gap_ratio: maxUncoveredGapRatio,
+		uncovered_sentence_count: uncoveredSentenceCount,
 	};
 }
 
@@ -424,6 +491,7 @@ Options:
   --format <type>       Citation format: footnote | link (default: footnote)
   --high-fidelity       Enforce local High-Fidelity non-parametric grounding mode (no Vertex API)
   --min-coverage <n>    Minimum grounding coverage threshold for high fidelity (default 0.70)
+  --max-gap-ratio <n>   Maximum ungrounded contiguous block ratio for high fidelity (default 0.25)
   --json                Output JSON result
 `);
 		process.exit(0);
@@ -436,6 +504,7 @@ Options:
 	let asJson = args.includes("--json");
 	let highFidelity = args.includes("--high-fidelity");
 	let minCoverage = 0.70;
+	let maxGapRatio = 0.25;
 
 	for (let i = 0; i < args.length; i++) {
 		if (args[i] === "--file" && args[i + 1]) {
@@ -458,6 +527,9 @@ Options:
 		} else if (args[i] === "--min-coverage" && args[i + 1]) {
 			minCoverage = Number(args[i + 1]) || 0.70;
 			i++;
+		} else if (args[i] === "--max-gap-ratio" && args[i + 1]) {
+			maxGapRatio = Number(args[i + 1]) || 0.25;
+			i++;
 		}
 	}
 
@@ -479,6 +551,7 @@ Options:
 		citation_format: format,
 		high_fidelity: highFidelity,
 		min_coverage: minCoverage,
+		max_gap_ratio: maxGapRatio,
 	});
 
 	if (asJson) {
