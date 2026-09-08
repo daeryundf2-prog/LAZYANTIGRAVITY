@@ -392,17 +392,20 @@ export function renderGroundingCitations(options) {
 
 	// Coverage Dilution guard: a fabricated claim padded behind grounded filler must
 	// not hide behind the global ratio. Two checks:
-	//  1. Sentence-level: any *uncovered* sentence with >= MIN_SENTENCE_CONTENT
-	//     non-ws chars fails (catches short-but-critical fabrications in long docs).
-	//  2. Ratio: the largest uncovered contiguous block exceeds max_gap_ratio of the
-	//     document (catches distributed multi-sentence fabrication).
-	// Sentence-level only applies when offset-mapped coverage exists; the text-search
-	// fallback path (no coveredIntervals) degrades to the ratio check on mappingRate.
+	//  1. Sentence-level: every non-trivial sentence must have >= 50% of its
+	//     non-ws characters covered (any-char exemption defeated 1-char-support
+	//     attacks). Bullets/headers are exempt by marker shape, not by length,
+	//     so short fabricated claims ("국회 해산.") are still checked.
+	//  2. Ratio: the largest uncovered contiguous block exceeds max_gap_ratio of
+	//     the document (catches distributed multi-sentence fabrication).
+	// Sentence-level only applies when offset-mapped coverage exists; the
+	// text-search fallback path (no coveredIntervals) skips both gap and
+	// sentence checks and falls back to the mappingRate judgment.
 	let maxUncoveredGapRatio = 0;
 	let uncoveredSentenceCount = 0;
 	{
 		const totalNonWs = rawText.replace(/\s/g, "").length;
-		if (totalNonWs > 0) {
+		if (totalNonWs > 0 && coveredIntervals.length > 0) {
 			const covered = new Uint8Array(rawText.length);
 			for (const [start, end] of coveredIntervals) {
 				for (let i = Math.max(0, start); i < Math.min(rawText.length, end); i++) covered[i] = 1;
@@ -420,24 +423,42 @@ export function renderGroundingCitations(options) {
 				}
 			}
 			maxUncoveredGapRatio = Number(Math.min(1, maxGapRun / totalNonWs).toFixed(2));
-			// Sentence-level: zero coverage across the whole sentence
-			if (coveredIntervals.length > 0) {
-				const sentences = rawText.split(/(?<=[.!?…])\s+|\n+/);
-				for (const sent of sentences) {
-					const nonWs = sent.replace(/\s/g, "");
-					if (nonWs.length < 20) continue; // connective tissue / headers exempt
-					let hasCover = false;
-					const base = rawText.indexOf(sent);
-					if (base !== -1) {
-						for (let i = base; i < base + sent.length; i++) {
-							if (covered[i]) {
-								hasCover = true;
-								break;
-							}
-						}
-					}
-					if (!hasCover) uncoveredSentenceCount++;
+
+			// Sentence-level coverage ratio. Korean prose omits the space after
+			// a period and ends sentences with '~다' without any period, so a
+			// pure lookbehind split fails. Build sentence spans by walking
+			// terminators (punctuation) and Korean sentence-final endings
+			// (~다/~냐/~까/~요/~죠/~음/~함) with a cursor, so each sentence is
+			// checked at its own offset even when duplicated.
+			const sentenceSpans = [];
+			const termRe = /(?:[.!?…。!?]+|(?:다|냐|까|요|죠|음|함)(?=\s|$|[가-힣"'\)\]]*(?:\s|$)))/g;
+			let cursor = 0;
+			let m;
+			while ((m = termRe.exec(rawText)) !== null) {
+				const segEnd = m.index + m[0].length;
+				const seg = rawText.slice(cursor, segEnd);
+				if (seg.trim()) sentenceSpans.push([cursor, segEnd]);
+				cursor = segEnd;
+			}
+			if (cursor < rawText.length && rawText.slice(cursor).trim()) {
+				sentenceSpans.push([cursor, rawText.length]);
+			}
+			for (const [sStart, sEnd] of sentenceSpans) {
+				const sent = rawText.slice(sStart, sEnd);
+				const trimmed = sent.trim();
+				// Exempt only structural markers (headers, bullets, list numbers),
+				// not by length — short verdict claims must still be checked.
+				if (/^(#{1,6}\s|[-*+]\s|\d+[.)]\s|>)/.test(trimmed)) continue;
+				let sentNonWs = 0;
+				let coveredNonWs = 0;
+				for (let i = sStart; i < sEnd; i++) {
+					if (/\s/.test(rawText[i])) continue;
+					sentNonWs++;
+					if (covered[i]) coveredNonWs++;
 				}
+				if (sentNonWs < 4) continue; // pure punctuation/fragment remainder
+				const ratio = coveredNonWs / sentNonWs;
+				if (ratio < 0.5) uncoveredSentenceCount++;
 			}
 		}
 	}
@@ -446,14 +467,14 @@ export function renderGroundingCitations(options) {
 		!isHighFidelity ||
 		(groundingCoverage >= minCoverage &&
 			supportedSegmentCount > 0 &&
-			maxUncoveredGapRatio <= maxGapRatio &&
-			uncoveredSentenceCount === 0);
+			(coveredIntervals.length === 0 ||
+				(maxUncoveredGapRatio <= maxGapRatio && uncoveredSentenceCount === 0)));
 	const abstention = isHighFidelity && !highFidelityPassed;
 
 	let finalText = rendered.trimEnd() + "\n";
 	if (abstention) {
 		if (groundingCoverage >= minCoverage && uncoveredSentenceCount > 0) {
-			finalText = `[INSUFFICIENT_DATA]: ${uncoveredSentenceCount} sentence(s) have no grounding support. Uncovered claims blocked (dilution guard).\n`;
+			finalText = `[INSUFFICIENT_DATA]: ${uncoveredSentenceCount} sentence(s) are less than 50% grounded. Uncovered claims blocked (dilution guard).\n`;
 		} else if (groundingCoverage >= minCoverage && maxUncoveredGapRatio > maxGapRatio) {
 			finalText = `[INSUFFICIENT_DATA]: Largest ungrounded block ${(maxUncoveredGapRatio * 100).toFixed(1)}% > ${(maxGapRatio * 100).toFixed(0)}% of document. Diluted ungrounded claims blocked.\n`;
 		} else {
