@@ -31,6 +31,17 @@ export function resolveSiblingRoot(root, candidates) {
 	return null;
 }
 
+export function resolvePythonBinary() {
+	if (process.env.PYTHON) return process.env.PYTHON;
+	for (const bin of ["python3", "python", "/opt/homebrew/bin/python3", "/usr/bin/python3"]) {
+		try {
+			const probe = spawnSync(bin, ["--version"], { stdio: "ignore" });
+			if (probe.status === 0) return bin;
+		} catch (_) {}
+	}
+	return "python3";
+}
+
 export async function runEnterpriseHealthCheck(options = {}) {
 	const includeCrossRepo = options.crossRepo ?? true;
 	const results = [];
@@ -223,7 +234,8 @@ export async function runEnterpriseHealthCheck(options = {}) {
 	const pyScript = join(ROOT, "..", "lazyothers", "scripts", "verify_legal_factuality.py");
 	let legalHealthData = null;
 	if (existsSync(pyScript)) {
-		const res = spawnSync("python", [pyScript, "--health-check", "--json"], { encoding: "utf8" });
+		const pythonBin = resolvePythonBinary();
+		const res = spawnSync(pythonBin, [pyScript, "--health-check", "--json"], { encoding: "utf8" });
 		if (res.status === 0) {
 			try {
 				legalHealthData = JSON.parse(res.stdout);
@@ -321,7 +333,8 @@ export async function runEnterpriseHealthCheck(options = {}) {
 		if (lazyforensicRoot !== null) {
 			const forensicVerify = join(lazyforensicRoot, "scripts", "verify_report.py");
 			if (existsSync(forensicVerify)) {
-				const res = spawnSync("python", [forensicVerify, "--health-check", "--json"], { encoding: "utf8" });
+				const pythonBin = resolvePythonBinary();
+				const res = spawnSync(pythonBin, [forensicVerify, "--health-check", "--json"], { encoding: "utf8" });
 				if (res.status === 0) {
 					try {
 						crossRepo.lazyforensic = JSON.parse(res.stdout);
@@ -338,7 +351,8 @@ export async function runEnterpriseHealthCheck(options = {}) {
 		if (lazyothersRoot !== null) {
 			const othersVerify = join(lazyothersRoot, "scripts", "verify_legal_factuality.py");
 			if (existsSync(othersVerify)) {
-				const res = spawnSync("python", [othersVerify, "--health-check", "--json"], { encoding: "utf8" });
+				const pythonBin = resolvePythonBinary();
+				const res = spawnSync(pythonBin, [othersVerify, "--health-check", "--json"], { encoding: "utf8" });
 				if (res.status === 0) {
 					try {
 						crossRepo.lazyothers = JSON.parse(res.stdout);
