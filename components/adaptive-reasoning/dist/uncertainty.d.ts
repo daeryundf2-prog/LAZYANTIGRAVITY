@@ -3,14 +3,8 @@
  * Evaluates epistemic uncertainty and multi-path reasoning entropy to trigger
  * external grounding when confidence is low or hypotheses diverge.
  */
-export interface EntropyEvaluation {
-    entropy: number;
-    pathCount: number;
-    conflicting: boolean;
-    agreementRatio: number;
-    triggerSearch: boolean;
-    reasons: string[];
-}
+import { EntropyEvaluation, evaluateHypothesisEntropy, POSITIVE_VERDICTS, NEGATIVE_VERDICTS } from "./entropy.js";
+export { EntropyEvaluation, evaluateHypothesisEntropy, POSITIVE_VERDICTS, NEGATIVE_VERDICTS };
 export interface UncertaintyEvaluation {
     score: number;
     level: "low" | "medium" | "high";
@@ -18,11 +12,6 @@ export interface UncertaintyEvaluation {
     reasons: string[];
     entropyEvaluation?: EntropyEvaluation;
 }
-/**
- * Evaluates Shannon entropy across multiple reasoning paths / hypotheses (Section 4.3).
- * When reasoning paths diverge or produce contradictory verdicts, entropy rises and triggers search.
- */
-export declare function evaluateHypothesisEntropy(hypotheses: string[]): EntropyEvaluation;
 export declare function computeUncertainty(prompt: string): UncertaintyEvaluation;
 /**
  * Blends prompt epistemic uncertainty with multi-path reasoning entropy (Section 4.3).
