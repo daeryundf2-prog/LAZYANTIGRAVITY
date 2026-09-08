@@ -234,7 +234,6 @@ export async function runCheckpointQualityGate(
 		await assertGroundTruthEvidence(repoRoot, args.qualityGateJson, events, evidenceEnvelope);
 	} catch (error) {
 		const reason = error instanceof Error ? error.message : String(error);
-
 		await appendRunEvent(repoRoot, runId, "quality_gate.failed", {
 			reason: `Ground-Truth evidence verification failed: ${reason}`,
 			qualityInputFingerprint: fingerprint,
