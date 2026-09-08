@@ -43,3 +43,13 @@ export function postCompactRecoveringKinds(state: PostCompactStateFields): Set<P
 	}
 	return recoveringKinds;
 }
+
+export function isPostCompactPendingState(value: unknown): value is PostCompactPendingState {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		!Array.isArray(value) &&
+		((value as Record<string, unknown>)["static"] === undefined || typeof (value as Record<string, unknown>)["static"] === "boolean") &&
+		((value as Record<string, unknown>)["dynamic"] === undefined || typeof (value as Record<string, unknown>)["dynamic"] === "boolean")
+	);
+}

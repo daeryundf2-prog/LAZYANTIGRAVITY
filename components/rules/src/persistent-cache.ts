@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import {
 	type PostCompactPendingKind,
 	type PostCompactPendingState,
+	isPostCompactPendingState,
 	postCompactKindState,
 	postCompactPendingKinds,
 	postCompactRecoveringKinds,
@@ -236,14 +237,6 @@ function isSerializedSessionState(value: unknown): value is SerializedSessionSta
 		(postCompactPending === undefined || isPostCompactPendingState(postCompactPending)) &&
 		(postCompactRecovering === undefined || isPostCompactPendingState(postCompactRecovering)) &&
 		(compacted === undefined || typeof compacted === "boolean")
-	);
-}
-
-function isPostCompactPendingState(value: unknown): value is PostCompactPendingState {
-	return (
-		isRecord(value) &&
-		(value["static"] === undefined || typeof value["static"] === "boolean") &&
-		(value["dynamic"] === undefined || typeof value["dynamic"] === "boolean")
 	);
 }
 

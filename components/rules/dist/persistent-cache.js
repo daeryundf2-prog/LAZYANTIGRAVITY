@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { postCompactKindState, postCompactPendingKinds, postCompactRecoveringKinds, } from "./post-compact-state.js";
+import { isPostCompactPendingState, postCompactKindState, postCompactPendingKinds, postCompactRecoveringKinds, } from "./post-compact-state.js";
 import { SESSION_STATE_LOCK_CONTENDED, withSessionStateLock } from "./session-state-lock.js";
 export function hydrateEngineState(engine, cachePath) {
     const state = readSessionState(cachePath);
@@ -180,11 +180,6 @@ function isSerializedSessionState(value) {
         (postCompactPending === undefined || isPostCompactPendingState(postCompactPending)) &&
         (postCompactRecovering === undefined || isPostCompactPendingState(postCompactRecovering)) &&
         (compacted === undefined || typeof compacted === "boolean"));
-}
-function isPostCompactPendingState(value) {
-    return (isRecord(value) &&
-        (value["static"] === undefined || typeof value["static"] === "boolean") &&
-        (value["dynamic"] === undefined || typeof value["dynamic"] === "boolean"));
 }
 function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);

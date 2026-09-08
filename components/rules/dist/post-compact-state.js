@@ -27,3 +27,10 @@ export function postCompactRecoveringKinds(state) {
     }
     return recoveringKinds;
 }
+export function isPostCompactPendingState(value) {
+    return (typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value) &&
+        (value["static"] === undefined || typeof value["static"] === "boolean") &&
+        (value["dynamic"] === undefined || typeof value["dynamic"] === "boolean"));
+}

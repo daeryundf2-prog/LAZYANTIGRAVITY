@@ -11,3 +11,4 @@ export interface PostCompactStateFields {
 export declare function postCompactKindState(kinds: ReadonlySet<PostCompactPendingKind>): PostCompactPendingState | undefined;
 export declare function postCompactPendingKinds(state: PostCompactStateFields): Set<PostCompactPendingKind>;
 export declare function postCompactRecoveringKinds(state: PostCompactStateFields): Set<PostCompactPendingKind>;
+export declare function isPostCompactPendingState(value: unknown): value is PostCompactPendingState;
