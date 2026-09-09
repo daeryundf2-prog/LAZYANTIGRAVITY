@@ -3,6 +3,7 @@
  * Prevents automated completion on unverified, partial, or fabricated evidence.
  */
 export type EvidenceStatus = "verified" | "partial" | "not_checked" | "inference";
+export type EvidenceReceiptFailure = "invalid" | "placeholder" | "stale" | null;
 export interface EvidenceRange {
     readonly file: string;
     readonly startLine?: number;
@@ -44,6 +45,8 @@ export interface StrictEvidenceEnvelope {
     readonly commandAudits?: readonly CommandExecutionAudit[];
     readonly executionBinding?: ExecutionBinding;
     readonly dryRunSafety?: boolean;
+    readonly runStartedAtMs?: number;
+    readonly minContentLength?: number;
 }
 export interface EvidenceValidationResult {
     readonly valid: boolean;

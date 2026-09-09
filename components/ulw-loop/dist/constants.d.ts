@@ -2,6 +2,7 @@ export declare const ULW_LOOP_DIR = ".omo/ulw-loop";
 export declare const ULW_LOOP_BRIEF = "brief.md";
 export declare const ULW_LOOP_GOALS = "goals.json";
 export declare const ULW_LOOP_LEDGER = "ledger.jsonl";
+export declare const ULW_LOOP_GATE_FAILED = "gate_failed.json";
 export type UlwLoopStatus = "pending" | "in_progress" | "complete" | "failed" | "blocked" | "review_blocked" | "needs_user_decision";
 export type UlwLoopCodexGoalMode = "aggregate" | "per_story";
 export type UlwLoopSteeringStatus = "superseded" | "blocked";

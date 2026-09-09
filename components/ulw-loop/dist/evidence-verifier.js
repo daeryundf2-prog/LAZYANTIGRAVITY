@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 export function computeFileSha256(filePath) {
     try {
@@ -7,6 +7,17 @@ export function computeFileSha256(filePath) {
             return null;
         const content = readFileSync(filePath);
         return createHash("sha256").update(content).digest("hex");
+    }
+    catch {
+        return null;
+    }
+}
+export function computeFileMtimeMs(filePath) {
+    try {
+        if (!existsSync(filePath))
+            return null;
+        const stat = statSync(filePath);
+        return stat.mtimeMs;
     }
     catch {
         return null;
@@ -23,14 +34,49 @@ export function countFileLines(filePath) {
         return null;
     }
 }
-export function verifyEvidenceGroundTruth(repoRoot, evidence, events) {
+export function verifyEvidenceGroundTruth(repoRoot, evidence, events, options) {
     const mismatchedFiles = [];
     const invalidLineRanges = [];
     const nonZeroExitCommands = [];
+    const placeholderReceipts = [];
+    const staleReceipts = [];
     const root = resolve(repoRoot);
     const isInsideRoot = (targetPath) => {
         const rel = relative(root, targetPath);
         return rel === "" || (!isAbsolute(rel) && rel !== ".." && !rel.startsWith(`..${sep}`));
+    };
+    const runStartedAtMs = options?.runStartedAtMs ??
+        evidence.runStartedAtMs ??
+        (evidence.executionBinding?.startedAt ? Date.parse(evidence.executionBinding.startedAt) : undefined);
+    const checkEvidenceReceipt = (filePath, relativeDisplay) => {
+        const isReceipt = relativeDisplay.includes(".omo/evidence") ||
+            relativeDisplay.includes(".omo\\evidence") ||
+            relativeDisplay.includes(".lazyantigravity") ||
+            relativeDisplay.includes("evidence") ||
+            /\.(log|jsonl?|txt|receipt)$/i.test(relativeDisplay);
+        if (!isReceipt || !existsSync(filePath))
+            return;
+        try {
+            const stat = statSync(filePath);
+            if (stat.isFile()) {
+                if (stat.size <= 0) {
+                    placeholderReceipts.push(`Zero-byte placeholder evidence receipt: ${relativeDisplay}`);
+                }
+                else {
+                    const content = readFileSync(filePath, "utf8").trim();
+                    const minLen = options?.minReceiptLength ?? evidence.minContentLength ?? 40;
+                    if (content.length < minLen) {
+                        placeholderReceipts.push(`Placeholder evidence receipt (< ${minLen} chars): ${relativeDisplay}`);
+                    }
+                }
+                if (runStartedAtMs !== undefined && stat.mtimeMs < runStartedAtMs) {
+                    staleReceipts.push(`Stale evidence receipt: ${relativeDisplay} (mtime ${new Date(stat.mtimeMs).toISOString()} < run start ${new Date(runStartedAtMs).toISOString()})`);
+                }
+            }
+        }
+        catch {
+            // ignore file read error here; existence checks handle missing files
+        }
     };
     // 1. Verify readRanges against actual disk files and valid line numbers
     if (evidence.readRanges && evidence.readRanges.length > 0) {
@@ -44,6 +90,7 @@ export function verifyEvidenceGroundTruth(repoRoot, evidence, events) {
                 mismatchedFiles.push(`Missing referenced file in readRanges: ${range.file}`);
                 continue;
             }
+            checkEvidenceReceipt(targetPath, range.file);
             const totalLines = countFileLines(targetPath);
             if (totalLines !== null) {
                 if (range.startLine !== undefined && (range.startLine < 1 || range.startLine > totalLines)) {
@@ -72,6 +119,9 @@ export function verifyEvidenceGroundTruth(repoRoot, evidence, events) {
             }
             else if (actualSha !== checksum.sha256) {
                 mismatchedFiles.push(`SHA-256 mismatch for ${checksum.file}: expected ${checksum.sha256}, got ${actualSha}`);
+            }
+            else {
+                checkEvidenceReceipt(targetPath, checksum.file);
             }
         }
     }
@@ -108,7 +158,11 @@ export function verifyEvidenceGroundTruth(repoRoot, evidence, events) {
             }
         }
     }
-    const hasErrors = mismatchedFiles.length > 0 || invalidLineRanges.length > 0 || nonZeroExitCommands.length > 0;
+    const hasErrors = mismatchedFiles.length > 0 ||
+        invalidLineRanges.length > 0 ||
+        nonZeroExitCommands.length > 0 ||
+        placeholderReceipts.length > 0 ||
+        staleReceipts.length > 0;
     if (hasErrors) {
         const errorParts = [];
         if (mismatchedFiles.length > 0)
@@ -117,12 +171,18 @@ export function verifyEvidenceGroundTruth(repoRoot, evidence, events) {
             errorParts.push(`Lines: ${invalidLineRanges.join("; ")}`);
         if (nonZeroExitCommands.length > 0)
             errorParts.push(`Commands: ${nonZeroExitCommands.join("; ")}`);
+        if (placeholderReceipts.length > 0)
+            errorParts.push(`Placeholders: ${placeholderReceipts.join("; ")}`);
+        if (staleReceipts.length > 0)
+            errorParts.push(`Stale Receipts: ${staleReceipts.join("; ")}`);
         return {
             verified: false,
-            error: `Fabricated or inconsistent evidence detected: ${errorParts.join(" | ")}`,
+            error: `Fabricated, placeholder, or stale evidence detected: ${errorParts.join(" | ")}`,
             mismatchedFiles,
             invalidLineRanges,
             nonZeroExitCommands,
+            placeholderReceipts,
+            staleReceipts,
         };
     }
     return { verified: true };

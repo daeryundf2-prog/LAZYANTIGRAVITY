@@ -12,5 +12,6 @@ export declare function ulwLoopLedgerRelativePath(scope?: UlwLoopScope): string;
 export declare function ulwLoopBriefPath(repoRoot: string, scope?: UlwLoopScope): string;
 export declare function ulwLoopGoalsPath(repoRoot: string, scope?: UlwLoopScope): string;
 export declare function ulwLoopLedgerPath(repoRoot: string, scope?: UlwLoopScope): string;
+export declare function ulwLoopGateFailedPath(repoRoot: string, scope?: UlwLoopScope): string;
 export declare function repoRelative(absolutePath: string, repoRoot: string): string;
 export {};

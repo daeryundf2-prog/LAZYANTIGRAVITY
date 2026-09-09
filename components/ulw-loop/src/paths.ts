@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { ULW_LOOP_BRIEF, ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER } from "./types.js";
+import { ULW_LOOP_BRIEF, ULW_LOOP_DIR, ULW_LOOP_GATE_FAILED, ULW_LOOP_GOALS, ULW_LOOP_LEDGER } from "./types.js";
 
 export interface UlwLoopScope {
 	readonly sessionId?: string | null;
@@ -67,6 +67,10 @@ export function ulwLoopGoalsPath(repoRoot: string, scope?: UlwLoopScope): string
 
 export function ulwLoopLedgerPath(repoRoot: string, scope?: UlwLoopScope): string {
 	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_LEDGER).split("\\").join("/");
+}
+
+export function ulwLoopGateFailedPath(repoRoot: string, scope?: UlwLoopScope): string {
+	return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_GATE_FAILED).split("\\").join("/");
 }
 
 export function repoRelative(absolutePath: string, repoRoot: string): string {

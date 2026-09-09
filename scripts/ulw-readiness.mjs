@@ -28,7 +28,21 @@ if (!existsSync(cliPath)) {
 
 const goalsPath = join(cwd, ".omo", "ulw-loop", "goals.json");
 const ledgerPath = join(cwd, ".omo", "ulw-loop", "ledger.jsonl");
+const gateFailedPath = join(cwd, ".omo", "ulw-loop", "gate_failed.json");
 const incompleteStatuses = new Set(["complete", "completed", "done", "passed", "cancelled", "canceled"]);
+
+if (existsSync(gateFailedPath)) {
+	try {
+		const failedData = JSON.parse(readFileSync(gateFailedPath, "utf8"));
+		lines.push(
+			`LazyAntigravity HARD STOP: Quality gate is LOCKED by gate_failed.json (failed at ${failedData.failedAt ?? "recently"}: ${failedData.error ?? "verification failed"}). Re-run tests and pass verification to unlock.`,
+		);
+	} catch {
+		lines.push(
+			"LazyAntigravity HARD STOP: Quality gate is LOCKED by gate_failed.json. Re-run tests and pass verification to unlock.",
+		);
+	}
+}
 
 if (existsSync(goalsPath)) {
 	try {

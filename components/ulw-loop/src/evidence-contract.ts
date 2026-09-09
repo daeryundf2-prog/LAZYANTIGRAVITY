@@ -4,6 +4,7 @@
  */
 
 export type EvidenceStatus = "verified" | "partial" | "not_checked" | "inference";
+export type EvidenceReceiptFailure = "invalid" | "placeholder" | "stale" | null;
 
 export interface EvidenceRange {
 	readonly file: string;
@@ -50,6 +51,8 @@ export interface StrictEvidenceEnvelope {
 	readonly commandAudits?: readonly CommandExecutionAudit[];
 	readonly executionBinding?: ExecutionBinding;
 	readonly dryRunSafety?: boolean;
+	readonly runStartedAtMs?: number;
+	readonly minContentLength?: number;
 }
 
 export interface EvidenceValidationResult {
@@ -174,6 +177,13 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 		return { valid: false, error: "Evidence summary is required and cannot be empty." };
 	}
 
+	if (typeof raw["minContentLength"] === "number" && status === "verified" && summary.length < raw["minContentLength"]) {
+		return {
+			valid: false,
+			error: `Evidence summary is a placeholder (${summary.length} chars). Verified evidence summary must be at least ${raw["minContentLength"]} substantive characters.`,
+		};
+	}
+
 	const readRanges = parseRanges(raw["readRanges"]);
 	const unreadRanges = parseRanges(raw["unreadRanges"]);
 	const unknowns = Array.isArray(raw["unknowns"])
@@ -231,6 +241,8 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 		commandAudits: parseCommandAudits(raw["commandAudits"]),
 		...(executionBinding !== undefined ? { executionBinding } : {}),
 		dryRunSafety: Boolean(raw["dryRunSafety"]),
+		...(typeof raw["runStartedAtMs"] === "number" ? { runStartedAtMs: raw["runStartedAtMs"] } : {}),
+		...(typeof raw["minContentLength"] === "number" ? { minContentLength: raw["minContentLength"] } : {}),
 	};
 
 	return { valid: true, envelope };

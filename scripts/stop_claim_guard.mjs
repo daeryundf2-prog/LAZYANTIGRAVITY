@@ -98,9 +98,12 @@ async function main() {
 		// Feature 15: Fact-Retracing Gate (v2)
 		// Verify high-risk claimed file paths against disk and transcript
 		let transcriptContent = '';
+		let transcriptStart;
 		const transcriptPath = payload.transcript_path;
 		if (transcriptPath && typeof transcriptPath === 'string' && fs.existsSync(transcriptPath)) {
 			try {
+				const tStat = fs.statSync(transcriptPath);
+				transcriptStart = tStat.birthtimeMs ?? tStat.ctimeMs;
 				transcriptContent = fs.readFileSync(transcriptPath, 'utf8');
 			} catch {
 				// Ignore transcript read failure
@@ -120,6 +123,24 @@ async function main() {
 				const reason = `[STOP CLAIM GUARD v${GUARD_PACK_VERSION}] 사실 역추적(Fact-Retracing) 실패: 메시지에 완료 산출물로 주장된 파일 "${claimedPath}"이 디스크 또는 트랜스크립트에 존재하지 않습니다. 허위 파일 경로 생성을 차단합니다.`;
 				process.stdout.write(`${JSON.stringify({ decision: 'block', reason })}\n`);
 				process.exit(0);
+			}
+
+			if (existsOnDisk) {
+				try {
+					const fStat = fs.statSync(fullPath);
+					if (fStat.isFile() && fStat.size <= 0) {
+						const reason = `[STOP CLAIM GUARD v${GUARD_PACK_VERSION}] 빈 껍데기(Placeholder) 산출물 감지: 산출물 "${claimedPath}"이 0바이트입니다. 실질적인 작업 결과물을 생성해야 합니다.`;
+						process.stdout.write(`${JSON.stringify({ decision: 'block', reason })}\n`);
+						process.exit(0);
+					}
+					if (transcriptStart && fStat.mtimeMs && fStat.mtimeMs < transcriptStart && /\.(log|jsonl?|txt|md)$/i.test(claimedPath)) {
+						const reason = `[STOP CLAIM GUARD v${GUARD_PACK_VERSION}] 과거 산출물 재탕(Stale Evidence) 감지: 산출물 "${claimedPath}"의 최종 수정 시각이 현재 세션 시작 이전입니다. 현재 세션에서 새로 실행하고 생성한 결과물이어야 합니다.`;
+						process.stdout.write(`${JSON.stringify({ decision: 'block', reason })}\n`);
+						process.exit(0);
+					}
+				} catch {
+					// Ignore stat errors
+				}
 			}
 		}
 

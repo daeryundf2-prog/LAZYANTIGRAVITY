@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { ULW_LOOP_BRIEF, ULW_LOOP_DIR, ULW_LOOP_GOALS, ULW_LOOP_LEDGER } from "./types.js";
+import { ULW_LOOP_BRIEF, ULW_LOOP_DIR, ULW_LOOP_GATE_FAILED, ULW_LOOP_GOALS, ULW_LOOP_LEDGER } from "./types.js";
 const SESSION_ENV_KEYS = [
     "OMO_ULW_LOOP_SESSION_ID",
     "ANTIGRAVITY_SESSION_ID",
@@ -53,6 +53,9 @@ export function ulwLoopGoalsPath(repoRoot, scope) {
 }
 export function ulwLoopLedgerPath(repoRoot, scope) {
     return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_LEDGER).split("\\").join("/");
+}
+export function ulwLoopGateFailedPath(repoRoot, scope) {
+    return join(ulwLoopDir(repoRoot, scope), ULW_LOOP_GATE_FAILED).split("\\").join("/");
 }
 export function repoRelative(absolutePath, repoRoot) {
     const slashPrefix = `${repoRoot}/`;
