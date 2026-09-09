@@ -6,17 +6,8 @@
 export type EvidenceStatus = "verified" | "partial" | "not_checked" | "inference";
 export type EvidenceReceiptFailure = "invalid" | "placeholder" | "stale" | null;
 
-export interface EvidenceRange {
-	readonly file: string;
-	readonly startLine?: number;
-	readonly endLine?: number;
-}
-
-export interface FileChecksum {
-	readonly file: string;
-	readonly sha256: string;
-}
-
+export interface EvidenceRange { readonly file: string; readonly startLine?: number; readonly endLine?: number; }
+export interface FileChecksum { readonly file: string; readonly sha256: string; }
 export interface CommandExecutionAudit {
 	readonly command: string;
 	readonly exitCode?: number;
@@ -24,7 +15,6 @@ export interface CommandExecutionAudit {
 	readonly stdoutFingerprint?: string;
 	readonly stderrFingerprint?: string;
 }
-
 export interface ExecutionBinding {
 	readonly requestId: string;
 	readonly runId: string;
@@ -71,13 +61,10 @@ function parseRanges(rawRanges: unknown): EvidenceRange[] {
 	for (const item of rawRanges) {
 		if (item && typeof item === "object" && typeof (item as Record<string, unknown>)["file"] === "string") {
 			const record = item as Record<string, unknown>;
-			const file = (record["file"] as string).trim();
-			const startLine = typeof record["startLine"] === "number" ? record["startLine"] : undefined;
-			const endLine = typeof record["endLine"] === "number" ? record["endLine"] : undefined;
 			result.push({
-				file,
-				...(startLine !== undefined ? { startLine } : {}),
-				...(endLine !== undefined ? { endLine } : {}),
+				file: (record["file"] as string).trim(),
+				...(typeof record["startLine"] === "number" ? { startLine: record["startLine"] } : {}),
+				...(typeof record["endLine"] === "number" ? { endLine: record["endLine"] } : {}),
 			});
 		}
 	}
@@ -198,22 +185,13 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 	// Rule 1: 'verified' evidence must NOT contain any unread ranges, unknowns, or inferences
 	if (status === "verified") {
 		if (unreadRanges.length > 0) {
-			return {
-				valid: false,
-				error: `Evidence marked as 'verified' cannot contain unreadRanges (${unreadRanges.length} found). Mark as 'partial' instead.`,
-			};
+			return { valid: false, error: `Evidence marked as 'verified' cannot contain unreadRanges (${unreadRanges.length} found). Mark as 'partial' instead.` };
 		}
 		if (unknowns.length > 0) {
-			return {
-				valid: false,
-				error: `Evidence marked as 'verified' cannot contain unknowns (${unknowns.length} found). Mark as 'partial' or resolve unknowns.`,
-			};
+			return { valid: false, error: `Evidence marked as 'verified' cannot contain unknowns (${unknowns.length} found). Mark as 'partial' or resolve unknowns.` };
 		}
 		if (inferences.length > 0) {
-			return {
-				valid: false,
-				error: `Evidence marked as 'verified' cannot contain inferences (${inferences.length} found). Mark as 'inference' or verify factually.`,
-			};
+			return { valid: false, error: `Evidence marked as 'verified' cannot contain inferences (${inferences.length} found). Mark as 'inference' or verify factually.` };
 		}
 	}
 
@@ -221,10 +199,7 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 	if (status === "partial" || status === "not_checked" || status === "inference") {
 		const hasGapsDocumented = unreadRanges.length > 0 || unknowns.length > 0 || inferences.length > 0;
 		if (!hasGapsDocumented) {
-			return {
-				valid: false,
-				error: `Evidence marked as '${status}' must explicitly document at least one unreadRange, unknown, or inference gap.`,
-			};
+			return { valid: false, error: `Evidence marked as '${status}' must explicitly document at least one unreadRange, unknown, or inference gap.` };
 		}
 	}
 

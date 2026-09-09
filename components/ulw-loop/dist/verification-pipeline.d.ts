@@ -12,3 +12,13 @@ export declare function calculateConsensusVerdict(results: ConsensusResultEnvelo
 };
 export declare function runConsensusGate(ctx: VerificationContext, policy: VerificationPolicy): QualityGateResult;
 export declare function runVerificationPipeline(ctx: VerificationContext, policy: VerificationPolicy): QualityGateResult[];
+export declare function createVerificationContext(params: {
+    runId: string;
+    events: readonly import("./control-plane-types.js").LedgerEvent[];
+    evidenceEnvelope: import("./control-plane-types.js").QualityEvidenceEnvelope;
+    objective: string;
+    evidence: string;
+    filesChanged: readonly string[];
+    lspDiagnostics: readonly unknown[];
+    rulesViolations: readonly unknown[];
+}): VerificationContext;

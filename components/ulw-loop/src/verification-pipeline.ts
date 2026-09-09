@@ -178,3 +178,47 @@ export function runVerificationPipeline(ctx: VerificationContext, policy: Verifi
 
 	return results;
 }
+
+export function createVerificationContext(params: {
+	runId: string;
+	events: readonly import("./control-plane-types.js").LedgerEvent[];
+	evidenceEnvelope: import("./control-plane-types.js").QualityEvidenceEnvelope;
+	objective: string;
+	evidence: string;
+	filesChanged: readonly string[];
+	lspDiagnostics: readonly unknown[];
+	rulesViolations: readonly unknown[];
+}): VerificationContext {
+	const isSec = /\b(security|auth|login|password|encrypt|token|credential|permission)\b/i.test(
+		`${params.objective} ${params.evidence}`,
+	);
+	const isPub = /\b(release|publish|deploy|production|public)\b/i.test(`${params.objective} ${params.evidence}`);
+	const isDest = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(`${params.objective} ${params.evidence}`);
+	let riskLevel: "low" | "medium" | "high" = "low";
+	if (
+		isSec ||
+		isPub ||
+		isDest ||
+		params.filesChanged.length > 5 ||
+		params.lspDiagnostics.length > 0 ||
+		params.rulesViolations.length > 0
+	) {
+		riskLevel = "high";
+	} else if (params.filesChanged.length > 2) {
+		riskLevel = "medium";
+	}
+	return {
+		runId: params.runId,
+		events: params.events as import("./control-plane-types.js").LedgerEvent[],
+		evidence: params.evidenceEnvelope,
+		goal: params.objective,
+		wouldSwitchModel: false,
+		isDryRun: true,
+		riskLevel,
+		destructiveChange: isDest,
+		publicRelease: isPub,
+		securitySensitive: isSec,
+		lspDiagnostics: params.lspDiagnostics as any,
+		rulesViolations: params.rulesViolations as any,
+	};
+}

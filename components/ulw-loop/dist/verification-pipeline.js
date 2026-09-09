@@ -142,3 +142,34 @@ export function runVerificationPipeline(ctx, policy) {
     results.push(conResult);
     return results;
 }
+export function createVerificationContext(params) {
+    const isSec = /\b(security|auth|login|password|encrypt|token|credential|permission)\b/i.test(`${params.objective} ${params.evidence}`);
+    const isPub = /\b(release|publish|deploy|production|public)\b/i.test(`${params.objective} ${params.evidence}`);
+    const isDest = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(`${params.objective} ${params.evidence}`);
+    let riskLevel = "low";
+    if (isSec ||
+        isPub ||
+        isDest ||
+        params.filesChanged.length > 5 ||
+        params.lspDiagnostics.length > 0 ||
+        params.rulesViolations.length > 0) {
+        riskLevel = "high";
+    }
+    else if (params.filesChanged.length > 2) {
+        riskLevel = "medium";
+    }
+    return {
+        runId: params.runId,
+        events: params.events,
+        evidence: params.evidenceEnvelope,
+        goal: params.objective,
+        wouldSwitchModel: false,
+        isDryRun: true,
+        riskLevel,
+        destructiveChange: isDest,
+        publicRelease: isPub,
+        securitySensitive: isSec,
+        lspDiagnostics: params.lspDiagnostics,
+        rulesViolations: params.rulesViolations,
+    };
+}

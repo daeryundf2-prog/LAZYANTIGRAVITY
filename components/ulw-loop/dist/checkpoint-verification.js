@@ -4,8 +4,9 @@ import { appendRunEvent, readRunEvents } from "./control-plane.js";
 import { assertGateUnlocked, assertGroundTruthEvidence, writeGateFailedMarker } from "./evidence-completion-gate.js";
 import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
+import { checkPriorGateEvents } from "./previous-gate-events.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
-import { calculateQualityFingerprint, loadVerificationPolicy, runVerificationPipeline, } from "./verification-pipeline.js";
+import { calculateQualityFingerprint, createVerificationContext, loadVerificationPolicy, runVerificationPipeline, } from "./verification-pipeline.js";
 export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, args, now, scope) {
     const runId = normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
     const events = await readRunEvents(repoRoot, runId);
@@ -63,86 +64,25 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         ...(coveVerified !== undefined ? { coveVerified } : {}),
     };
     const fingerprint = calculateQualityFingerprint(evidenceEnvelope);
-    const passEvent = events.find((e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint);
-    if (passEvent) {
-        await assertGroundTruthEvidence(repoRoot, args.qualityGateJson, events, evidenceEnvelope);
-        return {
-            finalizerAllowed: true,
-            ...(await reconcileCheckpointSnapshot(repoRoot, plan, goal, evidence, now, args, scope)),
-        };
-    }
-    const failEvent = events.find((e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint);
-    if (failEvent) {
-        const lastMech = events.find((e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint);
-        const conFailed = events.find((e) => [
-            "quality_gate.consensus_failed",
-            "quality_gate.consensus_inconclusive",
-            "quality_gate.consensus_rework_required",
-        ].includes(e.type) && e.qualityInputFingerprint === fingerprint);
-        let goalStatusOverride = "failed";
-        let blockedReasonOverride;
-        let failedReasonOverride = failEvent.reason || "Verification pipeline failed";
-        if (lastMech)
-            failedReasonOverride = lastMech.reason || "Mechanical check failed";
-        else if (conFailed) {
-            if (conFailed.type === "quality_gate.consensus_inconclusive") {
-                goalStatusOverride = "needs_user_decision";
-                blockedReasonOverride = conFailed.reason || "Consensus inconclusive";
-            }
-            else if (conFailed.type === "quality_gate.consensus_rework_required") {
-                goalStatusOverride = "in_progress";
-            }
-            else {
-                failedReasonOverride = conFailed.reason || "Consensus failed";
-            }
-        }
-        return {
-            finalizerAllowed: false,
-            goalStatusOverride,
-            ...(blockedReasonOverride ? { blockedReasonOverride } : {}),
-            failedReasonOverride,
-        };
-    }
-    const reworks = events.filter((e) => e.type === "quality_gate.consensus_rework_required" && e.qualityInputFingerprint === fingerprint);
-    if (reworks.length >= 3) {
-        await appendRunEvent(repoRoot, runId, "parent.hitl_required", {
-            reason: "Consensus rework iteration limit reached (max 3 reworks). User intervention required.",
-            qualityInputFingerprint: fingerprint,
-        });
-        return {
-            finalizerAllowed: false,
-            goalStatusOverride: "needs_user_decision",
-            blockedReasonOverride: "Consensus rework iteration limit reached (max 3 reworks)",
-        };
-    }
+    const priorResult = await checkPriorGateEvents(repoRoot, runId, events, fingerprint, plan, goal, evidence, evidenceEnvelope, now, args, scope);
+    if (priorResult !== null)
+        return priorResult;
     await appendRunEvent(repoRoot, runId, "quality_gate.started", { qualityInputFingerprint: fingerprint });
     // Physical data-flow lock: a previous verification failure locks the gate
     // until a successful ground-truth re-verification clears the marker.
     assertGateUnlocked(repoRoot);
     const lspDiagnostics = await collectLspDiagnostics(repoRoot, filesChanged);
     const rulesViolations = await collectRulesViolations(repoRoot, filesChanged);
-    const isSec = /\b(security|auth|login|password|encrypt|token|credential|permission)\b/i.test(`${goal.objective} ${evidence}`);
-    const isPub = /\b(release|publish|deploy|production|public)\b/i.test(`${goal.objective} ${evidence}`);
-    const isDest = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(`${goal.objective} ${evidence}`);
-    let riskLevel = "low";
-    if (isSec || isPub || isDest || filesChanged.length > 5 || lspDiagnostics.length > 0 || rulesViolations.length > 0)
-        riskLevel = "high";
-    else if (filesChanged.length > 2)
-        riskLevel = "medium";
-    const ctx = {
+    const ctx = createVerificationContext({
         runId,
         events,
-        evidence: evidenceEnvelope,
-        goal: goal.objective,
-        wouldSwitchModel: false,
-        isDryRun: true,
-        riskLevel,
-        destructiveChange: isDest,
-        publicRelease: isPub,
-        securitySensitive: isSec,
+        evidenceEnvelope,
+        objective: goal.objective,
+        evidence,
+        filesChanged,
         lspDiagnostics,
         rulesViolations,
-    };
+    });
     const policy = await loadVerificationPolicy(repoRoot);
     const gateResults = runVerificationPipeline(ctx, policy);
     const mech = gateResults.find((r) => r.stage === "mechanical");
