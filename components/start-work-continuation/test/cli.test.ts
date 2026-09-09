@@ -26,7 +26,7 @@ describe("start-work continuation CLI", () => {
 		expect(result.stdout).toContain('"decision":"block"');
 	});
 
-	it("#given valid SubagentStop stdin #when CLI runs #then stdout contains block JSON", () => {
+	it("#given valid SubagentStop stdin #when CLI runs #then stdout is empty and exit is zero (SubagentStop no-op)", () => {
 		// given
 		const cwd = createWorkspace(["codex:s1"]);
 		const payload = JSON.stringify(makePayload(cwd, false, "SubagentStop"));
@@ -37,7 +37,7 @@ describe("start-work continuation CLI", () => {
 		// then
 		if (result.error !== undefined) throw result.error;
 		expect(result.status).toBe(0);
-		expect(result.stdout).toContain('"decision":"block"');
+		expect(result.stdout).toBe("");
 	});
 
 	it("#given active stop hook stdin #when CLI runs #then stdout is empty and exit is zero", () => {

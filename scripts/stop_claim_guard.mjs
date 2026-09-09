@@ -110,7 +110,10 @@ async function main() {
 			}
 		}
 
-		const claimedFileMatches = message.matchAll(/(?:(?:생성|작성|수정|추가|산출물)(?:은|는|이|가|로|으로)?|(?:created|written|generated|file|path))\s*[:=]?\s*[`"']?([a-zA-Z0-9_.:/\\가-힣-]+\.(?:ts|js|mjs|py|go|rs|json|md))[`"']?/gi);
+		// 파일 추출 확장자 집합은 아래 stale 검사의 (log|jsonl?|txt|md) 집합을
+		// 완전히 포함해야 한다 — .log/.jsonl/.txt 영수증이 stale 체크 밖에서
+		// 조용히 통과하는 우회가 있었다.
+		const claimedFileMatches = message.matchAll(/(?:(?:생성|작성|수정|추가|산출물)(?:은|는|이|가|로|으로)?|(?:created|written|generated|file|path))\s*[:=]?\s*[`"']?([a-zA-Z0-9_.:/\\가-힣-]+\.(?:ts|js|mjs|cjs|cts|mts|py|go|rs|json|jsonl|log|txt|md|csv|html|htm|yml|yaml|xml))[`"']?/gi);
 		for (const match of claimedFileMatches) {
 			const claimedPath = match[1];
 			const fullPath = path.isAbsolute(claimedPath)

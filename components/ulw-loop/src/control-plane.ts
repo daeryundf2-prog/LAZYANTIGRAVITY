@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { appendRunEvent } from "./append-run-event.js";
 import {
 	checkLeases,
 	heartbeatAgent,
@@ -11,11 +12,10 @@ import {
 } from "./control-plane-helpers.js";
 import { withLedgerWriteLock } from "./plan-io.js";
 import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
-import { appendRunEvent } from "./append-run-event.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
 
-export { appendRunEvent };
 export {
+	appendRunEvent,
 	checkLeases,
 	heartbeatAgent,
 	readRunEvents,
@@ -114,7 +114,6 @@ export async function loadLeasePolicy(repoRoot: string): Promise<LeasePolicy> {
 	}
 	return DEFAULT_POLICY;
 }
-
 
 export async function getAgentState(repoRoot: string, runId: string, agentId: string): Promise<AgentState | null> {
 	const state = await reconstructStateFromEvents(repoRoot, runId);

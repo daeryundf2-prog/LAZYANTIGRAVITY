@@ -39,6 +39,16 @@ export function computeFileMtimeMs(filePath: string): number | null {
 	}
 }
 
+/**
+ * Masks credentials, secrets, and auth tokens in logged URLs and command outputs (insane-search v0.16.1~v0.16.3).
+ */
+export function sanitizeEvidenceUrls(text: string): string {
+	if (!text) return text;
+	let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^@/\s]+)@/g, "$1$2:***@");
+	sanitized = sanitized.replace(/([?&](?:token|key|secret|api_key|password|auth|access_token)=)[^&\s'")]+/gi, "$1***");
+	return sanitized;
+}
+
 export function countFileLines(filePath: string): number | null {
 	try {
 		if (!existsSync(filePath)) return null;
@@ -204,17 +214,21 @@ export function verifyEvidenceGroundTruth(
 
 	if (hasErrors) {
 		const errorParts: string[] = [];
-		if (mismatchedFiles.length > 0) errorParts.push(`Files: ${mismatchedFiles.join("; ")}`);
-		if (invalidLineRanges.length > 0) errorParts.push(`Lines: ${invalidLineRanges.join("; ")}`);
-		if (nonZeroExitCommands.length > 0) errorParts.push(`Commands: ${nonZeroExitCommands.join("; ")}`);
-		if (placeholderReceipts.length > 0) errorParts.push(`Placeholders: ${placeholderReceipts.join("; ")}`);
-		if (staleReceipts.length > 0) errorParts.push(`Stale Receipts: ${staleReceipts.join("; ")}`);
+		if (mismatchedFiles.length > 0) errorParts.push(`Files: ${mismatchedFiles.map(sanitizeEvidenceUrls).join("; ")}`);
+		if (invalidLineRanges.length > 0)
+			errorParts.push(`Lines: ${invalidLineRanges.map(sanitizeEvidenceUrls).join("; ")}`);
+		if (nonZeroExitCommands.length > 0)
+			errorParts.push(`Commands: ${nonZeroExitCommands.map(sanitizeEvidenceUrls).join("; ")}`);
+		if (placeholderReceipts.length > 0)
+			errorParts.push(`Placeholders: ${placeholderReceipts.map(sanitizeEvidenceUrls).join("; ")}`);
+		if (staleReceipts.length > 0)
+			errorParts.push(`Stale Receipts: ${staleReceipts.map(sanitizeEvidenceUrls).join("; ")}`);
 		return {
 			verified: false,
-			error: `Fabricated, placeholder, or stale evidence detected: ${errorParts.join(" | ")}`,
+			error: sanitizeEvidenceUrls(`Fabricated, placeholder, or stale evidence detected: ${errorParts.join(" | ")}`),
 			mismatchedFiles,
 			invalidLineRanges,
-			nonZeroExitCommands,
+			nonZeroExitCommands: nonZeroExitCommands.map(sanitizeEvidenceUrls),
 			placeholderReceipts,
 			staleReceipts,
 		};

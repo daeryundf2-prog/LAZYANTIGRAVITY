@@ -83,7 +83,9 @@ export async function consensusPendingCmd(repoRoot: string, argv: readonly strin
 	const report = await getConsensusPending(repoRoot, runId, consensusId || undefined);
 	if (json) printJson({ ok: true, ...report, pendingCount: report.pending.length });
 	else {
-		process.stdout.write(`Consensus ${report.consensusId}: ${report.pending.length} persona(s) pending, ${report.reported.length} reported.\n`);
+		process.stdout.write(
+			`Consensus ${report.consensusId}: ${report.pending.length} persona(s) pending, ${report.reported.length} reported.\n`,
+		);
 		for (const item of report.pending) {
 			process.stdout.write(`\n=== persona: ${item.persona} (agentId: ${item.agentId}) ===\n${item.fullPrompt}\n`);
 		}

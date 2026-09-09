@@ -14,7 +14,9 @@ export async function evidenceDraftCmd(repoRoot: string, argv: readonly string[]
 	else {
 		process.stdout.write(`Evidence draft written: ${result.draftPath}\n`);
 		for (const warning of result.warnings) process.stdout.write(`- ${warning}\n`);
-		process.stdout.write(`Submit with: checkpoint --goal-id <id> --status complete --quality-gate-json "${result.draftPath}"\n`);
+		process.stdout.write(
+			`Submit with: checkpoint --goal-id <id> --status complete --quality-gate-json "${result.draftPath}"\n`,
+		);
 	}
 	return 0;
 }

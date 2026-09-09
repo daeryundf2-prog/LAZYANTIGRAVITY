@@ -1,9 +1,8 @@
+import { appendRunEvent } from "./append-run-event.js";
 import { checkLeases, heartbeatAgent, registerPoller, validateQualityEvidenceEnvelope, validateResultEnvelope } from "./control-plane-helpers.js";
 import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
-import { appendRunEvent } from "./append-run-event.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
-export { appendRunEvent };
-export { checkLeases, heartbeatAgent, readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, registerPoller, repairLedgerFile, stripSensitiveData, validateQualityEvidenceEnvelope, validateResultEnvelope, };
+export { appendRunEvent, checkLeases, heartbeatAgent, readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, registerPoller, repairLedgerFile, stripSensitiveData, validateQualityEvidenceEnvelope, validateResultEnvelope, };
 import type { AgentState, AssignmentState, EventType, LeasePolicy, LedgerEvent, PollerState, RunState, RunStateSchema, SubagentResultEnvelope } from "./control-plane-types.js";
 export type { AgentState, AssignmentState, EventType, LeasePolicy, LedgerEvent, PollerState, RunState, RunStateSchema, SubagentResultEnvelope, };
 export declare const GENESIS_HASH: string;

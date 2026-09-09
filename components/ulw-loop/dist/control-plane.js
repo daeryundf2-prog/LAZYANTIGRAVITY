@@ -2,13 +2,12 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { appendRunEvent } from "./append-run-event.js";
 import { checkLeases, heartbeatAgent, registerPoller, validateQualityEvidenceEnvelope, validateResultEnvelope, } from "./control-plane-helpers.js";
 import { withLedgerWriteLock } from "./plan-io.js";
 import { readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, repairLedgerFile } from "./reconstruct.js";
-import { appendRunEvent } from "./append-run-event.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
-export { appendRunEvent };
-export { checkLeases, heartbeatAgent, readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, registerPoller, repairLedgerFile, stripSensitiveData, validateQualityEvidenceEnvelope, validateResultEnvelope, };
+export { appendRunEvent, checkLeases, heartbeatAgent, readRunEvents, reconstructAndSaveState, reconstructStateFromEvents, registerPoller, repairLedgerFile, stripSensitiveData, validateQualityEvidenceEnvelope, validateResultEnvelope, };
 const DEFAULT_POLICY = {
     subagentLease: {
         defaultLeaseMs: 30000,

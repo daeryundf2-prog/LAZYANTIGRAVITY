@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { computeLedgerHash, getRunDir, loadLeasePolicy, safeSegment, } from "./control-plane.js";
+import { computeLedgerHash, getRunDir, loadLeasePolicy, safeSegment } from "./control-plane.js";
 import { withLedgerWriteLock } from "./plan-io.js";
 import { applyEventToState, readRunEvents, stateFromEventsList } from "./reconstruct.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
@@ -71,7 +71,9 @@ async function appendRunEventLocked(repoRoot, runId, type, data) {
                 appendCache.delete(oldest);
         }
     }
-    catch { /* 캐시 갱신 실패는 다음 append의 콜드 경로로 귀결될 뿐이다 */ }
+    catch {
+        /* 캐시 갱신 실패는 다음 append의 콜드 경로로 귀결될 뿐이다 */
+    }
     if (event.agentId) {
         const agentsDir = join(runDir, "agents");
         if (!existsSync(agentsDir))

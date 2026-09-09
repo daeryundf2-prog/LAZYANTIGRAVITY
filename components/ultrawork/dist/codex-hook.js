@@ -17,11 +17,26 @@ export function runUserPromptSubmitHook(input) {
         return "";
     if (isContextPressureRecoveryPrompt(input.prompt))
         return "";
-    if (hasUltraworkDirectiveAlreadyInTranscript(input.transcript_path))
-        return "";
     if (isContextPressureTranscript(input.transcript_path))
         return "";
-    return isUltraworkPrompt(input.prompt) ? formatAdditionalContextOutput(ULTRAWORK_DIRECTIVE) : "";
+    if (isExplicitCancellation(input.prompt))
+        return "";
+    const alreadyInTranscript = hasUltraworkDirectiveAlreadyInTranscript(input.transcript_path);
+    if (isUltraworkPrompt(input.prompt)) {
+        return alreadyInTranscript ? "" : formatAdditionalContextOutput(ULTRAWORK_DIRECTIVE);
+    }
+    if (alreadyInTranscript) {
+        return formatAdditionalContextOutput('<ultrawork-mode active="true" follow-up="true"/>');
+    }
+    return "";
+}
+function isExplicitCancellation(prompt) {
+    const lower = prompt.toLowerCase();
+    return (lower.includes("cancel ulw") ||
+        lower.includes("stop ulw") ||
+        lower.includes("stop ultrawork") ||
+        lower.includes("ulw 중단") ||
+        lower.includes("ulw 취소"));
 }
 function hasUltraworkDirectiveAlreadyInTranscript(transcriptPath) {
     if (transcriptPath === undefined || transcriptPath === null)

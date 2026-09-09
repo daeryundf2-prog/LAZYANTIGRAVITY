@@ -78,7 +78,9 @@ export function runSemanticGate(ctx, policy) {
     }
     const minFactuality = policy?.minFactualityScore ?? 0.85;
     if (typeof ctx.evidence.factualityScore === "number" && ctx.evidence.factualityScore < minFactuality) {
-        const thresholdStr = (minFactuality * 100) % 1 === 0 ? `${(minFactuality * 100).toFixed(0)}%` : `${(minFactuality * 100).toFixed(1)}%`;
+        const thresholdStr = (minFactuality * 100) % 1 === 0
+            ? `${(minFactuality * 100).toFixed(0)}%`
+            : `${(minFactuality * 100).toFixed(1)}%`;
         return {
             stage: "semantic",
             status: "failed",

@@ -5,8 +5,10 @@ import type { ReadonlyFileSystem, StopHookEventName, StopHookOutput, StopInput }
 
 export function runStopHook(input: unknown, fs: ReadonlyFileSystem): string {
 	if (!isStopInput(input)) return "";
+	if (input.hook_event_name === "SubagentStop") return "";
 	if (input.stop_hook_active) return "";
 	if (isExplicitCancellation(input.last_assistant_message)) return "";
+	if (isTerminalFailureOrRefusal(input.last_assistant_message)) return "";
 	const state = readContinuationState(input.cwd, input.session_id, fs);
 	if (state === null) return "";
 	return JSON.stringify({
@@ -24,6 +26,24 @@ function isExplicitCancellation(message: string | undefined): boolean {
 		lower.includes("중단") ||
 		lower.includes("취소") ||
 		lower.includes("stopped by user")
+	);
+}
+
+function isTerminalFailureOrRefusal(message: string | undefined): boolean {
+	if (!message) return false;
+	const lower = message.toLowerCase();
+	return (
+		lower.includes("policy violation") ||
+		lower.includes("content policy") ||
+		lower.includes("rate limit") ||
+		lower.includes("quota exceeded") ||
+		lower.includes("resource has been exhausted") ||
+		lower.includes("sensitive topic") ||
+		lower.includes("cannot comply with") ||
+		lower.includes("cannot fulfill this request") ||
+		lower.includes("safety guidelines") ||
+		lower.includes("terminal error") ||
+		lower.includes("unrecoverable error")
 	);
 }
 

@@ -48,13 +48,17 @@ When submitting work completion via `/ulw checkpoint`, `quality_gate`, or `omo a
 
 ## 3. Ground-Truth Independent Audit Checks
 
-The `evidence-verifier` automatically checks four invariants before allowing any goal completion or persistent memory storage:
+The `evidence-verifier` automatically checks these invariants before allowing any goal completion or persistent memory storage:
 
 1. **Physical File Existence**: Every path in `readRanges` and `fileChecksums` must exist in the workspace.
 2. **Line Bounds Accuracy**: `startLine` and `endLine` must not exceed the actual physical line count of the target file.
 3. **SHA-256 Checksum Match**: Disk contents are hashed in real-time and compared against `fileChecksums`.
 4. **Command Execution Zero-Exit**: All recorded commands in `commandAudits` must have exit code `0`.
 5. **Host Execution Binding**: `executionBinding` must reference the current run (`runId`) and carry `exitCode: 0`; without a binding, completion fails closed into `needs_user_decision`.
+6. **Placeholder Rejection**: Evidence receipts (`.omo/evidence`, `.lazyantigravity`, `*.log|json|jsonl|txt|receipt`) that are 0 bytes or shorter than 40 substantive characters are rejected.
+7. **Freshness (Stale Receipt Rejection)**: Evidence receipts whose `mtime` predates the current run start are rejected — re-serving a previous session's results as fresh work is blocked.
+   - **Known limitation**: freshness compares filesystem `mtime` against the transcript birthtime. `touch` (or any copy that resets mtime) re-labels an old receipt as fresh. Treat freshness as a cheap tripwire, not a cryptographic guarantee; the substantive defenses are the 40-char minimum, SHA-256 checksums, and the run-bound `executionBinding`.
+8. **Gate-Failure Lock**: any verification failure writes `.omo/ulw-loop/gate_failed.json`; subsequent quality gates hard-stop with `ULW_LOOP_GATE_LOCKED` until a passing ground-truth verification deletes the marker. `ulw-readiness` surfaces the lock as a HARD STOP status line.
 
 ---
 

@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { appendRunEvent } from "../src/control-plane.js";
-import { buildEvidenceDraft } from "../src/evidence-draft.js";
 import { validateStrictEvidence } from "../src/evidence-contract.js";
+import { buildEvidenceDraft } from "../src/evidence-draft.js";
 import { verifyEvidenceGroundTruth } from "../src/evidence-verifier.js";
 
 let testDir: string;

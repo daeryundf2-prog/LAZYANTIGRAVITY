@@ -2,16 +2,11 @@ import { randomUUID } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import {
-	computeLedgerHash,
-	getRunDir,
-	loadLeasePolicy,
-	safeSegment,
-} from "./control-plane.js";
+import { computeLedgerHash, getRunDir, loadLeasePolicy, safeSegment } from "./control-plane.js";
+import type { EventType, LedgerEvent, RunStateSchema } from "./control-plane-types.js";
 import { withLedgerWriteLock } from "./plan-io.js";
 import { applyEventToState, readRunEvents, stateFromEventsList } from "./reconstruct.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
-import type { EventType, LedgerEvent, RunStateSchema } from "./control-plane-types.js";
 
 // append 핫패스 캐시: 실행별 (원장 파일 크기 → 마지막 이벤트 + 재구성 상태).
 // 쓰기 락 안에서만 갱신되고, 사용 전에 파일 크기로 검증한다 — 다른 프로세스가
@@ -89,7 +84,9 @@ async function appendRunEventLocked(
 			const oldest = appendCache.keys().next().value;
 			if (oldest !== undefined) appendCache.delete(oldest);
 		}
-	} catch { /* 캐시 갱신 실패는 다음 append의 콜드 경로로 귀결될 뿐이다 */ }
+	} catch {
+		/* 캐시 갱신 실패는 다음 append의 콜드 경로로 귀결될 뿐이다 */
+	}
 
 	if (event.agentId) {
 		const agentsDir = join(runDir, "agents");

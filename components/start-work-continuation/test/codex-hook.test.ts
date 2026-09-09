@@ -183,6 +183,40 @@ describe("start-work Stop hook", () => {
 		// then
 		expect(output).toBe("");
 	});
+
+	it("#given SubagentStop event #when hook runs #then returns empty output (no child plan hijacking)", () => {
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		});
+		const input = { ...createStopInput(), hook_event_name: "SubagentStop" as const };
+		const output = runStopHook(input, fs);
+		expect(output).toBe("");
+	});
+
+	it("#given terminal policy refusal or rate limit #when hook runs #then returns empty output without resubmission", () => {
+		const fs = createMemoryFs({
+			[BOULDER_PATH]: createBoulderJson({
+				sessionIds: ["sess_abc"],
+				status: "active",
+			}),
+			[PLAN_PATH]: ["# Plan", "", "## TODOs", "- [ ] First"].join("\n"),
+		});
+		const refusalInput = {
+			...createStopInput(),
+			last_assistant_message: "Request blocked due to policy violation: sensitive content detected.",
+		};
+		expect(runStopHook(refusalInput, fs)).toBe("");
+
+		const rateLimitInput = {
+			...createStopInput(),
+			last_assistant_message: "Error: rate limit exceeded. Resource has been exhausted.",
+		};
+		expect(runStopHook(rateLimitInput, fs)).toBe("");
+	});
 });
 
 type BoulderInput = {

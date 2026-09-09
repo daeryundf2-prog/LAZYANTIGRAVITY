@@ -49,7 +49,7 @@ export async function createUlwLoopPlan(repoRoot, args, scope) {
             throw new UlwLoopError(`Refusing to overwrite existing ${ulwLoopGoalsRelativePath(scope)}; pass --force to recreate it.`, "ULW_LOOP_PLAN_EXISTS");
         const now = iso();
         const goals = deriveGoalCandidates(args.brief).map((goal, index) => makeGoal(goal.title, goal.objective, index, now));
-        const plan = { version: 1, createdAt: now, updatedAt: now, briefPath: ulwLoopBriefRelativePath(scope), goalsPath: ulwLoopGoalsRelativePath(scope), ledgerPath: ulwLoopLedgerRelativePath(scope), codexGoalMode: args.codexGoalMode ?? "aggregate", goals };
+        const plan = { version: 1, createdAt: now, updatedAt: now, briefPath: ulwLoopBriefRelativePath(scope), goalsPath: ulwLoopGoalsRelativePath(scope), ledgerPath: ulwLoopLedgerRelativePath(scope), originalObjective: args.brief.trim(), deliverables: goals.map((g) => g.title), codexGoalMode: args.codexGoalMode ?? "aggregate", goals };
         if (plan.codexGoalMode === "aggregate")
             plan.codexObjective = aggregateCodexObjectiveForScope(scope);
         await mkdir(ulwLoopDir(repoRoot, scope), { recursive: true });

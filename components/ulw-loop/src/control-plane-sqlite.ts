@@ -59,7 +59,9 @@ function migrateLegacyIndex(runDir: string): void {
 		const tmp = `${jsonl}.tmp`;
 		writeFileSync(tmp, envelopes.map((e) => `${JSON.stringify(e)}\n`).join(""), "utf8");
 		renameSync(tmp, jsonl);
-	} catch { /* 깨진 레거시 파일은 검증기가 보고한다 — append를 막지 않는다 */ }
+	} catch {
+		/* 깨진 레거시 파일은 검증기가 보고한다 — append를 막지 않는다 */
+	}
 }
 
 function readEnvelopes(runDir: string): TransactionalEventEnvelope[] {
@@ -74,9 +76,13 @@ function readEnvelopes(runDir: string): TransactionalEventEnvelope[] {
 			if (!trimmed) continue;
 			try {
 				out.push(JSON.parse(trimmed) as TransactionalEventEnvelope);
-			} catch { /* corrupted line — verifyLedgerWalIntegrity reports it */ }
+			} catch {
+				/* corrupted line — verifyLedgerWalIntegrity reports it */
+			}
 		}
-	} catch { /* unreadable file — treated as empty */ }
+	} catch {
+		/* unreadable file — treated as empty */
+	}
 	return out;
 }
 
@@ -139,7 +145,9 @@ export async function appendTransactionalEvent(
 	try {
 		const size = statSync(jsonl).size;
 		walCountCache.set(runDir, { fileSize: size, count: sequence });
-	} catch { /* 카운트 캐시 갱신 실패 시 다음 append가 콜드 카운트로 회복한다 */ }
+	} catch {
+		/* 카운트 캐시 갱신 실패 시 다음 append가 콜드 카운트로 회복한다 */
+	}
 
 	return envelope;
 }

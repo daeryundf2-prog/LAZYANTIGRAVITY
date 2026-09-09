@@ -1,5 +1,5 @@
-import { ALL_PERSONAS } from "./consensus-types.js";
 import { getPersonaSystemPrompt } from "./consensus-dispatcher.js";
+import { ALL_PERSONAS } from "./consensus-types.js";
 import { readRunEvents } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
 /**

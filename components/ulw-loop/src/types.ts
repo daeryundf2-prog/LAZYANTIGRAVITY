@@ -3,4 +3,5 @@ export * from "./constants.js";
 export * from "./domain-types.js";
 export * from "./role-checkpoint.js";
 export * from "./runtime.js";
+export * from "./session-goal-anchor.js";
 export * from "./steering-types.js";

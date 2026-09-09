@@ -6,5 +6,6 @@ export default defineConfig({
 		environment: "node",
 		pool: "threads",
 		isolate: true,
+		fileParallelism: false,
 	},
 });

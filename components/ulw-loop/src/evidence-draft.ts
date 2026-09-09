@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { getRunDir, readRunEvents } from "./control-plane.js";
-import { countFileSha256Pair } from "./evidence-draft-utils.js";
 import type { StrictEvidenceEnvelope } from "./evidence-contract.js";
+import { countFileSha256Pair } from "./evidence-draft-utils.js";
 
 export interface EvidenceDraftResult {
 	readonly draftPath: string;
@@ -70,7 +70,9 @@ export async function buildEvidenceDraft(
 		},
 	};
 	if (commandsRun.length > 0) {
-		warnings.push("commandAudits are placeholders with exitCode 0 — they must reflect the real outcome of each command.");
+		warnings.push(
+			"commandAudits are placeholders with exitCode 0 — they must reflect the real outcome of each command.",
+		);
 	}
 	warnings.push("the execution binding must match the run that actually produced this work.");
 

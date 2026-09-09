@@ -56,7 +56,9 @@ export async function validateClaimLedger(repoRoot, options) {
                 violations.push({ claimId, violation: msg });
             }
             const primaryNorm = primarySource.trim();
-            if (!primaryNorm || INVALID_COUNTER_STRINGS.has(primaryNorm.toLowerCase()) || (!primaryNorm.includes("/") && !primaryNorm.includes("."))) {
+            if (!primaryNorm ||
+                INVALID_COUNTER_STRINGS.has(primaryNorm.toLowerCase()) ||
+                (!primaryNorm.includes("/") && !primaryNorm.includes("."))) {
                 const msg = "Primary source missing or invalid for verified claim";
                 rowViolations.push(msg);
                 violations.push({ claimId, violation: msg });
@@ -93,15 +95,20 @@ export async function validateClaimLedger(repoRoot, options) {
         if (existsSync(synthPath)) {
             const synthContent = await readFile(synthPath, "utf8");
             const citationRegex = /\[Claim\s*([A-Za-z0-9._-]+)\]/gi;
-            let match;
-            while ((match = citationRegex.exec(synthContent)) !== null) {
+            for (const match of synthContent.matchAll(citationRegex)) {
                 const citedId = `Claim ${match[1]}`;
                 const found = rows.find((r) => r.claimId.toLowerCase() === citedId.toLowerCase());
                 if (!found) {
-                    violations.push({ claimId: citedId, violation: `Cited in ${options.synthesisFile} but not found in ledger` });
+                    violations.push({
+                        claimId: citedId,
+                        violation: `Cited in ${options.synthesisFile} but not found in ledger`,
+                    });
                 }
                 else if (found.status !== "VERIFIED") {
-                    violations.push({ claimId: citedId, violation: `Cited in ${options.synthesisFile} but status is ${found.status}` });
+                    violations.push({
+                        claimId: citedId,
+                        violation: `Cited in ${options.synthesisFile} but status is ${found.status}`,
+                    });
                 }
             }
         }

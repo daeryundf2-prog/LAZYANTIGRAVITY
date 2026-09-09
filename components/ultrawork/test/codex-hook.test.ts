@@ -257,6 +257,43 @@ describe("codex ultrawork hook", () => {
 		expect(directive).not.toMatch(/wait_agent/);
 		expect(directive).not.toMatch(/list_agents/);
 	});
+
+	it("#given active transcript and follow-up prompt without ulw keyword #when hook runs #then emits follow-up marker (PR #7986)", () => {
+		const payload = {
+			hook_event_name: "UserPromptSubmit",
+			prompt: "now implement the second step please",
+			transcript_path: writeTranscript(
+				JSON.stringify({
+					hookSpecificOutput: {
+						hookEventName: "UserPromptSubmit",
+						additionalContext: "<ultrawork-mode>\nexisting directive",
+					},
+				}),
+			),
+		};
+
+		const output = runUserPromptSubmitHook(payload);
+		const parsed = parseHookOutput(output);
+		expect(parsed.hookSpecificOutput.additionalContext).toBe('<ultrawork-mode active="true" follow-up="true"/>');
+	});
+
+	it("#given active transcript and explicit cancellation prompt #when hook runs #then stays quiet without follow-up marker", () => {
+		const payload = {
+			hook_event_name: "UserPromptSubmit",
+			prompt: "cancel ulw now",
+			transcript_path: writeTranscript(
+				JSON.stringify({
+					hookSpecificOutput: {
+						hookEventName: "UserPromptSubmit",
+						additionalContext: "<ultrawork-mode>\nexisting directive",
+					},
+				}),
+			),
+		};
+
+		const output = runUserPromptSubmitHook(payload);
+		expect(output).toBe("");
+	});
 });
 
 interface UserPromptSubmitHookOutput {

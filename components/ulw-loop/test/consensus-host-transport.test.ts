@@ -65,7 +65,13 @@ describe("host-subagent consensus transport", () => {
 				runId,
 				consensusId,
 				item.agentId,
-				envelope(runId, consensusId, item.agentId, item.persona, item.persona === "devils_advocate" ? "needs_rework" : "approve"),
+				envelope(
+					runId,
+					consensusId,
+					item.agentId,
+					item.persona,
+					item.persona === "devils_advocate" ? "needs_rework" : "approve",
+				),
 			);
 		}
 

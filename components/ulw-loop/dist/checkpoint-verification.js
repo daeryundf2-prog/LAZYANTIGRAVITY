@@ -1,7 +1,7 @@
 import { runCheckpointConsensusStep } from "./checkpoint-consensus-step.js";
 import { reconcileCheckpointSnapshot } from "./checkpoint-reconciliation.js";
 import { appendRunEvent, readRunEvents } from "./control-plane.js";
-import { assertGroundTruthEvidence } from "./evidence-completion-gate.js";
+import { assertGateUnlocked, assertGroundTruthEvidence, writeGateFailedMarker } from "./evidence-completion-gate.js";
 import { collectLspDiagnostics, collectRulesViolations } from "./lsp-rules-feedback.js";
 import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
 import { checkStagnation, loadStagnationPolicy } from "./stagnation-guard.js";
@@ -41,10 +41,14 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
     }
     const factualityScore = typeof subResult?.factualityScore === "number"
         ? subResult.factualityScore
-        : (typeof qgParsed?.["factualityScore"] === "number" ? qgParsed["factualityScore"] : undefined);
+        : typeof qgParsed?.["factualityScore"] === "number"
+            ? qgParsed["factualityScore"]
+            : undefined;
     const coveVerified = subResult?.coveVerified !== undefined
         ? subResult.coveVerified
-        : (typeof qgParsed?.["coveVerified"] === "boolean" ? qgParsed["coveVerified"] : undefined);
+        : typeof qgParsed?.["coveVerified"] === "boolean"
+            ? qgParsed["coveVerified"]
+            : undefined;
     const evidenceEnvelope = {
         goal: goal.objective,
         summary: evidence || subResult?.summary || "",
@@ -70,10 +74,11 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
     const failEvent = events.find((e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint);
     if (failEvent) {
         const lastMech = events.find((e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint);
-        const conFailed = events.find((e) => (e.type === "quality_gate.consensus_failed" ||
-            e.type === "quality_gate.consensus_inconclusive" ||
-            e.type === "quality_gate.consensus_rework_required") &&
-            e.qualityInputFingerprint === fingerprint);
+        const conFailed = events.find((e) => [
+            "quality_gate.consensus_failed",
+            "quality_gate.consensus_inconclusive",
+            "quality_gate.consensus_rework_required",
+        ].includes(e.type) && e.qualityInputFingerprint === fingerprint);
         let goalStatusOverride = "failed";
         let blockedReasonOverride;
         let failedReasonOverride = failEvent.reason || "Verification pipeline failed";
@@ -94,7 +99,7 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         return {
             finalizerAllowed: false,
             goalStatusOverride,
-            ...(blockedReasonOverride !== undefined ? { blockedReasonOverride } : {}),
+            ...(blockedReasonOverride ? { blockedReasonOverride } : {}),
             failedReasonOverride,
         };
     }
@@ -111,6 +116,9 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
         };
     }
     await appendRunEvent(repoRoot, runId, "quality_gate.started", { qualityInputFingerprint: fingerprint });
+    // Physical data-flow lock: a previous verification failure locks the gate
+    // until a successful ground-truth re-verification clears the marker.
+    assertGateUnlocked(repoRoot);
     const lspDiagnostics = await collectLspDiagnostics(repoRoot, filesChanged);
     const rulesViolations = await collectRulesViolations(repoRoot, filesChanged);
     const isSec = /\b(security|auth|login|password|encrypt|token|credential|permission)\b/i.test(`${goal.objective} ${evidence}`);
@@ -149,6 +157,7 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
             reason: "Verification pipeline failed at mechanical stage",
             qualityInputFingerprint: fingerprint,
         });
+        writeGateFailedMarker(repoRoot, mech.reason || "Mechanical check failed", "ULW_LOOP_MECHANICAL_FAILED");
         return {
             finalizerAllowed: false,
             goalStatusOverride: "failed",
@@ -161,6 +170,7 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
             reason: sem.reason || "Semantic check failed",
             qualityInputFingerprint: fingerprint,
         });
+        writeGateFailedMarker(repoRoot, sem.reason || "Semantic check failed", "ULW_LOOP_SEMANTIC_FAILED");
         return {
             finalizerAllowed: false,
             goalStatusOverride: "failed",
@@ -188,6 +198,7 @@ export async function runCheckpointQualityGate(repoRoot, goal, plan, evidence, a
             reason: "Verification pipeline failed at consensus stage",
             qualityInputFingerprint: fingerprint,
         });
+        writeGateFailedMarker(repoRoot, failedReasonOverride || "Consensus stage failed", "ULW_LOOP_CONSENSUS_FAILED");
         return {
             finalizerAllowed: false,
             ...(goalStatusOverride !== undefined ? { goalStatusOverride } : {}),

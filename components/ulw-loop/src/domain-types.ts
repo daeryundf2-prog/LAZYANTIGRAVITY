@@ -61,6 +61,8 @@ export interface UlwLoopPlan {
 	briefPath: string;
 	goalsPath: string;
 	ledgerPath: string;
+	originalObjective?: string;
+	deliverables?: readonly string[];
 	codexGoalMode?: UlwLoopCodexGoalMode;
 	codexObjective?: string;
 	codexObjectiveAliases?: string[];

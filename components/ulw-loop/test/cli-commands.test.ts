@@ -277,7 +277,10 @@ describe("ulwLoopCommand checkpoint", () => {
 		mkdirSync(join(testDir, "test"), { recursive: true });
 		writeFileSync(join(testDir, "src", "auth.ts"), "export const auth = true;\n", "utf8");
 		writeFileSync(join(testDir, "test", "auth.test.ts"), "test('auth', () => {});\n", "utf8");
-		const sha256 = (file: string) => createHash("sha256").update(readFileSync(join(testDir, file))).digest("hex");
+		const sha256 = (file: string) =>
+			createHash("sha256")
+				.update(readFileSync(join(testDir, file)))
+				.digest("hex");
 		const evidenceContract = {
 			status: "verified",
 			summary: "implementation done and validation passed",

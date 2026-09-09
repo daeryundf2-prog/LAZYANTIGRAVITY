@@ -3,6 +3,11 @@ import { resolve } from "node:path";
 /**
  * Verifies that walkthrough.md only makes claims that match ground truth
  * attested in the ledger and verified file system.
+ *
+ * Command matching is exact-token only. Substring matching
+ * (cmd.includes(attested)) previously let unattested commands pass whenever
+ * they shared a fragment with an attested command line, which defeats the
+ * purpose of phantom-command detection.
  */
 export function verifyWalkthroughGroundTruth(repoRoot, walkthroughRelativePath = "walkthrough.md", events = []) {
     const candidates = [
@@ -41,6 +46,19 @@ export function verifyWalkthroughGroundTruth(repoRoot, walkthroughRelativePath =
             phantomFiles: [],
             phantomCommands: [],
             error: `Failed to read walkthrough at ${targetPath}: ${error instanceof Error ? error.message : String(error)}`,
+        };
+    }
+    // Without ledger attestation there is nothing to verify against; an empty
+    // attestation set previously passed every claimed command silently.
+    if (events.length === 0) {
+        return {
+            ok: true,
+            walkthroughPath: targetPath,
+            claimedFiles: [],
+            claimedCommands: [],
+            phantomFiles: [],
+            phantomCommands: [],
+            skipped: true,
         };
     }
     // 1. Extract claimed file modifications: [MODIFY] path, [NEW] path, etc.
@@ -96,8 +114,7 @@ export function verifyWalkthroughGroundTruth(repoRoot, walkthroughRelativePath =
         }
     }
     for (const cmd of claimedCommands) {
-        const hasAttestation = [...attestedCommands].some((attested) => attested === cmd || attested.includes(cmd) || cmd.includes(attested));
-        if (!hasAttestation && attestedCommands.size > 0) {
+        if (!attestedCommands.has(cmd)) {
             phantomCommands.push(cmd);
         }
     }
@@ -126,35 +143,4 @@ export function verifyWalkthroughGroundTruth(repoRoot, walkthroughRelativePath =
         phantomFiles: [],
         phantomCommands: [],
     };
-}
-import { readValue } from "./cli-arg-parser.js";
-import { printJson } from "./cli-output.js";
-import { readRunEvents } from "./control-plane.js";
-import { normalizeUlwLoopSessionId, resolveUlwLoopSessionIdFromEnv } from "./paths.js";
-export async function verifyWalkthroughCmd(repoRoot, argv, json, scope) {
-    const explicitRunId = readValue(argv, "--run-id")?.trim();
-    const runId = explicitRunId ?? normalizeUlwLoopSessionId(scope?.sessionId) ?? resolveUlwLoopSessionIdFromEnv() ?? "default-run";
-    const walkthroughFile = readValue(argv, "--file")?.trim() ?? "walkthrough.md";
-    let events = [];
-    try {
-        events = await readRunEvents(repoRoot, runId);
-    }
-    catch {
-        // events absent
-    }
-    const result = verifyWalkthroughGroundTruth(repoRoot, walkthroughFile, events);
-    if (json)
-        printJson(result);
-    else if (result.ok) {
-        if (result.skipped) {
-            process.stdout.write("Walkthrough verification skipped (no walkthrough document found).\n");
-        }
-        else {
-            process.stdout.write(`Walkthrough ground-truth verified: ${result.claimedFiles.length} file(s), ${result.claimedCommands.length} command(s) attested.\n`);
-        }
-    }
-    else {
-        process.stderr.write(`Walkthrough verification FAILED: ${result.error}\n`);
-    }
-    return result.ok ? 0 : 1;
 }

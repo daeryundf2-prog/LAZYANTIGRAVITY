@@ -3,11 +3,7 @@ import { printJson } from "./cli-output.js";
 import { validateClaimLedger } from "./research-claims.js";
 import { UlwLoopError } from "./types.js";
 
-export async function researchClaimsCmd(
-	repoRoot: string,
-	argv: readonly string[],
-	json: boolean,
-): Promise<number> {
+export async function researchClaimsCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number> {
 	const file = readValue(argv, "--file") || readValue(argv, "--ledger");
 	if (!file) {
 		throw new UlwLoopError("Missing --file (path to claim-ledger.md)", "ULW_LOOP_ARGUMENT_MISSING");
@@ -26,8 +22,12 @@ export async function researchClaimsCmd(
 		process.stdout.write(`=== Research Claims Gate ===\n`);
 		process.stdout.write(`Ledger File: ${report.ledgerFile}\n`);
 		if (report.synthesisFile) process.stdout.write(`Synthesis File: ${report.synthesisFile}\n`);
-		process.stdout.write(`Total Claims: ${report.totalClaims} (Verified: ${report.verifiedCount}, Refuted: ${report.refutedCount}, Unresolved: ${report.unresolvedCount})\n`);
-		process.stdout.write(`Result: ${report.ok ? "PASS" : "FAIL"} (${report.passCount} passed, ${report.failCount} failed)\n\n`);
+		process.stdout.write(
+			`Total Claims: ${report.totalClaims} (Verified: ${report.verifiedCount}, Refuted: ${report.refutedCount}, Unresolved: ${report.unresolvedCount})\n`,
+		);
+		process.stdout.write(
+			`Result: ${report.ok ? "PASS" : "FAIL"} (${report.passCount} passed, ${report.failCount} failed)\n\n`,
+		);
 
 		if (report.violations.length > 0) {
 			process.stdout.write(`Violations (${report.violations.length}):\n`);

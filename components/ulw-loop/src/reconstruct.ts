@@ -3,8 +3,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { computeLedgerHash, getRunDir, loadLeasePolicy } from "./control-plane.js";
 import type { LedgerEvent, RunStateSchema } from "./control-plane-types.js";
-import { mutateStateWithEvent } from "./state-mutations.js";
 import { stripSensitiveData } from "./sensitive-data-scrubber.js";
+import { mutateStateWithEvent } from "./state-mutations.js";
 
 // Read events
 export async function readRunEvents(repoRoot: string, runId: string): Promise<LedgerEvent[]> {
@@ -80,7 +80,6 @@ export async function applyEventToState(
 	mutateStateWithEvent(runState, event, policy.subagentLease);
 	return await finalizeState(runState, repoRoot, runId, nowOverride || new Date());
 }
-
 
 // staleness 후처리 + poller 복원 — 전체 재구성과 증분 적용이 동일하게 거치는 마무리 패스.
 async function finalizeState(

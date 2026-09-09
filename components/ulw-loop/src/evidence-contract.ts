@@ -91,9 +91,7 @@ function parseChecksums(rawChecksums: unknown): FileChecksum[] {
 		if (item && typeof item === "object" && typeof (item as Record<string, unknown>)["file"] === "string") {
 			const record = item as Record<string, unknown>;
 			const sha256 = typeof record["sha256"] === "string" ? record["sha256"].trim().toLowerCase() : "";
-			if (sha256.length === 64) {
-				result.push({ file: (record["file"] as string).trim(), sha256 });
-			}
+			if (sha256.length === 64) result.push({ file: (record["file"] as string).trim(), sha256 });
 		}
 	}
 	return result;
@@ -177,7 +175,11 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 		return { valid: false, error: "Evidence summary is required and cannot be empty." };
 	}
 
-	if (typeof raw["minContentLength"] === "number" && status === "verified" && summary.length < raw["minContentLength"]) {
+	if (
+		typeof raw["minContentLength"] === "number" &&
+		status === "verified" &&
+		summary.length < raw["minContentLength"]
+	) {
 		return {
 			valid: false,
 			error: `Evidence summary is a placeholder (${summary.length} chars). Verified evidence summary must be at least ${raw["minContentLength"]} substantive characters.`,

@@ -33,8 +33,7 @@ export function extractRegistrableDomain(hostname) {
 export function extractUrls(text) {
     const urls = [];
     const regex = /https?:\/\/[^\s)\]><",]+/gi;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
+    for (const match of text.matchAll(regex)) {
         urls.push(match[0]);
     }
     return urls;
@@ -74,7 +73,10 @@ export function parseMarkdownTable(markdown) {
         const line = lines[i];
         if (!line || /^\|[\s\-:|]+\|$/.test(line))
             continue; // delimiter row
-        const cells = line.slice(1, -1).split("|").map((c) => c.trim());
+        const cells = line
+            .slice(1, -1)
+            .split("|")
+            .map((c) => c.trim());
         const row = {};
         for (let j = 0; j < headers.length; j++) {
             const header = headers[j];

@@ -1,5 +1,5 @@
-import { ALL_PERSONAS } from "./consensus-types.js";
 import { getPersonaSystemPrompt } from "./consensus-dispatcher.js";
+import { ALL_PERSONAS } from "./consensus-types.js";
 import { readRunEvents } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
 
@@ -41,9 +41,10 @@ export async function getConsensusPending(
 			.filter((e) => e.type === "quality_gate.consensus_persona_reported" && e.consensusId === cid)
 			.map((e) => e.persona as string),
 	);
-	const targetPrompt = typeof started.prompt === "string" && started.prompt.trim().length > 0
-		? started.prompt
-		: "Verify the workspace changes.";
+	const targetPrompt =
+		typeof started.prompt === "string" && started.prompt.trim().length > 0
+			? started.prompt
+			: "Verify the workspace changes.";
 	const pending = ALL_PERSONAS.filter((persona) => !reported.has(persona)).map((persona) => {
 		const agentId = `${persona}-${cid.substring(0, 8)}`;
 		return {

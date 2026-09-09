@@ -1,4 +1,6 @@
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	aggregateConsensus,
@@ -7,25 +9,22 @@ import {
 	setMockPersonaVerdict,
 	validateConsensusSchema,
 } from "../src/consensus-dispatcher.js";
-import { appendRunEvent, getRunDir, readRunEvents } from "../src/control-plane.js";
+import { appendRunEvent, readRunEvents } from "../src/control-plane.js";
 import { validateConsensusResultEnvelope } from "../src/verification-pipeline.js";
 
-const repoRoot = process.cwd();
+let repoRoot: string;
 const runId = "test-live-run-id";
-const runDir = getRunDir(repoRoot, runId);
 
 describe("Consensus Live Invocation Tests", () => {
 	beforeEach(async () => {
-		if (existsSync(runDir)) {
-			rmSync(runDir, { recursive: true, force: true });
-		}
+		repoRoot = mkdtempSync(join(tmpdir(), "consensus-live-"));
 		// Always initialize the run directory and events
 		await appendRunEvent(repoRoot, runId, "run.created", {});
 	});
 
 	afterEach(() => {
-		if (existsSync(runDir)) {
-			rmSync(runDir, { recursive: true, force: true });
+		if (repoRoot && existsSync(repoRoot)) {
+			rmSync(repoRoot, { recursive: true, force: true });
 		}
 	});
 

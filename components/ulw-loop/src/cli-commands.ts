@@ -4,8 +4,10 @@ import {
 	aggregateConsensusCmd,
 	checkLeasesCmd,
 	claimAgentCmd,
+	consensusPendingCmd,
 	dispatchAgentCmd,
 	dispatchConsensusCmd,
+	evidenceDraftCmd,
 	heartbeatAgentCmd,
 	initRunCmd,
 	progressAgentCmd,
@@ -13,16 +15,13 @@ import {
 	rejectAgentCmd,
 	reportCompleteCmd,
 	reportConsensusResultCmd,
-	consensusPendingCmd,
-	evidenceDraftCmd,
-	researchClaimsCmd,
 	reportFailedCmd,
+	researchClaimsCmd,
 	rewindRunCmd,
 	setRunStateCmd,
 } from "./cli-control-plane.js";
-import { verifyLedgerCmd } from "./cli-ledger.js";
-import { verifyWalkthroughCmd } from "./walkthrough-verifier.js";
 import { coveVerifyCmd, safeEvalCmd } from "./cli-cove-safe-cmds.js";
+import { verifyLedgerCmd } from "./cli-ledger.js";
 import { printJson, ULW_LOOP_HELP } from "./cli-output.js";
 import {
 	addGoal,
@@ -35,6 +34,7 @@ import {
 	status,
 	steer,
 } from "./cli-plan-commands.js";
+import { verifyWalkthroughCmd } from "./cli-walkthrough.js";
 import { dryRunCmd } from "./dry-run.js";
 import { resolveUlwLoopSessionIdFromEnv, type UlwLoopScope } from "./paths.js";
 import { findLatestRoleCheckpoint, saveRoleCheckpoint, type UlwLimitErrorType } from "./role-checkpoint.js";
@@ -113,7 +113,7 @@ export async function ulwLoopCommand(argv: readonly string[]): Promise<number> {
 				return await researchClaimsCmd(repoRoot, rest, json);
 			case "consensus-pending":
 				return await consensusPendingCmd(repoRoot, rest, json);
-		case "aggregate-consensus":
+			case "aggregate-consensus":
 				return await aggregateConsensusCmd(repoRoot, rest, json);
 			case "verify-ledger":
 				return await verifyLedgerCmd(repoRoot, rest, json, scope);

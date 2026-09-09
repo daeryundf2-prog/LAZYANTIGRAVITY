@@ -13,7 +13,12 @@ import {
 } from "./control-plane.js";
 import { UlwLoopError } from "./types.js";
 
-export { aggregateConsensusCmd, consensusPendingCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
+export {
+	aggregateConsensusCmd,
+	consensusPendingCmd,
+	dispatchConsensusCmd,
+	reportConsensusResultCmd,
+} from "./cli-consensus-commands.js";
 export { evidenceDraftCmd } from "./cli-evidence-draft-cmd.js";
 export { researchClaimsCmd } from "./cli-research-claims.js";
 

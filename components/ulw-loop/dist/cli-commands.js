@@ -1,10 +1,10 @@
 import { hasFlag, readRepeated, readValue } from "./cli-arg-parser.js";
-import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, dispatchAgentCmd, dispatchConsensusCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, consensusPendingCmd, evidenceDraftCmd, researchClaimsCmd, reportFailedCmd, rewindRunCmd, setRunStateCmd, } from "./cli-control-plane.js";
-import { verifyLedgerCmd } from "./cli-ledger.js";
-import { verifyWalkthroughCmd } from "./walkthrough-verifier.js";
+import { ackAgentCmd, aggregateConsensusCmd, checkLeasesCmd, claimAgentCmd, consensusPendingCmd, dispatchAgentCmd, dispatchConsensusCmd, evidenceDraftCmd, heartbeatAgentCmd, initRunCmd, progressAgentCmd, registerPollerCmd, rejectAgentCmd, reportCompleteCmd, reportConsensusResultCmd, reportFailedCmd, researchClaimsCmd, rewindRunCmd, setRunStateCmd, } from "./cli-control-plane.js";
 import { coveVerifyCmd, safeEvalCmd } from "./cli-cove-safe-cmds.js";
+import { verifyLedgerCmd } from "./cli-ledger.js";
 import { printJson, ULW_LOOP_HELP } from "./cli-output.js";
 import { addGoal, captureEvidence, checkpoint, completeGoals, createGoals, criteria, reviewBlockers, status, steer, } from "./cli-plan-commands.js";
+import { verifyWalkthroughCmd } from "./cli-walkthrough.js";
 import { dryRunCmd } from "./dry-run.js";
 import { resolveUlwLoopSessionIdFromEnv } from "./paths.js";
 import { findLatestRoleCheckpoint, saveRoleCheckpoint } from "./role-checkpoint.js";

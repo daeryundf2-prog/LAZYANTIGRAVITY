@@ -1,22 +1,26 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { appendRunEvent, computeLedgerHash, getRunDir, readRunEvents, stripSensitiveData } from "../src/control-plane.ts";
-import { reconstructStateFromEvents } from "../src/reconstruct.ts";
+import {
+	appendRunEvent,
+	computeLedgerHash,
+	getRunDir,
+	readRunEvents,
+	stripSensitiveData,
+} from "../src/control-plane.ts";
 import type { LedgerEvent } from "../src/control-plane-types.ts";
 import { verifyLedgerIntegrity } from "../src/ledger-integrity.ts";
+import { reconstructStateFromEvents } from "../src/reconstruct.ts";
 
-const testDir = join(fileURLToPath(new URL(".", import.meta.url)), "test-ledger-integrity-temp");
+let testDir: string;
 
 beforeEach(() => {
-	if (existsSync(testDir)) {
-		rmSync(testDir, { recursive: true, force: true });
-	}
+	testDir = mkdtempSync(join(tmpdir(), "ledger-integrity-"));
 });
 
 afterEach(() => {
-	if (existsSync(testDir)) {
+	if (testDir && existsSync(testDir)) {
 		rmSync(testDir, { recursive: true, force: true });
 	}
 });
@@ -117,9 +121,10 @@ describe("Ledger hash-chain integrity", () => {
 				progress: `e${i}`,
 			});
 		}
-		const savedState = JSON.parse(
-			readFileSync(join(getRunDir(testDir, runId), "state.json"), "utf8"),
-		) as Record<string, unknown>;
+		const savedState = JSON.parse(readFileSync(join(getRunDir(testDir, runId), "state.json"), "utf8")) as Record<
+			string,
+			unknown
+		>;
 		const replayed = (await reconstructStateFromEvents(testDir, runId)) as unknown as Record<string, unknown>;
 		// updatedAt은 '재구성이 수행된 시각'이지 원장에서 유도되는 값이 아니므로 제외한다.
 		const { updatedAt: _savedUpdatedAt, ...savedRest } = savedState;

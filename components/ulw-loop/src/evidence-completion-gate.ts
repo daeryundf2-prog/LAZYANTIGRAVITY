@@ -90,17 +90,20 @@ export async function assertGroundTruthEvidence(
 			}
 		}
 	} catch (error) {
-		// Physical data flow lock: record failure marker
-		try {
-			const payload = {
-				failedAt: new Date().toISOString(),
-				error: error instanceof Error ? error.message : String(error),
-				code: error instanceof UlwLoopError ? error.code : "ULW_LOOP_GATE_FAILED",
-			};
-			writeFileSync(gateFailedFile, JSON.stringify(payload, null, 2), "utf8");
-		} catch {
-			// ignore marker write errors
-		}
+		writeGateFailedMarker(
+			repoRoot,
+			error instanceof Error ? error.message : String(error),
+			error instanceof UlwLoopError ? error.code : "ULW_LOOP_GATE_FAILED",
+		);
 		throw error;
+	}
+}
+
+export function writeGateFailedMarker(repoRoot: string, error: string, code = "ULW_LOOP_GATE_FAILED"): void {
+	try {
+		const payload = { failedAt: new Date().toISOString(), error, code };
+		writeFileSync(ulwLoopGateFailedPath(repoRoot), JSON.stringify(payload, null, 2), "utf8");
+	} catch {
+		// ignore marker write errors
 	}
 }

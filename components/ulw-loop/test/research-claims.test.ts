@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { validateClaimLedger } from "../src/research-claims.js";
+import { describe, expect, it } from "vitest";
 import { ulwLoopCommand } from "../src/cli-commands.js";
+import { validateClaimLedger } from "../src/research-claims.js";
 
 async function withTempDir(fn: (dir: string) => Promise<void>) {
 	const dir = mkdtempSync(join(tmpdir(), "ulw-claims-test-"));
@@ -110,8 +110,12 @@ We rely on [Claim 1] and [Claim 2] and [Claim 99].
 			});
 
 			expect(report.ok).toBe(false);
-			expect(report.violations.some((v) => v.claimId === "Claim 2" && v.violation.includes("status is REFUTED"))).toBe(true);
-			expect(report.violations.some((v) => v.claimId === "Claim 99" && v.violation.includes("not found"))).toBe(true);
+			expect(
+				report.violations.some((v) => v.claimId === "Claim 2" && v.violation.includes("status is REFUTED")),
+			).toBe(true);
+			expect(report.violations.some((v) => v.claimId === "Claim 99" && v.violation.includes("not found"))).toBe(
+				true,
+			);
 		});
 	});
 
@@ -142,12 +146,7 @@ We rely on [Claim 1] and [Claim 2] and [Claim 99].
 			expect(exitClean).toBe(0);
 
 			// Bad without --enforce -> 0 (report only)
-			const exitBadReport = await ulwLoopCommand([
-				"research-claims",
-				"--file",
-				join(dir, "bad.md"),
-				"--json",
-			]);
+			const exitBadReport = await ulwLoopCommand(["research-claims", "--file", join(dir, "bad.md"), "--json"]);
 			expect(exitBadReport).toBe(0);
 
 			// Bad with --enforce -> 1

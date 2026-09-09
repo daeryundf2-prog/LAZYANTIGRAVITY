@@ -1,4 +1,4 @@
-export { aggregateConsensusCmd, consensusPendingCmd, dispatchConsensusCmd, reportConsensusResultCmd } from "./cli-consensus-commands.js";
+export { aggregateConsensusCmd, consensusPendingCmd, dispatchConsensusCmd, reportConsensusResultCmd, } from "./cli-consensus-commands.js";
 export { evidenceDraftCmd } from "./cli-evidence-draft-cmd.js";
 export { researchClaimsCmd } from "./cli-research-claims.js";
 export declare function initRunCmd(repoRoot: string, argv: readonly string[], json: boolean): Promise<number>;
