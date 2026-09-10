@@ -2,10 +2,9 @@
 // Research MCP server: web_read, web_search, fetch_json with
 // explicit network opt-in gate (LAZYANTIGRAVITY_RESEARCH_NETWORK=1)
 // and SSRF protection (localhost / private IP blocking).
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import { resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
+import { assertFinalUrlSafe, validateSafeUrl } from "./lib/ssrf.js";
 
 // Startup guard (same contract as the other bundled servers).
 const pluginRootEnv = process.env["PLUGIN_ROOT"];
@@ -33,84 +32,6 @@ function textResult(payload, isError = false) {
 function truncate(text, max = MAX_OUTPUT_CHARS) {
 	if (typeof text !== "string" || text.length <= max) return text;
 	return `${text.slice(0, max)}\n[output truncated at ${max} chars]`;
-}
-
-function isPrivateIp(ip) {
-	if (!ip || ip === "::1" || ip === "0.0.0.0" || ip === "::") return true;
-	let candidate = ip;
-	if (candidate.startsWith("::ffff:")) {
-		candidate = candidate.slice(7);
-	}
-	const parts = candidate.split(".").map(Number);
-	if (parts.length === 4 && parts.every((n) => !Number.isNaN(n) && n >= 0 && n <= 255)) {
-		const [a, b] = parts;
-		if (a === 0) return true; // 0.0.0.0/8
-		if (a === 10) return true; // 10.0.0.0/8
-		if (a === 127) return true; // 127.0.0.0/8
-		if (a === 169 && b === 254) return true; // 169.254.0.0/16
-		if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
-		if (a === 192 && b === 168) return true; // 192.168.0.0/16
-		return false;
-	}
-	const lower = candidate.toLowerCase();
-	if (lower === "::1" || lower === "::") return true;
-	if (lower.startsWith("fe80:") || lower.startsWith("fe90:") || lower.startsWith("fea0:") || lower.startsWith("feb0:")) return true;
-	if (lower.startsWith("fc") || lower.startsWith("fd")) return true;
-	return false;
-}
-
-async function validateSafeUrl(rawUrl) {
-	if (typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
-		return { ok: false, error: "url must be a non-empty string." };
-	}
-	let parsed;
-	try {
-		parsed = new URL(rawUrl.trim());
-	} catch {
-		return { ok: false, error: `Invalid URL: '${rawUrl}'` };
-	}
-	if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-		return { ok: false, error: `Protocol '${parsed.protocol}' is not allowed. Only http: and https: are permitted.` };
-	}
-	const hostname = parsed.hostname;
-	if (!hostname) {
-		return { ok: false, error: `Missing hostname in URL: '${rawUrl}'` };
-	}
-	const lowerHost = hostname.toLowerCase();
-	if (
-		lowerHost === "localhost" ||
-		lowerHost.endsWith(".localhost") ||
-		lowerHost.endsWith(".local") ||
-		lowerHost.endsWith(".internal")
-	) {
-		return { ok: false, error: `Access to local/internal host '${hostname}' is rejected.` };
-	}
-	if (isIP(hostname)) {
-		if (isPrivateIp(hostname)) {
-			return { ok: false, error: `Access to private/loopback IP '${hostname}' is rejected.` };
-		}
-	} 	else {
-		try {
-			const addresses = await lookup(hostname, { all: true });
-			for (const entry of addresses) {
-				if (isPrivateIp(entry.address)) {
-					return { ok: false, error: `Host '${hostname}' resolves to a private/loopback address and is rejected.` };
-				}
-			}
-		} catch (err) {
-			return { ok: false, error: `DNS resolution failed for '${hostname}': ${err instanceof Error ? err.message : String(err)}` };
-		}
-	}
-	return { ok: true, url: parsed.href };
-}
-
-async function assertFinalUrlSafe(finalUrl, originalUrl) {
-	if (!finalUrl || finalUrl === originalUrl) return { ok: true };
-	const recheck = await validateSafeUrl(finalUrl);
-	if (!recheck.ok) {
-		return { ok: false, error: `Redirect target rejected: ${recheck.error}` };
-	}
-	return { ok: true, url: recheck.url };
 }
 
 function stripHtml(html) {
@@ -160,8 +81,16 @@ async function webRead(args) {
 
 	// 1. Try Jina Reader first (keyless clean markdown)
 	try {
+		// fetch 직전 재검증: 최초 검증과 fetch 사이 DNS rebinding될 수 있어
+		// 한 번 더 확인한다. TOCTOU를 완전히 막지는 못한다(한계 명시).
+		const freshCheck = await validateSafeUrl(targetUrl);
+		if (!freshCheck.ok) return textResult({ ok: false, url: targetUrl, error: freshCheck.error }, true);
 		const jinaUrl = `https://r.jina.ai/${targetUrl}`;
+		// redirect는 undici 기본 추종(redirect:'follow')에 맡기고 수동 체인
+		// 추적은 하지 않는다. 중간 홉은 미검증이라는 한계가 있으나, 최종 URL은
+		// 아래에서 재검증하므로 5회 이내 단문 체인 기준으로는 충분하다.
 		const jinaRes = await fetch(jinaUrl, {
+			redirect: "follow",
 			signal: AbortSignal.timeout(30000),
 			headers: {
 				Accept: "text/markdown, text/plain",
@@ -172,12 +101,17 @@ async function webRead(args) {
 			const text = await jinaRes.text();
 			if (text && text.trim().length > 0) {
 				const trimmed = text.trim();
-				const finalCheck = await assertFinalUrlSafe(jinaRes.url || targetUrl, targetUrl);
-				if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
+				// jina 프록시 우회 오해 방지: jinaRes.url(https://r.jina.ai/...)만
+				// 검증하면 원본 target 검증이 빠진다. 프록시 최종 URL과 원본
+				// targetUrl을 각각 검증한다.
+				const proxyCheck = await assertFinalUrlSafe(jinaRes.url || jinaUrl, jinaUrl);
+				if (!proxyCheck.ok) return textResult({ ok: false, url: targetUrl, error: proxyCheck.error }, true);
+				const targetRecheck = await validateSafeUrl(targetUrl);
+				if (!targetRecheck.ok) return textResult({ ok: false, url: targetUrl, error: targetRecheck.error }, true);
 				return textResult({
 					ok: true,
 					url: targetUrl,
-					finalUrl: finalCheck.url || jinaRes.url || targetUrl,
+					finalUrl: proxyCheck.url || jinaRes.url || targetUrl,
 					content: truncate(trimmed),
 					length: trimmed.length,
 				});
@@ -189,7 +123,13 @@ async function webRead(args) {
 
 	// 2. Direct fetch fallback
 	try {
+		// fetch 직전 재검증(DNS rebinding 완화; 완전한 TOCTOU 방지는 불가).
+		const freshDirect = await validateSafeUrl(targetUrl);
+		if (!freshDirect.ok) return textResult({ ok: false, url: targetUrl, error: freshDirect.error }, true);
+		// redirect는 undici 기본 추종에 맡기고 최종 URL만 재검증한다(중간 홉
+		// 미검증 한계는 Jina 경로와 동일).
 		const directRes = await fetch(targetUrl, {
+			redirect: "follow",
 			signal: AbortSignal.timeout(30000),
 			headers: { "User-Agent": USER_AGENT_DIRECT },
 		});
@@ -430,12 +370,24 @@ async function fetchJson(args) {
 	const targetUrl = urlCheck.url;
 
 	try {
+		// fetch 직전 재검증(DNS rebinding 완화; 완전한 TOCTOU 방지는 불가).
+		const freshCheck = await validateSafeUrl(targetUrl);
+		if (!freshCheck.ok) return textResult({ ok: false, url: targetUrl, error: freshCheck.error }, true);
+		// redirect는 undici 기본 추종(redirect:'follow')에 맡기고 수동 체인
+		// 추적은 하지 않는다. 중간 홉 미검증 한계는 있으나 최종 URL을 아래에서
+		// 재검증하므로 충분하다.
 		const res = await fetch(targetUrl, {
+			redirect: "follow",
 			signal: AbortSignal.timeout(20000),
 			headers: { "User-Agent": USER_AGENT_API, Accept: "application/json, text/plain, */*" },
 		});
 		if (!res.ok) {
 			return textResult({ ok: false, url: targetUrl, status: res.status, error: `HTTP ${res.status}: ${res.statusText}` }, true);
+		}
+		// webRead와 동일한 content-type 가드: JSON 계열 외에는 거부한다.
+		const contentType = res.headers.get("content-type") || "";
+		if (!/text|html|json|xml|markdown/i.test(contentType)) {
+			return textResult({ ok: false, url: targetUrl, status: res.status, error: `Unsupported content-type: '${contentType}'` }, true);
 		}
 		const text = await res.text();
 		let data;

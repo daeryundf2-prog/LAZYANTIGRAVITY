@@ -19,7 +19,11 @@ export function ensureToken(path: string): void {
 			closeSync(fd);
 		}
 	}
-	chmodSync(path, 0o600);
+	try {
+		chmodSync(path, 0o600);
+	} catch {
+		// The token file may be on a filesystem without chmod support.
+	}
 }
 
 export function tokenMatches(expected: string, received: unknown): boolean {

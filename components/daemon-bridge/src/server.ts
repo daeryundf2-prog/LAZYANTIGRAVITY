@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { join, resolve } from "node:path";
-import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { createConnection, createServer, type Server, type Socket } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
 import { ensurePrivateDirectory, ensureToken, tokenMatches } from "./security.js";
@@ -15,6 +15,8 @@ export interface DaemonConfig {
 const NONCE_LEDGER_LIMIT = 4096;
 // 단일 커맨드 라인의 최대 길이. 개행 없는 입력이 버퍼를 무한히 밀어넣는 것을 막는다.
 const MAX_LINE_BYTES = 1 << 20;
+// pid 파일의 stale 판정 한도. mtime이 이보다 오래되면 죽은 데몬의 잔재로 보고 unlink한다.
+const PID_STALE_MS = 5 * 60 * 1000;
 
 export function getDaemonPaths(cwd: string = process.cwd()): DaemonConfig {
 	const runDir = join(cwd, ".lazyantigravity", "run");
@@ -65,7 +67,15 @@ export class DaemonServer {
 	private persistNonce(requestId: string): void {
 		try {
 			appendFileSync(this.nonceLedgerPath, `${requestId}\n`, { encoding: "utf8", mode: 0o600 });
-			chmodSync(this.nonceLedgerPath, 0o600);
+			// win32 ACL 한계: chmod는 POSIX 모드 비트 흉내에 불과해 실제 ACL을
+			// 강화하지 못하므로 win32에서는 스킵한다.
+			if (process.platform !== "win32") {
+				try {
+					chmodSync(this.nonceLedgerPath, 0o600);
+				} catch {
+					// chmod 미지원 파일시스템에서는 생성 시 mode 비트에 의존한다.
+				}
+			}
 			this.pruneNonceLedger();
 		} catch {
 			this.consumedRequestIds.delete(requestId);
@@ -80,7 +90,14 @@ export class DaemonServer {
 		const kept = [...this.consumedRequestIds].slice(-NONCE_LEDGER_LIMIT / 2);
 		this.consumedRequestIds = new Set(kept);
 		writeFileSync(this.nonceLedgerPath, kept.map((id) => `${id}\n`).join(""), { encoding: "utf8", mode: 0o600 });
-		chmodSync(this.nonceLedgerPath, 0o600);
+		// win32 ACL 한계: 위와 동일하게 POSIX chmod는 스킵한다.
+		if (process.platform !== "win32") {
+			try {
+				chmodSync(this.nonceLedgerPath, 0o600);
+			} catch {
+				// chmod 미지원 파일시스템에서는 생성 시 mode 비트에 의존한다.
+			}
+		}
 	}
 
 	// win32에서 네임드파이프는 "존재 = 살아 있는 서버"다. pid 파일만으로는
@@ -112,6 +129,10 @@ export class DaemonServer {
 			if (this.isExistingDaemonAlive()) {
 				throw new Error("An active daemon already owns this workspace");
 			}
+			// TOCTOU 유의: 위 alive 판정과 아래 unlink/listen 사이에 다른 프로세스가
+			// 바인드할 수 있다. listen의 EADDRINUSE가 최종 판정이므로, 여기서의
+			// 재확인(probeExistingPipe/isExistingDaemonAlive)은 stale 잔재를 치우는
+			// best-effort 정리로만 취급한다.
 			try { unlinkSync(this.config.socketPath); } catch { /* listen reports protected sockets */ }
 		}
 
@@ -121,9 +142,22 @@ export class DaemonServer {
 			this.server.on("error", (err) => reject(err));
 
 			this.server.listen(this.config.socketPath, () => {
-				if (process.platform !== "win32") chmodSync(this.config.socketPath, 0o600);
-				writeFileSync(this.config.pidPath, String(process.pid), { encoding: "utf8", mode: 0o600 });
-				chmodSync(this.config.pidPath, 0o600);
+				// win32 ACL 한계: 네임드파이프/파일에 POSIX chmod 의미가 없어 스킵한다.
+				if (process.platform !== "win32") {
+					try {
+						chmodSync(this.config.socketPath, 0o600);
+					} catch {
+						// chmod 미지원 파일시스템에서는 생성 시 mode 비트에 의존한다.
+					}
+				}
+				writeFileSync(this.config.pidPath, `${String(process.pid)}:${String(Date.now())}`, { encoding: "utf8", mode: 0o600 });
+				if (process.platform !== "win32") {
+					try {
+						chmodSync(this.config.pidPath, 0o600);
+					} catch {
+						// chmod 미지원 파일시스템에서는 생성 시 mode 비트에 의존한다.
+					}
+				}
 				resolve();
 			});
 		});
@@ -191,9 +225,24 @@ export class DaemonServer {
 
 	private isExistingDaemonAlive(): boolean {
 		try {
-			const pid = Number.parseInt(readFileSync(this.config.pidPath, "utf8").trim(), 10);
+			// pid 파일 형식: "<pid>:<startTimeMs>" (구형 "<pid>"도 허용).
+			const raw = readFileSync(this.config.pidPath, "utf8").trim().split(":")[0];
+			const pid = Number.parseInt(raw, 10);
 			if (!Number.isInteger(pid) || pid <= 0) return false;
 			process.kill(pid, 0);
+			// pid 재사용 오판 완화: pid 파일 mtime이 stale 한도를 넘으면 죽은
+			// 데몬의 잔재로 보고 unlink 후 미존재로 판정한다. kill(pid,0) 성공
+			// 직후에도 pid 재사용 가능성은 남으므로, listen의 EADDRINUSE와
+			// 실제 소켓 응답이 최종 판정이다.
+			try {
+				const mtime = statSync(this.config.pidPath).mtimeMs;
+				if (Number.isFinite(mtime) && Date.now() - mtime > PID_STALE_MS) {
+					try { unlinkSync(this.config.pidPath); } catch { /* best-effort */ }
+					return false;
+				}
+			} catch {
+				// mtime을 읽을 수 없으면 kill 판정을 그대로 따른다.
+			}
 			return true;
 		} catch { return false; }
 	}
