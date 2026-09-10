@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
-import { appendFileSync, chmodSync, existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { SharedBlackboard } from "./blackboard.js";
-import { ensurePrivateDirectory, ensureToken, tokenMatches } from "./security.js";
-// 소비된 뮤테이션 논스의 보관 한도. 원장(파일·메모리)이 무한히 자라는 것을 막는다.
-const NONCE_LEDGER_LIMIT = 4096;
+import { NonceLedger } from "./nonce-ledger.js";
+import { ensurePrivateDirectory, ensureToken, hardenWindowsAcl, tokenMatches } from "./security.js";
 // 단일 커맨드 라인의 최대 길이. 개행 없는 입력이 버퍼를 무한히 밀어넣는 것을 막는다.
 const MAX_LINE_BYTES = 1 << 20;
+// pid 파일의 stale 판정 한도. mtime이 이보다 오래되면 죽은 데몬의 잔재로 보고 unlink한다.
+const PID_STALE_MS = 5 * 60 * 1000;
 export function getDaemonPaths(cwd = process.cwd()) {
     const runDir = join(cwd, ".lazyantigravity", "run");
     ensurePrivateDirectory(runDir);
@@ -29,52 +30,16 @@ export class DaemonServer {
     config;
     startTime = Date.now();
     token;
-    consumedRequestIds = new Set();
-    nonceLedgerPath;
+    nonceLedger;
     stopRequested = false;
     constructor(config) {
         this.config = config;
         ensureToken(config.tokenPath);
         this.token = readFileSync(config.tokenPath, "utf8").trim();
-        this.nonceLedgerPath = `${config.pidPath}.nonces`;
-        this.loadNonceLedger();
-    }
-    loadNonceLedger() {
-        if (!existsSync(this.nonceLedgerPath))
-            return;
-        try {
-            for (const line of readFileSync(this.nonceLedgerPath, "utf8").split(/\r?\n/)) {
-                const id = line.trim();
-                if (id)
-                    this.consumedRequestIds.add(id);
-            }
-        }
-        catch { /* fail closed at request time if the ledger cannot be read */ }
-    }
-    persistNonce(requestId) {
-        try {
-            appendFileSync(this.nonceLedgerPath, `${requestId}\n`, { encoding: "utf8", mode: 0o600 });
-            chmodSync(this.nonceLedgerPath, 0o600);
-            this.pruneNonceLedger();
-        }
-        catch {
-            this.consumedRequestIds.delete(requestId);
-            throw new Error("Unable to persist mutation nonce");
-        }
-    }
-    pruneNonceLedger() {
-        // 논스 원장은 append-only로 무한히 자란다. 한도를 넘기면 최근 절반만
-        // 남기고 원장을 재작성한다(재사용 방지 창은 충분히 유지된다).
-        if (this.consumedRequestIds.size <= NONCE_LEDGER_LIMIT)
-            return;
-        const kept = [...this.consumedRequestIds].slice(-NONCE_LEDGER_LIMIT / 2);
-        this.consumedRequestIds = new Set(kept);
-        writeFileSync(this.nonceLedgerPath, kept.map((id) => `${id}\n`).join(""), { encoding: "utf8", mode: 0o600 });
-        chmodSync(this.nonceLedgerPath, 0o600);
+        this.nonceLedger = new NonceLedger(config.pidPath);
     }
     // win32에서 네임드파이프는 "존재 = 살아 있는 서버"다. pid 파일만으로는
-    // 재사용된 pid를 오판할 수 있으므로 실제로 응답하는지 확인한다(토큰 없는
-    // PING도 Unauthorized 응답을 돌려주므로 생존 신호가 된다).
+    // 재사용된 pid를 오판할 수 있으므로 실제로 응답하는지 확인한다.
     probeExistingPipe() {
         return new Promise((resolve) => {
             const socket = createConnection(this.config.socketPath);
@@ -111,10 +76,25 @@ export class DaemonServer {
             this.server = createServer((socket) => this.handleConnection(socket));
             this.server.on("error", (err) => reject(err));
             this.server.listen(this.config.socketPath, () => {
-                if (process.platform !== "win32")
-                    chmodSync(this.config.socketPath, 0o600);
-                writeFileSync(this.config.pidPath, String(process.pid), { encoding: "utf8", mode: 0o600 });
-                chmodSync(this.config.pidPath, 0o600);
+                if (process.platform === "win32") {
+                    hardenWindowsAcl(this.config.pidPath);
+                }
+                else {
+                    try {
+                        chmodSync(this.config.socketPath, 0o600);
+                    }
+                    catch { /* ignore */ }
+                }
+                writeFileSync(this.config.pidPath, `${String(process.pid)}:${String(Date.now())}`, { encoding: "utf8", mode: 0o600 });
+                if (process.platform === "win32") {
+                    hardenWindowsAcl(this.config.pidPath);
+                }
+                else {
+                    try {
+                        chmodSync(this.config.pidPath, 0o600);
+                    }
+                    catch { /* ignore */ }
+                }
                 resolve();
             });
         });
@@ -142,18 +122,14 @@ export class DaemonServer {
             try {
                 unlinkSync(this.config.socketPath);
             }
-            catch {
-                // Best-effort cleanup.
-            }
+            catch { /* best-effort */ }
         }
         for (const path of [this.config.pidPath]) {
             if (existsSync(path)) {
                 try {
                     unlinkSync(path);
                 }
-                catch {
-                    // Best-effort cleanup.
-                }
+                catch { /* best-effort */ }
             }
         }
     }
@@ -161,8 +137,6 @@ export class DaemonServer {
         let buffer = "";
         socket.on("data", (chunk) => {
             buffer += chunk.toString("utf8");
-            // 개행 없는 입력(또는 비정상 클라이언트)이 버퍼를 무한히 밀어넣지
-            // 못하게 한다 — 라인 단위 프로토콜이니 한도를 넘는 연결은 폐기한다.
             if (buffer.length > MAX_LINE_BYTES) {
                 socket.destroy();
                 return;
@@ -180,10 +154,22 @@ export class DaemonServer {
     }
     isExistingDaemonAlive() {
         try {
-            const pid = Number.parseInt(readFileSync(this.config.pidPath, "utf8").trim(), 10);
+            const raw = readFileSync(this.config.pidPath, "utf8").trim().split(":")[0];
+            const pid = Number.parseInt(raw, 10);
             if (!Number.isInteger(pid) || pid <= 0)
                 return false;
             process.kill(pid, 0);
+            try {
+                const mtime = statSync(this.config.pidPath).mtimeMs;
+                if (Number.isFinite(mtime) && Date.now() - mtime > PID_STALE_MS) {
+                    try {
+                        unlinkSync(this.config.pidPath);
+                    }
+                    catch { /* best-effort */ }
+                    return false;
+                }
+            }
+            catch { /* ignore */ }
             return true;
         }
         catch {
@@ -198,10 +184,9 @@ export class DaemonServer {
             const { cmd, key: rawKey, value, options: rawOptions, namespace: rawNamespace } = req;
             const requestId = typeof req["requestId"] === "string" ? req["requestId"] : undefined;
             if ((cmd === "SET" || cmd === "DEL" || cmd === "CLEAR") && requestId !== undefined) {
-                if (this.consumedRequestIds.has(requestId))
+                if (this.nonceLedger.has(requestId))
                     return { status: "error", error: "Replay rejected" };
-                this.consumedRequestIds.add(requestId);
-                this.persistNonce(requestId);
+                this.nonceLedger.record(requestId);
             }
             const key = typeof rawKey === "string" ? rawKey : undefined;
             const namespace = typeof rawNamespace === "string" ? rawNamespace : rawNamespace === undefined ? undefined : null;
@@ -218,8 +203,6 @@ export class DaemonServer {
                     return { status: "ok", cleared: true };
                 case "STOP": {
                     this.stopRequested = true;
-                    // Close asynchronously so the acknowledgment is written to the
-                    // socket first; the process exits once the loop drains.
                     void this.stop();
                     return { status: "ok", stopping: true };
                 }

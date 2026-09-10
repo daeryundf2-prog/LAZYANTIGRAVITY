@@ -4,7 +4,7 @@
 // and SSRF protection (localhost / private IP blocking).
 import { resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
-import { assertFinalUrlSafe, redactSecrets, validateSafeUrl } from "./lib/ssrf.js";
+import { assertFinalUrlSafe, fetchWithSafeRedirects, redactSecrets, validateSafeUrl } from "./lib/ssrf.js";
 
 // Startup guard (same contract as the other bundled servers).
 const pluginRootEnv = process.env["PLUGIN_ROOT"];
@@ -86,32 +86,27 @@ async function webRead(args) {
 		const freshCheck = await validateSafeUrl(targetUrl);
 		if (!freshCheck.ok) return textResult({ ok: false, url: targetUrl, error: freshCheck.error }, true);
 		const jinaUrl = `https://r.jina.ai/${targetUrl}`;
-		// redirect는 undici 기본 추종(redirect:'follow')에 맡기고 수동 체인
-		// 추적은 하지 않는다. 중간 홉은 미검증이라는 한계가 있으나, 최종 URL은
-		// 아래에서 재검증하므로 5회 이내 단문 체인 기준으로는 충분하다.
-		const jinaRes = await fetch(jinaUrl, {
-			redirect: "follow",
+		// redirect 중간 홉을 최대 5회 수동 추적 및 사전 검증하여 SSRF 및 루프백 우회를 차단한다.
+		const jinaRes = await fetchWithSafeRedirects(jinaUrl, {
 			signal: AbortSignal.timeout(30000),
 			headers: {
 				Accept: "text/markdown, text/plain",
 				"User-Agent": USER_AGENT_DIRECT,
 			},
-		});
-		if (jinaRes.ok) {
-			const text = await jinaRes.text();
+		}, 5);
+		if (jinaRes.ok && jinaRes.response.ok) {
+			const text = await jinaRes.response.text();
 			if (text && text.trim().length > 0) {
 				const trimmed = text.trim();
-				// jina 프록시 우회 오해 방지: jinaRes.url(https://r.jina.ai/...)만
-				// 검증하면 원본 target 검증이 빠진다. 프록시 최종 URL과 원본
-				// targetUrl을 각각 검증한다.
-				const proxyCheck = await assertFinalUrlSafe(jinaRes.url || jinaUrl, jinaUrl);
+				// jina 프록시 우회 오해 방지: jina 최종 URL과 원본 targetUrl을 각각 검증한다.
+				const proxyCheck = await assertFinalUrlSafe(jinaRes.finalUrl, jinaUrl);
 				if (!proxyCheck.ok) return textResult({ ok: false, url: targetUrl, error: proxyCheck.error }, true);
 				const targetRecheck = await validateSafeUrl(targetUrl);
 				if (!targetRecheck.ok) return textResult({ ok: false, url: targetUrl, error: targetRecheck.error }, true);
 				return textResult({
 					ok: true,
 					url: targetUrl,
-					finalUrl: proxyCheck.url || jinaRes.url || targetUrl,
+					finalUrl: proxyCheck.url || jinaRes.finalUrl || targetUrl,
 					content: truncate(trimmed),
 					length: trimmed.length,
 				});
@@ -123,31 +118,26 @@ async function webRead(args) {
 
 	// 2. Direct fetch fallback
 	try {
-		// fetch 직전 재검증(DNS rebinding 완화; 완전한 TOCTOU 방지는 불가).
-		const freshDirect = await validateSafeUrl(targetUrl);
-		if (!freshDirect.ok) return textResult({ ok: false, url: targetUrl, error: freshDirect.error }, true);
-		// redirect는 undici 기본 추종에 맡기고 최종 URL만 재검증한다(중간 홉
-		// 미검증 한계는 Jina 경로와 동일).
-		const directRes = await fetch(targetUrl, {
-			redirect: "follow",
+		const directRes = await fetchWithSafeRedirects(targetUrl, {
 			signal: AbortSignal.timeout(30000),
 			headers: { "User-Agent": USER_AGENT_DIRECT },
-		});
-		if (!directRes.ok) {
-			return textResult({ ok: false, url: targetUrl, error: `Direct fetch failed with HTTP ${directRes.status}` }, true);
+		}, 5);
+		if (!directRes.ok) return textResult({ ok: false, url: targetUrl, error: directRes.error }, true);
+		if (!directRes.response.ok) {
+			return textResult({ ok: false, url: targetUrl, error: `Direct fetch failed with HTTP ${directRes.response.status}` }, true);
 		}
-		const contentType = directRes.headers.get("content-type") || "";
+		const contentType = directRes.response.headers.get("content-type") || "";
 		if (!/text|html|json|xml|markdown/i.test(contentType)) {
 			return textResult({ ok: false, url: targetUrl, error: `Unsupported content-type: '${contentType}'` }, true);
 		}
-		const rawText = await directRes.text();
+		const rawText = await directRes.response.text();
 		const clean = /html/i.test(contentType) ? stripHtml(rawText) : rawText.trim();
-		const finalCheck = await assertFinalUrlSafe(directRes.url || targetUrl, targetUrl);
+		const finalCheck = await assertFinalUrlSafe(directRes.finalUrl, targetUrl);
 		if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
 		return textResult({
 			ok: true,
 			url: targetUrl,
-			finalUrl: finalCheck.url || directRes.url || targetUrl,
+			finalUrl: finalCheck.url || directRes.finalUrl || targetUrl,
 			content: truncate(clean),
 			length: clean.length,
 		});
@@ -370,17 +360,12 @@ async function fetchJson(args) {
 	const targetUrl = urlCheck.url;
 
 	try {
-		// fetch 직전 재검증(DNS rebinding 완화; 완전한 TOCTOU 방지는 불가).
-		const freshCheck = await validateSafeUrl(targetUrl);
-		if (!freshCheck.ok) return textResult({ ok: false, url: targetUrl, error: freshCheck.error }, true);
-		// redirect는 undici 기본 추종(redirect:'follow')에 맡기고 수동 체인
-		// 추적은 하지 않는다. 중간 홉 미검증 한계는 있으나 최종 URL을 아래에서
-		// 재검증하므로 충분하다.
-		const res = await fetch(targetUrl, {
-			redirect: "follow",
+		const fetchRes = await fetchWithSafeRedirects(targetUrl, {
 			signal: AbortSignal.timeout(20000),
 			headers: { "User-Agent": USER_AGENT_API, Accept: "application/json, text/plain, */*" },
-		});
+		}, 5);
+		if (!fetchRes.ok) return textResult({ ok: false, url: targetUrl, error: fetchRes.error }, true);
+		const res = fetchRes.response;
 		if (!res.ok) {
 			return textResult({ ok: false, url: targetUrl, status: res.status, error: `HTTP ${res.status}: ${res.statusText}` }, true);
 		}
@@ -396,9 +381,9 @@ async function fetchJson(args) {
 		} catch {
 			return textResult({ ok: false, url: targetUrl, status: res.status, error: "Response was not valid JSON" }, true);
 		}
-		const finalCheck = await assertFinalUrlSafe(res.url || targetUrl, targetUrl);
+		const finalCheck = await assertFinalUrlSafe(fetchRes.finalUrl, targetUrl);
 		if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
-		return textResult({ ok: true, url: targetUrl, finalUrl: finalCheck.url || res.url || targetUrl, status: res.status, data });
+		return textResult({ ok: true, url: targetUrl, finalUrl: finalCheck.url || fetchRes.finalUrl || targetUrl, status: res.status, data });
 	} catch (err) {
 		return textResult({ ok: false, url: targetUrl, error: `fetch_json failed: ${err instanceof Error ? err.message : String(err)}` }, true);
 	}

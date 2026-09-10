@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { readdirSync } from "node:fs";
 
 console.log("[verify-dist-sync] Verifying source-to-dist compilation reproducibility...");
 
@@ -50,5 +51,7 @@ if (offenders.length > 0) {
 	process.exit(1);
 }
 
-console.log("[verify-dist-sync] All dist outputs (15 components + 7 bundled MCP runtimes + omo mirror) match sources 100%.");
+const compCount = readdirSync("components", { withFileTypes: true }).filter((d) => d.isDirectory()).length;
+const mcpCount = DIST_PATHS.filter((p) => p.endsWith("-mcp/dist")).length;
+console.log(`[verify-dist-sync] All dist outputs (${compCount} components + ${mcpCount} bundled MCP runtimes + omo mirror) match sources 100%.`);
 process.exit(0);

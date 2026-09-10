@@ -82,6 +82,51 @@ export async function assertFinalUrlSafe(finalUrl, originalUrl) {
 	return { ok: true, url: recheck.url };
 }
 
+export async function fetchWithSafeRedirects(initialUrl, fetchOptions = {}, maxHops = 5) {
+	let currentUrl = initialUrl;
+	let hops = 0;
+
+	while (hops <= maxHops) {
+		// fetch 직전 이중 검증 (DNS rebinding 완화; 다단계 사전 점검)
+		const check = await validateSafeUrl(currentUrl);
+		if (!check.ok) {
+			return { ok: false, error: check.error, finalUrl: currentUrl };
+		}
+
+		let res;
+		try {
+			res = await fetch(currentUrl, {
+				...fetchOptions,
+				redirect: "manual",
+			});
+		} catch (err) {
+			return { ok: false, error: err instanceof Error ? err.message : String(err), finalUrl: currentUrl };
+		}
+
+		// 301, 302, 303, 307, 308 redirect inspection
+		if ([301, 302, 303, 307, 308].includes(res.status)) {
+			const location = res.headers.get("location");
+			if (!location) {
+				return { ok: false, error: `Redirect HTTP ${res.status} without Location header`, finalUrl: currentUrl };
+			}
+			hops++;
+			if (hops > maxHops) {
+				return { ok: false, error: `Exceeded maximum redirect limit of ${maxHops} hops`, finalUrl: currentUrl };
+			}
+			try {
+				currentUrl = new URL(location, currentUrl).href;
+			} catch {
+				return { ok: false, error: `Invalid redirect location: '${location}'`, finalUrl: currentUrl };
+			}
+			continue;
+		}
+
+		return { ok: true, response: res, finalUrl: currentUrl };
+	}
+
+	return { ok: false, error: `Exceeded maximum redirect limit of ${maxHops} hops`, finalUrl: currentUrl };
+}
+
 export function redactSecrets(text) {
 	if (typeof text !== "string") return text;
 	return text

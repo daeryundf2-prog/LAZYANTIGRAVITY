@@ -10,13 +10,9 @@ export declare class DaemonServer {
     private config;
     private startTime;
     private token;
-    private consumedRequestIds;
-    private nonceLedgerPath;
+    private nonceLedger;
     private stopRequested;
     constructor(config: DaemonConfig);
-    private loadNonceLedger;
-    private persistNonce;
-    private pruneNonceLedger;
     private probeExistingPipe;
     start(): Promise<void>;
     stop(): Promise<void>;
