@@ -24,13 +24,13 @@ export function computeFileMtimeMs(filePath) {
     }
 }
 /**
- * Masks credentials, secrets, and auth tokens in logged URLs and command outputs (insane-search v0.16.1~v0.16.3).
+ * Masks credentials, secrets, and auth tokens in logged URLs and command outputs.
  */
 export function sanitizeEvidenceUrls(text) {
     if (!text)
         return text;
-    let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^@/\s]+)@/g, "$1$2:***@");
-    sanitized = sanitized.replace(/([?&](?:token|key|secret|api_key|password|auth|access_token)=)[^&\s'")]+/gi, "$1***");
+    let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^\/\s]+)@([^\/\s]+)/g, "$1$2:***@$4");
+    sanitized = sanitized.replace(/([?&][a-zA-Z0-9_-]*(?:token|key|secret|password|auth)[a-zA-Z0-9_-]*=)[^&\s'")]+/gi, "$1***");
     return sanitized;
 }
 export function countFileLines(filePath) {

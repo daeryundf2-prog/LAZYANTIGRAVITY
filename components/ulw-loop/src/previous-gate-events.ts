@@ -24,9 +24,22 @@ export async function checkPriorGateEvents(
 	args: { readonly codexGoalJson?: string; readonly qualityGateJson?: string },
 	scope?: UlwLoopScope,
 ): Promise<CheckpointQualityGateResult | null> {
-	const passEvent = events.find(
-		(e) => e.type === "quality_gate.completed" && e.qualityInputFingerprint === fingerprint,
-	);
+	let passEvent: LedgerEvent | undefined;
+	let failEvent: LedgerEvent | undefined;
+	let lastMech: LedgerEvent | undefined;
+	let conFailed: LedgerEvent | undefined;
+	let reworkCount = 0;
+
+	for (let i = events.length - 1; i >= 0; i--) {
+		const e = events[i];
+		if (!e || e.qualityInputFingerprint !== fingerprint) continue;
+		if (!passEvent && e.type === "quality_gate.completed") passEvent = e;
+		if (!failEvent && e.type === "quality_gate.failed") failEvent = e;
+		if (!lastMech && e.type === "quality_gate.mechanical_failed") lastMech = e;
+		if (!conFailed && CONSENSUS_FAILED_TYPES.has(e.type)) conFailed = e;
+		if (e.type === "quality_gate.consensus_rework_required") reworkCount++;
+	}
+
 	if (passEvent) {
 		await assertGroundTruthEvidence(repoRoot, args.qualityGateJson, events, evidenceEnvelope);
 		return {
@@ -35,12 +48,7 @@ export async function checkPriorGateEvents(
 		};
 	}
 
-	const failEvent = events.find((e) => e.type === "quality_gate.failed" && e.qualityInputFingerprint === fingerprint);
 	if (failEvent) {
-		const lastMech = events.find(
-			(e) => e.type === "quality_gate.mechanical_failed" && e.qualityInputFingerprint === fingerprint,
-		);
-		const conFailed = events.find((e) => CONSENSUS_FAILED_TYPES.has(e.type) && e.qualityInputFingerprint === fingerprint);
 		let goalStatusOverride: UlwLoopItem["status"] = "failed";
 		let blockedReasonOverride: string | undefined;
 		let failedReasonOverride = (failEvent.reason as string) || "Verification pipeline failed";
@@ -64,10 +72,7 @@ export async function checkPriorGateEvents(
 		};
 	}
 
-	const reworks = events.filter(
-		(e) => e.type === "quality_gate.consensus_rework_required" && e.qualityInputFingerprint === fingerprint,
-	);
-	if (reworks.length >= 3) {
+	if (reworkCount >= 3) {
 		await appendRunEvent(repoRoot, runId, "parent.hitl_required", {
 			reason: "Consensus rework iteration limit reached (max 3 reworks). User intervention required.",
 			qualityInputFingerprint: fingerprint,

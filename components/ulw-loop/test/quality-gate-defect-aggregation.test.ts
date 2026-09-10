@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateQualityGate } from "../src/quality-gate.js";
 import { UlwLoopError } from "../src/types.js";
 
-describe("Quality Gate Defect Aggregation (PR #7656)", () => {
+describe("Quality Gate Defect Aggregation", () => {
 	it("#given multiple quality gate defects #when validateQualityGate runs #then aggregates all defects into a single error", () => {
 		const invalidGate = {
 			qualityGate: {

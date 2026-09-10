@@ -163,6 +163,16 @@ test("retraces Korean particle attached file claims", () => {
 	assert.equal(out.decision, "block");
 	assert.match(out.reason, /사실 역추적\(Fact-Retracing\) 실패/);
 });
-
-
-
+test("correctly parses jsonl files without truncation to js", () => {
+	const res = runGuard(
+		stopPayload({
+			transcript_path: null,
+			last_assistant_message: "모두 완료했습니다. 산출물: nonexistent_data.jsonl 작성 완료.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+	assert.match(out.reason, /nonexistent_data\.jsonl/);
+	assert.doesNotMatch(out.reason, /nonexistent_data\.js[^\w]/);
+});

@@ -16,7 +16,7 @@ export interface GroundTruthAuditOptions {
 export declare function computeFileSha256(filePath: string): string | null;
 export declare function computeFileMtimeMs(filePath: string): number | null;
 /**
- * Masks credentials, secrets, and auth tokens in logged URLs and command outputs (insane-search v0.16.1~v0.16.3).
+ * Masks credentials, secrets, and auth tokens in logged URLs and command outputs.
  */
 export declare function sanitizeEvidenceUrls(text: string): string;
 export declare function countFileLines(filePath: string): number | null;

@@ -37,7 +37,7 @@ const EVIDENCE_RE = new RegExp(
 		'테스트\\s*\\d+', '(pytest|unittest|vitest|npm\\s+test|npx\\s+vitest|go\\s+test)',
 		'exit\\s*0', '--json', '--check',
 		'(^|\\s)(python3?|node|git|uv|ffmpeg)\\s+\\S', // 실행한 명령줄
-		'[\\w./가-힣-]+\\.(md|json|png|txt|html|csv|yml|yaml|ts|js|mjs|py|go|rs)\\b', // 산출물 경로
+		'[\\w./가-힣-]+\\.(?:jsonl|json|png|txt|log|html|htm|csv|yml|yaml|xml|ts|js|mjs|cjs|cts|mts|py|go|rs|md)\\b', // 산출물 경로
 		'\\b(commit|커밋)\\b',
 		'\\b[0-9a-f]{7,40}\\b', // 커밋 SHA
 		'미확인|미측정|수정 전', // 정직 선언 어휘도 증거로 인정
@@ -97,30 +97,43 @@ async function main() {
 	if (EVIDENCE_RE.test(message)) {
 		// Feature 15: Fact-Retracing Gate (v2)
 		// Verify high-risk claimed file paths against disk and transcript
-		let transcriptContent = '';
+		let transcriptContent = null;
 		let transcriptStart;
 		const transcriptPath = payload.transcript_path;
 		if (transcriptPath && typeof transcriptPath === 'string' && fs.existsSync(transcriptPath)) {
 			try {
 				const tStat = fs.statSync(transcriptPath);
 				transcriptStart = tStat.birthtimeMs ?? tStat.ctimeMs;
-				transcriptContent = fs.readFileSync(transcriptPath, 'utf8');
 			} catch {
 				// Ignore transcript read failure
 			}
 		}
 
+		const getTranscriptContent = () => {
+			if (transcriptContent === null) {
+				try {
+					transcriptContent = (transcriptPath && typeof transcriptPath === 'string' && fs.existsSync(transcriptPath))
+						? fs.readFileSync(transcriptPath, 'utf8')
+						: '';
+				} catch {
+					transcriptContent = '';
+				}
+			}
+			return transcriptContent;
+		};
+
 		// 파일 추출 확장자 집합은 아래 stale 검사의 (log|jsonl?|txt|md) 집합을
 		// 완전히 포함해야 한다 — .log/.jsonl/.txt 영수증이 stale 체크 밖에서
 		// 조용히 통과하는 우회가 있었다.
-		const claimedFileMatches = message.matchAll(/(?:(?:생성|작성|수정|추가|산출물)(?:은|는|이|가|로|으로)?|(?:created|written|generated|file|path))\s*[:=]?\s*[`"']?([a-zA-Z0-9_.:/\\가-힣-]+\.(?:ts|js|mjs|cjs|cts|mts|py|go|rs|json|jsonl|log|txt|md|csv|html|htm|yml|yaml|xml))[`"']?/gi);
+		// 긴 확장자가 짧은 접두사(예: jsonl/json vs js)보다 먼저 평가되도록 순서를 배치하고 단어 경계를 적용한다.
+		const claimedFileMatches = message.matchAll(/(?:(?:생성|작성|수정|추가|산출물)(?:은|는|이|가|로|으로)?|(?:created|written|generated|file|path))\s*[:=]?\s*[`"']?([a-zA-Z0-9_.:/\\가-힣-]+\.(?:jsonl|json|html|htm|yaml|yml|mjs|cjs|cts|mts|log|txt|csv|xml|ts|js|py|go|rs|md)\b)[`"']?/gi);
 		for (const match of claimedFileMatches) {
 			const claimedPath = match[1];
 			const fullPath = path.isAbsolute(claimedPath)
 				? path.normalize(claimedPath)
 				: path.resolve(payload.cwd || process.cwd(), claimedPath);
 			const existsOnDisk = fs.existsSync(fullPath);
-			const existsInTranscript = transcriptContent ? transcriptContent.includes(claimedPath) : false;
+			const existsInTranscript = !existsOnDisk && getTranscriptContent() ? getTranscriptContent().includes(claimedPath) : false;
 
 			if (!existsOnDisk && !existsInTranscript) {
 				const reason = `[STOP CLAIM GUARD v${GUARD_PACK_VERSION}] 사실 역추적(Fact-Retracing) 실패: 메시지에 완료 산출물로 주장된 파일 "${claimedPath}"이 디스크 또는 트랜스크립트에 존재하지 않습니다. 허위 파일 경로 생성을 차단합니다.`;
