@@ -1,4 +1,4 @@
-# LAZYANTIGRAVITY
+# LAZYANTIGRAVITY (v0.7.0)
 
 AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).
 

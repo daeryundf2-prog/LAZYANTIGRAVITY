@@ -4,7 +4,7 @@
 // and SSRF protection (localhost / private IP blocking).
 import { resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
-import { assertFinalUrlSafe, validateSafeUrl } from "./lib/ssrf.js";
+import { assertFinalUrlSafe, redactSecrets, validateSafeUrl } from "./lib/ssrf.js";
 
 // Startup guard (same contract as the other bundled servers).
 const pluginRootEnv = process.env["PLUGIN_ROOT"];
@@ -163,7 +163,7 @@ async function searchTavily(query, maxResults, key) {
 		headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT_API },
 		body: JSON.stringify({ api_key: key, query, max_results: maxResults, search_depth: "basic" }),
 	});
-	if (!res.ok) throw new Error(`Tavily HTTP ${res.status}: ${await res.text()}`);
+	if (!res.ok) throw new Error(redactSecrets(`Tavily HTTP ${res.status}: ${await res.text()}`));
 	const json = await res.json();
 	return (json.results || []).map((r) => ({
 		title: r.title || "",
@@ -178,7 +178,7 @@ async function searchBrave(query, maxResults, key) {
 		signal: AbortSignal.timeout(20000),
 		headers: { "X-Subscription-Token": key, Accept: "application/json", "User-Agent": USER_AGENT_API },
 	});
-	if (!res.ok) throw new Error(`Brave HTTP ${res.status}: ${await res.text()}`);
+	if (!res.ok) throw new Error(redactSecrets(`Brave HTTP ${res.status}: ${await res.text()}`));
 	const json = await res.json();
 	return (json.web?.results || []).map((r) => ({
 		title: r.title || "",
@@ -193,7 +193,7 @@ async function searchJina(query, maxResults, key) {
 		signal: AbortSignal.timeout(20000),
 		headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "User-Agent": USER_AGENT_API },
 	});
-	if (!res.ok) throw new Error(`Jina Search HTTP ${res.status}: ${await res.text()}`);
+	if (!res.ok) throw new Error(redactSecrets(`Jina Search HTTP ${res.status}: ${await res.text()}`));
 	const json = await res.json();
 	return (json.data || []).slice(0, maxResults).map((r) => ({
 		title: r.title || "",
@@ -269,7 +269,7 @@ async function webSearch(args) {
 			const results = await searchTavily(query, maxResults, tavilyKey);
 			return textResult(formatSearchResult("tavily", results));
 		} catch (err) {
-			return textResult({ ok: false, query, provider: "tavily", error: String(err) }, true);
+			return textResult({ ok: false, query: redactSecrets(query), provider: "tavily", error: redactSecrets(String(err)) }, true);
 		}
 	}
 	if (braveKey) {
@@ -277,7 +277,7 @@ async function webSearch(args) {
 			const results = await searchBrave(query, maxResults, braveKey);
 			return textResult(formatSearchResult("brave", results));
 		} catch (err) {
-			return textResult({ ok: false, query, provider: "brave", error: String(err) }, true);
+			return textResult({ ok: false, query: redactSecrets(query), provider: "brave", error: redactSecrets(String(err)) }, true);
 		}
 	}
 	if (jinaKey) {
@@ -285,7 +285,7 @@ async function webSearch(args) {
 			const results = await searchJina(query, maxResults, jinaKey);
 			return textResult(formatSearchResult("jina", results));
 		} catch (err) {
-			return textResult({ ok: false, query, provider: "jina", error: String(err) }, true);
+			return textResult({ ok: false, query: redactSecrets(query), provider: "jina", error: redactSecrets(String(err)) }, true);
 		}
 	}
 

@@ -81,3 +81,11 @@ export async function assertFinalUrlSafe(finalUrl, originalUrl) {
 	}
 	return { ok: true, url: recheck.url };
 }
+
+export function redactSecrets(text) {
+	if (typeof text !== "string") return text;
+	return text
+		.replace(/(api[_-]?key\s*[:=]\s*)(['"]?)[^\s,'"}]+(\2)/gi, "$1$2[REDACTED]$3")
+		.replace(/(Bearer\s+)[A-Za-z0-9._~+/-]+/gi, "$1[REDACTED]")
+		.replace(/((?:password|passwd|pwd|secret|token)\s*[:=]\s*)(['"]?)[^\s,'"};]+(\2)/gi, "$1$2[REDACTED]$3");
+}
