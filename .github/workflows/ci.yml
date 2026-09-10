@@ -83,3 +83,12 @@ jobs:
 
       - name: Component test suites
         run: npm run test:components
+
+      - name: Verify hook policies
+        run: npm run verify:hook-policies
+
+      - name: Verify skills sync (aggregate skills/ drift)
+        run: npm run sync:skills && git diff --exit-code -- skills/ shared-skills/
+
+      - name: Verify dist reproducibility
+        run: npm run verify:reproducible
