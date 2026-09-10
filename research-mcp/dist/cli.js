@@ -89,12 +89,12 @@ async function validateSafeUrl(rawUrl) {
 		if (isPrivateIp(hostname)) {
 			return { ok: false, error: `Access to private/loopback IP '${hostname}' is rejected.` };
 		}
-	} else {
+	} 	else {
 		try {
 			const addresses = await lookup(hostname, { all: true });
 			for (const entry of addresses) {
 				if (isPrivateIp(entry.address)) {
-					return { ok: false, error: `Host '${hostname}' resolves to private/loopback IP (${entry.address}) and is rejected.` };
+					return { ok: false, error: `Host '${hostname}' resolves to a private/loopback address and is rejected.` };
 				}
 			}
 		} catch (err) {
@@ -102,6 +102,15 @@ async function validateSafeUrl(rawUrl) {
 		}
 	}
 	return { ok: true, url: parsed.href };
+}
+
+async function assertFinalUrlSafe(finalUrl, originalUrl) {
+	if (!finalUrl || finalUrl === originalUrl) return { ok: true };
+	const recheck = await validateSafeUrl(finalUrl);
+	if (!recheck.ok) {
+		return { ok: false, error: `Redirect target rejected: ${recheck.error}` };
+	}
+	return { ok: true, url: recheck.url };
 }
 
 function stripHtml(html) {
@@ -163,10 +172,12 @@ async function webRead(args) {
 			const text = await jinaRes.text();
 			if (text && text.trim().length > 0) {
 				const trimmed = text.trim();
+				const finalCheck = await assertFinalUrlSafe(jinaRes.url || targetUrl, targetUrl);
+				if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
 				return textResult({
 					ok: true,
 					url: targetUrl,
-					finalUrl: jinaRes.url || targetUrl,
+					finalUrl: finalCheck.url || jinaRes.url || targetUrl,
 					content: truncate(trimmed),
 					length: trimmed.length,
 				});
@@ -191,10 +202,12 @@ async function webRead(args) {
 		}
 		const rawText = await directRes.text();
 		const clean = /html/i.test(contentType) ? stripHtml(rawText) : rawText.trim();
+		const finalCheck = await assertFinalUrlSafe(directRes.url || targetUrl, targetUrl);
+		if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
 		return textResult({
 			ok: true,
 			url: targetUrl,
-			finalUrl: directRes.url || targetUrl,
+			finalUrl: finalCheck.url || directRes.url || targetUrl,
 			content: truncate(clean),
 			length: clean.length,
 		});
@@ -431,7 +444,9 @@ async function fetchJson(args) {
 		} catch {
 			return textResult({ ok: false, url: targetUrl, status: res.status, error: "Response was not valid JSON" }, true);
 		}
-		return textResult({ ok: true, url: targetUrl, status: res.status, data });
+		const finalCheck = await assertFinalUrlSafe(res.url || targetUrl, targetUrl);
+		if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
+		return textResult({ ok: true, url: targetUrl, finalUrl: finalCheck.url || res.url || targetUrl, status: res.status, data });
 	} catch (err) {
 		return textResult({ ok: false, url: targetUrl, error: `fetch_json failed: ${err instanceof Error ? err.message : String(err)}` }, true);
 	}

@@ -11,7 +11,7 @@ if (buildRes.status !== 0) {
 	process.exit(1);
 }
 
-// 커밋된 모든 빌드 산출물이 소스와 일치하는지 검사한다. 번들 MCP 4종의 dist도
+// 커밋된 모든 빌드 산출물이 소스와 일치하는지 검사한다. 번들 MCP 7종의 dist도
 // 대상에 포함한다 — 구버전은 components/*만 봐서 MCP dist가 벗어나도 몰랐다.
 const DIST_PATHS = [
 	"components/*/dist",
@@ -20,6 +20,9 @@ const DIST_PATHS = [
 	"ast-grep-mcp/dist",
 	"lsp-tools-mcp/dist",
 	"workspace-mcp/dist",
+	"media-mcp/dist",
+	"research-mcp/dist",
+	"korean-law-mcp/dist",
 ];
 
 // git status --porcelain 은 autocrlf 환경에서 EOL 유실없는 유령 변경을
@@ -47,5 +50,5 @@ if (offenders.length > 0) {
 	process.exit(1);
 }
 
-console.log("[verify-dist-sync] All dist outputs (15 components + 4 bundled MCP runtimes + omo mirror) match sources 100%.");
+console.log("[verify-dist-sync] All dist outputs (15 components + 7 bundled MCP runtimes + omo mirror) match sources 100%.");
 process.exit(0);
