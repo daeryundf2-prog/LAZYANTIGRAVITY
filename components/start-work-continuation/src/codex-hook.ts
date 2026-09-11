@@ -29,6 +29,17 @@ function isExplicitCancellation(message: string | undefined): boolean {
 	);
 }
 
+/**
+ * Terminal-failure / refusal detection for the Stop hook.
+ *
+ * Policy note: "rate limit" / "quota exceeded" / "resource has been
+ * exhausted" are classified as terminal on purpose. They are usually
+ * transient, but injecting a continuation directive into an exhausted
+ * quota state makes the host burn the next turn on an immediate retry
+ * that will fail again; surfacing the condition to the user is the
+ * safer default. Recovery happens when the user re-issues the work
+ * prompt (a fresh UserPromptSubmit re-arms the continuation state).
+ */
 function isTerminalFailureOrRefusal(message: string | undefined): boolean {
 	if (!message) return false;
 	const lower = message.toLowerCase();

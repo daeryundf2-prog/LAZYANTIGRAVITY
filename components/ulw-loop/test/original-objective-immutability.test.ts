@@ -45,4 +45,35 @@ describe("originalObjective and deliverables immutability", () => {
 		expect(rendered).toContain("Status: in_progress");
 		expect(rendered).toContain("</session-goal>");
 	});
+
+	it("#given deliverable phrased differently from goal title #when anchor is rendered #then normalized matching preserves check state", () => {
+		const plan: UlwLoopPlan = {
+			version: 1,
+			createdAt: "2026-09-10T06:00:00.000Z",
+			updatedAt: "2026-09-10T06:00:00.000Z",
+			briefPath: ".omo/ulw-loop/brief.md",
+			goalsPath: ".omo/ulw-loop/goals.json",
+			ledgerPath: ".omo/ulw-loop/ledger.jsonl",
+			originalObjective: "Ship the release",
+			deliverables: ["auth token  module", "User Dashboard UI"],
+			goals: [
+				{
+					id: "G001",
+					title: "Auth Token Module",
+					objective: "Build JWT token module",
+					status: "complete",
+					successCriteria: [],
+					attempt: 1,
+					createdAt: "2026-09-10T06:00:00.000Z",
+					updatedAt: "2026-09-10T06:05:00.000Z",
+				},
+			],
+		};
+
+		const rendered = renderSessionGoalAnchor(plan);
+		// "auth token  module" (double space, lowercase) must still resolve to the
+		// completed goal instead of silently rendering as unchecked
+		expect(rendered).toContain("- [x] auth token  module");
+		expect(rendered).toContain("- [ ] User Dashboard UI");
+	});
 });

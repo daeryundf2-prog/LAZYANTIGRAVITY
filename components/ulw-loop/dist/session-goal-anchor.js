@@ -6,7 +6,7 @@ export function renderSessionGoalAnchor(plan) {
     const objective = plan.originalObjective || plan.briefPath || "Unspecified goal";
     const deliverables = plan.deliverables || plan.goals.map((g) => g.title);
     const items = deliverables.map((d) => {
-        const match = plan.goals.find((g) => g.title === d);
+        const match = findGoalForDeliverable(plan.goals, d);
         const mark = match?.status === "complete" ? "[x]" : "[ ]";
         return `- ${mark} ${d}`;
     });
@@ -18,4 +18,25 @@ export function renderSessionGoalAnchor(plan) {
         `Status: ${plan.aggregateCompletion?.status === "complete" ? "completed" : "in_progress"}`,
         "</session-goal>",
     ].join("\n");
+}
+/**
+ * Deliverable-to-goal matching tolerant to whitespace/punctuation drift.
+ * Exact-title match first, then a normalized comparison (case-folded,
+ * whitespace collapsed, punctuation stripped) so a deliverable phrased
+ * slightly differently from the goal title still renders its check state
+ * instead of silently defaulting to "[ ]".
+ */
+function findGoalForDeliverable(goals, deliverable) {
+    const exact = goals.find((g) => g.title === deliverable);
+    if (exact !== undefined)
+        return exact;
+    const normDeliverable = normalizeAnchorText(deliverable);
+    return goals.find((g) => normalizeAnchorText(g.title) === normDeliverable);
+}
+function normalizeAnchorText(value) {
+    return value
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .replace(/[.,;:!?"'`()\[\]{}·、。？！「」『』]/g, "")
+        .trim();
 }
