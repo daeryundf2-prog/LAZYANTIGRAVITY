@@ -34,4 +34,22 @@ describe("URL Credential and Token Masking", () => {
 		expect(sanitized).not.toContain("myKey");
 		expect(sanitized).not.toContain("mySecret");
 	});
+
+	it("#given hyphenated or abbreviated parameter names #when sanitizeEvidenceUrls runs #then masks root-based families", () => {
+		const raw = "https://h.com/a?api-key=zzz&sig=abc123&credential=pw&passwd=p2&pwd=p3&signature=xyz";
+		const sanitized = sanitizeEvidenceUrls(raw);
+		expect(sanitized).not.toContain("zzz");
+		expect(sanitized).not.toContain("abc123");
+		expect(sanitized).not.toContain("pw=");
+		expect(sanitized).not.toContain("p2");
+		expect(sanitized).not.toContain("p3");
+		expect(sanitized).not.toContain("xyz");
+	});
+
+	it("#given Authorization Bearer header #when sanitizeEvidenceUrls runs #then masks bearer token", () => {
+		const raw = "Authorization: Bearer sk-live-abcdef123456";
+		const sanitized = sanitizeEvidenceUrls(raw);
+		expect(sanitized).toBe("Authorization: Bearer ***");
+		expect(sanitized).not.toContain("sk-live-abcdef123456");
+	});
 });

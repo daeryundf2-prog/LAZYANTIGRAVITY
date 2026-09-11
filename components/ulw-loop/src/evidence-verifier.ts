@@ -41,14 +41,18 @@ export function computeFileMtimeMs(filePath: string): number | null {
 
 /**
  * Masks credentials, secrets, and auth tokens in logged URLs and command outputs.
+ * Parameter matching is root-based (sig, pwd, passwd, credential also match the
+ * "signature"/"password"/"credential" families) and case-insensitive, so
+ * api-key/API-KEY/X-Api-Key variants cannot slip a secret into logs.
  */
 export function sanitizeEvidenceUrls(text: string): string {
 	if (!text) return text;
 	let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^\/\s]+)@([^\/\s]+)/g, "$1$2:***@$4");
 	sanitized = sanitized.replace(
-		/([?&][a-zA-Z0-9_-]*(?:token|key|secret|password|auth)[a-zA-Z0-9_-]*=)[^&\s'")]+/gi,
+		/([?&][a-zA-Z0-9_-]*(?:token|key|secret|password|passwd|pwd|sig|auth|credential)[a-zA-Z0-9_-]*=)[^&\s'")]+/gi,
 		"$1***",
 	);
+	sanitized = sanitized.replace(/(\bAuthorization:\s*Bearer\s+)[^\s'")]+/gi, "$1***");
 	return sanitized;
 }
 
