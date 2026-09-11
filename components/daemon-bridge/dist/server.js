@@ -152,25 +152,21 @@ export class DaemonServer {
             }
         });
     }
+    // pid 재사용 완화 3중 확인: kill(pid,0) + pid mtime 5분 + 소켓 존재. 기록시각 대조는 과도하여 미채택.
     isExistingDaemonAlive() {
         try {
-            const raw = readFileSync(this.config.pidPath, "utf8").trim().split(":")[0];
-            const pid = Number.parseInt(raw, 10);
+            const pid = Number.parseInt(readFileSync(this.config.pidPath, "utf8").trim().split(":")[0], 10);
             if (!Number.isInteger(pid) || pid <= 0)
                 return false;
             process.kill(pid, 0);
-            try {
-                const mtime = statSync(this.config.pidPath).mtimeMs;
-                if (Number.isFinite(mtime) && Date.now() - mtime > PID_STALE_MS) {
-                    try {
-                        unlinkSync(this.config.pidPath);
-                    }
-                    catch { /* best-effort */ }
-                    return false;
+            if (Date.now() - statSync(this.config.pidPath).mtimeMs > PID_STALE_MS) {
+                try {
+                    unlinkSync(this.config.pidPath);
                 }
+                catch { /* best-effort */ }
+                return false;
             }
-            catch { /* ignore */ }
-            return true;
+            return existsSync(this.config.socketPath);
         }
         catch {
             return false;

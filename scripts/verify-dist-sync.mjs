@@ -51,7 +51,9 @@ if (offenders.length > 0) {
 	process.exit(1);
 }
 
-const compCount = readdirSync("components", { withFileTypes: true }).filter((d) => d.isDirectory()).length;
+const compNames = readdirSync("components", { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+const compCount = compNames.length;
 const mcpCount = DIST_PATHS.filter((p) => p.endsWith("-mcp/dist")).length;
-console.log(`[verify-dist-sync] All dist outputs (${compCount} components + ${mcpCount} bundled MCP runtimes + omo mirror) match sources 100%.`);
+console.log(`[verify-dist-sync] All dist outputs (${compCount} components [${compNames.join(", ")}] + ${mcpCount} bundled MCP runtimes + omo mirror) match sources 100%.`);
+if (compCount !== 15) console.warn(`[verify-dist-sync] WARN: measured ${compCount} components, expected 15.`);
 process.exit(0);

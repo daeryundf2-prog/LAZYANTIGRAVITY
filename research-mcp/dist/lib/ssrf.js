@@ -82,9 +82,10 @@ export async function assertFinalUrlSafe(finalUrl, originalUrl) {
 	return { ok: true, url: recheck.url };
 }
 
-export async function fetchWithSafeRedirects(initialUrl, fetchOptions = {}, maxHops = 5) {
+export async function fetchWithSafeRedirects(initialUrl, fetchOptions = {}, maxHops = 5, options = {}) {
 	let currentUrl = initialUrl;
 	let hops = 0;
+	const httpOnlyPin = options.httpOnlyPin === true || fetchOptions.httpOnlyPin === true;
 
 	while (hops <= maxHops) {
 		// fetch 직전 이중 검증 (DNS rebinding 완화; 다단계 사전 점검)
@@ -92,13 +93,21 @@ export async function fetchWithSafeRedirects(initialUrl, fetchOptions = {}, maxH
 		if (!check.ok) {
 			return { ok: false, error: check.error, finalUrl: currentUrl };
 		}
-
+		// httpOnlyPin: 확인된 IP로의 Host 재요청은 HTTP에만 적용 (HTTPS는 인증서 문제로 경고+차단).
+		let requestUrl = currentUrl, pinHeaders = {};
+		if (httpOnlyPin) {
+			const parsed = new URL(currentUrl);
+			if (parsed.protocol === "https:") { console.warn("[ssrf] httpOnlyPin: HTTPS pinning blocked (certificate mismatch risk)."); return { ok: false, error: "httpOnlyPin: HTTPS host pinning is blocked (certificate mismatch risk).", finalUrl: currentUrl }; }
+			if (parsed.protocol === "http:" && !isIP(parsed.hostname)) {
+				const addrs = await lookup(parsed.hostname, { all: true });
+				const ip = addrs.length > 0 ? addrs[0].address : "";
+				if (!ip || isPrivateIp(ip)) return { ok: false, error: `httpOnlyPin: resolved IP '${ip}' is not safe.`, finalUrl: currentUrl };
+				const origHost = parsed.host; parsed.hostname = ip; requestUrl = parsed.href; pinHeaders = { Host: origHost };
+			}
+		}
 		let res;
 		try {
-			res = await fetch(currentUrl, {
-				...fetchOptions,
-				redirect: "manual",
-			});
+			res = await fetch(requestUrl, { ...fetchOptions, headers: { ...(fetchOptions.headers || {}), ...pinHeaders }, redirect: "manual" });
 		} catch (err) {
 			return { ok: false, error: err instanceof Error ? err.message : String(err), finalUrl: currentUrl };
 		}
