@@ -48,7 +48,7 @@
 			],
 			"cwd": "."
 		},
-		"korean_law": {
+		"korean_law_offline": {
 			"command": "node",
 			"args": [
 				"./korean-law-mcp/dist/cli.js",

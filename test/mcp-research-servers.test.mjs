@@ -17,7 +17,7 @@ test("#given default MCP config #when inspected #then only local servers are ena
 	const serverNames = Object.keys(mcp.mcpServers).sort();
 
 	// then
-	assert.deepEqual(serverNames, ["ast_grep", "git_bash", "korean_law", "lsp", "media", "research", "workspace"]);
+	assert.deepEqual(serverNames, ["ast_grep", "git_bash", "korean_law_offline", "lsp", "media", "research", "workspace"]);
 	assert.equal(mcp.mcpServers.notebooklm, undefined);
 	for (const server of Object.values(mcp.mcpServers)) {
 		assert.notEqual(server.command, "npx", "default MCP config must not spawn npx");

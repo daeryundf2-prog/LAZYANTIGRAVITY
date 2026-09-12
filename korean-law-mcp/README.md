@@ -12,6 +12,10 @@ codebases share no source. The full server is consumed via lazyforensic
 `lazyothers/scripts/korean_law_mcp_wrapper.mjs`, which prefers the full build
 and falls back to this bundled server.
 
+This package registers as `korean_law_offline` (lazyothers registers
+`korean_law_proxy`); the bare `korean_law` name belongs to lazyforensic's
+full-API server, so all three plugins can be enabled without a collision.
+
 Maintenance rule: edit `src/cli.mjs` here directly — there is no upstream to
 sync. If the hardcoded statute text is updated, verify against law.go.kr before
 committing (the whole point of this server is not to fabricate statute text).
