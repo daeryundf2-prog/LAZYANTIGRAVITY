@@ -57,3 +57,36 @@ test("fetchWithSafeRedirects passes through a safe single response", async () =>
 		globalThis.fetch = origFetch;
 	}
 });
+
+test("fetchWithSafeRedirects allows HTTP with httpOnlyPin (IP literal passthrough)", async () => {
+	const origFetch = globalThis.fetch;
+	globalThis.fetch = async (url, opts) => {
+		assert.equal(opts.redirect, "manual");
+		return mockResponse(200, null);
+	};
+	try {
+		const res = await fetchWithSafeRedirects(`${PUBLIC}/ok`, {}, 5, { httpOnlyPin: true });
+		assert.equal(res.ok, true);
+		assert.ok(String(res.finalUrl).startsWith(PUBLIC));
+		assert.equal(res.response.status, 200);
+	} finally {
+		globalThis.fetch = origFetch;
+	}
+});
+
+test("fetchWithSafeRedirects blocks HTTPS when httpOnlyPin is set", async () => {
+	const origFetch = globalThis.fetch;
+	let fetchCalled = false;
+	globalThis.fetch = async () => {
+		fetchCalled = true;
+		return mockResponse(200, null);
+	};
+	try {
+		const res = await fetchWithSafeRedirects("https://93.184.216.34/ok", {}, 5, { httpOnlyPin: true });
+		assert.equal(res.ok, false);
+		assert.match(res.error, /httpOnlyPin.*HTTPS/i);
+		assert.equal(fetchCalled, false);
+	} finally {
+		globalThis.fetch = origFetch;
+	}
+});
