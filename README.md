@@ -118,7 +118,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for repository rules (dist sync, 250-LOC 
 - `lazyforensic` — forensic / Korean-law domain plugin
 - `lazyothers` — legal-document / HWP / humanize domain plugin
 - `lazyagentic` — rules-only governance plugin (Dual-Mount `~/agentic`)
-- [`korean-law-mcp`](https://github.com/daeryundf2-prog/korean-law-mcp) — Korean-law MCP server source; this repo bundles a built copy under `korean-law-mcp/`
+- [`korean-law-mcp`](https://github.com/daeryundf2-prog/korean-law-mcp) — Korean-law MCP server (full API version), cloned+built by lazyforensic. This repo's own `korean-law-mcp/` package is a separate offline grounding fallback, not a build of that repo — see `korean-law-mcp/README.md`.
 
 Shared asset: `scripts/coverage_audit.mjs` is kept byte-identical across lazyforensic (canonical), lazyothers, and LAZYANTIGRAVITY — sync all three on change.
 
