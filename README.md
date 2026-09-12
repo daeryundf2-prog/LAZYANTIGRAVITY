@@ -112,6 +112,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for repository rules (dist sync, 250-LOC 
 - Antigravity: pass `Subagents[].Model` on `invoke_subagent` (`canTierRoute=true`, `hostEnforced=false`, `routingMode=agent-tier-hint`). There is no `model_tier` field.
 - Do not claim the host switched models just because a skill passed `Model`.
 
+## Lazy ecosystem (repo boundaries)
+
+- `LAZYANTIGRAVITY` (this repo) — runtime umbrella: hook aggregation, shared-skill materialization, bundled MCP runtimes
+- `lazyforensic` — forensic / Korean-law domain plugin
+- `lazyothers` — legal-document / HWP / humanize domain plugin
+- `lazyagentic` — rules-only governance plugin (Dual-Mount `~/agentic`)
+- [`korean-law-mcp`](https://github.com/daeryundf2-prog/korean-law-mcp) — Korean-law MCP server source; this repo bundles a built copy under `korean-law-mcp/`
+
+Shared asset: `scripts/coverage_audit.mjs` is kept byte-identical across lazyforensic (canonical), lazyothers, and LAZYANTIGRAVITY — sync all three on change.
+
 ## License
 
 MIT (see component `LICENSE` files where present).
