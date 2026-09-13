@@ -351,7 +351,14 @@ function runTranscribeJob(jobDir) {
 	};
 	try {
 		const st = JSON.parse(readFileSync(statusPath, "utf8"));
-		const inputPath = resolve(getWorkspaceRoot(), st.input);
+		// status.json은 워크스페이스 내 사용자가 쓸 수 있는 파일이다 — 잡 러너는
+		// 시작할 때의 confinement 결과를 신뢰하지 않고 입력 경로를 재검증한다.
+		const confined = confineInputPath(st.input);
+		if (!confined.ok) {
+			update({ status: "failed", error: `input confinement failed: ${confined.error}` });
+			return;
+		}
+		const inputPath = confined.path;
 		const wavPath = join(resolvedDir, "audio-16k.wav");
 		update({ phase: "extract" });
 		const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", inputPath, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
