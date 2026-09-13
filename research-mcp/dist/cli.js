@@ -93,7 +93,7 @@ async function webRead(args) {
 				Accept: "text/markdown, text/plain",
 				"User-Agent": USER_AGENT_DIRECT,
 			},
-		}, 5);
+		}, 5, { dnsPin: true });
 		if (jinaRes.ok && jinaRes.response.ok) {
 			const text = await jinaRes.response.text();
 			if (text && text.trim().length > 0) {
@@ -121,7 +121,7 @@ async function webRead(args) {
 		const directRes = await fetchWithSafeRedirects(targetUrl, {
 			signal: AbortSignal.timeout(30000),
 			headers: { "User-Agent": USER_AGENT_DIRECT },
-		}, 5);
+		}, 5, { dnsPin: true });
 		if (!directRes.ok) return textResult({ ok: false, url: targetUrl, error: directRes.error }, true);
 		if (!directRes.response.ok) {
 			return textResult({ ok: false, url: targetUrl, error: `Direct fetch failed with HTTP ${directRes.response.status}` }, true);
@@ -363,7 +363,7 @@ async function fetchJson(args) {
 		const fetchRes = await fetchWithSafeRedirects(targetUrl, {
 			signal: AbortSignal.timeout(20000),
 			headers: { "User-Agent": USER_AGENT_API, Accept: "application/json, text/plain, */*" },
-		}, 5);
+		}, 5, { dnsPin: true });
 		if (!fetchRes.ok) return textResult({ ok: false, url: targetUrl, error: fetchRes.error }, true);
 		const res = fetchRes.response;
 		if (!res.ok) {

@@ -3,6 +3,8 @@
 // live here so SSRF policy stays in one reviewable unit.
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import http from "node:http";
+import https from "node:https";
 
 export function isPrivateIp(ip) {
 	if (!ip || ip === "::1" || ip === "0.0.0.0" || ip === "::") return true;
@@ -82,16 +84,104 @@ export async function assertFinalUrlSafe(finalUrl, originalUrl) {
 	return { ok: true, url: recheck.url };
 }
 
+// Minimal fetch-Response facade over http(s).IncomingMessage so callers that use
+// .ok/.status/.statusText/.headers.get()/.text() work unchanged.
+function wrapIncomingMessage(res, body) {
+	const h = res.headers;
+	return {
+		ok: res.statusCode >= 200 && res.statusCode < 300,
+		status: res.statusCode,
+		statusText: res.statusMessage || "",
+		headers: { get: (name) => { const v = h[String(name).toLowerCase()]; return Array.isArray(v) ? v.join(", ") : (v ?? null); } },
+		text: () => Promise.resolve(body.toString("utf8")),
+		json: () => Promise.resolve(JSON.parse(body.toString("utf8"))),
+	};
+}
+
+// dnsPin: resolve once, validate all answers, then connect to the pinned IP while
+// keeping the real hostname for SNI/Host/TLS — closes the validate→fetch TOCTOU
+// (DNS rebinding) window on both http and https without breaking certificates.
+function pinnedRequest(url, { headers = {}, signal, pinnedAddrs }) {
+	return new Promise((resolve, reject) => {
+		const parsed = new URL(url);
+		const mod = parsed.protocol === "https:" ? https : http;
+		const pinned = pinnedAddrs[0];
+		const req = mod.request(parsed, {
+			method: "GET",
+			headers,
+			servername: parsed.hostname,
+			lookup: (_host, opts, cb) => (opts && opts.all)
+				? cb(null, pinnedAddrs.map((a) => ({ address: a.address, family: a.family })))
+				: cb(null, pinned.address, pinned.family),
+		}, (res) => {
+			const chunks = [];
+			res.on("data", (c) => chunks.push(c));
+			res.on("end", () => resolve(wrapIncomingMessage(res, Buffer.concat(chunks))));
+			res.on("error", reject);
+		});
+		req.on("error", reject);
+		if (signal) {
+			const onAbort = () => req.destroy(new Error("aborted"));
+			if (signal.aborted) onAbort();
+			else {
+				signal.addEventListener("abort", onAbort, { once: true });
+				req.on("close", () => signal.removeEventListener("abort", onAbort));
+			}
+		}
+		req.end();
+	});
+}
+
+async function resolvePinnedAddrs(hostname) {
+	const addrs = await lookup(hostname, { all: true });
+	const safe = addrs.filter((a) => !isPrivateIp(a.address));
+	return safe.length > 0 ? safe : [];
+}
+
 export async function fetchWithSafeRedirects(initialUrl, fetchOptions = {}, maxHops = 5, options = {}) {
 	let currentUrl = initialUrl;
 	let hops = 0;
 	const httpOnlyPin = options.httpOnlyPin === true || fetchOptions.httpOnlyPin === true;
+	const dnsPin = options.dnsPin === true || fetchOptions.dnsPin === true;
 
 	while (hops <= maxHops) {
 		// fetch 직전 이중 검증 (DNS rebinding 완화; 다단계 사전 점검)
 		const check = await validateSafeUrl(currentUrl);
 		if (!check.ok) {
 			return { ok: false, error: check.error, finalUrl: currentUrl };
+		}
+		// dnsPin: HTTPS 포함 전 프로토콜에 검증된 IP로 직접 연결 (SNI는 호스트명 유지).
+		let res;
+		if (dnsPin) {
+			const parsed = new URL(currentUrl);
+			const pinnedAddrs = isIP(parsed.hostname)
+				? [{ address: parsed.hostname, family: parsed.hostname.includes(":") ? 6 : 4 }]
+				: await resolvePinnedAddrs(parsed.hostname);
+			if (pinnedAddrs.length === 0) {
+				return { ok: false, error: `dnsPin: no safe addresses resolved for '${parsed.hostname}'.`, finalUrl: currentUrl };
+			}
+			try {
+				res = await pinnedRequest(currentUrl, { headers: fetchOptions.headers || {}, signal: fetchOptions.signal, pinnedAddrs });
+			} catch (err) {
+				return { ok: false, error: err instanceof Error ? err.message : String(err), finalUrl: currentUrl };
+			}
+			if (![301, 302, 303, 307, 308].includes(res.status)) {
+				return { ok: true, response: res, finalUrl: currentUrl };
+			}
+			const location = res.headers.get("location");
+			if (!location) {
+				return { ok: false, error: `Redirect HTTP ${res.status} without Location header`, finalUrl: currentUrl };
+			}
+			hops++;
+			if (hops > maxHops) {
+				return { ok: false, error: `Exceeded maximum redirect limit of ${maxHops} hops`, finalUrl: currentUrl };
+			}
+			try {
+				currentUrl = new URL(location, currentUrl).href;
+			} catch {
+				return { ok: false, error: `Invalid redirect location: '${location}'`, finalUrl: currentUrl };
+			}
+			continue;
 		}
 		// httpOnlyPin: 확인된 IP로의 Host 재요청은 HTTP에만 적용 (HTTPS는 인증서 문제로 경고+차단).
 		let requestUrl = currentUrl, pinHeaders = {};
@@ -105,7 +195,6 @@ export async function fetchWithSafeRedirects(initialUrl, fetchOptions = {}, maxH
 				const origHost = parsed.host; parsed.hostname = ip; requestUrl = parsed.href; pinHeaders = { Host: origHost };
 			}
 		}
-		let res;
 		try {
 			res = await fetch(requestUrl, { ...fetchOptions, headers: { ...(fetchOptions.headers || {}), ...pinHeaders }, redirect: "manual" });
 		} catch (err) {
