@@ -6,6 +6,14 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — async long transcription
+
+- `media_transcribe_start` returns a jobId immediately and spawns a detached job runner that reports extract → transcribe → done|failed into `.lazyantigravity/media/<jobId>/status.json`. `media_transcribe_status` polls it; jobs survive an MCP server restart. Same workspace confinement as the sync `media_transcribe`.
+
+### Changed — bundled Korean-law MCP renamed
+
+- The bundled server is `korean_law_offline` (was `korean_law`). The bare `korean_law` name belongs to lazyforensic's full-API clone; lazyothers ships `korean_law_proxy`. Update any client config that referenced `korean_law`.
+
 ### Fixed — aggregate hook mirror and High-Fidelity branding leftovers
 
 - `hooks/hooks.json` now matches root `hooks.json` (write aliases, markdown/json guards, Stop claim guard). PostToolUse also covers shell redirects. PreToolUse shell matcher includes `execute_command`.

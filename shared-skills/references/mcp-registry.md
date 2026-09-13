@@ -10,7 +10,7 @@ This registry documents the available MCP servers configured in `mcp_config.json
 - **Trust class**: `remote-npx` (third-party download, not a bundled local server).
 - **Purpose**: Document Q&A grounded by Google NotebookLM after explicit opt-in.
 
-### 2. Korean Law & Statute MCP Server (`korean_law`) - Feature 14
+### 2. Korean Law & Statute MCP Server (`korean_law_offline`) - Feature 14
 - **Runtime**: `./korean-law-mcp/dist/cli.js`
 - **Tools**:
   - `lookup_statute`: Retrieve verified text for Korean statutes (민법, 형법, 개인정보보호법, 정보통신망법, 전자문서법 등). Returns `[INSUFFICIENT_DATA]` if an article does not exist.
