@@ -4,9 +4,10 @@
 // fetcher (yt-dlp). Everything is workspace-confined; no network egress
 // unless the YouTube gate is enabled.
 import { createInterface } from "node:readline";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Startup guard (same contract as the other bundled servers).
 const pluginRootEnv = process.env["PLUGIN_ROOT"];
@@ -20,9 +21,11 @@ if (pluginRootEnv) {
 	}
 }
 
+const SELF_PATH = fileURLToPath(import.meta.url);
 const MAX_INPUT_BYTES = 1024 * 1024 * 1024; // 1 GB
 const MAX_OUTPUT_CHARS = 200_000;
 const MAX_FRAMES = 60;
+const JOB_TIMEOUT_MS = 24 * 60 * 60 * 1000; // async whisper jobs may exceed 1h
 const YOUTUBE_HOSTS = new Set(["www.youtube.com", "youtube.com", "youtu.be", "m.youtube.com", "music.youtube.com"]);
 
 function getWorkspaceRoot() {
@@ -216,6 +219,39 @@ function resolveWhisperModel(args) {
 }
 
 async function mediaTranscribe(args) {
+	const check = transcribeValidation(args);
+	if ("content" in check) return check;
+	const workDir = mediaWorkDir("transcribe");
+	const wavPath = join(workDir, "audio-16k.wav");
+	const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", check.confined.path, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
+	if (!conv.ok) {
+		return textResult({ ok: false, error: truncate(`ffmpeg audio extraction failed: ${conv.stderr || conv.stdout}`) }, true);
+	}
+	const outBase = join(workDir, "transcript");
+	const timeoutMs = Number(args.timeoutSec) > 0 ? Math.min(Number(args.timeoutSec), 3600) * 1000 : 3600000;
+	const res = runBinary(findBinary("whisper"), ["-m", check.model, "-f", wavPath, "-otxt", "-of", outBase], timeoutMs);
+	const textPath = `${outBase}.txt`;
+	if (!existsSync(textPath)) {
+		return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
+	}
+	const text = readFileSync(textPath, "utf8").trim();
+	return textResult({ ok: true, input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length });
+}
+
+// ---------------------------------------------------------------------------
+// Async transcription jobs: media_transcribe is synchronous and the tool call
+// blocks until whisper exits — unusable for hour-long evidence audio. The
+// async pair spawns a detached copy of this same file (`node cli.mjs job
+// <jobDir>`) which writes status.json under .lazyantigravity/media/<jobId>/ as
+// it moves through extract → transcribe → done|failed, so the MCP server and
+// the host tool call return immediately. status polling reads that file, so
+// jobs also survive an MCP server restart.
+// ---------------------------------------------------------------------------
+function mediaJobsDir() {
+	return join(getWorkspaceRoot(), ".lazyantigravity", "media");
+}
+
+function transcribeValidation(args) {
 	if (findBinary("whisper") === null) return missingBinaryResult("whisper");
 	if (findBinary("ffmpeg") === null) return missingBinaryResult("ffmpeg");
 	const confined = confineInputPath(args.input);
@@ -231,21 +267,110 @@ async function mediaTranscribe(args) {
 			true,
 		);
 	}
-	const workDir = mediaWorkDir("transcribe");
-	const wavPath = join(workDir, "audio-16k.wav");
-	const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", confined.path, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
-	if (!conv.ok) {
-		return textResult({ ok: false, error: truncate(`ffmpeg audio extraction failed: ${conv.stderr || conv.stdout}`) }, true);
+	return { confined, model };
+}
+
+async function mediaTranscribeStart(args) {
+	const check = transcribeValidation(args);
+	if ("content" in check) return check; // an error textResult
+	const jobId = `job-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+	const jobDir = join(mediaJobsDir(), jobId);
+	mkdirSync(jobDir, { recursive: true, mode: 0o700 });
+	writeFileSync(
+		join(jobDir, "status.json"),
+		JSON.stringify(
+			{
+				jobId,
+				input: args.input,
+				model: check.model,
+				status: "running",
+				phase: "extract",
+				createdAt: new Date().toISOString(),
+			},
+			null,
+			2,
+		),
+	);
+	const child = spawn(process.execPath, [SELF_PATH, "job", jobDir], { detached: true, stdio: "ignore" });
+	child.unref();
+	return textResult({
+		ok: true,
+		jobId,
+		jobDir,
+		note: "Long-running transcription started in background. Poll with media_transcribe_status {jobId}.",
+	});
+}
+
+async function mediaTranscribeStatus(args) {
+	const jobId = String(args.jobId ?? "");
+	if (!/^job-[A-Za-z0-9-]+$/.test(jobId)) {
+		return textResult({ ok: false, error: "jobId must be the id returned by media_transcribe_start (job-<ts>-<suffix>)." }, true);
 	}
-	const outBase = join(workDir, "transcript");
-	const timeoutMs = Number(args.timeoutSec) > 0 ? Math.min(Number(args.timeoutSec), 3600) * 1000 : 3600000;
-	const res = runBinary(findBinary("whisper"), ["-m", model, "-f", wavPath, "-otxt", "-of", outBase], timeoutMs);
-	const textPath = `${outBase}.txt`;
-	if (!existsSync(textPath)) {
-		return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
+	const jobDir = join(mediaJobsDir(), jobId);
+	const statusPath = join(jobDir, "status.json");
+	if (!existsSync(statusPath)) {
+		return textResult({ ok: false, error: `no such job: ${jobId} (may have been removed by media_cleanup).` }, true);
 	}
-	const text = readFileSync(textPath, "utf8").trim();
-	return textResult({ ok: true, input: args.input, model, textPath, text: truncate(text), chars: text.length });
+	let st = {};
+	try {
+		st = JSON.parse(readFileSync(statusPath, "utf8"));
+	} catch {
+		return textResult({ ok: false, error: `job ${jobId} status file is unreadable.` }, true);
+	}
+	const out = { ok: true, jobId, status: st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt };
+	if (st.status === "done" && typeof st.textPath === "string" && existsSync(st.textPath)) {
+		const text = readFileSync(st.textPath, "utf8").trim();
+		out.textPath = st.textPath;
+		out.text = truncate(text);
+		out.chars = text.length;
+	}
+	if (st.status === "failed") {
+		out.error = truncate(st.error || "unknown job failure");
+	}
+	return textResult(out, st.status === "failed");
+}
+
+// Detached job runner entry: `node cli.mjs job <jobDir>`. Runs the same
+// ffmpeg→whisper pipeline as mediaTranscribe but reports progress into
+// status.json instead of a tool result.
+function runTranscribeJob(jobDir) {
+	const resolvedDir = resolve(jobDir);
+	if (!isInsideRoot(resolvedDir, mediaJobsDir())) {
+		process.stderr.write("[media-mcp] job dir outside media root; refusing.\n");
+		return;
+	}
+	const statusPath = join(resolvedDir, "status.json");
+	const update = (patch) => {
+		let cur = {};
+		try {
+			cur = JSON.parse(readFileSync(statusPath, "utf8"));
+		} catch {
+			/* keep previous fields on parse hiccup */
+		}
+		writeFileSync(statusPath, JSON.stringify({ ...cur, ...patch, updatedAt: new Date().toISOString() }, null, 2));
+	};
+	try {
+		const st = JSON.parse(readFileSync(statusPath, "utf8"));
+		const inputPath = resolve(getWorkspaceRoot(), st.input);
+		const wavPath = join(resolvedDir, "audio-16k.wav");
+		update({ phase: "extract" });
+		const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", inputPath, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
+		if (!conv.ok) {
+			update({ status: "failed", error: truncate(`ffmpeg audio extraction failed: ${conv.stderr || conv.stdout}`, 20000) });
+			return;
+		}
+		update({ phase: "transcribe" });
+		const outBase = join(resolvedDir, "transcript");
+		const res = runBinary(findBinary("whisper"), ["-m", st.model, "-f", wavPath, "-otxt", "-of", outBase], JOB_TIMEOUT_MS);
+		const textPath = `${outBase}.txt`;
+		if (!existsSync(textPath)) {
+			update({ status: "failed", error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`, 20000) });
+			return;
+		}
+		update({ status: "done", textPath });
+	} catch (e) {
+		update({ status: "failed", error: String(e && e.message ? e.message : e) });
+	}
 }
 
 function isAllowedYouTubeUrl(rawUrl) {
@@ -441,6 +566,28 @@ const TOOLS = [
 		}
 	},
 	{
+		name: "media_transcribe_start",
+		description: "Start a background whisper.cpp transcription job and return a jobId immediately. Use for long audio/video; poll with media_transcribe_status.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				input: { type: "string", description: "Workspace-relative audio/video path" },
+				model: { type: "string", description: "Path to a ggml-*.bin whisper model" },
+				lang: { type: "string", description: "Spoken language hint" }
+			},
+			required: ["input"]
+		}
+	},
+	{
+		name: "media_transcribe_status",
+		description: "Poll a background transcription job started by media_transcribe_start. Returns running/done/failed plus the transcript when done.",
+		inputSchema: {
+			type: "object",
+			properties: { jobId: { type: "string", description: "Job id returned by media_transcribe_start" } },
+			required: ["jobId"]
+		}
+	},
+	{
 		name: "media_cleanup",
 		description: "Remove old work dirs under .lazyantigravity/media/ (age and capacity based). Run this periodically during heavy media work.",
 		inputSchema: {
@@ -471,6 +618,8 @@ const TOOL_HANDLERS = {
 	media_frames: mediaFrames,
 	media_ocr: mediaOcr,
 	media_transcribe: mediaTranscribe,
+	media_transcribe_start: mediaTranscribeStart,
+	media_transcribe_status: mediaTranscribeStatus,
 	media_youtube: mediaYoutube,
 	media_cleanup: mediaCleanup,
 };
@@ -526,6 +675,10 @@ function main() {
 	}
 	if (argv[0] === "mcp") {
 		runMcpServer();
+		return 0;
+	}
+	if (argv[0] === "job" && argv[1]) {
+		runTranscribeJob(argv[1]);
 		return 0;
 	}
 	console.log("[media-mcp] Standalone media CLI initialized.");

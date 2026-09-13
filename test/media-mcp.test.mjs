@@ -38,7 +38,7 @@ function withWorkspace(fn) {
 	}
 }
 
-test("media-mcp exposes the five media tools", () => {
+test("media-mcp exposes the media tools", () => {
 	const res = spawnSync(process.execPath, [SERVER, "mcp"], {
 		input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
 		encoding: "utf8",
@@ -46,7 +46,11 @@ test("media-mcp exposes the five media tools", () => {
 	});
 	assert.equal(res.status, 0);
 	const tools = JSON.parse(res.stdout).result.tools.map((t) => t.name);
-	assert.deepEqual(tools, ["media_probe", "media_frames", "media_ocr", "media_transcribe", "media_cleanup", "media_youtube"]);
+	assert.deepEqual(tools, [
+		"media_probe", "media_frames", "media_ocr", "media_transcribe",
+		"media_transcribe_start", "media_transcribe_status",
+		"media_cleanup", "media_youtube",
+	]);
 });
 
 test("media tools reject paths outside the workspace", () => {
@@ -68,6 +72,22 @@ test("media_transcribe degrades honestly without the whisper binary or model", (
 			assert.match(res.error, /NOT INSTALLED/);
 			assert.ok(res.installHint, "install hint expected");
 		}
+	});
+});
+
+test("media_transcribe_start degrades honestly and status reports unknown jobs", () => {
+	withWorkspace((dir) => {
+		mkdirSync(join(dir, "audio"), { recursive: true });
+		const res = callTool("media_transcribe_start", { input: "audio/clip.mp4" }, dir);
+		assert.equal(res.ok, false);
+		if (!binaryAvailable("whisper")) {
+			assert.match(res.error, /NOT INSTALLED/);
+		}
+		const st = callTool("media_transcribe_status", { jobId: "job-1-abc" }, dir);
+		assert.equal(st.ok, false);
+		assert.match(st.error, /no such job/);
+		const bad = callTool("media_transcribe_status", { jobId: "../../etc" }, dir);
+		assert.equal(bad.ok, false);
 	});
 });
 

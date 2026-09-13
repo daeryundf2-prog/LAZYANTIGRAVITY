@@ -26,11 +26,11 @@ Six gaps surfaced by walking the real user's day-to-day, all code-verified:
    tesseract/whisper.cpp/yt-dlp/@ast-grep/napi/comment-checker with install
    hints, so users learn what they CAN enable instead of discovering "NOT
    INSTALLED" reactively.
-6. **⏳ OPEN — async long transcription**: media_transcribe is synchronous
-   (default cap 1h); a 1h+ video blocks the tool call for the full run.
-   Design: media_transcribe_start returns a jobId and writes progress under
-   .lazyantigravity/media/<job>/, media_transcribe_status polls it. Needs the
-   same workspace confinement as the sync path.
+6. **✅ async long transcription** — media_transcribe_start returns a jobId
+   and spawns a detached job runner that writes status.json under
+   .lazyantigravity/media/<jobId>/ (extract → transcribe → done|failed);
+   media_transcribe_status polls it. Same workspace confinement as the sync
+   path; jobs survive an MCP server restart.
 
 ## Real-session validation log (Antigravity + Gemini 3.8 Flash, production repo)
 
