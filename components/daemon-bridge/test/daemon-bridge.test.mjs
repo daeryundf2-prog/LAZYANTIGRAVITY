@@ -7,6 +7,12 @@ import { SharedBlackboard } from "../dist/blackboard.js";
 import { DaemonServer, getDaemonPaths } from "../dist/server.js";
 import { DaemonClient } from "../dist/client.js";
 
+function safeCleanDir(dir) {
+	try {
+		rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+	} catch {}
+}
+
 test("SharedBlackboard supports set, get, ttl expiration and list", () => {
 	const bb = new SharedBlackboard();
 	bb.set("auth_schema", { user: "string", role: "admin" }, { namespace: "auth" });
@@ -53,11 +59,10 @@ test("DaemonServer and DaemonClient exchange IPC commands over local socket", as
 		assert.equal(list.length, 1);
 
 		await server.stop();
-		} finally {
-			rmSync(tempDir, { recursive: true, force: true });
-		}
-	});
-
+	} finally {
+		safeCleanDir(tempDir);
+	}
+});
 
 test("DaemonServer rejects replayed mutating request IDs", async () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "d-r-"));
@@ -73,7 +78,7 @@ test("DaemonServer rejects replayed mutating request IDs", async () => {
 		assert.deepEqual(replay, { status: "error", error: "Replay rejected" });
 		await server.stop();
 	} finally {
-		rmSync(tempDir, { recursive: true, force: true });
+		safeCleanDir(tempDir);
 	}
 });
 
@@ -90,7 +95,7 @@ test("DaemonServer rejects IPC requests with an invalid token", async () => {
 		assert.deepEqual(response, { status: "error", error: "Unauthorized" });
 		await server.stop();
 	} finally {
-		rmSync(tempDir, { recursive: true, force: true });
+		safeCleanDir(tempDir);
 	}
 });
 
@@ -115,6 +120,6 @@ test("DaemonServer stops cleanly on the STOP command", async () => {
 		assert.equal(existsSync(config.socketPath), false, "socket file must be removed after STOP");
 		assert.equal(await client.status(), null, "status must fail after the daemon stopped");
 	} finally {
-		rmSync(tempDir, { recursive: true, force: true });
+		safeCleanDir(tempDir);
 	}
 });

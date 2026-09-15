@@ -1,13 +1,15 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { chmodSync, closeSync, existsSync, mkdirSync, openSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, mkdirSync, openSync, statSync, writeFileSync } from "node:fs";
 
 export function hardenWindowsAcl(targetPath: string): void {
 	if (process.platform !== "win32") return;
 	try {
 		const user = process.env.USERNAME || process.env.USER;
 		if (!user) return;
-		execFileSync("icacls", [targetPath, "/inheritance:r", "/grant:r", `${user}:(OI)(CI)F`], {
+		const isDir = existsSync(targetPath) && statSync(targetPath).isDirectory();
+		const perm = isDir ? `${user}:(OI)(CI)F` : `${user}:F`;
+		execFileSync("icacls", [targetPath, "/inheritance:r", "/grant:r", perm], {
 			stdio: "ignore",
 			timeout: 5000,
 			windowsHide: true,

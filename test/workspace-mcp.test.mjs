@@ -38,7 +38,9 @@ function withWorkspace(name, fn) {
 	try {
 		fn(dir);
 	} finally {
-		rmSync(dir, { recursive: true, force: true });
+		try {
+			rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+		} catch {}
 	}
 }
 
