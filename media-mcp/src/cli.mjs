@@ -269,6 +269,19 @@ function checkExternalSttGate() {
 	return { ok: true, apiKey };
 }
 
+// Workspace subdirs that must never leave the machine, even when the
+// external-STT gate is on. Comma-separated, e.g. "evidence,cases".
+function localOnlyDirHit(confinedPath) {
+	const raw = process.env["LAZYANTIGRAVITY_MEDIA_LOCAL_ONLY_DIRS"];
+	if (!raw) return null;
+	const root = getWorkspaceRoot();
+	for (const d of raw.split(",").map((s) => s.trim()).filter(Boolean)) {
+		const dir = resolve(root, d);
+		if (confinedPath === dir || isInsideRoot(confinedPath, dir)) return d;
+	}
+	return null;
+}
+
 function probeDurationSeconds(path) {
 	const res = runBinary(findBinary("ffprobe"), ["-v", "quiet", "-print_format", "json", "-show_format", path], 30000);
 	if (!res.ok) return null;
@@ -398,6 +411,29 @@ async function transcribeGemini(args) {
 	if (findBinary("ffprobe") === null) return missingBinaryResult("ffprobe");
 	const confined = confineInputPath(args.input);
 	if (!confined.ok) return textResult({ ok: false, error: confined.error }, true);
+	const blockedDir = localOnlyDirHit(confined.path);
+	if (blockedDir) {
+		return textResult(
+			{
+				ok: false,
+				error: `input is inside '${blockedDir}', which LAZYANTIGRAVITY_MEDIA_LOCAL_ONLY_DIRS marks as local-only. ` +
+					"The gemini backend cannot upload it — use the whisper backend.",
+			},
+			true,
+		);
+	}
+	if (args.confirmNotClientData !== true) {
+		return textResult(
+			{
+				ok: false,
+				error:
+					"backend=gemini uploads this audio to Google's API. Ask the user to confirm the file contains " +
+					"no client or confidential information, then retry with confirmNotClientData=true. " +
+					"If it does contain client data, use the local whisper backend instead.",
+			},
+			true,
+		);
+	}
 
 	const diarization = args.diarization === true;
 	const wordTimestamps = args.wordTimestamps === true;
@@ -825,7 +861,8 @@ const TOOLS = [
 				wordTimestamps: { type: "boolean", description: "gemini backend: word-level timestamps (30-min audio limit)" },
 				languageCodes: { type: "array", items: { type: "string" }, description: "gemini backend: BCP-47 hints e.g. [\"ko-KR\"]; omit for auto-detect" },
 				customVocabulary: { type: "array", items: { type: "string" }, description: "gemini backend: up to 1000 bias terms; incompatible with diarization/wordTimestamps" },
-				mode: { type: "string", enum: ["verbatim", "smart"], description: "gemini backend: verbatim (default, preserves disfluencies) or smart (removes fillers — not for evidence)" }
+				mode: { type: "string", enum: ["verbatim", "smart"], description: "gemini backend: verbatim (default, preserves disfluencies) or smart (removes fillers — not for evidence)" },
+				confirmNotClientData: { type: "boolean", description: "gemini backend: REQUIRED — ask the user first, then set true only if the audio contains no client/confidential information" }
 			},
 			required: ["input"]
 		}

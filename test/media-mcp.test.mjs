@@ -132,15 +132,51 @@ test("media_transcribe backend=gemini rejects incompatible option combos before 
 		assert.equal(gen.status, 0, gen.stderr);
 		const env = { LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1", GEMINI_API_KEY: "test-key-not-used" };
 		const vocab = callTool("media_transcribe", {
-			input: "clip.wav", backend: "gemini", diarization: true, customVocabulary: ["foo"],
+			input: "clip.wav", backend: "gemini", confirmNotClientData: true, diarization: true, customVocabulary: ["foo"],
 		}, dir, env);
 		assert.equal(vocab.ok, false);
 		assert.match(vocab.error, /customVocabulary/);
 		const smart = callTool("media_transcribe", {
-			input: "clip.wav", backend: "gemini", mode: "smart", wordTimestamps: true,
+			input: "clip.wav", backend: "gemini", confirmNotClientData: true, mode: "smart", wordTimestamps: true,
 		}, dir, env);
 		assert.equal(smart.ok, false);
 		assert.match(smart.error, /mode=smart/);
+	});
+});
+
+test("media_transcribe backend=gemini demands per-call no-client-data confirmation", () => {
+	if (!binaryAvailable("ffmpeg") || !binaryAvailable("ffprobe")) return;
+	withWorkspace((dir) => {
+		const gen = spawnSync("ffmpeg", [
+			"-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+			join(dir, "clip.wav"), "-loglevel", "error",
+		], { encoding: "utf8", timeout: 60000 });
+		assert.equal(gen.status, 0, gen.stderr);
+		const env = { LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1", GEMINI_API_KEY: "test-key-not-used" };
+		const res = callTool("media_transcribe", { input: "clip.wav", backend: "gemini" }, dir, env);
+		assert.equal(res.ok, false);
+		assert.match(res.error, /confirmNotClientData=true/);
+	});
+});
+
+test("media_transcribe backend=gemini refuses local-only directories outright", () => {
+	if (!binaryAvailable("ffmpeg") || !binaryAvailable("ffprobe")) return;
+	withWorkspace((dir) => {
+		mkdirSync(join(dir, "evidence"), { recursive: true });
+		const gen = spawnSync("ffmpeg", [
+			"-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+			join(dir, "evidence", "clip.wav"), "-loglevel", "error",
+		], { encoding: "utf8", timeout: 60000 });
+		assert.equal(gen.status, 0, gen.stderr);
+		const res = callTool("media_transcribe", {
+			input: "evidence/clip.wav", backend: "gemini", confirmNotClientData: true,
+		}, dir, {
+			LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1",
+			GEMINI_API_KEY: "test-key-not-used",
+			LAZYANTIGRAVITY_MEDIA_LOCAL_ONLY_DIRS: "evidence,cases",
+		});
+		assert.equal(res.ok, false);
+		assert.match(res.error, /local-only/);
 	});
 });
 
