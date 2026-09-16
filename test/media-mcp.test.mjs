@@ -16,12 +16,13 @@ function binaryAvailable(kind) {
 	return spawnSync(override || kind, [spec], { encoding: "utf8", timeout: 15000 }).status === 0;
 }
 
-function callTool(name, args, cwd) {
+function callTool(name, args, cwd, extraEnv) {
 	const res = spawnSync(process.execPath, [SERVER, "mcp"], {
 		input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
 		encoding: "utf8",
 		timeout: 120000,
 		cwd,
+		env: { ...process.env, ...extraEnv },
 	});
 	assert.equal(res.status, 0, res.stderr);
 	const output = JSON.parse(res.stdout);
@@ -96,6 +97,50 @@ test("media_youtube is gated behind the network opt-in", () => {
 		const res = callTool("media_youtube", { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }, dir);
 		assert.equal(res.ok, false);
 		assert.match(res.error, /LAZYANTIGRAVITY_MEDIA_NETWORK=1/);
+	});
+});
+
+test("media_transcribe backend=gemini is gated behind the external-STT opt-in", () => {
+	withWorkspace((dir) => {
+		const res = callTool("media_transcribe", { input: "clip.wav", backend: "gemini" }, dir, {
+			LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "",
+		});
+		assert.equal(res.ok, false);
+		assert.match(res.error, /LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1/);
+	});
+});
+
+test("media_transcribe backend=gemini requires an API key after the gate", () => {
+	withWorkspace((dir) => {
+		const res = callTool("media_transcribe", { input: "clip.wav", backend: "gemini" }, dir, {
+			LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1",
+			GEMINI_API_KEY: "",
+			GOOGLE_API_KEY: "",
+		});
+		assert.equal(res.ok, false);
+		assert.match(res.error, /GEMINI_API_KEY/);
+	});
+});
+
+test("media_transcribe backend=gemini rejects incompatible option combos before egress", () => {
+	if (!binaryAvailable("ffmpeg") || !binaryAvailable("ffprobe")) return;
+	withWorkspace((dir) => {
+		const gen = spawnSync("ffmpeg", [
+			"-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+			join(dir, "clip.wav"), "-loglevel", "error",
+		], { encoding: "utf8", timeout: 60000 });
+		assert.equal(gen.status, 0, gen.stderr);
+		const env = { LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1", GEMINI_API_KEY: "test-key-not-used" };
+		const vocab = callTool("media_transcribe", {
+			input: "clip.wav", backend: "gemini", diarization: true, customVocabulary: ["foo"],
+		}, dir, env);
+		assert.equal(vocab.ok, false);
+		assert.match(vocab.error, /customVocabulary/);
+		const smart = callTool("media_transcribe", {
+			input: "clip.wav", backend: "gemini", mode: "smart", wordTimestamps: true,
+		}, dir, env);
+		assert.equal(smart.ok, false);
+		assert.match(smart.error, /mode=smart/);
 	});
 });
 

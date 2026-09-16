@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Media MCP server: audio/video/image analysis through local binaries
-// (ffmpeg/ffprobe/tesseract/whisper.cpp) plus an explicitly opt-in YouTube
-// fetcher (yt-dlp). Everything is workspace-confined; no network egress
-// unless the YouTube gate is enabled.
+// (ffmpeg/ffprobe/tesseract/whisper.cpp) plus two explicitly opt-in egress
+// paths: a YouTube fetcher (yt-dlp, LAZYANTIGRAVITY_MEDIA_NETWORK=1) and a
+// Gemini 3.5 Transcribe STT backend (LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1).
+// Everything is workspace-confined; no network egress unless a gate is on.
 import { createInterface } from "node:readline";
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -27,6 +28,11 @@ const MAX_OUTPUT_CHARS = 200_000;
 const MAX_FRAMES = 60;
 const JOB_TIMEOUT_MS = 24 * 60 * 60 * 1000; // async whisper jobs may exceed 1h
 const YOUTUBE_HOSTS = new Set(["www.youtube.com", "youtube.com", "youtu.be", "m.youtube.com", "music.youtube.com"]);
+const GEMINI_STT_MODEL = "gemini-3.5-transcribe";
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com";
+const GEMINI_INLINE_LIMIT = 18 * 1024 * 1024; // stay under the ~20 MB request cap
+const GEMINI_MAX_SECONDS = 3600; // unary audio limit per request
+const GEMINI_ANNOTATED_MAX_SECONDS = 1800; // 30 min when diarization/word timestamps are on
 
 function getWorkspaceRoot() {
 	return resolve(process.env["LAZYANTIGRAVITY_WORKSPACE_ROOT"] || process.cwd());
@@ -219,6 +225,7 @@ function resolveWhisperModel(args) {
 }
 
 async function mediaTranscribe(args) {
+	if (args.backend === "gemini") return transcribeGemini(args);
 	const check = transcribeValidation(args);
 	if ("content" in check) return check;
 	const workDir = mediaWorkDir("transcribe");
@@ -236,6 +243,248 @@ async function mediaTranscribe(args) {
 	}
 	const text = readFileSync(textPath, "utf8").trim();
 	return textResult({ ok: true, input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length });
+}
+
+// ---------------------------------------------------------------------------
+// Gemini 3.5 Transcribe backend (opt-in network egress). Unlike the YouTube
+// gate this path UPLOADS workspace audio to Google's API — a higher consent
+// class than downloading — so it sits behind its own env var and refuses
+// unless LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1. Never use it on evidence
+// audio covered by the local-only handling policy.
+// ---------------------------------------------------------------------------
+function checkExternalSttGate() {
+	if (process.env["LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT"] !== "1") {
+		return {
+			ok: false,
+			error:
+				"backend=gemini uploads audio to the Gemini API (network egress). " +
+				"For evidence audio governed by local-only handling, use the default whisper backend instead. " +
+				"To opt in for non-evidence audio, set LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1 in this server's env.",
+		};
+	}
+	const apiKey = process.env["GEMINI_API_KEY"] || process.env["GOOGLE_API_KEY"];
+	if (!apiKey) {
+		return { ok: false, error: "backend=gemini requires GEMINI_API_KEY (or GOOGLE_API_KEY) in the server env." };
+	}
+	return { ok: true, apiKey };
+}
+
+function probeDurationSeconds(path) {
+	const res = runBinary(findBinary("ffprobe"), ["-v", "quiet", "-print_format", "json", "-show_format", path], 30000);
+	if (!res.ok) return null;
+	try {
+		return Number(JSON.parse(res.stdout)?.format?.duration ?? 0) || null;
+	} catch {
+		return null;
+	}
+}
+
+// Encode for upload: opus first (small), mp3 fallback, wav last resort.
+function extractAudioForUpload(inputPath, workDir) {
+	const ffmpeg = findBinary("ffmpeg");
+	const attempts = [
+		{ file: "upload.ogg", mime: "audio/ogg", args: ["-vn", "-ar", "16000", "-ac", "1", "-c:a", "libopus", "-b:a", "32k"] },
+		{ file: "upload.mp3", mime: "audio/mpeg", args: ["-vn", "-ar", "16000", "-ac", "1", "-c:a", "libmp3lame", "-b:a", "64k"] },
+		{ file: "upload.wav", mime: "audio/wav", args: ["-vn", "-ar", "16000", "-ac", "1"] },
+	];
+	for (const attempt of attempts) {
+		const out = join(workDir, attempt.file);
+		const res = runBinary(ffmpeg, ["-y", "-i", inputPath, ...attempt.args, out], 600000);
+		if (res.ok && existsSync(out) && statSync(out).size > 0) {
+			return { path: out, mimeType: attempt.mime };
+		}
+		if (existsSync(out)) rmSync(out);
+	}
+	return null;
+}
+
+// Small files go inline as base64; larger ones use the Files API resumable
+// upload. Returns { audioPart, remoteFileName } — remoteFileName is set when
+// the file must be deleted server-side afterwards.
+async function geminiUploadAudio(filePath, mimeType, apiKey) {
+	const size = statSync(filePath).size;
+	if (size <= GEMINI_INLINE_LIMIT) {
+		return {
+			audioPart: { inlineData: { mimeType, data: readFileSync(filePath).toString("base64") } },
+			remoteFileName: null,
+		};
+	}
+	const start = await fetch(`${GEMINI_API_BASE}/upload/v1beta/files?key=${apiKey}`, {
+		method: "POST",
+		headers: {
+			"X-Goog-Upload-Protocol": "resumable",
+			"X-Goog-Upload-Command": "start",
+			"X-Goog-Upload-Header-Content-Length": String(size),
+			"X-Goog-Upload-Header-Content-Type": mimeType,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ file: { display_name: filePath.split(sep).pop() } }),
+	});
+	if (!start.ok) {
+		return { error: `Files API upload start failed: HTTP ${start.status} ${truncate(await start.text(), 2000)}` };
+	}
+	const uploadUrl = start.headers.get("x-goog-upload-url");
+	if (!uploadUrl) return { error: "Files API did not return a resumable upload URL." };
+	const up = await fetch(uploadUrl, {
+		method: "POST",
+		headers: {
+			"Content-Length": String(size),
+			"X-Goog-Upload-Offset": "0",
+			"X-Goog-Upload-Command": "upload, finalize",
+		},
+		body: readFileSync(filePath),
+	});
+	if (!up.ok) {
+		return { error: `Files API upload failed: HTTP ${up.status} ${truncate(await up.text(), 2000)}` };
+	}
+	const info = await up.json();
+	const file = info?.file;
+	if (!file?.uri || !file?.name) return { error: `Files API returned an unexpected response: ${truncate(JSON.stringify(info), 2000)}` };
+	// Uploaded files must reach ACTIVE before generateContent accepts them.
+	for (let i = 0; i < 30; i++) {
+		const st = await fetch(`${GEMINI_API_BASE}/v1beta/${file.name}?key=${apiKey}`);
+		if (st.ok) {
+			const meta = await st.json();
+			if (meta.state === "ACTIVE") break;
+			if (meta.state === "FAILED") return { error: "Files API marked the uploaded audio as FAILED." };
+		}
+		await new Promise((r) => setTimeout(r, 2000));
+	}
+	return { audioPart: { fileData: { fileUri: file.uri, mimeType } }, remoteFileName: file.name };
+}
+
+async function geminiDeleteFile(remoteFileName, apiKey) {
+	try {
+		await fetch(`${GEMINI_API_BASE}/v1beta/${remoteFileName}?key=${apiKey}`, { method: "DELETE" });
+	} catch {
+		/* remote cleanup is best-effort */
+	}
+}
+
+// Merge word-level annotations into speaker turns: "[spk_1] word word ...".
+function formatGeminiTranscript(parts) {
+	let plain = "";
+	const words = [];
+	for (const part of parts) {
+		if (typeof part.text === "string") plain += part.text;
+		const tr = part.audioTranscription;
+		if (!tr) continue;
+		for (const w of tr.words ?? []) {
+			words.push({ word: w.word ?? "", speaker: tr.speakerLabel ?? "", start: w.startOffset ?? "", end: w.endOffset ?? "" });
+		}
+	}
+	if (words.length === 0) return { text: plain.trim(), turns: [], wordCount: 0 };
+	const turns = [];
+	for (const w of words) {
+		const last = turns[turns.length - 1];
+		if (last && last.speaker === w.speaker) {
+			last.text += ` ${w.word}`;
+			last.end = w.end;
+		} else {
+			turns.push({ speaker: w.speaker, start: w.start, end: w.end, text: w.word });
+		}
+	}
+	const formatted = turns
+		.map((t) => `${t.speaker ? `[${t.speaker}] ` : ""}${t.start ? `(${t.start} -> ${t.end}) ` : ""}${t.text}`)
+		.join("\n");
+	return { text: formatted, turns, wordCount: words.length, plainText: plain.trim() };
+}
+
+async function transcribeGemini(args) {
+	const gate = checkExternalSttGate();
+	if (!gate.ok) return textResult({ ok: false, error: gate.error }, true);
+	const apiKey = gate.apiKey;
+	if (findBinary("ffmpeg") === null) return missingBinaryResult("ffmpeg");
+	if (findBinary("ffprobe") === null) return missingBinaryResult("ffprobe");
+	const confined = confineInputPath(args.input);
+	if (!confined.ok) return textResult({ ok: false, error: confined.error }, true);
+
+	const diarization = args.diarization === true;
+	const wordTimestamps = args.wordTimestamps === true;
+	const mode = args.mode === "smart" ? "SMART" : "VERBATIM";
+	const customVocabulary = Array.isArray(args.customVocabulary) ? args.customVocabulary.filter((t) => typeof t === "string" && t.trim()) : [];
+	const languageCodes = Array.isArray(args.languageCodes) ? args.languageCodes.filter((t) => typeof t === "string" && t.trim()) : [];
+	if (customVocabulary.length > 0 && (diarization || wordTimestamps)) {
+		return textResult({ ok: false, error: "Gemini API rejects customVocabulary combined with diarization or wordTimestamps." }, true);
+	}
+	if (mode === "SMART" && (diarization || wordTimestamps)) {
+		return textResult({ ok: false, error: "mode=smart is incompatible with diarization/wordTimestamps; use verbatim." }, true);
+	}
+	const duration = probeDurationSeconds(confined.path);
+	const limit = diarization || wordTimestamps ? GEMINI_ANNOTATED_MAX_SECONDS : GEMINI_MAX_SECONDS;
+	if (duration !== null && duration > limit) {
+		return textResult(
+			{
+				ok: false,
+				error: `input duration ${Math.round(duration)}s exceeds the ${limit}s per-request limit` +
+					(diarization || wordTimestamps ? " when diarization/wordTimestamps are enabled" : "") +
+					". Split the audio and transcribe the parts.",
+			},
+			true,
+		);
+	}
+
+	const workDir = mediaWorkDir("transcribe-gemini");
+	const audio = extractAudioForUpload(confined.path, workDir);
+	if (!audio) {
+		return textResult({ ok: false, error: "ffmpeg could not produce an uploadable audio track (opus/mp3/wav all failed)." }, true);
+	}
+	let upload;
+	try {
+		upload = await geminiUploadAudio(audio.path, audio.mimeType, apiKey);
+	} catch (e) {
+		return textResult({ ok: false, error: `upload failed: ${e?.message ?? e}` }, true);
+	}
+	if (upload.error) return textResult({ ok: false, error: upload.error }, true);
+
+	const audioTranscriptionConfig = {};
+	if (diarization) audioTranscriptionConfig.diarization = true;
+	if (wordTimestamps) audioTranscriptionConfig.wordTimestamp = true;
+	if (mode === "SMART") audioTranscriptionConfig.mode = "SMART";
+	if (languageCodes.length > 0) audioTranscriptionConfig.languageCodes = languageCodes;
+	if (customVocabulary.length > 0) audioTranscriptionConfig.customVocabulary = customVocabulary;
+
+	let resp;
+	try {
+		resp = await fetch(`${GEMINI_API_BASE}/v1beta/models/${GEMINI_STT_MODEL}:generateContent`, {
+			method: "POST",
+			headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+			body: JSON.stringify({
+				contents: [{ parts: [upload.audioPart] }],
+				generationConfig: { audioTranscriptionConfig },
+			}),
+		});
+	} catch (e) {
+		if (upload.remoteFileName) await geminiDeleteFile(upload.remoteFileName, apiKey);
+		return textResult({ ok: false, error: `generateContent request failed: ${e?.message ?? e}` }, true);
+	}
+	if (upload.remoteFileName) await geminiDeleteFile(upload.remoteFileName, apiKey);
+	if (!resp.ok) {
+		return textResult({ ok: false, error: `Gemini API error: HTTP ${resp.status} ${truncate(await resp.text(), 2000)}` }, true);
+	}
+	const json = await resp.json();
+	const parts = json?.candidates?.[0]?.content?.parts ?? [];
+	const { text, turns, wordCount, plainText } = formatGeminiTranscript(parts);
+	const finalText = text || plainText;
+	if (!finalText) {
+		return textResult({ ok: false, error: `Gemini returned no transcript: ${truncate(JSON.stringify(json), 2000)}` }, true);
+	}
+	const textPath = join(workDir, "transcript.txt");
+	writeFileSync(textPath, finalText, "utf8");
+	return textResult({
+		ok: true,
+		backend: "gemini",
+		model: GEMINI_STT_MODEL,
+		input: args.input,
+		mode,
+		diarization,
+		wordTimestamps,
+		textPath,
+		text: truncate(finalText),
+		chars: finalText.length,
+		...(turns.length > 0 ? { speakerTurns: turns.length, wordAnnotations: wordCount } : {}),
+		note: "Audio was uploaded to the Gemini API. Default mode is verbatim (disfluencies preserved); mode=smart strips fillers and is not suitable for evidence records.",
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -560,14 +809,23 @@ const TOOLS = [
 	},
 	{
 		name: "media_transcribe",
-		description: "Transcribe audio/video with whisper.cpp (ffmpeg converts to 16 kHz mono first). Requires a ggml model path.",
+		description:
+			"Transcribe audio/video. backend=whisper (default) runs whisper.cpp locally and needs a ggml model path. " +
+			"backend=gemini uploads the audio to Gemini 3.5 Transcribe — requires LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1 and " +
+			"GEMINI_API_KEY; do not use on local-only evidence audio.",
 		inputSchema: {
 			type: "object",
 			properties: {
 				input: { type: "string", description: "Workspace-relative audio/video path" },
-				model: { type: "string", description: "Path to a ggml-*.bin whisper model" },
-				lang: { type: "string", description: "Spoken language hint" },
-				timeoutSec: { type: "number", description: "whisper timeout (default 3600)" }
+				backend: { type: "string", enum: ["whisper", "gemini"], description: "whisper (local, default) or gemini (cloud, opt-in egress)" },
+				model: { type: "string", description: "whisper backend: path to a ggml-*.bin model" },
+				lang: { type: "string", description: "whisper backend: spoken language hint" },
+				timeoutSec: { type: "number", description: "whisper backend: timeout (default 3600)" },
+				diarization: { type: "boolean", description: "gemini backend: speaker diarization (up to 8 speakers; 30-min audio limit)" },
+				wordTimestamps: { type: "boolean", description: "gemini backend: word-level timestamps (30-min audio limit)" },
+				languageCodes: { type: "array", items: { type: "string" }, description: "gemini backend: BCP-47 hints e.g. [\"ko-KR\"]; omit for auto-detect" },
+				customVocabulary: { type: "array", items: { type: "string" }, description: "gemini backend: up to 1000 bias terms; incompatible with diarization/wordTimestamps" },
+				mode: { type: "string", enum: ["verbatim", "smart"], description: "gemini backend: verbatim (default, preserves disfluencies) or smart (removes fillers — not for evidence)" }
 			},
 			required: ["input"]
 		}

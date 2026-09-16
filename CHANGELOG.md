@@ -6,6 +6,10 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — opt-in Gemini 3.5 Transcribe backend
+
+- `media_transcribe` accepts `backend=gemini` (default stays local `whisper`). The Gemini path uploads workspace audio to `gemini-3.5-transcribe` and is gated behind `LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1` + `GEMINI_API_KEY`/`GOOGLE_API_KEY` — separate from the YouTube download gate because uploading evidence-class audio is a higher consent class. Supports `diarization` (≤8 speakers), `wordTimestamps`, `languageCodes`, `customVocabulary`, and `mode=verbatim|smart`; verbatim is the default and preserves disfluencies, smart mode strips fillers and is unsuitable for evidence. Per-request limits (60 min, 30 min with diarization/word timestamps) are enforced before egress via ffprobe. Audio is uploaded inline under 18 MB or through the Files API otherwise; remote Files API objects are deleted after transcription.
+
 ### Added — async long transcription
 
 - `media_transcribe_start` returns a jobId immediately and spawns a detached job runner that reports extract → transcribe → done|failed into `.lazyantigravity/media/<jobId>/status.json`. `media_transcribe_status` polls it; jobs survive an MCP server restart. Same workspace confinement as the sync `media_transcribe`.
