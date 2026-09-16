@@ -1,0 +1,19 @@
+name: Feature Request / RFC
+description: Suggest an enhancement, new skill, or architectural RFC
+title: "[RFC]: "
+labels: ["enhancement", "discussion"]
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal Overview
+      description: What capability or workflow would you like to see?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / Use Case
+      description: Why is this important to your development workflow?
+    validations:
+      required: true
