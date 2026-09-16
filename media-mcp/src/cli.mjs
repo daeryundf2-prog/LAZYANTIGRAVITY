@@ -71,7 +71,9 @@ function findBinary(kind) {
 	const candidates = override ? [override] : spec.candidates;
 	let found = null;
 	for (const candidate of candidates) {
-		const res = spawnSync(candidate, [spec.versionArg], { encoding: "utf8", timeout: 15000 });
+		// stdin must be closed: whisper-cli blocks reading stdin when the
+		// pipe stays open, which made detection time out on a valid binary.
+		const res = spawnSync(candidate, [spec.versionArg], { encoding: "utf8", timeout: 15000, input: "" });
 		if (res.status === 0) {
 			found = candidate;
 			break;
@@ -255,7 +257,10 @@ function whisperTranscribe(args, check, fallbackReason) {
 	}
 	const outBase = join(workDir, "transcript");
 	const timeoutMs = Number(args.timeoutSec) > 0 ? Math.min(Number(args.timeoutSec), 3600) * 1000 : 3600000;
-	const res = runBinary(findBinary("whisper"), ["-m", check.model, "-f", wavPath, "-otxt", "-of", outBase], timeoutMs);
+	// whisper-cli defaults -l to "en" which silently translates non-English
+	// audio into English — pass "auto" unless the caller gave a hint.
+	const lang = typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "auto";
+	const res = runBinary(findBinary("whisper"), ["-m", check.model, "-f", wavPath, "-l", lang, "-otxt", "-of", outBase], timeoutMs);
 	const textPath = `${outBase}.txt`;
 	if (!existsSync(textPath)) {
 		return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
@@ -610,6 +615,7 @@ async function mediaTranscribeStart(args) {
 				jobId,
 				input: args.input,
 				model: check.model,
+				lang: typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "auto",
 				status: "running",
 				phase: "extract",
 				createdAt: new Date().toISOString(),
@@ -695,7 +701,8 @@ function runTranscribeJob(jobDir) {
 		}
 		update({ phase: "transcribe" });
 		const outBase = join(resolvedDir, "transcript");
-		const res = runBinary(findBinary("whisper"), ["-m", st.model, "-f", wavPath, "-otxt", "-of", outBase], JOB_TIMEOUT_MS);
+		const jobLang = typeof st.lang === "string" && st.lang.trim() ? st.lang.trim() : "auto";
+		const res = runBinary(findBinary("whisper"), ["-m", st.model, "-f", wavPath, "-l", jobLang, "-otxt", "-of", outBase], JOB_TIMEOUT_MS);
 		const textPath = `${outBase}.txt`;
 		if (!existsSync(textPath)) {
 			update({ status: "failed", error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`, 20000) });
