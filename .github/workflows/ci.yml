@@ -37,6 +37,11 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
 
+      - name: Install system dependencies (ffmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
       - name: Install dependencies
         run: npm ci
 

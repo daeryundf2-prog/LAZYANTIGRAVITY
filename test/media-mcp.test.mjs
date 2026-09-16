@@ -69,9 +69,18 @@ test("media tools reject paths outside the workspace", () => {
 	withWorkspace((dir) => {
 		const probe = callTool("media_probe", { input: "/etc/hosts" }, dir);
 		assert.equal(probe.ok, false);
-		assert.match(probe.error, /workspace-relative/);
+		if (binaryAvailable("ffprobe")) {
+			assert.match(probe.error, /workspace-relative/);
+		} else {
+			assert.match(probe.error, /NOT INSTALLED/);
+		}
 		const ocr = callTool("media_ocr", { input: "~/secret.png" }, dir);
 		assert.equal(ocr.ok, false);
+		if (binaryAvailable("tesseract")) {
+			assert.match(ocr.error, /workspace-relative/);
+		} else {
+			assert.match(ocr.error, /NOT INSTALLED/);
+		}
 	});
 });
 
