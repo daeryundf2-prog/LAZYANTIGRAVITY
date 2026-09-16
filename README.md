@@ -1,8 +1,14 @@
 # LAZYANTIGRAVITY (v0.7.0)
 
-AI agent orchestration plugin for [Google Antigravity (Gemini CLI)](https://github.com/google-gemini/antigravity).
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Node 18+](https://img.shields.io/badge/Node-18%2B-brightgreen.svg?style=flat-square)](https://nodejs.org/)
+[![Reproducible Builds](https://img.shields.io/badge/Builds-Reproducible-success.svg?style=flat-square)](package.json)
+[![Architecture: Agentic Core](https://img.shields.io/badge/Architecture-Agentic%20Core-orange.svg?style=flat-square)](AGENTS.md)
 
-It gives your coding agent durable workspace memory, evidence-bound work loops with quality gates, sandboxed local tools, and a review pipeline — everything local, no telemetry unless you opt in, no network egress by default. Built on ideas from [Ouroboros](https://github.com/Q00/ouroboros) and [lazycodex](https://github.com/code-yeongyu/lazycodex), tuned for **Gemini 3.8 Flash**.
+> **Deterministic Multi-Agent Orchestration Framework & Maintainer Automation Layer**  
+> Bringing durable workspace memory, evidence-bound work loops with fail-closed quality gates, zero-latency IPC state bridges, and automated maintainer pipelines to modern agentic coding environments.
+
+Originating from concepts in [lazycodex](https://github.com/code-yeongyu/lazycodex) and [Ouroboros](https://github.com/Q00/ouroboros), LAZYANTIGRAVITY provides a model-agnostic, developer-first orchestration architecture that enforces deterministic verification over probabilistic hallucinations. It is optimized for high-throughput agent runtimes ([Google Antigravity / Gemini CLI](https://github.com/google-gemini/antigravity)) with native extension pathways for OpenAI Codex and multi-agent CI/CD bots.
 
 ## Install
 

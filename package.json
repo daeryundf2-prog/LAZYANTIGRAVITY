@@ -1,7 +1,7 @@
 {
 	"name": "lazyantigravity",
 	"version": "0.7.0",
-	"description": "Aggregated Antigravity plugin root for LazyAntigravity components (Gemini 3.8 Flash default).",
+	"description": "Open-source agent orchestration framework providing deterministic multi-agent workflows, AST verification gates, and maintainer automation pipelines.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",
 	"license": "MIT",
