@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,10 +10,21 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SERVER = join(ROOT, "media-mcp", "dist", "cli.js");
 
 function binaryAvailable(kind) {
-	const spec = { ffmpeg: "-version", ffprobe: "-version", tesseract: "--version", ytdlp: "--version" }[kind];
+	const spec = {
+		ffmpeg: ["-version"],
+		ffprobe: ["-version"],
+		tesseract: ["--version"],
+		whisper: ["--help"],
+		ytdlp: ["--version"],
+	}[kind];
 	if (!spec) return false;
 	const override = process.env[`LAZYANTIGRAVITY_${kind.toUpperCase()}_BIN`];
-	return spawnSync(override || kind, [spec], { encoding: "utf8", timeout: 15000 }).status === 0;
+	const candidates = override ? [override] : (kind === "whisper" ? ["whisper-cli", "whisper-cpp", "whisper"] : [kind]);
+	for (const bin of candidates) {
+		const res = spawnSync(bin, spec, { encoding: "utf8", timeout: 15000, input: "" });
+		if (res.status === 0) return true;
+	}
+	return false;
 }
 
 function callTool(name, args, cwd, extraEnv) {
@@ -67,11 +78,14 @@ test("media tools reject paths outside the workspace", () => {
 test("media_transcribe degrades honestly without the whisper binary or model", () => {
 	withWorkspace((dir) => {
 		mkdirSync(join(dir, "audio"), { recursive: true });
+		writeFileSync(join(dir, "audio", "clip.mp4"), "fake audio content");
 		const res = callTool("media_transcribe", { input: "audio/clip.mp4" }, dir);
 		assert.equal(res.ok, false);
 		if (!binaryAvailable("whisper")) {
 			assert.match(res.error, /NOT INSTALLED/);
 			assert.ok(res.installHint, "install hint expected");
+		} else {
+			assert.match(res.error, /whisper model file not found/);
 		}
 	});
 });
@@ -79,10 +93,13 @@ test("media_transcribe degrades honestly without the whisper binary or model", (
 test("media_transcribe_start degrades honestly and status reports unknown jobs", () => {
 	withWorkspace((dir) => {
 		mkdirSync(join(dir, "audio"), { recursive: true });
+		writeFileSync(join(dir, "audio", "clip.mp4"), "fake audio content");
 		const res = callTool("media_transcribe_start", { input: "audio/clip.mp4" }, dir);
 		assert.equal(res.ok, false);
 		if (!binaryAvailable("whisper")) {
 			assert.match(res.error, /NOT INSTALLED/);
+		} else {
+			assert.match(res.error, /whisper model file not found/);
 		}
 		const st = callTool("media_transcribe_status", { jobId: "job-1-abc" }, dir);
 		assert.equal(st.ok, false);

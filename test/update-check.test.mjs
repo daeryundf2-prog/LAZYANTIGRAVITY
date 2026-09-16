@@ -18,7 +18,16 @@ function runCheck(repoRoot) {
 }
 
 function git(repo, ...args) {
-	const res = spawnSync("git", ["-C", repo, ...args], { encoding: "utf8" });
+	const res = spawnSync("git", ["-C", repo, ...args], {
+		encoding: "utf8",
+		env: {
+			...process.env,
+			GIT_AUTHOR_NAME: "test",
+			GIT_AUTHOR_EMAIL: "test@test.com",
+			GIT_COMMITTER_NAME: "test",
+			GIT_COMMITTER_EMAIL: "test@test.com",
+		},
+	});
 	assert.equal(res.status, 0, res.stderr);
 	return res.stdout.trim();
 }
