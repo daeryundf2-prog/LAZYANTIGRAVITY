@@ -28,7 +28,7 @@ const MAX_OUTPUT_CHARS = 200_000;
 const MAX_FRAMES = 60;
 const JOB_TIMEOUT_MS = 24 * 60 * 60 * 1000; // async whisper jobs may exceed 1h
 const YOUTUBE_HOSTS = new Set(["www.youtube.com", "youtube.com", "youtu.be", "m.youtube.com", "music.youtube.com"]);
-const GEMINI_STT_MODEL = "gemini-3.5-transcribe";
+const GEMINI_STT_MODEL = process.env["LAZYANTIGRAVITY_GEMINI_STT_MODEL"] || "gemini-3.5-transcribe";
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com";
 const GEMINI_INLINE_LIMIT = 18 * 1024 * 1024; // stay under the ~20 MB request cap
 const GEMINI_MAX_SECONDS = 3600; // unary audio limit per request
@@ -225,9 +225,28 @@ function resolveWhisperModel(args) {
 }
 
 async function mediaTranscribe(args) {
-	if (args.backend === "gemini") return transcribeGemini(args);
+	// backend=gemini requested but not fully permitted -> fall back to the
+	// local whisper backend instead of failing. Denied egress never blocks
+	// transcription; it just stays on the machine.
+	if (args.backend === "gemini") {
+		const denial = geminiDenialReason(args);
+		if (denial === null) return transcribeGemini(args);
+		const check = transcribeValidation(args);
+		if ("content" in check) {
+			const inner = JSON.parse(check.content[0].text);
+			return textResult(
+				{ ok: false, error: `gemini backend not permitted (${denial}); whisper fallback unavailable: ${inner.error}`, installHint: inner.installHint },
+				true,
+			);
+		}
+		return whisperTranscribe(args, check, denial);
+	}
 	const check = transcribeValidation(args);
 	if ("content" in check) return check;
+	return whisperTranscribe(args, check, null);
+}
+
+function whisperTranscribe(args, check, fallbackReason) {
 	const workDir = mediaWorkDir("transcribe");
 	const wavPath = join(workDir, "audio-16k.wav");
 	const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", check.confined.path, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
@@ -242,7 +261,13 @@ async function mediaTranscribe(args) {
 		return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
 	}
 	const text = readFileSync(textPath, "utf8").trim();
-	return textResult({ ok: true, input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length });
+	const payload = { ok: true, backend: "whisper", input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length };
+	if (fallbackReason) {
+		payload.requestedBackend = "gemini";
+		payload.fallbackReason = fallbackReason;
+		payload.note = "Ran locally via whisper because the gemini backend was not permitted for this call.";
+	}
+	return textResult(payload);
 }
 
 // ---------------------------------------------------------------------------
@@ -401,6 +426,23 @@ function formatGeminiTranscript(parts) {
 		.map((t) => `${t.speaker ? `[${t.speaker}] ` : ""}${t.start ? `(${t.start} -> ${t.end}) ` : ""}${t.text}`)
 		.join("\n");
 	return { text: formatted, turns, wordCount: words.length, plainText: plain.trim() };
+}
+
+// Returns null when the gemini backend is fully permitted, otherwise a
+// human-readable denial reason used for the whisper fallback.
+function geminiDenialReason(args) {
+	if (process.env["LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT"] !== "1") {
+		return "LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1 is not set";
+	}
+	if (!process.env["GEMINI_API_KEY"] && !process.env["GOOGLE_API_KEY"]) {
+		return "GEMINI_API_KEY/GOOGLE_API_KEY is not set";
+	}
+	const confined = confineInputPath(args.input);
+	if (!confined.ok) return confined.error;
+	const blockedDir = localOnlyDirHit(confined.path);
+	if (blockedDir) return `input is inside local-only dir '${blockedDir}'`;
+	if (args.confirmNotClientData !== true) return "client-data confirmation was not provided";
+	return null;
 }
 
 async function transcribeGemini(args) {
@@ -847,8 +889,10 @@ const TOOLS = [
 		name: "media_transcribe",
 		description:
 			"Transcribe audio/video. backend=whisper (default) runs whisper.cpp locally and needs a ggml model path. " +
-			"backend=gemini uploads the audio to Gemini 3.5 Transcribe — requires LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1 and " +
-			"GEMINI_API_KEY; do not use on local-only evidence audio.",
+			"backend=gemini uploads the audio to Gemini Transcribe — requires LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1, " +
+			"GEMINI_API_KEY, and confirmNotClientData=true after asking the user. When gemini is not permitted " +
+			"(gate off, no key, local-only dir, or no confirmation) it automatically falls back to local whisper " +
+			"instead of failing, so prefer backend=gemini and let the tool decide.",
 		inputSchema: {
 			type: "object",
 			properties: {

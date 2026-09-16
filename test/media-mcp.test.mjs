@@ -100,25 +100,34 @@ test("media_youtube is gated behind the network opt-in", () => {
 	});
 });
 
-test("media_transcribe backend=gemini is gated behind the external-STT opt-in", () => {
+test("media_transcribe backend=gemini without the STT gate falls back to whisper", () => {
 	withWorkspace((dir) => {
 		const res = callTool("media_transcribe", { input: "clip.wav", backend: "gemini" }, dir, {
 			LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "",
 		});
-		assert.equal(res.ok, false);
-		assert.match(res.error, /LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1/);
+		if (res.ok) {
+			assert.equal(res.backend, "whisper");
+			assert.equal(res.requestedBackend, "gemini");
+			assert.match(res.fallbackReason, /LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1/);
+		} else {
+			assert.match(res.error, /LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1/);
+		}
 	});
 });
 
-test("media_transcribe backend=gemini requires an API key after the gate", () => {
+test("media_transcribe backend=gemini without an API key falls back to whisper", () => {
 	withWorkspace((dir) => {
 		const res = callTool("media_transcribe", { input: "clip.wav", backend: "gemini" }, dir, {
 			LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1",
 			GEMINI_API_KEY: "",
 			GOOGLE_API_KEY: "",
 		});
-		assert.equal(res.ok, false);
-		assert.match(res.error, /GEMINI_API_KEY/);
+		if (res.ok) {
+			assert.equal(res.backend, "whisper");
+			assert.match(res.fallbackReason, /GEMINI_API_KEY/);
+		} else {
+			assert.match(res.error, /GEMINI_API_KEY/);
+		}
 	});
 });
 
@@ -144,7 +153,7 @@ test("media_transcribe backend=gemini rejects incompatible option combos before 
 	});
 });
 
-test("media_transcribe backend=gemini demands per-call no-client-data confirmation", () => {
+test("media_transcribe backend=gemini without client-data confirmation falls back to whisper", () => {
 	if (!binaryAvailable("ffmpeg") || !binaryAvailable("ffprobe")) return;
 	withWorkspace((dir) => {
 		const gen = spawnSync("ffmpeg", [
@@ -154,12 +163,16 @@ test("media_transcribe backend=gemini demands per-call no-client-data confirmati
 		assert.equal(gen.status, 0, gen.stderr);
 		const env = { LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT: "1", GEMINI_API_KEY: "test-key-not-used" };
 		const res = callTool("media_transcribe", { input: "clip.wav", backend: "gemini" }, dir, env);
-		assert.equal(res.ok, false);
-		assert.match(res.error, /confirmNotClientData=true/);
+		if (res.ok) {
+			assert.equal(res.backend, "whisper");
+			assert.match(res.fallbackReason, /confirmation/);
+		} else {
+			assert.match(res.error, /client-data confirmation/);
+		}
 	});
 });
 
-test("media_transcribe backend=gemini refuses local-only directories outright", () => {
+test("media_transcribe backend=gemini never uploads local-only dirs, falls back to whisper", () => {
 	if (!binaryAvailable("ffmpeg") || !binaryAvailable("ffprobe")) return;
 	withWorkspace((dir) => {
 		mkdirSync(join(dir, "evidence"), { recursive: true });
@@ -175,8 +188,12 @@ test("media_transcribe backend=gemini refuses local-only directories outright", 
 			GEMINI_API_KEY: "test-key-not-used",
 			LAZYANTIGRAVITY_MEDIA_LOCAL_ONLY_DIRS: "evidence,cases",
 		});
-		assert.equal(res.ok, false);
-		assert.match(res.error, /local-only/);
+		if (res.ok) {
+			assert.equal(res.backend, "whisper");
+			assert.match(res.fallbackReason, /local-only/);
+		} else {
+			assert.match(res.error, /local-only/);
+		}
 	});
 });
 
