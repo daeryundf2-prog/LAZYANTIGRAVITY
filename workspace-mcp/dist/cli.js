@@ -17,9 +17,7 @@ const FORK_GATE_ENV = "LAZYANTIGRAVITY_SESSION_TREE_FORK";
 const MAX_VALUE_BYTES = 64 * 1024;
 const MAX_LIST_ENTRIES = 100;
 
-function getWorkspaceRoot() {
-	return process.env["LAZYANTIGRAVITY_WORKSPACE_ROOT"] || process.cwd();
-}
+import { getWorkspaceRoot } from "./path-policy.js";
 
 function textResult(payload, isError = false) {
 	return {
