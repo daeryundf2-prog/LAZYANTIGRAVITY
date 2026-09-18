@@ -461,11 +461,14 @@ function geminiDenialReason(args) {
 	if (!process.env["GEMINI_API_KEY"] && !process.env["GOOGLE_API_KEY"]) {
 		reasons.push("GEMINI_API_KEY/GOOGLE_API_KEY is not set");
 	}
-	if (reasons.length === 0) {
+	if (reasons.length === 0 || existsSync(resolve(getWorkspaceRoot(), String(args.input ?? "")))) {
 		const confined = confineInputPath(args.input);
-		if (!confined.ok) return confined.error;
-		const blockedDir = localOnlyDirHit(confined.path);
-		if (blockedDir) reasons.push(`input is inside local-only dir '${blockedDir}'`);
+		if (!confined.ok) {
+			if (reasons.length === 0) return confined.error;
+		} else {
+			const blockedDir = localOnlyDirHit(confined.path);
+			if (blockedDir) reasons.push(`input is inside local-only dir '${blockedDir}'`);
+		}
 	}
 	if (args.confirmNotClientData !== true) reasons.push("client-data confirmation was not provided");
 	return reasons.length > 0 ? reasons.join("; ") : null;
@@ -666,7 +669,7 @@ async function mediaTranscribeStatus(args) {
 		return textResult({ ok: false, error: `job ${jobId} status file is unreadable.` }, true);
 	}
 	const receipt = st.processing_receipt || unknownReceipt(st.input, {});
-	const out = { ok: st.status !== "failed", jobId, status: receipt.status === "not_measured" ? "not_measured" : st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt, processing_receipt: receipt };
+	const out = { ok: st.status !== "failed", jobId, status: st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt, processing_receipt: receipt };
 	if (st.status === "done" && typeof st.textPath === "string" && existsSync(st.textPath)) {
 		const text = readFileSync(st.textPath, "utf8").trim();
 		out.textPath = st.textPath;
@@ -697,7 +700,7 @@ async function runTranscribeJob(jobDir) {
 			payload = JSON.parse(result.content[0].text);
 		} catch (error) { payload = { ok: false, error: error.message }; }
 		const processing_receipt = await finalizeReceipt(context, payload);
-		writeFileSync(confinePath(statusPath), JSON.stringify({ ...st, ...payload, processing_receipt, status: processing_receipt.status, phase: "finished", updatedAt: processing_receipt.finished_at }, null, 2));
+		writeFileSync(confinePath(statusPath), JSON.stringify({ ...st, ...payload, processing_receipt, status: processing_receipt.status === "failed" ? "failed" : "done", phase: "finished", updatedAt: processing_receipt.finished_at }, null, 2));
 	});
 }
 

@@ -669,7 +669,7 @@ async function mediaTranscribeStatus(args) {
 		return textResult({ ok: false, error: `job ${jobId} status file is unreadable.` }, true);
 	}
 	const receipt = st.processing_receipt || unknownReceipt(st.input, {});
-	const out = { ok: st.status !== "failed", jobId, status: receipt.status === "not_measured" ? "not_measured" : st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt, processing_receipt: receipt };
+	const out = { ok: st.status !== "failed", jobId, status: st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt, processing_receipt: receipt };
 	if (st.status === "done" && typeof st.textPath === "string" && existsSync(st.textPath)) {
 		const text = readFileSync(st.textPath, "utf8").trim();
 		out.textPath = st.textPath;
@@ -700,7 +700,7 @@ async function runTranscribeJob(jobDir) {
 			payload = JSON.parse(result.content[0].text);
 		} catch (error) { payload = { ok: false, error: error.message }; }
 		const processing_receipt = await finalizeReceipt(context, payload);
-		writeFileSync(confinePath(statusPath), JSON.stringify({ ...st, ...payload, processing_receipt, status: processing_receipt.status, phase: "finished", updatedAt: processing_receipt.finished_at }, null, 2));
+		writeFileSync(confinePath(statusPath), JSON.stringify({ ...st, ...payload, processing_receipt, status: processing_receipt.status === "failed" ? "failed" : "done", phase: "finished", updatedAt: processing_receipt.finished_at }, null, 2));
 	});
 }
 
