@@ -5,9 +5,17 @@
 // Gemini 3.5 Transcribe STT backend (LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1).
 // Everything is workspace-confined; no network egress unless a gate is on.
 import { createInterface } from "node:readline";
+import { randomUUID } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { confinePath, getWorkspaceRoot, isInsideRoot, canonicalPath } from "../../workspace-mcp/dist/path-policy.js";
+import { runBoundedBinary } from "./process-runner.js";
+import { hashFile, unknownReceipt, finalizeReceipt } from "./receipt.js";
+import { cleanupMedia } from "./cleanup.js";
+const processingContext = new AsyncLocalStorage();
+const activeDirs = new Set();
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { isAbsolute, join, resolve, sep } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Startup guard (same contract as the other bundled servers).
@@ -33,15 +41,6 @@ const GEMINI_API_BASE = "https://generativelanguage.googleapis.com";
 const GEMINI_INLINE_LIMIT = 18 * 1024 * 1024; // stay under the ~20 MB request cap
 const GEMINI_MAX_SECONDS = 3600; // unary audio limit per request
 const GEMINI_ANNOTATED_MAX_SECONDS = 1800; // 30 min when diarization/word timestamps are on
-
-function getWorkspaceRoot() {
-	return resolve(process.env["LAZYANTIGRAVITY_WORKSPACE_ROOT"] || process.cwd());
-}
-
-function isInsideRoot(candidate, root) {
-	const withSep = candidate.endsWith(sep) ? candidate : candidate + sep;
-	return withSep.startsWith(root.endsWith(sep) ? root : root + sep);
-}
 
 function textResult(payload, isError = false) {
 	return {
@@ -100,29 +99,22 @@ function missingBinaryResult(kind) {
 // Workspace confinement shared by every tool.
 // ---------------------------------------------------------------------------
 function confineInputPath(rawPath) {
-	if (typeof rawPath !== "string" || rawPath.length === 0) {
-		return { ok: false, error: "input path must be a non-empty string." };
-	}
-	if (rawPath.startsWith("~") || isAbsolute(rawPath) || /^[A-Za-z]:[\\/]/.test(rawPath)) {
-		return { ok: false, error: `input '${rawPath}' must be a workspace-relative path (absolute and ~ paths are rejected).` };
-	}
-	const root = getWorkspaceRoot();
-	const candidate = resolve(root, rawPath);
-	if (!isInsideRoot(candidate, root)) {
-		return { ok: false, error: `input '${rawPath}' resolves outside the workspace root (${root}).` };
-	}
-	if (!existsSync(candidate)) {
+	try {
+		const path = confinePath(rawPath, { evidence: true, kind: "file" });
+		if (statSync(path).size > MAX_INPUT_BYTES) throw new Error("Input exceeds size limit");
+		return { ok: true, path };
+	} catch (error) {
+		if (/workspace-relative/.test(error.message)) return { ok: false, error: error.message };
 		return { ok: false, error: `input '${rawPath}' does not exist in the workspace.` };
 	}
-	if (statSync(candidate).size > MAX_INPUT_BYTES) {
-		return { ok: false, error: `input '${rawPath}' exceeds the ${MAX_INPUT_BYTES / (1024 * 1024)} MB limit.` };
-	}
-	return { ok: true, path: candidate };
 }
 
 function mediaWorkDir(prefix) {
-	const dir = join(getWorkspaceRoot(), ".lazyantigravity", "media", `${prefix}-${Date.now()}`);
+	const dir = confinePath(join(getWorkspaceRoot(), ".lazyantigravity", "media", `${prefix}-${randomUUID()}`), { allowMissing: true });
 	mkdirSync(dir, { recursive: true, mode: 0o700 });
+	activeDirs.add(dir);
+	processingContext.getStore()?.dirs.push(dir);
+	writeFileSync(join(dir, ".active"), "");
 	return dir;
 }
 
@@ -131,23 +123,21 @@ function truncate(text, max = MAX_OUTPUT_CHARS) {
 	return `${text.slice(0, max)}\n[output truncated at ${max} chars]`;
 }
 
-function runBinary(binary, args, timeoutMs) {
-	const res = spawnSync(binary, args, { encoding: "utf8", timeout: timeoutMs, shell: false });
-	if (res.error) {
-		return { ok: false, error: res.error.message };
-	}
-	return { ok: res.status === 0, status: res.status, stdout: res.stdout || "", stderr: res.stderr || "" };
+async function runBinary(binary, args, timeoutMs) {
+	const result = await runBoundedBinary(binary, args, timeoutMs);
+	const context = processingContext.getStore();
+	if (context) context.runs.push({ ...result, binary });
+	return result;
 }
 
 // ---------------------------------------------------------------------------
 // Tools
 // ---------------------------------------------------------------------------
 async function mediaProbe(args) {
-	const missing = findBinary("ffprobe") === null;
-	if (missing) return missingBinaryResult("ffprobe");
 	const confined = confineInputPath(args.input);
 	if (!confined.ok) return textResult({ ok: false, error: confined.error }, true);
-	const res = runBinary(findBinary("ffprobe"), ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", confined.path], 30000);
+	if (findBinary("ffprobe") === null) return missingBinaryResult("ffprobe");
+	const res = await runBinary(findBinary("ffprobe"), ["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", confined.path], 30000);
 	if (!res.ok) {
 		return textResult({ ok: false, error: truncate(res.stderr || res.stdout || "ffprobe failed") }, true);
 	}
@@ -178,14 +168,14 @@ async function mediaProbe(args) {
 }
 
 async function mediaFrames(args) {
-	if (findBinary("ffmpeg") === null) return missingBinaryResult("ffmpeg");
 	const confined = confineInputPath(args.input);
 	if (!confined.ok) return textResult({ ok: false, error: confined.error }, true);
+	if (findBinary("ffmpeg") === null) return missingBinaryResult("ffmpeg");
 	const intervalSec = Number(args.intervalSec) > 0 ? Number(args.intervalSec) : 5;
 	const maxFrames = Math.min(Math.max(Number(args.maxFrames) || 10, 1), MAX_FRAMES);
 	const outDir = mediaWorkDir("frames");
 	const pattern = join(outDir, "frame-%03d.jpg");
-	const res = runBinary(
+	const res = await runBinary(
 		findBinary("ffmpeg"),
 		["-y", "-i", confined.path, "-vf", `fps=1/${intervalSec}`, "-frames:v", String(maxFrames), "-q:v", "3", pattern],
 		Number(args.timeoutSec) > 0 ? Math.min(Number(args.timeoutSec), 900) * 1000 : 300000,
@@ -194,30 +184,38 @@ async function mediaFrames(args) {
 	if (frames.length === 0) {
 		return textResult({ ok: false, error: truncate(`no frames extracted: ${res.stderr || res.stdout || "unknown error"}`) }, true);
 	}
+	const framePaths = frames.map((f) => join(outDir, f));
+	if (!res.ok) {
+		return textResult({ ok: false, partial: true, outDir, intervalSec, frames: framePaths, totalFrames: frames.length, error: truncate(`ffmpeg exited ${res.status}: ${res.stderr || res.stdout || "partial frames"}`) }, true);
+	}
 	return textResult({
 		ok: true,
 		outDir,
 		intervalSec,
-		frames: frames.map((f) => join(outDir, f)),
+		frames: framePaths,
 		totalFrames: frames.length,
 		note: "Open the frame images with the host's native vision to analyze content.",
 	});
 }
 
 async function mediaOcr(args) {
-	if (findBinary("tesseract") === null) return missingBinaryResult("tesseract");
 	const confined = confineInputPath(args.input);
 	if (!confined.ok) return textResult({ ok: false, error: confined.error }, true);
+	if (findBinary("tesseract") === null) return missingBinaryResult("tesseract");
 	const lang = typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "kor+eng";
 	const outDir = mediaWorkDir("ocr");
 	const outBase = join(outDir, "ocr");
-	const res = runBinary(findBinary("tesseract"), [confined.path, outBase, "-l", lang], 180000);
+	const res = await runBinary(findBinary("tesseract"), [confined.path, outBase, "-l", lang], 180000);
 	const textPath = `${outBase}.txt`;
-	if (!existsSync(textPath)) {
-		return textResult({ ok: false, error: truncate(`tesseract failed: ${res.stderr || res.stdout || "no output"}`) }, true);
+	if (res.ok && existsSync(textPath) && statSync(textPath).size > 0) {
+		const text = readFileSync(textPath, "utf8").trim();
+		return textResult({ ok: true, input: args.input, lang, textPath, text: truncate(text), chars: text.length });
 	}
-	const text = readFileSync(textPath, "utf8").trim();
-	return textResult({ ok: true, input: args.input, lang, textPath, text: truncate(text), chars: text.length });
+	if (existsSync(textPath) && statSync(textPath).size > 0) {
+		const text = readFileSync(textPath, "utf8").trim();
+		return textResult({ ok: false, partial: true, input: args.input, lang, textPath, text: truncate(text), chars: text.length, error: truncate(`tesseract exited ${res.status}: ${res.stderr || res.stdout || "partial output"}`) }, true);
+	}
+	return textResult({ ok: false, error: truncate(`tesseract failed: ${res.stderr || res.stdout || "no output"}`) }, true);
 }
 
 function resolveWhisperModel(args) {
@@ -231,6 +229,8 @@ async function mediaTranscribe(args) {
 	// local whisper backend instead of failing. Denied egress never blocks
 	// transcription; it just stays on the machine.
 	if (args.backend === "gemini") {
+		const comboError = geminiComboError(args);
+		if (comboError) return textResult({ ok: false, error: comboError }, true);
 		const denial = geminiDenialReason(args);
 		if (denial === null) return transcribeGemini(args);
 		const check = transcribeValidation(args);
@@ -248,31 +248,33 @@ async function mediaTranscribe(args) {
 	return whisperTranscribe(args, check, null);
 }
 
-function whisperTranscribe(args, check, fallbackReason) {
-	const workDir = mediaWorkDir("transcribe");
+async function whisperTranscribe(args, check, fallbackReason) {
+	const workDir = check.workDir || mediaWorkDir("transcribe");
 	const wavPath = join(workDir, "audio-16k.wav");
-	const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", check.confined.path, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
+	const conv = await runBinary(findBinary("ffmpeg"), ["-y", "-i", check.confined.path, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
 	if (!conv.ok) {
 		return textResult({ ok: false, error: truncate(`ffmpeg audio extraction failed: ${conv.stderr || conv.stdout}`) }, true);
 	}
 	const outBase = join(workDir, "transcript");
 	const timeoutMs = Number(args.timeoutSec) > 0 ? Math.min(Number(args.timeoutSec), 3600) * 1000 : 3600000;
-	// whisper-cli defaults -l to "en" which silently translates non-English
-	// audio into English — pass "auto" unless the caller gave a hint.
 	const lang = typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "auto";
-	const res = runBinary(findBinary("whisper"), ["-m", check.model, "-f", wavPath, "-l", lang, "-otxt", "-of", outBase], timeoutMs);
+	const res = await runBinary(findBinary("whisper"), ["-m", check.model, "-f", wavPath, "-l", lang, "-otxt", "-of", outBase], timeoutMs);
 	const textPath = `${outBase}.txt`;
-	if (!existsSync(textPath)) {
-		return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
+	if (res.ok && existsSync(textPath) && statSync(textPath).size > 0) {
+		const text = readFileSync(textPath, "utf8").trim();
+		const payload = { ok: true, backend: "whisper", input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length };
+		if (fallbackReason) {
+			payload.requestedBackend = "gemini";
+			payload.fallbackReason = fallbackReason;
+			payload.note = "Ran locally via whisper because the gemini backend was not permitted for this call.";
+		}
+		return textResult(payload);
 	}
-	const text = readFileSync(textPath, "utf8").trim();
-	const payload = { ok: true, backend: "whisper", input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length };
-	if (fallbackReason) {
-		payload.requestedBackend = "gemini";
-		payload.fallbackReason = fallbackReason;
-		payload.note = "Ran locally via whisper because the gemini backend was not permitted for this call.";
+	if (existsSync(textPath) && statSync(textPath).size > 0) {
+		const text = readFileSync(textPath, "utf8").trim();
+		return textResult({ ok: false, partial: true, backend: "whisper", input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length, error: truncate(`whisper exited ${res.status}: ${res.stderr || res.stdout || "partial output"}`) }, true);
 	}
-	return textResult(payload);
+	return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
 }
 
 // ---------------------------------------------------------------------------
@@ -283,6 +285,7 @@ function whisperTranscribe(args, check, fallbackReason) {
 // audio covered by the local-only handling policy.
 // ---------------------------------------------------------------------------
 function checkExternalSttGate() {
+	if (process.env.LAZYANTIGRAVITY_OFFLINE === "1") return { ok: false, error: "LAZYANTIGRAVITY_OFFLINE=1 overrides cloud opt-ins" };
 	if (process.env["LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT"] !== "1") {
 		return {
 			ok: false,
@@ -312,8 +315,8 @@ function localOnlyDirHit(confinedPath) {
 	return null;
 }
 
-function probeDurationSeconds(path) {
-	const res = runBinary(findBinary("ffprobe"), ["-v", "quiet", "-print_format", "json", "-show_format", path], 30000);
+async function probeDurationSeconds(path) {
+	const res = await runBinary(findBinary("ffprobe"), ["-v", "quiet", "-print_format", "json", "-show_format", path], 30000);
 	if (!res.ok) return null;
 	try {
 		return Number(JSON.parse(res.stdout)?.format?.duration ?? 0) || null;
@@ -323,7 +326,7 @@ function probeDurationSeconds(path) {
 }
 
 // Encode for upload: opus first (small), mp3 fallback, wav last resort.
-function extractAudioForUpload(inputPath, workDir) {
+async function extractAudioForUpload(inputPath, workDir) {
 	const ffmpeg = findBinary("ffmpeg");
 	const attempts = [
 		{ file: "upload.ogg", mime: "audio/ogg", args: ["-vn", "-ar", "16000", "-ac", "1", "-c:a", "libopus", "-b:a", "32k"] },
@@ -332,7 +335,7 @@ function extractAudioForUpload(inputPath, workDir) {
 	];
 	for (const attempt of attempts) {
 		const out = join(workDir, attempt.file);
-		const res = runBinary(ffmpeg, ["-y", "-i", inputPath, ...attempt.args, out], 600000);
+		const res = await runBinary(ffmpeg, ["-y", "-i", inputPath, ...attempt.args, out], 600000);
 		if (res.ok && existsSync(out) && statSync(out).size > 0) {
 			return { path: out, mimeType: attempt.mime };
 		}
@@ -435,19 +438,37 @@ function formatGeminiTranscript(parts) {
 
 // Returns null when the gemini backend is fully permitted, otherwise a
 // human-readable denial reason used for the whisper fallback.
+function geminiComboError(args) {
+	const diarization = args.diarization === true;
+	const wordTimestamps = args.wordTimestamps === true;
+	const mode = args.mode === "smart" ? "SMART" : "VERBATIM";
+	const customVocabulary = Array.isArray(args.customVocabulary) ? args.customVocabulary.filter((t) => typeof t === "string" && t.trim()) : [];
+	if (customVocabulary.length > 0 && (diarization || wordTimestamps)) {
+		return "Gemini API rejects customVocabulary combined with diarization or wordTimestamps.";
+	}
+	if (mode === "SMART" && (diarization || wordTimestamps)) {
+		return "mode=smart is incompatible with diarization/wordTimestamps; use verbatim.";
+	}
+	return null;
+}
+
 function geminiDenialReason(args) {
+	const reasons = [];
+	if (process.env.LAZYANTIGRAVITY_OFFLINE === "1") reasons.push("LAZYANTIGRAVITY_OFFLINE=1 overrides cloud opt-ins");
 	if (process.env["LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT"] !== "1") {
-		return "LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1 is not set";
+		reasons.push("LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1 is not set");
 	}
 	if (!process.env["GEMINI_API_KEY"] && !process.env["GOOGLE_API_KEY"]) {
-		return "GEMINI_API_KEY/GOOGLE_API_KEY is not set";
+		reasons.push("GEMINI_API_KEY/GOOGLE_API_KEY is not set");
 	}
-	const confined = confineInputPath(args.input);
-	if (!confined.ok) return confined.error;
-	const blockedDir = localOnlyDirHit(confined.path);
-	if (blockedDir) return `input is inside local-only dir '${blockedDir}'`;
-	if (args.confirmNotClientData !== true) return "client-data confirmation was not provided";
-	return null;
+	if (reasons.length === 0) {
+		const confined = confineInputPath(args.input);
+		if (!confined.ok) return confined.error;
+		const blockedDir = localOnlyDirHit(confined.path);
+		if (blockedDir) reasons.push(`input is inside local-only dir '${blockedDir}'`);
+	}
+	if (args.confirmNotClientData !== true) reasons.push("client-data confirmation was not provided");
+	return reasons.length > 0 ? reasons.join("; ") : null;
 }
 
 async function transcribeGemini(args) {
@@ -487,13 +508,7 @@ async function transcribeGemini(args) {
 	const mode = args.mode === "smart" ? "SMART" : "VERBATIM";
 	const customVocabulary = Array.isArray(args.customVocabulary) ? args.customVocabulary.filter((t) => typeof t === "string" && t.trim()) : [];
 	const languageCodes = Array.isArray(args.languageCodes) ? args.languageCodes.filter((t) => typeof t === "string" && t.trim()) : [];
-	if (customVocabulary.length > 0 && (diarization || wordTimestamps)) {
-		return textResult({ ok: false, error: "Gemini API rejects customVocabulary combined with diarization or wordTimestamps." }, true);
-	}
-	if (mode === "SMART" && (diarization || wordTimestamps)) {
-		return textResult({ ok: false, error: "mode=smart is incompatible with diarization/wordTimestamps; use verbatim." }, true);
-	}
-	const duration = probeDurationSeconds(confined.path);
+	const duration = await probeDurationSeconds(confined.path);
 	const limit = diarization || wordTimestamps ? GEMINI_ANNOTATED_MAX_SECONDS : GEMINI_MAX_SECONDS;
 	if (duration !== null && duration > limit) {
 		return textResult(
@@ -508,7 +523,7 @@ async function transcribeGemini(args) {
 	}
 
 	const workDir = mediaWorkDir("transcribe-gemini");
-	const audio = extractAudioForUpload(confined.path, workDir);
+	const audio = await extractAudioForUpload(confined.path, workDir);
 	if (!audio) {
 		return textResult({ ok: false, error: "ffmpeg could not produce an uploadable audio track (opus/mp3/wav all failed)." }, true);
 	}
@@ -580,7 +595,7 @@ async function transcribeGemini(args) {
 // jobs also survive an MCP server restart.
 // ---------------------------------------------------------------------------
 function mediaJobsDir() {
-	return join(getWorkspaceRoot(), ".lazyantigravity", "media");
+	return confinePath(join(getWorkspaceRoot(), ".lazyantigravity", "media"), { allowMissing: true });
 }
 
 function transcribeValidation(args) {
@@ -650,7 +665,8 @@ async function mediaTranscribeStatus(args) {
 	} catch {
 		return textResult({ ok: false, error: `job ${jobId} status file is unreadable.` }, true);
 	}
-	const out = { ok: true, jobId, status: st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt };
+	const receipt = st.processing_receipt || unknownReceipt(st.input, {});
+	const out = { ok: st.status !== "failed", jobId, status: receipt.status === "not_measured" ? "not_measured" : st.status, phase: st.phase, createdAt: st.createdAt, updatedAt: st.updatedAt, processing_receipt: receipt };
 	if (st.status === "done" && typeof st.textPath === "string" && existsSync(st.textPath)) {
 		const text = readFileSync(st.textPath, "utf8").trim();
 		out.textPath = st.textPath;
@@ -666,52 +682,23 @@ async function mediaTranscribeStatus(args) {
 // Detached job runner entry: `node cli.mjs job <jobDir>`. Runs the same
 // ffmpeg→whisper pipeline as mediaTranscribe but reports progress into
 // status.json instead of a tool result.
-function runTranscribeJob(jobDir) {
-	const resolvedDir = resolve(jobDir);
-	if (!isInsideRoot(resolvedDir, mediaJobsDir())) {
-		process.stderr.write("[media-mcp] job dir outside media root; refusing.\n");
-		return;
-	}
-	const statusPath = join(resolvedDir, "status.json");
-	const update = (patch) => {
-		let cur = {};
+async function runTranscribeJob(jobDir) {
+	const resolvedDir = confinePath(jobDir, { kind: "directory" });
+	if (!isInsideRoot(resolvedDir, mediaJobsDir()) || resolvedDir === mediaJobsDir()) throw new Error("Job directory outside media jobs root");
+	const statusPath = confinePath(join(resolvedDir, "status.json"));
+	const st = JSON.parse(readFileSync(statusPath, "utf8"));
+	const context = { name: "media_transcribe", args: st.parameters || { input: st.input, model: st.model, lang: st.lang }, startedAt: new Date().toISOString(), runs: [], dirs: [], source: null };
+	await processingContext.run(context, async () => {
+		let payload;
 		try {
-			cur = JSON.parse(readFileSync(statusPath, "utf8"));
-		} catch {
-			/* keep previous fields on parse hiccup */
-		}
-		writeFileSync(statusPath, JSON.stringify({ ...cur, ...patch, updatedAt: new Date().toISOString() }, null, 2));
-	};
-	try {
-		const st = JSON.parse(readFileSync(statusPath, "utf8"));
-		// status.json은 워크스페이스 내 사용자가 쓸 수 있는 파일이다 — 잡 러너는
-		// 시작할 때의 confinement 결과를 신뢰하지 않고 입력 경로를 재검증한다.
-		const confined = confineInputPath(st.input);
-		if (!confined.ok) {
-			update({ status: "failed", error: `input confinement failed: ${confined.error}` });
-			return;
-		}
-		const inputPath = confined.path;
-		const wavPath = join(resolvedDir, "audio-16k.wav");
-		update({ phase: "extract" });
-		const conv = runBinary(findBinary("ffmpeg"), ["-y", "-i", inputPath, "-vn", "-ar", "16000", "-ac", "1", wavPath], 600000);
-		if (!conv.ok) {
-			update({ status: "failed", error: truncate(`ffmpeg audio extraction failed: ${conv.stderr || conv.stdout}`, 20000) });
-			return;
-		}
-		update({ phase: "transcribe" });
-		const outBase = join(resolvedDir, "transcript");
-		const jobLang = typeof st.lang === "string" && st.lang.trim() ? st.lang.trim() : "auto";
-		const res = runBinary(findBinary("whisper"), ["-m", st.model, "-f", wavPath, "-l", jobLang, "-otxt", "-of", outBase], JOB_TIMEOUT_MS);
-		const textPath = `${outBase}.txt`;
-		if (!existsSync(textPath)) {
-			update({ status: "failed", error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`, 20000) });
-			return;
-		}
-		update({ status: "done", textPath });
-	} catch (e) {
-		update({ status: "failed", error: String(e && e.message ? e.message : e) });
-	}
+			context.source = await hashFile(st.input);
+			const check = transcribeValidation(context.args);
+			const result = "content" in check ? check : await whisperTranscribe(context.args, { ...check, workDir: resolvedDir }, null);
+			payload = JSON.parse(result.content[0].text);
+		} catch (error) { payload = { ok: false, error: error.message }; }
+		const processing_receipt = await finalizeReceipt(context, payload);
+		writeFileSync(confinePath(statusPath), JSON.stringify({ ...st, ...payload, processing_receipt, status: processing_receipt.status, phase: "finished", updatedAt: processing_receipt.finished_at }, null, 2));
+	});
 }
 
 function isAllowedYouTubeUrl(rawUrl) {
@@ -724,6 +711,7 @@ function isAllowedYouTubeUrl(rawUrl) {
 }
 
 async function mediaYoutube(args) {
+	if (process.env.LAZYANTIGRAVITY_OFFLINE === "1") return textResult({ ok: false, error: "LAZYANTIGRAVITY_OFFLINE=1 overrides all network opt-ins including LAZYANTIGRAVITY_MEDIA_NETWORK=1." }, true);
 	if (process.env["LAZYANTIGRAVITY_MEDIA_NETWORK"] !== "1") {
 		return textResult(
 			{
@@ -745,7 +733,7 @@ async function mediaYoutube(args) {
 	const outDir = mediaWorkDir(`yt-${subaction}`);
 
 	if (subaction === "metadata") {
-		const res = runBinary(ytdlp, ["--dump-single-json", "--no-warnings", rawUrl], 120000);
+		const res = await runBinary(ytdlp, ["--dump-single-json", "--no-warnings", rawUrl], 120000);
 		if (!res.ok) return textResult({ ok: false, error: truncate(res.stderr || "yt-dlp failed") }, true);
 		let meta = {};
 		try {
@@ -765,7 +753,7 @@ async function mediaYoutube(args) {
 
 	if (subaction === "subtitles") {
 		const lang = typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "ko,en";
-		const res = runBinary(
+		const res = await runBinary(
 			ytdlp,
 			["--skip-download", "--write-auto-sub", "--write-sub", "--sub-lang", lang, "--sub-format", "vtt", "-o", join(outDir, "%(title)s.%(ext)s"), "--no-warnings", rawUrl],
 			300000,
@@ -774,14 +762,20 @@ async function mediaYoutube(args) {
 		if (files.length === 0) {
 			return textResult({ ok: false, error: truncate(`no subtitles found (${res.stderr || res.stdout || "none available"}). Try media_transcribe on the audio instead.`) }, true);
 		}
+		if (!res.ok) {
+			return textResult({ ok: false, partial: true, subaction, subtitleFiles: files, error: truncate(`yt-dlp exited ${res.status}: ${res.stderr || res.stdout || "partial subtitles"}`) }, true);
+		}
 		return textResult({ ok: true, subaction, subtitleFiles: files, note: "Prefer subtitles over STT when they exist." });
 	}
 
 	// audio
-	const res = runBinary(ytdlp, ["-x", "--audio-format", "m4a", "-o", join(outDir, "%(title)s.%(ext)s"), "--no-warnings", rawUrl], 900000);
+	const res = await runBinary(ytdlp, ["-x", "--audio-format", "m4a", "-o", join(outDir, "%(title)s.%(ext)s"), "--no-warnings", rawUrl], 900000);
 	const files = readdirSync(outDir).filter((f) => !f.endsWith(".part")).map((f) => join(outDir, f));
 	if (files.length === 0) {
 		return textResult({ ok: false, error: truncate(`audio download failed: ${res.stderr || "unknown"}`) }, true);
+	}
+	if (!res.ok) {
+		return textResult({ ok: false, partial: true, subaction, files, error: truncate(`yt-dlp exited ${res.status}: ${res.stderr || res.stdout || "partial download"}`) }, true);
 	}
 	return textResult({ ok: true, subaction, files, nextStep: "Run media_transcribe on the audio file." });
 }
@@ -810,50 +804,8 @@ function removeDir(dir) {
 // Removes .lazyantigravity/media/<prefix>-<ts> work dirs: everything older
 // than keepDays, then oldest-first until the total fits within maxMb.
 async function mediaCleanup(args) {
-	const mediaDir = join(getWorkspaceRoot(), ".lazyantigravity", "media");
-	if (!existsSync(mediaDir)) {
-		return textResult({ ok: true, deleted: [], freedBytes: 0, note: "no media directory yet." });
-	}
-	const keepDays = Number(args.keepDays) > 0 ? Number(args.keepDays) : 14;
-	const maxMb = Number(args.maxMb) > 0 ? Number(args.maxMb) : 500;
-	const cutoff = Date.now() - keepDays * 86400000;
-	const entries = readdirSync(mediaDir, { withFileTypes: true })
-		.filter((e) => e.isDirectory())
-		.map((e) => {
-			const full = join(mediaDir, e.name);
-			return { name: e.name, path: full, mtime: statSync(full).mtimeMs, ...dirStats(full) };
-		})
-		.sort((a, b) => a.mtime - b.mtime);
-
-	const deleted = [];
-	let freedBytes = 0;
-	for (const entry of entries) {
-		if (entry.mtime < cutoff) {
-			removeDir(entry.path);
-			freedBytes += entry.bytes;
-			deleted.push({ dir: entry.name, reason: `older than ${keepDays}d`, freedBytes: entry.bytes });
-		}
-	}
-	let remaining = entries.filter((e) => existsSync(e.path)).reduce((sum, e) => sum + dirStats(e.path).bytes, 0);
-	const cap = maxMb * 1024 * 1024;
-	for (const entry of entries) {
-		if (remaining <= cap) break;
-		if (!existsSync(entry.path)) continue;
-		const size = dirStats(entry.path).bytes;
-		removeDir(entry.path);
-		remaining -= size;
-		freedBytes += size;
-		deleted.push({ dir: entry.name, reason: `capacity over ${maxMb} MB`, freedBytes: size });
-	}
-	return textResult({
-		ok: true,
-		keepDays,
-		maxMb,
-		deleted,
-		totalDeleted: deleted.length,
-		freedBytes,
-		remainingBytes: remaining,
-	});
+	const result = cleanupMedia(args, activeDirs);
+	return textResult(result, !result.ok);
 }
 
 const TOOLS = [
@@ -942,12 +894,14 @@ const TOOLS = [
 	},
 	{
 		name: "media_cleanup",
-		description: "Remove old work dirs under .lazyantigravity/media/ (age and capacity based). Run this periodically during heavy media work.",
+		description: "Preview removal of old unprotected work dirs under .lazyantigravity/media/ (age and capacity based). dryRun defaults to true; actual deletion requires confirmDelete=true. Active jobs, pinned/retained evidence and allowed evidence roots are protected.",
 		inputSchema: {
 			type: "object",
 			properties: {
-				keepDays: { type: "number", description: "Delete work dirs older than this many days (default 14)" },
-				maxMb: { type: "number", description: "Cap the media directory total size in MB (default 500)" }
+				keepDays: { type: "number", description: "Propose work dirs older than this many days for deletion (default 14)" },
+				maxMb: { type: "number", description: "Cap the unprotected media directory total size in MB (default 500)" },
+				dryRun: { type: "boolean", default: true, description: "Preview proposed deletions without deleting (default true)" },
+				confirmDelete: { type: "boolean", description: "REQUIRED true to delete after reviewing a dry-run" }
 			}
 		}
 	},
@@ -999,7 +953,32 @@ async function handleJsonRpc(message) {
 		if (!handler) {
 			return { jsonrpc: "2.0", id, error: { code: -32602, message: `Unsupported tool: ${name}` } };
 		}
-		const result = await handler(params?.arguments ?? {});
+		const args = params?.arguments ?? {};
+		const context = { name, args, startedAt: new Date().toISOString(), runs: [], dirs: [], source: null };
+		const result = await processingContext.run(context, async () => {
+			let response;
+			try {
+				if (args.input) {
+					try { context.source = await hashFile(args.input); }
+					catch { context.source = null; }
+				}
+				response = await handler(args);
+			} catch (error) { response = textResult({ ok: false, error: error.message }, true); }
+			const payload = JSON.parse(response.content[0].text);
+			if (name !== "media_cleanup" && name !== "media_transcribe_status" && !payload.processing_receipt) {
+				payload.processing_receipt = await finalizeReceipt(context, payload);
+				if (name !== "media_transcribe_start") {
+					payload.status = payload.processing_receipt.status;
+					payload.ok = payload.status === "complete";
+				}
+			}
+			for (const dir of context.dirs) {
+				activeDirs.delete(dir);
+				writeFileSync(confinePath(join(dir, ".active")), "finished");
+				if (payload.processing_receipt) writeFileSync(confinePath(join(dir, "processing-receipt.json"), { allowMissing: true }), JSON.stringify(payload.processing_receipt));
+			}
+			return textResult(payload, payload.ok === false);
+		});
 		return { jsonrpc: "2.0", id, result };
 	}
 	return { jsonrpc: "2.0", id, error: { code: -32601, message: `Method not found: ${method}` } };

@@ -88,14 +88,10 @@ test("media_transcribe degrades honestly without the whisper binary or model", (
 	withWorkspace((dir) => {
 		mkdirSync(join(dir, "audio"), { recursive: true });
 		writeFileSync(join(dir, "audio", "clip.mp4"), "fake audio content");
-		const res = callTool("media_transcribe", { input: "audio/clip.mp4" }, dir);
+		const res = callTool("media_transcribe", { input: "audio/clip.mp4" }, dir, { LAZYANTIGRAVITY_WHISPER_BIN: "/nonexistent-mcp-test-whisper" });
 		assert.equal(res.ok, false);
-		if (!binaryAvailable("whisper")) {
-			assert.match(res.error, /NOT INSTALLED/);
-			assert.ok(res.installHint, "install hint expected");
-		} else {
-			assert.match(res.error, /whisper model file not found/);
-		}
+		assert.match(res.error, /NOT INSTALLED/);
+		assert.ok(res.installHint, "install hint expected");
 	});
 });
 
@@ -103,13 +99,9 @@ test("media_transcribe_start degrades honestly and status reports unknown jobs",
 	withWorkspace((dir) => {
 		mkdirSync(join(dir, "audio"), { recursive: true });
 		writeFileSync(join(dir, "audio", "clip.mp4"), "fake audio content");
-		const res = callTool("media_transcribe_start", { input: "audio/clip.mp4" }, dir);
+		const res = callTool("media_transcribe_start", { input: "audio/clip.mp4" }, dir, { LAZYANTIGRAVITY_WHISPER_BIN: "/nonexistent-mcp-test-whisper" });
 		assert.equal(res.ok, false);
-		if (!binaryAvailable("whisper")) {
-			assert.match(res.error, /NOT INSTALLED/);
-		} else {
-			assert.match(res.error, /whisper model file not found/);
-		}
+		assert.match(res.error, /NOT INSTALLED/);
 		const st = callTool("media_transcribe_status", { jobId: "job-1-abc" }, dir);
 		assert.equal(st.ok, false);
 		assert.match(st.error, /no such job/);
