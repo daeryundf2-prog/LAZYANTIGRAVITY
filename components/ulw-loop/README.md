@@ -20,6 +20,24 @@ Codex plugin scaffold for durable repo-native multi-goal orchestration with embe
 
 Wave 1 is scaffold only. Command behavior lands in later waves.
 
+## Evidence Boundary
+
+Two record types exist and must not be conflated:
+
+- **Evidence envelopes** (`src/evidence-contract.ts`, `src/evidence-verifier.ts`)
+  are self-reported claims attached to a criterion. They carry
+  `commandsRun`/`commandAudits` and an optional `executionBinding`, but the
+  envelope alone proves nothing — a caller can fabricate its contents.
+- **Execution records** (`src/execution-records.ts`) are written by the host
+  side under `.omo/ulw-loop/runs/<runId>/executions/` at command execution
+  time, keyed by `(requestId, sessionId, toolCallId)` and never by evidence
+  content. `verifyExecutionRecords` accepts an evidence claim only when a
+  matching host-written record exists with identical binding fields, a zero
+  exit code, real timestamps, and command/stdout/stderr fingerprints.
+
+Receipts and drafts describe what a tool *claims* it did; execution records
+are the only trusted witness of what the host *actually ran*.
+
 ## Codex Plugin
 
 The plugin ships:
