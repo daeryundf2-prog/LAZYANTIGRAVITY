@@ -47,7 +47,7 @@ export async function finalizeReceipt(context, payload) {
 		schema_version: "1.0", case_id: context.args.case_id ?? null, evidence_id: context.args.evidence_id || randomUUID(), status, source, artifacts,
 		tool: { name: tool?.binary || context.name, version: tool?.version || "unknown" }, parameters,
 		started_at: context.startedAt, finished_at: new Date().toISOString(), exit_code: failedRun?.status ?? tool?.status ?? null,
-		warnings, limitations: ["Hashes identify bytes, not evidentiary authenticity; human review is pending", "Completion does not certify transcription accuracy or complete media coverage", ...(!tool?.version ? ["Tool version not measured"] : [])],
+		warnings, limitations: ["Hashes identify bytes, not evidentiary authenticity; human review is pending", "Completion does not certify transcription accuracy or complete media coverage", "Locally writable record, not an independent or third-party attestation", ...(!tool?.version ? ["Tool version not measured"] : [])],
 		review: { status: "pending", reviewer: null, reviewed_at: null },
 	};
 }
