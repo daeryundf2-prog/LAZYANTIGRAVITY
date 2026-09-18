@@ -5,6 +5,7 @@
 import { resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { assertFinalUrlSafe, fetchWithSafeRedirects, redactSecrets, validateSafeUrl } from "./lib/ssrf.js";
+import { readLimitedText, readLimitedJson } from "./lib/response-limit.js";
 
 // Startup guard (same contract as the other bundled servers).
 const pluginRootEnv = process.env["PLUGIN_ROOT"];
@@ -57,10 +58,12 @@ function stripHtml(html) {
 }
 
 function checkNetworkGate() {
-	if (process.env["LAZYANTIGRAVITY_RESEARCH_NETWORK"] !== "1") {
+	if (process.env.LAZYANTIGRAVITY_OFFLINE === "1" || process.env["LAZYANTIGRAVITY_RESEARCH_NETWORK"] !== "1") {
+		const offline = process.env.LAZYANTIGRAVITY_OFFLINE === "1";
 		return {
 			ok: false,
 			error:
+				(offline ? "LAZYANTIGRAVITY_OFFLINE=1 overrides all research network opt-ins; " : "") +
 				"research tools perform network egress and require the LAZYANTIGRAVITY_RESEARCH_NETWORK=1 " +
 				"environment opt-in (set it in mcp_config.json env for this server).",
 		};
@@ -95,7 +98,7 @@ async function webRead(args) {
 			},
 		}, 5, { dnsPin: true });
 		if (jinaRes.ok && jinaRes.response.ok) {
-			const text = await jinaRes.response.text();
+			const text = await readLimitedText(jinaRes.response);
 			if (text && text.trim().length > 0) {
 				const trimmed = text.trim();
 				// jina 프록시 우회 오해 방지: jina 최종 URL과 원본 targetUrl을 각각 검증한다.
@@ -130,7 +133,7 @@ async function webRead(args) {
 		if (!/text|html|json|xml|markdown/i.test(contentType)) {
 			return textResult({ ok: false, url: targetUrl, error: `Unsupported content-type: '${contentType}'` }, true);
 		}
-		const rawText = await directRes.response.text();
+		const rawText = await readLimitedText(directRes.response);
 		const clean = /html/i.test(contentType) ? stripHtml(rawText) : rawText.trim();
 		const finalCheck = await assertFinalUrlSafe(directRes.finalUrl, targetUrl);
 		if (!finalCheck.ok) return textResult({ ok: false, url: targetUrl, error: finalCheck.error }, true);
@@ -153,8 +156,8 @@ async function searchTavily(query, maxResults, key) {
 		headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT_API },
 		body: JSON.stringify({ api_key: key, query, max_results: maxResults, search_depth: "basic" }),
 	});
-	if (!res.ok) throw new Error(redactSecrets(`Tavily HTTP ${res.status}: ${await res.text()}`));
-	const json = await res.json();
+	if (!res.ok) throw new Error(redactSecrets(`Tavily HTTP ${res.status}: ${await readLimitedText(res)}`));
+	const json = await readLimitedJson(res);
 	return (json.results || []).map((r) => ({
 		title: r.title || "",
 		url: r.url || "",
@@ -168,8 +171,8 @@ async function searchBrave(query, maxResults, key) {
 		signal: AbortSignal.timeout(20000),
 		headers: { "X-Subscription-Token": key, Accept: "application/json", "User-Agent": USER_AGENT_API },
 	});
-	if (!res.ok) throw new Error(redactSecrets(`Brave HTTP ${res.status}: ${await res.text()}`));
-	const json = await res.json();
+	if (!res.ok) throw new Error(redactSecrets(`Brave HTTP ${res.status}: ${await readLimitedText(res)}`));
+	const json = await readLimitedJson(res);
 	return (json.web?.results || []).map((r) => ({
 		title: r.title || "",
 		url: r.url || "",
@@ -183,8 +186,8 @@ async function searchJina(query, maxResults, key) {
 		signal: AbortSignal.timeout(20000),
 		headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "User-Agent": USER_AGENT_API },
 	});
-	if (!res.ok) throw new Error(redactSecrets(`Jina Search HTTP ${res.status}: ${await res.text()}`));
-	const json = await res.json();
+	if (!res.ok) throw new Error(redactSecrets(`Jina Search HTTP ${res.status}: ${await readLimitedText(res)}`));
+	const json = await readLimitedJson(res);
 	return (json.data || []).slice(0, maxResults).map((r) => ({
 		title: r.title || "",
 		url: r.url || "",
@@ -199,7 +202,7 @@ async function searchDuckDuckGo(query, maxResults) {
 		headers: { "User-Agent": USER_AGENT_DIRECT },
 	});
 	if (!res.ok) throw new Error(`DuckDuckGo HTTP ${res.status}`);
-	const html = await res.text();
+	const html = await readLimitedText(res);
 	const results = [];
 	const regex = /<a\s+class="result__url"[^>]*href="([^"]+)"[^>]*>[\s\S]*?<a\s+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
 	let match;
@@ -247,10 +250,9 @@ async function webSearch(args) {
 			mode: modeStr,
 			high_fidelity: isHighFidelity,
 			grounding_chunks: results.map((r) => ({ title: r.title, url: r.url })),
-			grounding_supports: results.map((r, i) => ({
-				grounding_chunk_indices: [i],
-				confidence_score: Number((1.0 - dynamicThreshold * 0.5).toFixed(2)),
-			})),
+			grounding_supports: [],
+			confidence_status: "not_measured",
+			limitations: ["Search results are discovery candidates, not verified support for generated claims; caller thresholds do not measure confidence"],
 		},
 	});
 
@@ -374,7 +376,7 @@ async function fetchJson(args) {
 		if (!/text|html|json|xml|markdown/i.test(contentType)) {
 			return textResult({ ok: false, url: targetUrl, status: res.status, error: `Unsupported content-type: '${contentType}'` }, true);
 		}
-		const text = await res.text();
+		const text = await readLimitedText(res);
 		let data;
 		try {
 			data = JSON.parse(text);
@@ -517,9 +519,9 @@ function renderGroundingCitations(options) {
 	}
 
 	const validSupports = grounding_supports.filter((s) => {
-		if (s.chunkIndices.length === 0) return false;
+		if (!s.chunkIndices.some((i) => Number.isInteger(i) && grounding_chunks[i]?.url && /^https?:\/\//.test(grounding_chunks[i].url))) return false;
 		if (minConfidence <= 0.0) return true;
-		if (s.confidenceScores.length === 0) return true;
+		if (s.confidenceScores.length === 0 || s.confidenceScores.some((score) => !Number.isFinite(score) || score < 0 || score > 1)) return false;
 		const avg = s.confidenceScores.reduce((a, b) => a + b, 0) / s.confidenceScores.length;
 		return avg >= minConfidence;
 	});
@@ -535,7 +537,7 @@ function renderGroundingCitations(options) {
 		let spanEnd = -1;
 		const [sIdx, eIdx] = resolveOffsets(rawText, sup.startIndex, sup.endIndex, sup.text);
 
-		if (sIdx >= 0 && eIdx > sIdx && eIdx <= rawText.length) {
+		if (Number.isInteger(sIdx) && Number.isInteger(eIdx) && sIdx >= 0 && eIdx > sIdx && eIdx <= rawText.length && (!sup.text || rawText.slice(sIdx, eIdx).trim() === sup.text.trim())) {
 			insertPos = eIdx;
 			spanStart = sIdx;
 			spanEnd = eIdx;
@@ -578,17 +580,6 @@ function renderGroundingCitations(options) {
 		});
 	}
 
-	if (insertions.length === 0 && validSupports.length > 0) {
-		for (const sup of validSupports) {
-			for (const ci of sup.chunkIndices) {
-				if (ci >= 0 && ci < grounding_chunks.length) citedChunkIndices.add(ci);
-			}
-		}
-		if (citedChunkIndices.size > 0) {
-			mappedSupportCount = validSupports.length;
-			insertions.push({ pos: rawText.trimEnd().length, chunkIndices: Array.from(citedChunkIndices).sort((a, b) => a - b) });
-		}
-	}
 
 	const sortedCitedIndices = Array.from(citedChunkIndices).sort((a, b) => a - b);
 	const chunkToFootnoteNum = new Map();
@@ -673,6 +664,9 @@ function renderGroundingCitations(options) {
 
 	return {
 		ok: !abstention,
+		verification_status: "not_verified",
+		mapping_method: "caller_supplied_offsets_or_heuristic_text_match",
+		limitations: ["Source content was not fetched or verified; mapping coverage does not measure factual support", "Confidence values, if present, are caller supplied"],
 		high_fidelity_passed: highFidelityPassed,
 		abstention,
 		rendered_text: finalText,

@@ -93,6 +93,7 @@ function wrapIncomingMessage(res, body) {
 		status: res.statusCode,
 		statusText: res.statusMessage || "",
 		headers: { get: (name) => { const v = h[String(name).toLowerCase()]; return Array.isArray(v) ? v.join(", ") : (v ?? null); } },
+		body: new ReadableStream({ start(controller) { controller.enqueue(body); controller.close(); } }),
 		text: () => Promise.resolve(body.toString("utf8")),
 		json: () => Promise.resolve(JSON.parse(body.toString("utf8"))),
 	};
@@ -115,7 +116,18 @@ function pinnedRequest(url, { headers = {}, signal, pinnedAddrs }) {
 				: cb(null, pinned.address, pinned.family),
 		}, (res) => {
 			const chunks = [];
-			res.on("data", (c) => chunks.push(c));
+			let bytes = 0;
+			res.on("data", (c) => {
+				bytes += c.length;
+				if (bytes > 2 * 1024 * 1024) {
+					const error = new Error("Response exceeds byte limit");
+					res.destroy(error);
+					req.destroy(error);
+					reject(error);
+					return;
+				}
+				chunks.push(c);
+			});
 			res.on("end", () => resolve(wrapIncomingMessage(res, Buffer.concat(chunks))));
 			res.on("error", reject);
 		});
