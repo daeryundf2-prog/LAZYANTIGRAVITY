@@ -284,6 +284,8 @@ async function runSearch(args) {
 			} catch {
 				continue;
 			}
+			const langKey = napiLanguageKeyForFile(file);
+			if (!langKey || napi.Lang[langKey] === undefined) continue;
 			const structural = structuralMatches(napi, file, content, rawPattern);
 			if (structural !== null) {
 				matches.push(...structural);
@@ -331,6 +333,10 @@ async function runReplace(args) {
 	for (const file of collected.files) {
 		try {
 			const path = confinePath(file, { evidence: true, kind: "file" });
+			if (!isRegex) {
+				const langKey = napiLanguageKeyForFile(path);
+				if (!langKey || napi.Lang[langKey] === undefined) continue;
+			}
 			const original = readFileSync(path, "utf8");
 			let result;
 			if (isRegex) {

@@ -95,7 +95,7 @@ test("P1-2: ast-grep-mcp performs a real metavariable search over MCP", async ()
 			method: "tools/call",
 			params: {
 				name: "ast_grep_search",
-				arguments: { pattern: "# LazyAntigravity", language: "markdown" },
+				arguments: { pattern: "console.log($MSG)", language: "javascript" },
 			},
 		}),
 		encoding: "utf8",
@@ -106,7 +106,7 @@ test("P1-2: ast-grep-mcp performs a real metavariable search over MCP", async ()
 	const output = JSON.parse(res.stdout);
 	const parsed = JSON.parse(output.result.content[0].text);
 	assert.equal(parsed.ok, true);
-	assert.ok(parsed.totalMatches >= 1, "expected the README heading to match the $-pattern search");
+	assert.ok(parsed.totalMatches >= 1, "expected a real metavariable match in repository scripts");
 });
 
 test("P1-3: all TypeScript source modules adhere to <250 LOC ceiling", async () => {
