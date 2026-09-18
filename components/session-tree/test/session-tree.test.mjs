@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from "no
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { SessionTreeManager } from "../dist/tree-manager.js";
 
 const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
@@ -133,6 +133,12 @@ test("SessionTreeManager prune keeps the newest snapshot refs", () => {
 		assert.equal(result.kept.length, 2);
 		assert.equal(result.removed.length, 3);
 		assert.equal(refCount(), 2, "only the newest two refs must survive");
+		const graph = JSON.parse(readFileSync(join(tempDir, ".lazyantigravity/session-tree/nodes.json"), "utf8"));
+		for (const node of Object.values(graph.nodes)) {
+			const retained = spawnSync("git", ["rev-parse", `refs/lazyantigravity/history/${node.id}`], { cwd: tempDir, encoding: "utf8" });
+			assert.equal(retained.status, 0);
+			assert.equal(retained.stdout.trim(), node.gitSha);
+		}
 		// The graph keeps its history even after refs are pruned.
 		assert.equal(manager.renderAsciiTree().split("Snapshot").length - 1, 5);
 	} finally {
@@ -140,15 +146,52 @@ test("SessionTreeManager prune keeps the newest snapshot refs", () => {
 	}
 });
 
-test("concurrent sessions can snapshot without corrupting nodes.json", () => {
+test("fork refuses to overwrite tracked evidence", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "st-evidence-"));
+	try {
+		initGitRepo(tempDir);
+		const manager = new SessionTreeManager(tempDir);
+		const node = manager.snapshot("Baseline");
+		const state = join(tempDir, ".lazyantigravity/session-tree/nodes.json");
+		const before = readFileSync(state, "utf8");
+		assert.equal(spawnSync("git", ["add", ".lazyantigravity"], { cwd: tempDir }).status, 0);
+		assert.throws(() => manager.fork(node.id), /Fork refused/);
+		assert.equal(readFileSync(state, "utf8"), before);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("two pre-existing managers retain both nodes and the latest parent", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "st-managers-"));
+	try {
+		initGitRepo(tempDir);
+		const first = new SessionTreeManager(tempDir);
+		const second = new SessionTreeManager(tempDir);
+		const a = first.snapshot("First");
+		const b = second.snapshot("Second");
+		const graph = JSON.parse(readFileSync(join(tempDir, ".lazyantigravity", "session-tree", "nodes.json"), "utf8"));
+		assert.equal(Object.keys(graph.nodes).length, 2);
+		assert.equal(b.parentId, a.id);
+		assert.equal(first.getActiveNode().id, b.id);
+		const tree = spawnSync("git", ["ls-tree", "-r", "--name-only", b.gitSha], { cwd: tempDir, encoding: "utf8" });
+		assert.equal(tree.status, 0);
+		assert.doesNotMatch(tree.stdout, /\.lazyantigravity\/session-tree/);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("concurrent sessions can snapshot without corrupting nodes.json", async () => {
 	const tempDir = mkdtempSync(join(tmpdir(), "st-concurrent-"));
 	try {
 		initGitRepo(tempDir);
 		const cli = cliPath;
-		const procs = [1, 2, 3].map((i) =>
-			spawnSync("node", [cli, "snapshot", `Concurrent ${i}`], { cwd: tempDir, encoding: "utf8" }),
-		);
-		for (const p of procs) assert.equal(p.status, 0, p.stderr);
+		await Promise.all([1, 2, 3].map((i) => new Promise((resolve, reject) => {
+			const child = spawn(process.execPath, [cli, "snapshot", `Concurrent ${i}`], { cwd: tempDir, stdio: "ignore" });
+			child.once("error", reject);
+			child.once("close", (code) => code === 0 ? resolve() : reject(new Error(`Snapshot child exited ${code}`)));
+		})));
 		const graph = JSON.parse(readFileSync(join(tempDir, ".lazyantigravity", "session-tree", "nodes.json"), "utf8"));
 		assert.equal(Object.keys(graph.nodes).length, 3, "all three snapshots must persist intact");
 	} finally {

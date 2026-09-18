@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { LedgerEvent } from "./control-plane-types.js";
 import type { StrictEvidenceEnvelope } from "./evidence-contract.js";
+import { verifyExecutionRecords } from "./execution-records.js";
 
 export interface GroundTruthAuditResult {
 	readonly verified: boolean;
@@ -47,7 +48,7 @@ export function computeFileMtimeMs(filePath: string): number | null {
  */
 export function sanitizeEvidenceUrls(text: string): string {
 	if (!text) return text;
-	let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^\/\s]+)@([^\/\s]+)/g, "$1$2:***@$4");
+	let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^/\s]+)@([^/\s]+)/g, "$1$2:***@$4");
 	sanitized = sanitized.replace(
 		/([?&][a-zA-Z0-9_-]*(?:token|key|secret|password|passwd|pwd|sig|auth|credential)[a-zA-Z0-9_-]*=)[^&\s'")]+/gi,
 		"$1***",
@@ -74,7 +75,8 @@ export function verifyEvidenceGroundTruth(
 ): GroundTruthAuditResult {
 	const mismatchedFiles: string[] = [];
 	const invalidLineRanges: string[] = [];
-	const nonZeroExitCommands: string[] = [];
+	const nonZeroExitCommands: string[] = verifyExecutionRecords(repoRoot, evidence);
+	if (evidence.status !== "verified") nonZeroExitCommands.push("Evidence has not been verified");
 	const placeholderReceipts: string[] = [];
 	const staleReceipts: string[] = [];
 	const root = resolve(repoRoot);

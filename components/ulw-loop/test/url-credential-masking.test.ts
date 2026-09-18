@@ -17,9 +17,12 @@ describe("URL Credential and Token Masking", () => {
 	});
 
 	it("#given URL with compound query tokens and keys #when sanitizeEvidenceUrls runs #then masks all secret keys", () => {
-		const raw = "GET https://api.github.com/repos?client_secret=secret123&api_token=tok456&session_token=ses789&auth=xyz";
+		const raw =
+			"GET https://api.github.com/repos?client_secret=secret123&api_token=tok456&session_token=ses789&auth=xyz";
 		const sanitized = sanitizeEvidenceUrls(raw);
-		expect(sanitized).toBe("GET https://api.github.com/repos?client_secret=***&api_token=***&session_token=***&auth=***");
+		expect(sanitized).toBe(
+			"GET https://api.github.com/repos?client_secret=***&api_token=***&session_token=***&auth=***",
+		);
 		expect(sanitized).not.toContain("secret123");
 		expect(sanitized).not.toContain("tok456");
 		expect(sanitized).not.toContain("ses789");

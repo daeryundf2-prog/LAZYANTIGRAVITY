@@ -2,14 +2,6 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { getRunDir, readRunEvents } from "./control-plane.js";
 import { countFileSha256Pair } from "./evidence-draft-utils.js";
-/**
- * Scaffolds a strict evidence envelope from the run ledger so the agent only
- * has to verify (and fill command truths) instead of hand-assembling the
- * contract. Everything file-related is computed from the real disk; command
- * audits and the execution binding are placeholders the submitting agent is
- * accountable for — the checkpoint gate re-verifies every disk-verifiable
- * claim at submission time.
- */
 export async function buildEvidenceDraft(repoRoot, runId, goalId) {
     const events = await readRunEvents(repoRoot, runId);
     const completed = events.filter((e) => e.type === "agent.completed_reported");
@@ -37,27 +29,17 @@ export async function buildEvidenceDraft(repoRoot, runId, goalId) {
         warnings.push("none of the claimed files exist on disk yet — the draft cannot be submitted until they do.");
     }
     const envelope = {
-        status: "verified",
+        status: "not_checked",
+        unknowns: ["Command outcomes and execution binding require trusted host execution records."],
         summary: `Evidence draft for ${goalId ?? runId} — verify every claim before checkpointing.`,
         filesChanged,
         readRanges,
         fileChecksums,
         commandsRun,
-        commandAudits: commandsRun.map((command) => ({ command, exitCode: 0 })),
-        executionBinding: {
-            requestId: `draft-${Date.now().toString(36)}`,
-            runId,
-            sessionId: "draft-session",
-            toolCallId: `draft-${Math.random().toString(36).slice(2, 8)}`,
-            startedAt: new Date().toISOString(),
-            finishedAt: new Date().toISOString(),
-            stdoutFingerprint: "0".repeat(64),
-            stderrFingerprint: "0".repeat(64),
-            exitCode: 0,
-        },
+        commandAudits: commandsRun.map((command) => ({ command })),
     };
     if (commandsRun.length > 0) {
-        warnings.push("commandAudits are placeholders with exitCode 0 — they must reflect the real outcome of each command.");
+        warnings.push("commandAudits are placeholders without outcomes — obtain trusted records for each command before submission.");
     }
     warnings.push("the execution binding must match the run that actually produced this work.");
     const evidenceDir = join(getRunDir(repoRoot, runId), "..", "evidence");

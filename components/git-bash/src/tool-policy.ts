@@ -39,8 +39,12 @@ function matchesSchema(input: unknown, schema: JsonSchema): string | undefined {
 	return undefined;
 }
 
+export function normalizeShellToolName(toolName: string): string {
+	return /^(bash|shell|run_command|runcommand|terminal|execute|execute_command|exec_command|run_shell_command)$/i.test(toolName.trim()) ? "Bash" : toolName.trim();
+}
+
 export function validateToolInvocation(toolName: string, toolInput: unknown): ToolPolicyResult {
-	const name = toolName.trim();
+	const name = normalizeShellToolName(toolName);
 	if (!name) return { allowed: false, reason: "Tool name is required." };
 	const schema = TOOL_SCHEMAS[name];
 	if (!schema) return { allowed: false, reason: `Tool is not allowlisted: ${name}` };

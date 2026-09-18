@@ -1,5 +1,6 @@
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, } from "node:fs";
 import { join } from "node:path";
+import { factMetadata } from "./metadata.js";
 const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_RETRY_MS = 10;
 function sleepSync(ms) {
@@ -73,6 +74,8 @@ export function readFacts(filePath) {
                         timestamp: item.timestamp || Date.now(),
                         category: item.category || "fact",
                         content: item.content.trim(),
+                        verificationStatus: "unverified",
+                        ...factMetadata(item, item.content, path),
                     });
                 }
             }
@@ -82,12 +85,13 @@ export function readFacts(filePath) {
     catch { }
     return facts;
 }
-export function saveFact(content, category = "fact", filePath) {
+export function saveFact(content, category = "fact", filePath, metadata) {
     const trimmed = content.trim();
     if (trimmed.length === 0)
         return null;
     const path = filePath ?? getMemoryFilePath();
     return withFileLock(path, () => {
+        const validatedMetadata = factMetadata(metadata, trimmed, path, true);
         const existing = readFacts(path);
         // Deduplication check
         const isDuplicate = existing.some((f) => f.content.toLowerCase() === trimmed.toLowerCase());
@@ -98,6 +102,8 @@ export function saveFact(content, category = "fact", filePath) {
             timestamp: Date.now(),
             category,
             content: trimmed,
+            verificationStatus: "unverified",
+            ...validatedMetadata,
         };
         appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
         return record;
@@ -109,7 +115,7 @@ export function formatActiveMemoryContext(facts) {
     const lines = [
         "<project-active-memory>",
         "# Persistent Project Facts & Working Memory",
-        "These verified project facts, conventions, and architectural gotchas were preserved across previous sessions:",
+        "These editable working facts, conventions, and architectural gotchas were preserved across previous sessions. They are not verified evidence; review them against current sources before relying on them:",
     ];
     for (const fact of facts.slice(-20)) {
         const prefix = fact.category === "gotcha"

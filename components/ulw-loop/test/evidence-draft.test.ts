@@ -16,7 +16,7 @@ afterEach(async () => {
 });
 
 describe("evidence-draft", () => {
-	it("scaffolds a verified envelope from the ledger that passes ground-truth verification", async () => {
+	it("scaffolds an unchecked envelope without fabricated execution outcomes", async () => {
 		testDir = mkdtempSync(join(tmpdir(), "evidence-draft-"));
 		await mkdir(join(testDir, "src"), { recursive: true });
 		await writeFile(join(testDir, "src", "auth.ts"), "export const auth = true;\n", "utf8");
@@ -42,7 +42,10 @@ describe("evidence-draft", () => {
 		const validation = validateStrictEvidence(draft.envelope);
 		expect(validation.valid).toBe(true);
 		const truth = verifyEvidenceGroundTruth(testDir, draft.envelope);
-		expect(truth.verified).toBe(true);
+		expect(truth.verified).toBe(false);
+		expect(draft.envelope.status).toBe("not_checked");
+		expect(draft.envelope.executionBinding).toBeUndefined();
+		expect(draft.envelope.commandAudits).toEqual([{ command: "npm test" }]);
 		expect(draft.envelope.fileChecksums?.[0]?.file).toBe("src/auth.ts");
 		expect(draft.warnings.some((w) => w.includes("commandAudits are placeholders"))).toBe(true);
 		expect(existsSync(draft.draftPath)).toBe(true);

@@ -9,11 +9,14 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { factMetadata, type FactMetadata } from "./metadata.js";
+export type { FactMetadata, FactReview } from "./metadata.js";
 
 const LOCK_TIMEOUT_MS = 5_000;
 const LOCK_RETRY_MS = 10;
 
-export interface FactRecord {
+export interface FactRecord extends FactMetadata {
+	verificationStatus?: "unverified";
 	id: string;
 	timestamp: number;
 	category: "fact" | "preference" | "gotcha" | "rule";
@@ -87,6 +90,8 @@ export function readFacts(filePath?: string): FactRecord[] {
 						timestamp: item.timestamp || Date.now(),
 						category: item.category || "fact",
 						content: item.content.trim(),
+						verificationStatus: "unverified",
+						...factMetadata(item, item.content, path),
 					});
 				}
 			} catch {}
@@ -99,12 +104,14 @@ export function saveFact(
 	content: string,
 	category: FactRecord["category"] = "fact",
 	filePath?: string,
+	metadata?: FactMetadata,
 ): FactRecord | null {
 	const trimmed = content.trim();
 	if (trimmed.length === 0) return null;
 
 	const path = filePath ?? getMemoryFilePath();
 	return withFileLock(path, () => {
+		const validatedMetadata = factMetadata(metadata, trimmed, path, true);
 		const existing = readFacts(path);
 
 		// Deduplication check
@@ -118,6 +125,8 @@ export function saveFact(
 			timestamp: Date.now(),
 			category,
 			content: trimmed,
+			verificationStatus: "unverified",
+			...validatedMetadata,
 		};
 
 		appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
@@ -131,7 +140,7 @@ export function formatActiveMemoryContext(facts: FactRecord[]): string {
 	const lines = [
 		"<project-active-memory>",
 		"# Persistent Project Facts & Working Memory",
-		"These verified project facts, conventions, and architectural gotchas were preserved across previous sessions:",
+		"These editable working facts, conventions, and architectural gotchas were preserved across previous sessions. They are not verified evidence; review them against current sources before relying on them:",
 	];
 
 	for (const fact of facts.slice(-20)) {

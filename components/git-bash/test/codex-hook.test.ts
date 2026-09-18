@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
@@ -68,6 +68,18 @@ function captureStdout(): { readonly stdout: Writable; readonly read: () => stri
 }
 
 describe("validateToolInvocation", () => {
+	it.each(["Bash", "bash", "shell", "Shell", "run_command", "RunCommand", "terminal", "Terminal", "execute", "Execute", "execute_command", "exec_command", "run_shell_command"])("preserves policy and hook registration for %s", async (name) => {
+		for (const path of ["../hooks/hooks.json", "../../../hooks.json"]) {
+			const hooks = JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+			expect(hooks.hooks.PreToolUse.some((entry: { matcher?: string }) => entry.matcher !== ".*" && new RegExp(entry.matcher ?? "^$").test(name))).toBe(true);
+		}
+		expect(validateToolInvocation(name, { command: "git status" }).allowed).toBe(true);
+		expect(validateToolInvocation(name, { command: "sudo true" }).allowed).toBe(false);
+		expect(validateToolInvocation(name, { command: "pwd", unexpected: true }).allowed).toBe(false);
+		const capture = captureStdout();
+		await runGitBashHookCli(Readable.from([JSON.stringify({ ...preToolPayload(name), tool_input: { command: "git reset --hard" } })]), capture.stdout, "pre-tool-use", { platform: "linux", env: {} });
+		expect(JSON.parse(capture.read()).hookSpecificOutput.permissionDecision).toBe("deny");
+	});
 	it("denies destructive commands and accepts ordinary commands", () => {
 		expect(validateToolInvocation("Bash", { command: "git status" }).allowed).toBe(true);
 		expect(validateToolInvocation("Bash", { command: "git reset --hard HEAD" }).allowed).toBe(false);
@@ -149,7 +161,7 @@ describe("applyGitBashPreToolUseReminder", () => {
 		const pluginDataRoot = createTemporaryDirectory("omo-git-bash-hook-");
 
 		// when
-		const output = applyGitBashPreToolUseReminder(preToolPayload("exec_command"), {
+		const output = applyGitBashPreToolUseReminder(preToolPayload("Read"), {
 			env: windowsEnv(),
 			platform: "linux",
 			pluginDataRoot,

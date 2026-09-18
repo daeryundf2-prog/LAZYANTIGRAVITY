@@ -23,7 +23,8 @@ export function createShadowSnapshot(label, cwd = process.cwd()) {
         if (headTree) {
             runGit(["read-tree", headTree], cwd, true, gitEnv);
         }
-        runGit(["add", "-A", "--", "."], cwd, true, gitEnv);
+        runGit(["add", "-A", "--", ".", ":(exclude).lazyantigravity", ":(exclude).lazycodex", ":(exclude).omo"], cwd, true, gitEnv);
+        runGit(["rm", "-r", "--cached", "--ignore-unmatch", "--", ".lazyantigravity", ".lazycodex", ".omo"], cwd, true, gitEnv);
         const treeSha = runGit(["write-tree"], cwd, true, gitEnv);
         // Commit tree with parent HEAD
         let headSha = "";
@@ -48,6 +49,10 @@ export function createShadowSnapshot(label, cwd = process.cwd()) {
     }
 }
 export function restoreShadowSnapshot(commitSha, cwd = process.cwd()) {
-    // Checkout tree without changing branch
+    const protectedPaths = [".lazyantigravity", ".lazycodex", ".omo"];
+    const tracked = runGit(["ls-files", "--", ...protectedPaths], cwd);
+    const snapshot = runGit(["ls-tree", "-r", "--name-only", commitSha, "--", ...protectedPaths], cwd);
+    if (tracked || snapshot)
+        throw new Error("Fork refused: tracked evidence or state directories must not be restored or removed");
     runGit(["read-tree", "-u", "--reset", commitSha], cwd);
 }

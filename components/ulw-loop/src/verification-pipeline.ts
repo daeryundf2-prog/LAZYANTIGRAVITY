@@ -193,7 +193,9 @@ export function createVerificationContext(params: {
 		`${params.objective} ${params.evidence}`,
 	);
 	const isPub = /\b(release|publish|deploy|production|public)\b/i.test(`${params.objective} ${params.evidence}`);
-	const isDest = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(`${params.objective} ${params.evidence}`);
+	const isDest = /\b(delete|remove|destroy|drop|truncate|destructive)\b/i.test(
+		`${params.objective} ${params.evidence}`,
+	);
 	let riskLevel: "low" | "medium" | "high" = "low";
 	if (
 		isSec ||

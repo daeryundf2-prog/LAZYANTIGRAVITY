@@ -10,6 +10,7 @@ type JsonSchema = {
     }>;
     additionalProperties: boolean;
 };
+export declare function normalizeShellToolName(toolName: string): string;
 export declare function validateToolInvocation(toolName: string, toolInput: unknown): ToolPolicyResult;
 export declare function getToolPolicySchema(toolName: string): JsonSchema | undefined;
 export {};

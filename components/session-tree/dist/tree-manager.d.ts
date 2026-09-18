@@ -5,7 +5,7 @@ export declare class SessionTreeManager {
     private cwd;
     constructor(cwd?: string);
     private load;
-    private save;
+    private transaction;
     snapshot(label: string, metadata?: Record<string, unknown>): TreeNode;
     fork(nodeId: string): TreeNode;
     prune(keep: number): {

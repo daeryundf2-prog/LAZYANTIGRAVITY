@@ -3,9 +3,9 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import {
+	isPostCompactPendingState,
 	type PostCompactPendingKind,
 	type PostCompactPendingState,
-	isPostCompactPendingState,
 	postCompactKindState,
 	postCompactPendingKinds,
 	postCompactRecoveringKinds,

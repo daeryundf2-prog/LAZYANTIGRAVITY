@@ -81,8 +81,10 @@ function parseCommandAudits(rawAudits) {
             const stderrFingerprint = typeof record["stderrFingerprint"] === "string"
                 ? record["stderrFingerprint"].trim().toLowerCase()
                 : undefined;
+            const executionBinding = parseExecutionBinding(record["executionBinding"]);
             result.push({
                 command,
+                ...(executionBinding !== undefined ? { executionBinding } : {}),
                 ...(exitCode !== undefined ? { exitCode } : {}),
                 ...(outputSnippet !== undefined ? { outputSnippet } : {}),
                 ...(stdoutFingerprint !== undefined ? { stdoutFingerprint } : {}),
@@ -127,20 +129,32 @@ export function validateStrictEvidence(evidence) {
     // Rule 1: 'verified' evidence must NOT contain any unread ranges, unknowns, or inferences
     if (status === "verified") {
         if (unreadRanges.length > 0) {
-            return { valid: false, error: `Evidence marked as 'verified' cannot contain unreadRanges (${unreadRanges.length} found). Mark as 'partial' instead.` };
+            return {
+                valid: false,
+                error: `Evidence marked as 'verified' cannot contain unreadRanges (${unreadRanges.length} found). Mark as 'partial' instead.`,
+            };
         }
         if (unknowns.length > 0) {
-            return { valid: false, error: `Evidence marked as 'verified' cannot contain unknowns (${unknowns.length} found). Mark as 'partial' or resolve unknowns.` };
+            return {
+                valid: false,
+                error: `Evidence marked as 'verified' cannot contain unknowns (${unknowns.length} found). Mark as 'partial' or resolve unknowns.`,
+            };
         }
         if (inferences.length > 0) {
-            return { valid: false, error: `Evidence marked as 'verified' cannot contain inferences (${inferences.length} found). Mark as 'inference' or verify factually.` };
+            return {
+                valid: false,
+                error: `Evidence marked as 'verified' cannot contain inferences (${inferences.length} found). Mark as 'inference' or verify factually.`,
+            };
         }
     }
     // Rule 2: 'partial', 'not_checked', 'inference' evidence MUST explicitly document gaps
     if (status === "partial" || status === "not_checked" || status === "inference") {
         const hasGapsDocumented = unreadRanges.length > 0 || unknowns.length > 0 || inferences.length > 0;
         if (!hasGapsDocumented) {
-            return { valid: false, error: `Evidence marked as '${status}' must explicitly document at least one unreadRange, unknown, or inference gap.` };
+            return {
+                valid: false,
+                error: `Evidence marked as '${status}' must explicitly document at least one unreadRange, unknown, or inference gap.`,
+            };
         }
     }
     const executionBinding = parseExecutionBinding(raw["executionBinding"]);

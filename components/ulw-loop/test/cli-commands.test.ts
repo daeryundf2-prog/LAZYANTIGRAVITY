@@ -4,10 +4,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { ulwLoopCommand } from "../src/cli-commands.ts";
 import { appendRunEvent } from "../src/control-plane.js";
 import { ULW_LOOP_AGGREGATE_CODEX_OBJECTIVE } from "../src/goal-status.js";
+import { executeFixtureCommands } from "./trusted-execution-fixture.js";
 
 let testDir: string;
 let out: string[];
@@ -294,21 +294,7 @@ describe("ulwLoopCommand checkpoint", () => {
 				{ file: "test/auth.test.ts", sha256: sha256("test/auth.test.ts") },
 			],
 			commandsRun: ["npm test", "npm run build"],
-			commandAudits: [
-				{ command: "npm test", exitCode: 0 },
-				{ command: "npm run build", exitCode: 0 },
-			],
-			executionBinding: {
-				requestId: "req-accept-1",
-				runId: "default-run",
-				sessionId: "session-accept-1",
-				toolCallId: "call-accept-1",
-				startedAt: new Date().toISOString(),
-				finishedAt: new Date().toISOString(),
-				stdoutFingerprint: "a".repeat(64),
-				stderrFingerprint: "b".repeat(64),
-				exitCode: 0,
-			},
+			...(await executeFixtureCommands(testDir)),
 		};
 
 		expect(

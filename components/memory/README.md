@@ -17,6 +17,14 @@ flowchart LR
 
 ---
 
+## Source and review metadata
+
+`saveFact(content, category, filePath, metadata?)` accepts optional `source` text and `review` metadata. Saved and loaded facts always have `verificationStatus: "unverified"`, including legacy records claiming verified status. Review metadata never promotes a fact to verified evidence.
+
+A review requires `reviewer`, `reviewedAt`, `decision` (`approved` or `rejected`), and `evidence: { file, sha256 }`. The evidence is a JSON receipt inside the facts file's directory, bound to the same reviewer, timestamp, decision, and `contentSha256` of the trimmed UTF-8 fact. Missing, mismatched, future-dated, oversized, or escaping receipts are rejected on save; invalid review metadata is discarded on read without losing the working fact. Duplicate saves cannot bypass review validation.
+
+This is local provenance, not authenticated reviewer identity: anyone able to rewrite both facts and receipts is outside this trust boundary. Source text is also caller-supplied context, not verification. The `remember` CLI saves unreviewed facts; metadata is available through the library API.
+
 ## 사용법 (Usage)
 
 ### 1. 사실(Fact) 및 제약 사항 수동 기억하기

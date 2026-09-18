@@ -6,14 +6,22 @@
 export type EvidenceStatus = "verified" | "partial" | "not_checked" | "inference";
 export type EvidenceReceiptFailure = "invalid" | "placeholder" | "stale" | null;
 
-export interface EvidenceRange { readonly file: string; readonly startLine?: number; readonly endLine?: number; }
-export interface FileChecksum { readonly file: string; readonly sha256: string; }
+export interface EvidenceRange {
+	readonly file: string;
+	readonly startLine?: number;
+	readonly endLine?: number;
+}
+export interface FileChecksum {
+	readonly file: string;
+	readonly sha256: string;
+}
 export interface CommandExecutionAudit {
 	readonly command: string;
 	readonly exitCode?: number;
 	readonly outputSnippet?: string;
 	readonly stdoutFingerprint?: string;
 	readonly stderrFingerprint?: string;
+	readonly executionBinding?: ExecutionBinding;
 }
 export interface ExecutionBinding {
 	readonly requestId: string;
@@ -130,8 +138,10 @@ function parseCommandAudits(rawAudits: unknown): CommandExecutionAudit[] {
 				typeof record["stderrFingerprint"] === "string"
 					? record["stderrFingerprint"].trim().toLowerCase()
 					: undefined;
+			const executionBinding = parseExecutionBinding(record["executionBinding"]);
 			result.push({
 				command,
+				...(executionBinding !== undefined ? { executionBinding } : {}),
 				...(exitCode !== undefined ? { exitCode } : {}),
 				...(outputSnippet !== undefined ? { outputSnippet } : {}),
 				...(stdoutFingerprint !== undefined ? { stdoutFingerprint } : {}),
@@ -185,13 +195,22 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 	// Rule 1: 'verified' evidence must NOT contain any unread ranges, unknowns, or inferences
 	if (status === "verified") {
 		if (unreadRanges.length > 0) {
-			return { valid: false, error: `Evidence marked as 'verified' cannot contain unreadRanges (${unreadRanges.length} found). Mark as 'partial' instead.` };
+			return {
+				valid: false,
+				error: `Evidence marked as 'verified' cannot contain unreadRanges (${unreadRanges.length} found). Mark as 'partial' instead.`,
+			};
 		}
 		if (unknowns.length > 0) {
-			return { valid: false, error: `Evidence marked as 'verified' cannot contain unknowns (${unknowns.length} found). Mark as 'partial' or resolve unknowns.` };
+			return {
+				valid: false,
+				error: `Evidence marked as 'verified' cannot contain unknowns (${unknowns.length} found). Mark as 'partial' or resolve unknowns.`,
+			};
 		}
 		if (inferences.length > 0) {
-			return { valid: false, error: `Evidence marked as 'verified' cannot contain inferences (${inferences.length} found). Mark as 'inference' or verify factually.` };
+			return {
+				valid: false,
+				error: `Evidence marked as 'verified' cannot contain inferences (${inferences.length} found). Mark as 'inference' or verify factually.`,
+			};
 		}
 	}
 
@@ -199,7 +218,10 @@ export function validateStrictEvidence(evidence: unknown): EvidenceValidationRes
 	if (status === "partial" || status === "not_checked" || status === "inference") {
 		const hasGapsDocumented = unreadRanges.length > 0 || unknowns.length > 0 || inferences.length > 0;
 		if (!hasGapsDocumented) {
-			return { valid: false, error: `Evidence marked as '${status}' must explicitly document at least one unreadRange, unknown, or inference gap.` };
+			return {
+				valid: false,
+				error: `Evidence marked as '${status}' must explicitly document at least one unreadRange, unknown, or inference gap.`,
+			};
 		}
 	}
 

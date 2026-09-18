@@ -22,6 +22,7 @@ function isOptInFlag(value: string | undefined): boolean {
 }
 
 export function isTelemetryOptedIn(): boolean {
+  if (process.env["LAZYANTIGRAVITY_OFFLINE"] === "1") return false;
   if (
     isOptInFlag(process.env["OMO_SEND_ANONYMOUS_TELEMETRY"]) ||
     isOptInFlag(process.env["OMO_CODEX_SEND_ANONYMOUS_TELEMETRY"]) ||

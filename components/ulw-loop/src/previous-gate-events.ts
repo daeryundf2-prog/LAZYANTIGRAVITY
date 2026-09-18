@@ -1,4 +1,4 @@
-import { reconcileCheckpointSnapshot, type CheckpointQualityGateResult } from "./checkpoint-reconciliation.js";
+import { type CheckpointQualityGateResult, reconcileCheckpointSnapshot } from "./checkpoint-reconciliation.js";
 import { appendRunEvent } from "./control-plane.js";
 import type { LedgerEvent, QualityEvidenceEnvelope } from "./control-plane-types.js";
 import { assertGroundTruthEvidence } from "./evidence-completion-gate.js";

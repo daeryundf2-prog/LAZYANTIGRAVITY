@@ -1,7 +1,9 @@
 import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { realpathSync } from "node:fs";
 import { promisify } from "node:util";
 import type { ExecutionBinding } from "./evidence-contract.js";
+import { executionCommand, persistExecutionRecord } from "./execution-records.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -52,7 +54,7 @@ export async function executeHostCommand(request: HostExecutionRequest): Promise
 		exitCode = typeof failure.code === "number" ? failure.code : 1;
 	}
 	const finishedAt = new Date().toISOString();
-	return {
+	const result: HostExecutionResult = {
 		stdout,
 		stderr,
 		exitCode,
@@ -68,6 +70,12 @@ export async function executeHostCommand(request: HostExecutionRequest): Promise
 			stderrFingerprint: fingerprint(stderr),
 		},
 	};
+	persistExecutionRecord({
+		workspaceRoot: realpathSync(request.cwd),
+		commandFingerprint: fingerprint(executionCommand(request.command, request.args ?? [])),
+		binding: result.binding,
+	});
+	return result;
 }
 
 export function fingerprintOutput(value: string): string {

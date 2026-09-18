@@ -14,6 +14,8 @@ function isOptInFlag(value) {
     return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 export function isTelemetryOptedIn() {
+    if (process.env["LAZYANTIGRAVITY_OFFLINE"] === "1")
+        return false;
     if (isOptInFlag(process.env["OMO_SEND_ANONYMOUS_TELEMETRY"]) ||
         isOptInFlag(process.env["OMO_CODEX_SEND_ANONYMOUS_TELEMETRY"]) ||
         isOptInFlag(process.env["LAZYANTIGRAVITY_TELEMETRY_OPT_IN"])) {

@@ -1,6 +1,8 @@
 import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { realpathSync } from "node:fs";
 import { promisify } from "node:util";
+import { executionCommand, persistExecutionRecord } from "./execution-records.js";
 const execFileAsync = promisify(execFile);
 function fingerprint(value) {
     return createHash("sha256").update(value, "utf8").digest("hex");
@@ -30,7 +32,7 @@ export async function executeHostCommand(request) {
         exitCode = typeof failure.code === "number" ? failure.code : 1;
     }
     const finishedAt = new Date().toISOString();
-    return {
+    const result = {
         stdout,
         stderr,
         exitCode,
@@ -46,6 +48,12 @@ export async function executeHostCommand(request) {
             stderrFingerprint: fingerprint(stderr),
         },
     };
+    persistExecutionRecord({
+        workspaceRoot: realpathSync(request.cwd),
+        commandFingerprint: fingerprint(executionCommand(request.command, request.args ?? [])),
+        binding: result.binding,
+    });
+    return result;
 }
 export function fingerprintOutput(value) {
     return fingerprint(value);

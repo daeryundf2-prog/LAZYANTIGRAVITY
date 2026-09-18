@@ -19,6 +19,7 @@ export interface CommandExecutionAudit {
     readonly outputSnippet?: string;
     readonly stdoutFingerprint?: string;
     readonly stderrFingerprint?: string;
+    readonly executionBinding?: ExecutionBinding;
 }
 export interface ExecutionBinding {
     readonly requestId: string;

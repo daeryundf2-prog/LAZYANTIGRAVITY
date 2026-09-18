@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { verifyExecutionRecords } from "./execution-records.js";
 export function computeFileSha256(filePath) {
     try {
         if (!existsSync(filePath))
@@ -32,7 +33,7 @@ export function computeFileMtimeMs(filePath) {
 export function sanitizeEvidenceUrls(text) {
     if (!text)
         return text;
-    let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^\/\s]+)@([^\/\s]+)/g, "$1$2:***@$4");
+    let sanitized = text.replace(/(https?:\/\/)([^:/\s]+):([^/\s]+)@([^/\s]+)/g, "$1$2:***@$4");
     sanitized = sanitized.replace(/([?&][a-zA-Z0-9_-]*(?:token|key|secret|password|passwd|pwd|sig|auth|credential)[a-zA-Z0-9_-]*=)[^&\s'")]+/gi, "$1***");
     sanitized = sanitized.replace(/(\bAuthorization:\s*Bearer\s+)[^\s'")]+/gi, "$1***");
     return sanitized;
@@ -51,7 +52,9 @@ export function countFileLines(filePath) {
 export function verifyEvidenceGroundTruth(repoRoot, evidence, events, options) {
     const mismatchedFiles = [];
     const invalidLineRanges = [];
-    const nonZeroExitCommands = [];
+    const nonZeroExitCommands = verifyExecutionRecords(repoRoot, evidence);
+    if (evidence.status !== "verified")
+        nonZeroExitCommands.push("Evidence has not been verified");
     const placeholderReceipts = [];
     const staleReceipts = [];
     const root = resolve(repoRoot);

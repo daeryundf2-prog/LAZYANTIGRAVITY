@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { validateToolInvocation } from "./tool-policy.js";
+import { normalizeShellToolName, validateToolInvocation } from "./tool-policy.js";
 const BASH_TOOL_NAME = "Bash";
 const REMINDER = "On Windows, prefer the OMO git_bash MCP for shell commands before using built-in exec_command. Use exec_command only when git_bash is unavailable or for non-shell operations.";
 export function parsePreToolUsePayload(raw) {
@@ -34,7 +34,7 @@ export function parsePostCompactPayload(raw) {
 export function applyGitBashPreToolUseReminder(payload, options = {}) {
     if (payload.hook_event_name !== "PreToolUse")
         return "";
-    if (payload.tool_name !== BASH_TOOL_NAME)
+    if (normalizeShellToolName(payload.tool_name) !== BASH_TOOL_NAME)
         return "";
     if (!isWindowsHost(options))
         return "";

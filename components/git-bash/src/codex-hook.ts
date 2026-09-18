@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { validateToolInvocation } from "./tool-policy.js";
+import { normalizeShellToolName, validateToolInvocation } from "./tool-policy.js";
 
 export interface PreToolUsePayload {
 	readonly cwd: string;
@@ -66,7 +66,7 @@ export function parsePostCompactPayload(raw: string): PostCompactPayload | null 
 
 export function applyGitBashPreToolUseReminder(payload: PreToolUsePayload, options: GitBashHookOptions = {}): string {
 	if (payload.hook_event_name !== "PreToolUse") return "";
-	if (payload.tool_name !== BASH_TOOL_NAME) return "";
+	if (normalizeShellToolName(payload.tool_name) !== BASH_TOOL_NAME) return "";
 	if (!isWindowsHost(options)) return "";
 
 	const markerPath = reminderMarkerPath(payload.session_id, options.pluginDataRoot);
