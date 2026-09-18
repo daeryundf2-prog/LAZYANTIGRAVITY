@@ -61,6 +61,13 @@ const BINARY_SPECS = {
 	ytdlp: { candidates: ["yt-dlp"], versionArg: "--version", hint: "brew install yt-dlp  |  pip install yt-dlp" },
 };
 const binaryCache = new Map();
+const versionCache = new Map();
+
+function parseToolVersion(stdout) {
+	const firstLine = String(stdout || "").split("\n")[0] || "";
+	const match = /(\d+\.\d+[\d.]*)/.exec(firstLine);
+	return match ? match[1] : firstLine.trim().slice(0, 80) || null;
+}
 
 function findBinary(kind) {
 	if (binaryCache.has(kind)) return binaryCache.get(kind);
@@ -75,6 +82,7 @@ function findBinary(kind) {
 		const res = spawnSync(candidate, [spec.versionArg], { encoding: "utf8", timeout: 15000, input: "" });
 		if (res.status === 0) {
 			found = candidate;
+			versionCache.set(candidate, parseToolVersion(res.stdout || res.stderr));
 			break;
 		}
 	}
@@ -126,7 +134,7 @@ function truncate(text, max = MAX_OUTPUT_CHARS) {
 async function runBinary(binary, args, timeoutMs) {
 	const result = await runBoundedBinary(binary, args, timeoutMs);
 	const context = processingContext.getStore();
-	if (context) context.runs.push({ ...result, binary });
+	if (context) context.runs.push({ ...result, binary, version: versionCache.get(binary) ?? null });
 	return result;
 }
 
@@ -620,11 +628,30 @@ function transcribeValidation(args) {
 	return { confined, model };
 }
 
+const MAX_BACKGROUND_JOBS = 4;
+
+function countRunningJobs(jobsRoot) {
+	let running = 0;
+	if (!existsSync(jobsRoot)) return 0;
+	for (const entry of readdirSync(jobsRoot, { withFileTypes: true })) {
+		if (!entry.isDirectory()) continue;
+		try {
+			const st = JSON.parse(readFileSync(join(jobsRoot, entry.name, "status.json"), "utf8"));
+			if (st.status === "running") running++;
+		} catch { /* unreadable state does not count as running */ }
+	}
+	return running;
+}
+
 async function mediaTranscribeStart(args) {
 	const check = transcribeValidation(args);
 	if ("content" in check) return check; // an error textResult
+	const jobsRoot = mediaJobsDir();
+	if (countRunningJobs(jobsRoot) >= MAX_BACKGROUND_JOBS) {
+		return textResult({ ok: false, error: `Too many running transcription jobs (max ${MAX_BACKGROUND_JOBS}). Poll media_transcribe_status or run media_cleanup first.` }, true);
+	}
 	const jobId = `job-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const jobDir = join(mediaJobsDir(), jobId);
+	const jobDir = join(jobsRoot, jobId);
 	mkdirSync(jobDir, { recursive: true, mode: 0o700 });
 	writeFileSync(
 		join(jobDir, "status.json"),

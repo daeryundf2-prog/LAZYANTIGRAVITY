@@ -38,9 +38,14 @@ export async function finalizeReceipt(context, payload) {
 	if (payload.status === "running") status = "not_measured";
 	if (!source.sha256 && status === "complete") { status = "partial"; warnings.push("Source hash not measured"); }
 	const tool = context.runs.at(-1);
+	const parameters = { ...context.args };
+	if (parameters.model) {
+		try { parameters.model_sha256 = (await hashFile(parameters.model)).sha256; }
+		catch { parameters.model_sha256 = null; }
+	}
 	return {
 		schema_version: "1.0", case_id: context.args.case_id ?? null, evidence_id: context.args.evidence_id || randomUUID(), status, source, artifacts,
-		tool: { name: tool?.binary || context.name, version: tool?.version || "unknown" }, parameters: context.args,
+		tool: { name: tool?.binary || context.name, version: tool?.version || "unknown" }, parameters,
 		started_at: context.startedAt, finished_at: new Date().toISOString(), exit_code: failedRun?.status ?? tool?.status ?? null,
 		warnings, limitations: ["Hashes identify bytes, not evidentiary authenticity; human review is pending", "Completion does not certify transcription accuracy or complete media coverage", ...(!tool?.version ? ["Tool version not measured"] : [])],
 		review: { status: "pending", reviewer: null, reviewed_at: null },
