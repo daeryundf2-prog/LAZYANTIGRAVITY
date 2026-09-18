@@ -13,7 +13,7 @@ function runCheck(repoRoot) {
 	return spawnSync(process.execPath, [SCRIPT], {
 		encoding: "utf8",
 		timeout: 30000,
-		env: { ...process.env, UPDATE_CHECK_REPO_ROOT: repoRoot },
+		env: { ...process.env, UPDATE_CHECK_REPO_ROOT: repoRoot, LAZYANTIGRAVITY_UPDATE_CHECK: "1", LAZYANTIGRAVITY_OFFLINE: "0" },
 	});
 }
 

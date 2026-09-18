@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { stripSensitiveData } from "../components/ulw-loop/dist/sensitive-data-scrubber.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -156,10 +157,10 @@ async function main() {
 					const target = commandArgs.length > 0
 						? String(commandArgs[commandArgs.length - 1]).split("/").pop()
 						: command.split("/").pop();
-					recordFailureEvent({
+					recordFailureEvent(stripSensitiveData({
 						toolName: `hook:${target || command}`,
 						errorMessage: stderrData || `hook exited with code ${code}`,
-					}, process.cwd());
+					}), process.cwd());
 				})
 				.catch(() => {})
 				.finally(enforcePolicy);

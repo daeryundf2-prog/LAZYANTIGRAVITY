@@ -145,7 +145,7 @@ test("#given aggregate OMO plugin is enabled #when hooks are inspected #then she
 	assert.match(text, /Running Userpromptsubmit Hooks/);
 	assert.match(text, /Steering/);
 	assert.deepEqual(preToolUseGroups.map((group) => group.matcher), [
-		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
+		"^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command|exec_command|run_shell_command)$",
 		".*",
 	]);
 	const postToolUseMatchers = (hooks.hooks.PostToolUse ?? []).map((group) => group.matcher ?? "");

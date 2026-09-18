@@ -25,6 +25,7 @@ const DEFAULT_UPDATE_COMMAND = "npx";
 const INSTALLED_VERSION_FILE = "lazycodex-install.json";
 
 export function resolveAutoUpdatePlan({ env = process.env, now = Date.now(), lastCheckedAt, lastAttemptedAt, lastStatus } = {}) {
+	if (env.LAZYANTIGRAVITY_OFFLINE === "1") return statusPlan("offline");
 	if (readEnv(env, ["ANTIGRAVITY_AUTO_UPDATE_DISABLED", "LAZYCODEX_AUTO_UPDATE_DISABLED", "OMO_CODEX_AUTO_UPDATE_DISABLED"]) === "1") {
 		return statusPlan("disabled");
 	}
@@ -83,6 +84,7 @@ export function resolveLazyCodexUpdatePlan(options = {}) {
 }
 
 export async function runLazyCodexManualUpdate({ env = process.env, dryRun = false, log = console.log, runCommand } = {}) {
+	if (env.LAZYANTIGRAVITY_OFFLINE === "1") return 1;
 	const commandRunner = runCommand ?? defaultRunCommandForManualUpdate;
 	const source = resolveUpdateSource(env);
 	const currentVersion = resolveCurrentVersion(env);
@@ -110,6 +112,7 @@ export async function runLazyCodexManualUpdate({ env = process.env, dryRun = fal
 }
 
 export async function runAutoUpdateCheck({ env = process.env, now = Date.now() } = {}) {
+	if (env.LAZYANTIGRAVITY_OFFLINE === "1") return { started: false, reason: "offline" };
 	const runtimeConfig = getRuntimeConfig(env);
 	if (runtimeConfig.configMigrationEnabled) await runConfigMigration({ env });
 	const statePath = resolveStatePath(env);

@@ -10,6 +10,8 @@
 
 Originating from concepts in [lazycodex](https://github.com/code-yeongyu/lazycodex) and [Ouroboros](https://github.com/Q00/ouroboros), LAZYANTIGRAVITY provides a model-agnostic, developer-first orchestration architecture that enforces deterministic verification over probabilistic hallucinations. It is optimized for high-throughput agent runtimes ([Google Antigravity / Gemini CLI](https://github.com/google-gemini/antigravity)) with native extension pathways for OpenAI Codex and multi-agent CI/CD bots.
 
+Local-first by default: telemetry and startup update checks stay disabled unless explicitly opted in, and `LAZYANTIGRAVITY_OFFLINE=1` suppresses every application-level egress path. This is an application-level policy, not an OS-level network sandbox.
+
 ## Install
 
 ```bash
@@ -28,7 +30,7 @@ Restart Antigravity. No build step — compiled artifacts are committed and veri
 
 ## What happens in your first session
 
-Five session-start hooks run in under a second and stay silent unless they have something useful to inject: project rules load, your persisted memory loads, the IPC daemon starts, and the symbol index pre-builds. Then:
+Six session-start hook commands are registered: project rules, persisted working memory, the IPC daemon, symbol indexing, opt-in telemetry, and an opt-in update check. Full host cold-start latency has not been measured; hook timeouts are limits, not latency guarantees. Then:
 
 - **Ask a quick question** — a quick-lane classifier skips the heavy orchestration for one-line queries.
 - **Edit a file** — LSP/compiler diagnostics and comment-preservation checks run automatically; clean edits stay silent, real findings are fed back to the agent immediately.
@@ -87,8 +89,15 @@ npm run mcp:status -- --json       # every local MCP server, classified
 npm run mcp:status -- --probe      # actually handshakes with each local MCP server
 npm run provenance -- --json       # product / generated / vendored provenance
 npm run evidence:map -- --json     # docs claims mapped to their local evidence
-npm run bench                      # measured: daemon IPC set+get p50 0.207ms (n=500); ast-index lookups
+npm run bench                      # daemon IPC + ast-index benchmark; starts a sandbox daemon
+npm run bench:hooks                # warm pure hook paths only; not full host cold startup
 ```
+
+## Offline profile
+
+Set `LAZYANTIGRAVITY_OFFLINE=1` to override startup update checks, automatic/manual updater execution, and telemetry opt-ins. Startup fetching otherwise requires `LAZYANTIGRAVITY_UPDATE_CHECK=1`. This application-level switch is not a firewall: arbitrary shell commands, external tools, and separately configured MCP servers need their own network controls.
+
+ULW evidence drafts remain `not_checked`, with no invented exit codes or output fingerprints. Completion checks submitted commands and bindings against local host-executor records, not agent `verified` fields alone. These records assume trusted host code and storage; a process that can rewrite the plugin and its evidence storage is outside that trust boundary. Memory is editable working context, not verified evidence.
 
 ## Telemetry (opt-in)
 
@@ -98,15 +107,15 @@ Nothing is sent unless you opt in with `LAZYANTIGRAVITY_TELEMETRY_OPT_IN=1` (or 
 
 - **Consensus gate**: two live transports — the OpenCode endpoint (`--live`, optional `@opencode-ai/sdk` peer dependency) and the host-subagent transport (`consensus-pending` → `invoke_subagent` → `report-consensus-result` → `aggregate-consensus`). Without either, checkpoints that require consensus **fail closed** into `needs_user_decision` — never auto-approve.
 - **Symbol index**: regex-based and approximate; it can misparse strings, template literals, and multi-line signatures.
-- **Session tree**: snapshots capture the full working tree (including untracked files) via a temporary index without touching your index or HEAD; very large repos may exceed hook timeouts. `prune [--keep N]` manages ref growth.
+- **Session tree**: snapshots capture working files (including untracked files), excluding `.lazyantigravity`, `.lazycodex`, and `.omo` evidence/state directories, via a temporary index without touching your index or HEAD. Transactions lock before reading graph state and publish it atomically. `prune [--keep N]` trims recent snapshot refs; separate history refs retain graph-referenced commits, so pruning does not promise disk reclamation. Very large repos may exceed hook timeouts.
 - **comment-checker**: shells out to the external `@code-yeongyu/comment-checker` binary (optional dependency); without it the hook degrades to `status: "missing"`.
 - **Network sandbox**: `auditEgressRequest` is a library helper; nothing enforces egress at runtime today. Remote MCP servers stay off unless you merge the example configs.
-- **Windows**: exercised by a non-blocking CI probe job; the named-pipe IPC paths are implemented but not yet proven green on a Windows runner.
+- **Windows**: the Node 22 probe is a blocking CI job (no `continue-on-error`); configuration alone does not establish a green Windows run.
 
 ## Development
 
 ```bash
-npm install && npm run check   # full gate
+npm ci --ignore-scripts && npm run check   # locked dependencies + full gate
 npm test                       # root suites only
 npm run test:components        # per-component suites
 ```

@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * SessionStart hook: notify when the installed plugin is behind origin/main.
- *
- * Performs one short-timeout `git fetch` of the plugin's own origin (the repo
- * it was cloned from) and compares HEAD. Any failure - offline, timeout,
- * non-repo - is silent (fail-open): the session must never be blocked by an
- * update check. LAZYANTIGRAVITY_UPDATE_CHECK=0 disables the check entirely.
- */
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,7 +14,7 @@ function git(args, timeoutMs = 5000) {
 }
 
 function main() {
-	if (process.env["LAZYANTIGRAVITY_UPDATE_CHECK"] === "0") process.exit(0);
+	if (process.env["LAZYANTIGRAVITY_OFFLINE"] === "1" || process.env["LAZYANTIGRAVITY_UPDATE_CHECK"] !== "1") process.exit(0);
 
 	const fetch = git(["fetch", "origin", "main", "--quiet"], 5000);
 	if (fetch.error || fetch.status !== 0) process.exit(0); // offline or non-repo: stay silent

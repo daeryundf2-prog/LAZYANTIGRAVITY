@@ -77,7 +77,7 @@
 		],
 		"PreToolUse": [
 			{
-				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
+				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command|exec_command|run_shell_command)$",
 				"hooks": [
 					{
 						"type": "command",
@@ -144,7 +144,7 @@
 				]
 			},
 			{
-				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command)$",
+				"matcher": "^(Bash|bash|shell|Shell|run_command|RunCommand|terminal|Terminal|execute|Execute|execute_command|exec_command|run_shell_command)$",
 				"hooks": [
 					{
 						"type": "command",
