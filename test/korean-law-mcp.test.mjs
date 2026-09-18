@@ -35,7 +35,7 @@ test("korean-law-mcp exposes lookup_statute and lookup_precedent tools (Feature 
 test("lookup_statute retrieves verified civil and PII statute articles", () => {
 	const resCivil = callTool("lookup_statute", { statute_name: "민법", article_number: "750" });
 	assert.equal(resCivil.ok, true);
-	assert.equal(resCivil.grounding_status, "VERIFIED_PRIMARY_STATUTE");
+	assert.equal(resCivil.grounding_status, "CACHED_EXCERPT_UNVERIFIED");
 	assert.match(resCivil.text, /불법행위의 내용/);
 
 	const resPii = callTool("lookup_statute", { statute_name: "개인정보보호법", article_number: "29" });
@@ -57,12 +57,12 @@ test("lookup_statute prevents hallucination with [INSUFFICIENT_DATA] on non-exis
 test("lookup_precedent verifies landmark precedent and validates Korean court case formatting", () => {
 	const resLandmark = callTool("lookup_precedent", { case_number: "2017다220744" });
 	assert.equal(resLandmark.ok, true);
-	assert.equal(resLandmark.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
+	assert.equal(resLandmark.grounding_status, "CACHED_SUMMARY_UNVERIFIED");
 	assert.match(resLandmark.precedent.name, /위약벌/);
 
 	const resSpaced = callTool("lookup_precedent", { case_number: "2017 다 220744" });
 	assert.equal(resSpaced.ok, true);
-	assert.equal(resSpaced.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
+	assert.equal(resSpaced.grounding_status, "CACHED_SUMMARY_UNVERIFIED");
 	assert.match(resSpaced.precedent.name, /위약벌/);
 
 	const resValid = callTool("lookup_precedent", { case_number: "2023다99881" });
@@ -80,7 +80,7 @@ test("lookup_precedent rejects invalid case number format with [INSUFFICIENT_DAT
 test("lookup_statute supports Trade Secrets Act (부정경쟁방지법)", () => {
 	const resArt2 = callTool("lookup_statute", { statute_name: "부정경쟁방지법", article_number: "2" });
 	assert.equal(resArt2.ok, true);
-	assert.equal(resArt2.grounding_status, "VERIFIED_PRIMARY_STATUTE");
+	assert.equal(resArt2.grounding_status, "CACHED_EXCERPT_UNVERIFIED");
 	assert.match(resArt2.text, /영업비밀/);
 
 	const resArt18 = callTool("lookup_statute", { statute_name: "영업비밀보호법", article_number: "18" });
@@ -91,12 +91,12 @@ test("lookup_statute supports Trade Secrets Act (부정경쟁방지법)", () => 
 test("lookup_precedent verifies digital forensic landmark precedents (2011도10797, 2021도11170)", () => {
 	const resEvidence = callTool("lookup_precedent", { case_number: "2011도10797" });
 	assert.equal(resEvidence.ok, true);
-	assert.equal(resEvidence.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
+	assert.equal(resEvidence.grounding_status, "CACHED_SUMMARY_UNVERIFIED");
 	assert.match(resEvidence.precedent.name, /전자증거/);
 
 	const resWarrant = callTool("lookup_precedent", { case_number: "2021도11170" });
 	assert.equal(resWarrant.ok, true);
-	assert.equal(resWarrant.grounding_status, "VERIFIED_PRIMARY_PRECEDENT");
+	assert.equal(resWarrant.grounding_status, "CACHED_SUMMARY_UNVERIFIED");
 	assert.match(resWarrant.precedent.name, /압수수색/);
 });
 

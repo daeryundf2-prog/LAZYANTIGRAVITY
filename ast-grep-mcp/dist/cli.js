@@ -2,6 +2,7 @@
 import { createInterface } from "node:readline";
 import { readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve, sep } from "node:path";
+import { confinePath, getWorkspaceRoot, isInsideRoot } from "../../workspace-mcp/dist/path-policy.js";
 
 // Real structural matching runs on @ast-grep/napi (tree-sitter) when the
 // optional dependency is installed; otherwise the line-based regex matcher
@@ -93,6 +94,10 @@ function structuralReplace(napi, filePath, source, pattern, rewrite) {
 			if (interpolated === null) return null;
 			edits.push(node.replace(interpolated));
 		}
+		edits.sort((a, b) => a.startPos - b.startPos);
+		for (let i = 1; i < edits.length; i++) {
+			if (edits[i].startPos < edits[i - 1].endPos) return null;
+		}
 		return { updated: sg.root().commitEdits(edits), replacements: edits.length };
 	} catch {
 		return null;
@@ -116,15 +121,6 @@ const DEFAULT_EXCLUDED_DIRS = new Set(["node_modules", ".git", "dist", "build", 
 const MAX_FILES = 5000;
 const MAX_WALK_MS = 5000;
 
-function getWorkspaceRoot() {
-	return resolve(process.env["LAZYANTIGRAVITY_WORKSPACE_ROOT"] || process.cwd());
-}
-
-function isInsideRoot(candidate, root) {
-	const withSep = candidate.endsWith(sep) ? candidate : candidate + sep;
-	return withSep.startsWith(root.endsWith(sep) ? root : root + sep);
-}
-
 function resolveLanguageExts(language) {
 	const key = language?.toLowerCase() ?? "";
 	if (LANGUAGE_EXTENSIONS[key]) return LANGUAGE_EXTENSIONS[key];
@@ -144,14 +140,11 @@ function confineRoots(root, pathSpec) {
 		if (typeof spec !== "string" || spec.length === 0) {
 			return { ok: false, error: "paths entries must be non-empty strings." };
 		}
-		if (spec.startsWith("~") || isAbsolute(spec) || /^[A-Za-z]:[\\/]/.test(spec)) {
-			return { ok: false, error: `paths entry '${spec}' must be a workspace-relative path (absolute and ~ paths are rejected).` };
+		try {
+			roots.push(confinePath(spec, { base: root, evidence: true }));
+		} catch (error) {
+			return { ok: false, error: error.message };
 		}
-		const candidate = resolve(root, spec);
-		if (!isInsideRoot(candidate, root)) {
-			return { ok: false, error: `paths entry '${spec}' resolves outside the workspace root (${root}).` };
-		}
-		roots.push(candidate);
 	}
 	return { ok: true, roots };
 }
@@ -162,7 +155,19 @@ function collectFiles(root, pathSpec, exts) {
 
 	const files = [];
 	const deadline = Date.now() + MAX_WALK_MS;
+	const visited = new Set();
 	const walk = (dir) => {
+		try {
+			dir = confinePath(dir, { evidence: true });
+			if (visited.has(dir)) return;
+			visited.add(dir);
+			if (statSync(dir).isFile()) {
+				if (exts.length === 0 || exts.includes(extnameOf(dir))) files.push(dir);
+				return;
+			}
+		} catch {
+			return;
+		}
 		if (files.length >= MAX_FILES || Date.now() > deadline) return;
 		let entries;
 		try {
@@ -181,7 +186,7 @@ function collectFiles(root, pathSpec, exts) {
 				try {
 					const real = realpathSync(full);
 					const stats = statSync(real);
-					if (!isInsideRoot(real, root)) continue;
+					confinePath(real, { evidence: true });
 					if (stats.isDirectory()) {
 						walk(real);
 					} else if (exts.length === 0 || exts.includes(extnameOf(full))) {
@@ -265,7 +270,12 @@ async function runSearch(args) {
 		return { ok: false, error: collected.error };
 	}
 	const napi = isRegex ? null : await getNapiEngine();
+	if (!isRegex && !napi) return { ok: false, error: "Structural engine unavailable; use regex=true for explicit regex search." };
+	if (isRegex) {
+		try { new RegExp(rawPattern, "g"); } catch (error) { return { ok: false, error: error.message }; }
+	}
 	const matches = [];
+	const errors = [];
 	for (const file of collected.files) {
 		if (napi) {
 			let content;
@@ -279,12 +289,16 @@ async function runSearch(args) {
 				matches.push(...structural);
 				continue;
 			}
+			errors.push({ file, error: "Structural matching unavailable for this file or pattern" });
+			continue;
 		}
-		for (const m of searchInFile(file, rawPattern, isRegex)) matches.push(m);
+		for (const m of searchInFile(file, rawPattern, true)) matches.push(m);
 	}
 	const cap = matches.slice(0, 500);
 	return {
-		ok: true,
+		ok: errors.length === 0,
+		engine: isRegex ? "regex" : "structural",
+		errors,
 		matches: cap,
 		truncated: matches.length > cap.length || collected.truncated,
 		totalMatches: matches.length,
@@ -303,52 +317,54 @@ async function runReplace(args) {
 	if (!collected.ok) {
 		return { ok: false, error: collected.error };
 	}
-	const re = patternToRegex(rawPattern);
-	const napi = await getNapiEngine();
-	const changedFiles = [];
-
-	for (const file of collected.files) {
-		// Defense in depth: re-check containment right before writing.
-		if (!isInsideRoot(resolve(file), root)) continue;
-		try {
-			const original = readFileSync(file, "utf8");
-			let updated = null;
-			let replacements = 0;
-			if (napi) {
-				const structural = structuralReplace(napi, file, original, rawPattern, rewrite);
-				if (structural !== null && structural.replacements > 0) {
-					updated = structural.updated;
-					replacements = structural.replacements;
-				}
-			}
-			if (updated === null && re.test(original)) {
-				re.lastIndex = 0;
-				updated = original.replace(re, rewrite);
-				replacements = (original.match(re) || []).length;
-			}
-			if (updated !== null) {
-				changedFiles.push({ file, replacements });
-				if (!dryRun) {
-					writeFileSync(file, updated, "utf8");
-				}
-			}
-		} catch {}
+	const isRegex = args.regex === true;
+	const napi = isRegex ? null : await getNapiEngine();
+	if (!isRegex && !napi) return { ok: false, error: "Structural engine unavailable; no replacement performed. Explicit regex=true is required for regex semantics." };
+	let re;
+	try {
+		if (isRegex) re = new RegExp(rawPattern, "g");
+	} catch (error) {
+		return { ok: false, error: error.message };
 	}
-
+	const changedFiles = [];
+	const errors = [];
+	for (const file of collected.files) {
+		try {
+			const path = confinePath(file, { evidence: true, kind: "file" });
+			const original = readFileSync(path, "utf8");
+			let result;
+			if (isRegex) {
+				re.lastIndex = 0;
+				const replacements = [...original.matchAll(re)].length;
+				result = { replacements, updated: original.replace(re, rewrite) };
+			} else {
+				result = structuralReplace(napi, path, original, rawPattern, rewrite);
+				if (result === null) throw new Error("Unsupported structural language or rewrite; no regex fallback performed");
+			}
+			if (result.replacements > 0 && result.updated !== original) {
+				if (!dryRun) writeFileSync(confinePath(path, { evidence: true, kind: "file" }), result.updated, "utf8");
+				changedFiles.push({ file: path, replacements: result.replacements });
+			}
+		} catch (error) {
+			errors.push({ file, error: error.message });
+		}
+	}
 	return {
-		ok: true,
+		ok: errors.length === 0,
 		dryRun,
+		engine: isRegex ? "regex" : "structural",
+		errors,
 		changedFiles,
 		totalFilesChanged: changedFiles.length,
 		truncatedWalk: collected.truncated,
-		message: dryRun ? "Dry-run complete (no files written)." : "Replacements applied.",
+		message: errors.length ? "Replacement incomplete; inspect errors." : dryRun ? "Dry-run complete (no files written)." : "Replacements applied.",
 	};
 }
 
 const TOOLS = [
 	{
 		name: "ast_grep_search",
-		description: "Search code structurally across workspace files. Uses tree-sitter (via the optional @ast-grep/napi dependency) when available, with a line-based regex fallback. Paths must be workspace-relative.",
+		description: "Search using tree-sitter; unavailable or unsupported structural matching returns errors, never regex fallback. Explicit regex=true selects line-based regex. Canonical workspace and explicitly allowed evidence paths are accepted.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -362,14 +378,15 @@ const TOOLS = [
 	},
 	{
 		name: "ast_grep_replace",
-		description: "Perform structural code replacements across workspace files (tree-sitter when @ast-grep/napi is installed, regex fallback). dryRun defaults to true; writes are confined to the workspace root.",
+		description: "Structural replacement requires tree-sitter and supported rewrites; no regex fallback. Explicit regex=true uses JavaScript regex replacement semantics. dryRun defaults to true.",
 		inputSchema: {
 			type: "object",
 			properties: {
 				pattern: { type: "string", description: "Target AST pattern (e.g. `console.log($MSG)`)" },
 				rewrite: { type: "string", description: "Replacement template (e.g. `logger.info($MSG)`)" },
 				paths: { type: "array", items: { type: "string" }, description: "Workspace-relative paths to replace within" },
-				dryRun: { type: "boolean", description: "Preview changes without modifying files (default true)" }
+				regex: { type: "boolean", default: false, description: "Explicit JavaScript regex mode; never inferred from engine failure" },
+				dryRun: { type: "boolean", default: true, description: "Preview changes without modifying files (default true)" }
 			},
 			required: ["pattern", "rewrite"]
 		}

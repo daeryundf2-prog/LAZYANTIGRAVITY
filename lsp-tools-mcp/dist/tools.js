@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, extname, join, resolve } from "node:path";
+import { confinePath, getWorkspaceRoot } from "../../workspace-mcp/dist/path-policy.js";
 
 // Windows에서 이름만 스폰하면 libuv가 현재 디렉터리(=워크스페이스)를 검색하므로
 // 워크스페이스에 심어둔 python3.exe/go.exe가 실행될 수 있다. PATH에서만 찾아
@@ -49,7 +50,7 @@ export const LSP_TOOLS = [
 	},
 	{
 		name: "lsp_definitions",
-		description: "Find definitions and source origins for symbols at specific coordinates.",
+		description: "Find regex declaration candidates, not semantic LSP definitions. No scope, type, import or overload resolution; bounded project scan may be incomplete.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -62,7 +63,7 @@ export const LSP_TOOLS = [
 	},
 	{
 		name: "lsp_references",
-		description: "Find all reference occurrences of a symbol across the project.",
+		description: "Find regex textual occurrence candidates across a depth-limited project scan, not semantic references. Comments and strings may match; results may be incomplete.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -76,7 +77,7 @@ export const LSP_TOOLS = [
 	},
 	{
 		name: "lsp_symbols",
-		description: "List document symbols, classes, functions, and interfaces.",
+		description: "List line-based regex declaration candidates; not semantic document symbols. May include comments and omit multiline declarations.",
 		inputSchema: {
 			type: "object",
 			properties: {
@@ -88,7 +89,8 @@ export const LSP_TOOLS = [
 ];
 
 function jsonResult(payload) {
-	return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
+	const capabilities = payload.diagnostics ? { engine: "compiler", semanticLsp: false } : { engine: "regex", semanticLsp: false, limitations: ["Textual candidates only; no scope or import resolution", "Depth-limited scan; comments and strings may match"], truncated: payload.references ? payload.total > payload.references.length : false };
+	return { content: [{ type: "text", text: JSON.stringify({ ...payload, ...capabilities }, null, 2) }] };
 }
 
 function errorResult(message) {
@@ -100,7 +102,9 @@ export async function executeLspDiagnostics({ filePath }) {
 		return errorResult("Error: filePath is required");
 	}
 
-	const absolutePath = resolve(process.cwd(), filePath);
+	let absolutePath;
+	try { absolutePath = confinePath(filePath, { evidence: true, kind: "file" }); }
+	catch (error) { return errorResult(error.message); }
 	if (!existsSync(absolutePath)) {
 		return errorResult(`File not found: ${filePath}`);
 	}
@@ -240,7 +244,7 @@ function walkProjectFiles(dir, maxDepth = 4, currentDepth = 0) {
 			if (entry.isDirectory()) {
 				files.push(...walkProjectFiles(full, maxDepth, currentDepth + 1));
 			} else if ([".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go"].includes(extname(entry.name).toLowerCase())) {
-				files.push(full);
+				try { files.push(confinePath(full, { evidence: true, kind: "file" })); } catch {}
 			}
 		}
 	} catch {}
@@ -248,7 +252,9 @@ function walkProjectFiles(dir, maxDepth = 4, currentDepth = 0) {
 }
 
 export async function executeLspDefinitions({ filePath, line, column, symbol }) {
-	const absolutePath = resolve(process.cwd(), filePath);
+	let absolutePath;
+	try { absolutePath = confinePath(filePath, { evidence: true, kind: "file" }); }
+	catch (error) { return errorResult(error.message); }
 	if (!existsSync(absolutePath)) {
 		return errorResult(`File not found: ${filePath}`);
 	}
@@ -264,7 +270,7 @@ export async function executeLspDefinitions({ filePath, line, column, symbol }) 
 		// Escape the symbol: it can come from arbitrary file content or tool args.
 		const declPattern = new RegExp(`(?:export\\s+)?(?:pub\\s+)?(?:async\\s+)?(?:function|class|interface|type|const|let|var|def|fn|struct|enum|trait|typealias)\\s+(${escapeRegex(targetSymbol)})\\b`);
 
-		const files = [absolutePath, ...walkProjectFiles(process.cwd())];
+		const files = [absolutePath, ...walkProjectFiles(getWorkspaceRoot())];
 		const visited = new Set();
 
 		for (const file of files) {
@@ -307,7 +313,9 @@ export async function executeLspDefinitions({ filePath, line, column, symbol }) 
 }
 
 export async function executeLspReferences({ filePath, line, column, symbol }) {
-	const absolutePath = resolve(process.cwd(), filePath);
+	let absolutePath;
+	try { absolutePath = confinePath(filePath, { evidence: true, kind: "file" }); }
+	catch (error) { return errorResult(error.message); }
 	if (!existsSync(absolutePath)) {
 		return errorResult(`File not found: ${filePath}`);
 	}
@@ -322,7 +330,7 @@ export async function executeLspReferences({ filePath, line, column, symbol }) {
 		const references = [];
 		// Escape the symbol: unescaped metacharacters can crash RegExp construction.
 		const refPattern = new RegExp(`\\b${escapeRegex(targetSymbol)}\\b`);
-		const files = walkProjectFiles(process.cwd());
+		const files = walkProjectFiles(getWorkspaceRoot());
 
 		for (const file of files) {
 			try {
@@ -348,7 +356,9 @@ export async function executeLspReferences({ filePath, line, column, symbol }) {
 }
 
 export async function executeLspSymbols({ filePath }) {
-	const absolutePath = resolve(process.cwd(), filePath);
+	let absolutePath;
+	try { absolutePath = confinePath(filePath, { evidence: true, kind: "file" }); }
+	catch (error) { return errorResult(error.message); }
 	if (!existsSync(absolutePath)) {
 		return errorResult(`File not found: ${filePath}`);
 	}

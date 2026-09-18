@@ -49,10 +49,11 @@ test("structural engine matches multi-line patterns the regex engine cannot", ()
 		const regex = callTool("ast_grep_search", { pattern: "function add() { $$$B }" }, dir, {
 			LAZYANTIGRAVITY_AST_ENGINE: "regex",
 		});
-		// A brace block spans lines: only the structural engine can see it.
-		assert.equal(regex.totalMatches, 0, "line-based fallback cannot match across lines");
+		assert.equal(regex.ok, false);
+		assert.match(regex.error, /Structural engine unavailable/);
 		if (!structuralAvailable) {
-			assert.equal(structural.totalMatches, 0, "without @ast-grep/napi the search must fall back to the regex engine");
+			assert.equal(structural.ok, false);
+			assert.match(structural.error, /Structural engine unavailable/);
 			return;
 		}
 		assert.equal(structural.totalMatches, 1, "structural engine must match the multi-line function");
@@ -60,7 +61,7 @@ test("structural engine matches multi-line patterns the regex engine cannot", ()
 	});
 });
 
-test("structural replacement rewrites code and respects dry-run", () => {
+test("structural replacement rewrites code and respects dry-run", { skip: !structuralAvailable }, () => {
 	withSource((dir) => {
 		// Metavariable-free pattern/rewrite keeps this valid for the structural
 		// engine (node-level replace) and the regex fallback alike.
@@ -70,6 +71,7 @@ test("structural replacement rewrites code and respects dry-run", () => {
 			dir,
 		);
 		assert.equal(preview.dryRun, true);
+		assert.equal(preview.ok, true);
 		assert.equal(preview.totalFilesChanged, 1);
 		assert.ok(readFileSync(join(dir, "sample.ts"), "utf8").includes("const a = 1;"), "dry-run must not write");
 

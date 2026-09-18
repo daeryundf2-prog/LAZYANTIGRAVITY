@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve, sep } from "node:path";
+import { confinePath, getWorkspaceRoot, isInsideRoot } from "../../workspace-mcp/dist/path-policy.js";
 
 // Windows에서 이름만 스폰하면 libuv가 현재 디렉터리(=워크스페이스)를 검색하므로
 // 워크스페이스에 심어둔 git.exe가 실행될 수 있다 — 이 MCP가 막으려는 임의
@@ -115,15 +116,6 @@ function tokenizeCommand(str) {
 	return { ok: true, tokens };
 }
 
-function getWorkspaceRoot() {
-	return resolve(process.env["LAZYANTIGRAVITY_WORKSPACE_ROOT"] || process.cwd());
-}
-
-function isInsideRoot(candidate, root) {
-	const withSep = candidate.endsWith(sep) ? candidate : candidate + sep;
-	return withSep.startsWith(root.endsWith(sep) ? root : root + sep);
-}
-
 // Rejects path-like tokens that resolve outside the workspace root. Tokens that
 // do not look like paths (revs such as HEAD~2, ranges such as main..dev) pass.
 function pathArgumentError(token, cwd) {
@@ -138,8 +130,10 @@ function pathArgumentError(token, cwd) {
 	} else {
 		candidate = resolve(cwd, token);
 	}
-	if (!isInsideRoot(candidate, root)) {
-		return `Path '${token}' resolves outside the workspace root (${root}) and is not permitted.`;
+	try {
+		confinePath(candidate, { base: cwd, allowMissing: true, evidence: true });
+	} catch (error) {
+		return error.message;
 	}
 	return null;
 }
@@ -150,6 +144,11 @@ function gitPolicyError(subcommand, args) {
 		return `git ${subcommand} is denied (destructive, network-reaching or command-executing).`;
 	}
 	const writeOptIn = process.env["LAZYANTIGRAVITY_GIT_WRITE"] === "1";
+	if (args.some((arg) => /^(--output|--ext-diff|--textconv|--exec|--config|--work-tree|--git-dir|--pathspec-from-file|--open-files-in-pager)/.test(arg))) return "Git file output, external execution and indirect path options are denied.";
+	if (subcommand === "help") return args.length === 0 || args.every((arg) => ["-a", "--all", "-g", "--guides"].includes(arg)) ? null : "External help viewers are denied.";
+	if (subcommand === "interpret-trailers") return args.every((arg) => ["--parse", "--only-trailers", "--only-input", "--unfold"].includes(arg)) ? null : "Only trailer parsing from stdin is permitted.";
+	if (subcommand === "fsck" && args.some((arg) => !["--full", "--strict", "--no-reflogs", "--unreachable", "--no-progress", "--connectivity-only"].includes(arg))) return "Only read-only fsck flags are permitted.";
+	if (subcommand === "cat-file" && args.some((arg) => arg.startsWith("--filters") || arg.startsWith("--batch-command"))) return "Configured filters and batch commands are denied.";
 
 	switch (subcommand) {
 		// Log-family subcommands: block arbitrary-file reads and external drivers.
@@ -159,6 +158,9 @@ function gitPolicyError(subcommand, args) {
 		case "whatchanged":
 		case "shortlog":
 		case "reflog": {
+			if (subcommand === "reflog" && args.some((arg) => ["delete", "expire", "drop", "write"].includes(arg))) {
+				return "git reflog mutation is denied.";
+			}
 			for (const arg of args) {
 				if (arg === "--no-index") {
 					return "git diff --no-index is denied (reads arbitrary filesystem paths).";
@@ -188,7 +190,8 @@ function gitPolicyError(subcommand, args) {
 		}
 		case "stash": {
 			const head = args[0];
-			const isRead = args.length === 0 || head === "list" || head === "show" || head === "log";
+			const isRead = head === "list" || head === "show";
+			if (isRead) return gitPolicyError("log", args.slice(1));
 			if (isRead || writeOptIn) return null;
 			return "git stash mutation requires LAZYANTIGRAVITY_GIT_WRITE=1.";
 		}
@@ -270,25 +273,10 @@ function parseSafeCommand(commandStr) {
 }
 
 function resolveConfinedCwd(cwdArg) {
-	const root = getWorkspaceRoot();
-	if (!cwdArg) {
-		return { ok: true, cwd: root };
-	}
-	const candidate = resolve(root, cwdArg);
-	if (!isInsideRoot(candidate, root)) {
-		return { ok: false, error: `cwd '${cwdArg}' resolves outside the workspace root (${root}).` };
-	}
-	if (!existsSync(candidate)) {
-		return { ok: false, error: `cwd '${cwdArg}' does not exist.` };
-	}
 	try {
-		const real = realpathSync(candidate);
-		if (!isInsideRoot(real, root)) {
-			return { ok: false, error: `cwd '${cwdArg}' escapes the workspace root through a symlink.` };
-		}
-		return { ok: true, cwd: real };
-	} catch {
-		return { ok: true, cwd: candidate };
+		return { ok: true, cwd: confinePath(cwdArg || ".", { kind: "directory" }) };
+	} catch (error) {
+		return { ok: false, error: error.message };
 	}
 }
 
@@ -368,6 +356,10 @@ async function handleJsonRpc(message) {
 		}
 
 		try {
+			for (const arg of parsed.args) {
+				if (arg.startsWith("-")) continue;
+				confinePath(arg, { base: cwdResult.cwd, allowMissing: true, evidence: true });
+			}
 			const exe = resolveOnPath(parsed.binary);
 			if (!exe) {
 				return {

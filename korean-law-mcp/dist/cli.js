@@ -36,7 +36,6 @@ const STATUTE_DATABASE = {
 		"71": "제71조 (벌칙) 다음 각 호의 어느 하나에 해당하는 자는 5년 이하의 징역 또는 5천만원 이하의 벌금에 처한다."
 	},
 	"정보통신망법": {
-		"44": "제44조의7 (불법정보의 유통금지 등) ① 누구든지 정보통신망을 통하여 음란정보, 명예훼손 정보, 공포심·불안감 유발 문언, 해킹 프로그램 등 불법정보를 유통하여서는 아니 된다.",
 		"44-7": "제44조의7 (불법정보의 유통금지 등) ① 누구든지 정보통신망을 통하여 음란정보, 명예훼손 정보, 공포심·불안감 유발 문언, 해킹 프로그램 등 불법정보를 유통하여서는 아니 된다.",
 		"48": "제48조 (정보통신망 침해행위 등의 금지) ① 누구든지 정당한 접근권한 없이 또는 허용된 접근권한을 넘어 정보통신망에 침입하여서는 아니 된다. ② 누구든지 악성프로그램을 전달 또는 유포하여서는 아니 된다.",
 		"49": "제49조 (비밀 등의 보호) 누구든지 정보통신망에 의하여 처리·보관 또는 전송되는 타인의 정보를 훼손하거나 타인의 비밀을 침해·도용 또는 누설하여서는 아니 된다.",
@@ -128,6 +127,7 @@ const VALID_CASE_CODES = new Set([
 ]);
 
 function textResult(payload, isError = false) {
+	payload.provenance = { source_type: payload.precedent ? "bundled_summary" : "bundled_excerpt", source: "korean-law-mcp bundled limited cache", primary_source: false, last_verified: null, completeness: "limited", limitations: ["Not a current primary source; excerpts and summaries may be incomplete or outdated", "Verify exact text, effective date and holdings against official sources before use"] };
 	return {
 		content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
 		...(isError ? { isError: true } : {})
@@ -186,19 +186,8 @@ async function lookupStatute(args) {
 			}, true);
 		}
 
-		let article = statuteData[articleNum];
-		let resolvedNum = articleNum;
-		if (!article) {
-			const foundEntry = Object.entries(statuteData).find(([key, text]) => {
-				if (key === articleNum || key.replace(/-/g, "") === articleNum.replace(/-/g, "")) return true;
-				const cleanText = text.replace(/\s+/g, "");
-				return cleanText.includes(`제${articleNum}조`) || cleanText.includes(`제${articleNum.replace('-', '조의')}`);
-			});
-			if (foundEntry) {
-				resolvedNum = foundEntry[0];
-				article = foundEntry[1];
-			}
-		}
+		const article = statuteData[articleNum];
+		const resolvedNum = articleNum;
 
 		if (article) {
 			return textResult({
@@ -206,7 +195,7 @@ async function lookupStatute(args) {
 				statute_name: statuteKey,
 				article_number: resolvedNum,
 				text: article,
-				grounding_status: "VERIFIED_PRIMARY_STATUTE"
+				grounding_status: "CACHED_EXCERPT_UNVERIFIED"
 			});
 		} else {
 			return textResult({
@@ -231,7 +220,7 @@ async function lookupStatute(args) {
 			query_keyword: keyword,
 			match_count: matched.length,
 			matches: matched,
-			grounding_status: "VERIFIED_PRIMARY_STATUTE"
+			grounding_status: "CACHED_EXCERPT_UNVERIFIED"
 		});
 	}
 
@@ -241,7 +230,7 @@ async function lookupStatute(args) {
 		statute_name: statuteKey,
 		total_provisions: Object.keys(statuteData).length,
 		articles: statuteData,
-		grounding_status: "VERIFIED_PRIMARY_STATUTE"
+		grounding_status: "CACHED_EXCERPT_UNVERIFIED"
 	});
 }
 
@@ -302,7 +291,7 @@ async function lookupPrecedent(args) {
 			case_number: parsedCase.canonical_number,
 			format_valid: true,
 			precedent,
-			grounding_status: "VERIFIED_PRIMARY_PRECEDENT"
+			grounding_status: "CACHED_SUMMARY_UNVERIFIED"
 		});
 	}
 
