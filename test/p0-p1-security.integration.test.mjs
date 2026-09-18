@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { validateStrictEvidence } from "../components/ulw-loop/dist/evidence-contract.js";
 import { verifyEvidenceGroundTruth, computeFileSha256 } from "../components/ulw-loop/dist/evidence-verifier.js";
@@ -12,6 +12,12 @@ import { discoverRuntimeHooks } from "../components/rules/dist/hook-discovery.js
 import { evolveRules } from "../components/active-learning/dist/evolver.js";
 
 const ROOT = resolve(process.cwd());
+// The structural engine needs the optional @ast-grep/napi dependency, installed
+// inside ast-grep-mcp/node_modules but absent in a plain CI checkout. Tests
+// must pass in both worlds.
+const structuralAvailable = existsSync(
+	join(ROOT, "ast-grep-mcp", "node_modules", "@ast-grep", "napi", "package.json"),
+);
 
 test("P0-1: git-bash-mcp rejects shell injection and forbidden binaries", async () => {
 	const gitBashCli = join(ROOT, "git-bash-mcp", "dist", "cli.js");
@@ -87,7 +93,7 @@ test("P1-1: lsp-tools-mcp exposes its four tools over the MCP protocol", async (
 	}
 });
 
-test("P1-2: ast-grep-mcp performs a real metavariable search over MCP", async () => {
+test("P1-2: ast-grep-mcp performs a real metavariable search over MCP", { skip: !structuralAvailable }, async () => {
 	const res = spawnSync("node", [join(ROOT, "ast-grep-mcp", "dist", "cli.js"), "mcp"], {
 		input: JSON.stringify({
 			jsonrpc: "2.0",

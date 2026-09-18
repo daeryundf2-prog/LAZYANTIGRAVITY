@@ -5,9 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { runBoundedBinary } from "../media-mcp/src/process-runner.mjs";
 
-const server = new URL("../media-mcp/dist/cli.js", import.meta.url).pathname;
+// fileURLToPath 필수 — Windows에서 URL.pathname은 /C:/... 형태라 경로가 깨진다
+const server = fileURLToPath(new URL("../media-mcp/dist/cli.js", import.meta.url));
 function fixture() {
 	const dir = mkdtempSync(join(tmpdir(), "mcp-hardening-media-"));
 	const binary = join(dir, "synthetic-media");
@@ -29,7 +31,7 @@ function call(f, name, args, mode = "complete") {
 	return JSON.parse(rpc.result.content[0].text);
 }
 
-test("media OCR receipt records actual source/artifact hashes and exit status", () => {
+test("media OCR receipt records actual source/artifact hashes and exit status", { skip: process.platform === "win32" && "synthetic shebang binary requires POSIX exec" }, () => {
 	for (const mode of ["complete", "partial", "missing", "empty"]) {
 		const f = fixture();
 		const result = call(f, "media_ocr", { input: "input.wav", case_id: "synthetic-case", evidence_id: "synthetic-evidence" }, mode);
@@ -49,7 +51,7 @@ test("media OCR receipt records actual source/artifact hashes and exit status", 
 	}
 });
 
-test("media whisper uses the same measured failure contract", () => {
+test("media whisper uses the same measured failure contract", { skip: process.platform === "win32" && "synthetic shebang binary requires POSIX exec" }, () => {
 	const f = fixture();
 	const result = call(f, "media_transcribe", { input: "input.wav", model: "model.bin" });
 	assert.equal(result.ok, true);

@@ -1,12 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+// The structural engine needs the optional @ast-grep/napi dependency, installed
+// inside ast-grep-mcp/node_modules but absent in a plain CI checkout. Tests
+// must pass in both worlds.
+const structuralAvailable = existsSync(
+	join(ROOT, "ast-grep-mcp", "node_modules", "@ast-grep", "napi", "package.json"),
+);
 
 function callMcp(serverDir, toolName, args, { cwd, env } = {}) {
 	const res = spawnSync(
@@ -165,8 +171,13 @@ test("git-bash-mcp confines path arguments and cwd to the workspace root", () =>
 test("ast-grep-mcp searches inside the workspace and rejects external paths", () => {
 	withGitRepo("ag-paths", (repo) => {
 		const ok = callMcp("ast-grep-mcp", "ast_grep_search", { pattern: "const a" }, { cwd: repo });
-		assert.equal(ok.ok, true);
-		assert.equal(ok.matches.length, 1);
+		if (!structuralAvailable) {
+			assert.equal(ok.ok, false);
+			assert.match(ok.error, /Structural engine unavailable/);
+		} else {
+			assert.equal(ok.ok, true);
+			assert.equal(ok.matches.length, 1);
+		}
 
 		for (const paths of [["/etc"], ["~"], [".."], ["~/etc"]]) {
 			const res = callMcp("ast-grep-mcp", "ast_grep_search", { pattern: "const a", paths }, { cwd: repo });
@@ -190,7 +201,7 @@ test("ast-grep-mcp skips symlinks pointing outside the workspace", () => {
 	});
 });
 
-test("ast-grep-mcp replace keeps dryRun default and writes only inside the workspace", () => {
+test("ast-grep-mcp replace keeps dryRun default and writes only inside the workspace", { skip: !structuralAvailable }, () => {
 	withGitRepo("ag-replace", (repo) => {
 		const preview = callMcp(
 			"ast-grep-mcp",

@@ -5,11 +5,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
 
 test("media baseline exposes tools without invoking child binaries", () => {
-	const res = spawnSync(process.execPath, [new URL("media-mcp/dist/cli.js", root).pathname, "mcp"], {
+	const res = spawnSync(process.execPath, [fileURLToPath(new URL("media-mcp/dist/cli.js", root)), "mcp"], {
 		input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
 		encoding: "utf8", timeout: 5000,
 		env: { ...process.env, LAZYANTIGRAVITY_OFFLINE: "1" },
@@ -23,7 +24,7 @@ test("AST replacement is explicit, counted and dry-run by default through JSON-R
 	const path = join(dir, "sample.js");
 	writeFileSync(path, "const a = 1; const a2 = 1;\n");
 	const call = (args) => {
-		const res = spawnSync(process.execPath, [new URL("ast-grep-mcp/src/cli.mjs", root).pathname, "mcp"], {
+		const res = spawnSync(process.execPath, [fileURLToPath(new URL("ast-grep-mcp/src/cli.mjs", root)), "mcp"], {
 			input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "ast_grep_replace", arguments: { paths: ["sample.js"], ...args } } }),
 			encoding: "utf8", timeout: 5000, cwd: dir,
 			env: { ...process.env, LAZYANTIGRAVITY_WORKSPACE_ROOT: dir, LAZYANTIGRAVITY_OFFLINE: "1", LAZYANTIGRAVITY_AST_ENGINE: "regex" },

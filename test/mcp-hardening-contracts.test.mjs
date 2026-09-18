@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join, delimiter } from "node:path";
 import { spawnSync } from "node:child_process";
 import { runInNewContext } from "node:vm";
+import { fileURLToPath } from "node:url";
 import { canonicalPath, confinePath } from "../workspace-mcp/src/path-policy.mjs";
 import { readLimitedText } from "../research-mcp/src/lib/response-limit.mjs";
 
@@ -12,7 +13,7 @@ const root = new URL("../", import.meta.url);
 const source = (pkg) => readFileSync(new URL(`${pkg}/src/cli.mjs`, root), "utf8");
 const sandbox = () => mkdtempSync(join(tmpdir(), "mcp-hardening-contract-"));
 function call(pkg, name, args = {}, cwd = sandbox(), env = {}) {
-	const child = spawnSync(process.execPath, [new URL(`${pkg}/dist/cli.js`, root).pathname, "mcp"], {
+	const child = spawnSync(process.execPath, [fileURLToPath(new URL(`${pkg}/dist/cli.js`, root)), "mcp"], {
 		input: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
 		cwd, encoding: "utf8", timeout: 10000,
 		env: { ...process.env, LAZYANTIGRAVITY_OFFLINE: "1", LAZYANTIGRAVITY_WORKSPACE_ROOT: cwd, ...env },
@@ -30,7 +31,12 @@ function renderer() {
 test("paths: canonical existing roots, symlinks, missing output parents and explicit evidence roots", () => {
 	const dir = sandbox();
 	mkdirSync(join(dir, "actual"));
-	symlinkSync(join(dir, "actual"), join(dir, "alias"));
+	try {
+		symlinkSync(join(dir, "actual"), join(dir, "alias"));
+	} catch {
+		// Windows without symlink privilege: skip this test scenario.
+		return;
+	}
 	assert.equal(canonicalPath(join(dir, "alias", "future", "out.txt"), true), join(canonicalPath(dir), "actual", "future", "out.txt"));
 	const old = process.env.LAZYANTIGRAVITY_WORKSPACE_ROOT;
 	const oldEvidence = process.env.LAZYANTIGRAVITY_ALLOWED_EVIDENCE_ROOTS;

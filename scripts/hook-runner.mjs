@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { stripSensitiveData } from "../components/ulw-loop/dist/sensitive-data-scrubber.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -126,7 +126,7 @@ async function main() {
 				}
 				
 				// Log the event dynamically
-				import(join(__dirname, "../components/ulw-loop/dist/control-plane.js")).then(({ appendRunEvent }) => {
+				import(pathToFileURL(join(__dirname, "../components/ulw-loop/dist/control-plane.js")).href).then(({ appendRunEvent }) => {
 					return appendRunEvent(cwd, runId, "parent.hitl_required", {
 						hookEventName: hitlEventName || "unknown",
 						reason: "Hook execution failed"
@@ -152,7 +152,7 @@ async function main() {
 					resolve(1);
 				}
 			};
-			import(join(__dirname, "../components/active-learning/dist/recorder.js"))
+			import(pathToFileURL(join(__dirname, "../components/active-learning/dist/recorder.js")).href)
 				.then(({ recordFailureEvent }) => {
 					const target = commandArgs.length > 0
 						? String(commandArgs[commandArgs.length - 1]).split("/").pop()
