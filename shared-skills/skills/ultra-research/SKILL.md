@@ -69,7 +69,7 @@ METHOD: Conduct aggressive counter-search (e.g. site:github.com/issues OR site:r
 
 | Channel | Method | Availability / Status | Notes |
 |---|---|---|---|
-| **Jina Reader** | `web_read(url)` | **Keyless (즉시 사용 가능)** | WAF 없는 일반 블로그/문서의 클린 마크다운 파싱 (`r.jina.ai`) |
+| **Jina Reader** | `web_read(url)` | **Keyless (즉시 사용 가능)** | WAF 없는 일반 블로그/문서의 클린 마크다운 파싱 (`r.jina.ai`). ⚠️ 제3자 프록시 경유 파생물 — **증거 채증·인용 원본으로 사용 금지** (CoC 오염). 리서치 요약 전용 |
 | **Tavily Search** | `web_search(query)` | **Keyed (`LAZYANTIGRAVITY_TAVILY_KEY`)** | 고품질 LLM 검색 API |
 | **Brave Search** | `web_search(query)` | **Keyed (`LAZYANTIGRAVITY_BRAVE_KEY`)** | 독립 웹 인덱스 검색 API |
 | **Jina Search** | `web_search(query)` | **Keyed (`LAZYANTIGRAVITY_JINA_KEY`)** | LLM 친화형 마크다운 검색 |
