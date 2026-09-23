@@ -120,3 +120,33 @@ test("saveFact and readFacts work with deduplication", () => {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
 });
+
+test("dedup index rejects duplicates in O(1) and survives external appends", async () => {
+	const { loadDedupIndex, contentHash } = await import("../dist/dedup-index.js");
+	const dir = mkdtempSync(join(tmpdir(), "memory-dedup-"));
+	try {
+		const file = join(dir, "facts.jsonl");
+		saveFact("alpha fact", "fact", file);
+		saveFact("beta fact", "fact", file);
+		const idx = loadDedupIndex(file);
+		assert.equal(idx.size(), 2);
+		assert.ok(idx.has("alpha fact"));
+		assert.ok(idx.has("  ALPHA FACT  ")); // 정규화 일치
+		assert.ok(!idx.has("gamma fact"));
+		// 외부 append → 사이즈 불일치로 rebuild
+		writeFileSync(file, JSON.stringify({ content: "gamma fact" }) + "\n", { flag: "a" });
+		const idx2 = loadDedupIndex(file);
+		assert.ok(idx2.has("gamma fact"));
+		assert.equal(idx2.size(), 3);
+		// saveFact 자체도 dedup index를 거쳐 중복을 거부한다
+		assert.equal(saveFact("gamma fact", "fact", file), null);
+		assert.equal(readFacts(file).length, 3);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("contentHash is normalization-insensitive", async () => {
+	const { contentHash } = await import("../dist/dedup-index.js");
+	assert.equal(contentHash("  Foo Bar "), contentHash("foo bar"));
+});

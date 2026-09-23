@@ -6,10 +6,11 @@ import {
 	openSync,
 	readFileSync,
 	unlinkSync,
-	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { factMetadata, type FactMetadata } from "./metadata.js";
+import { loadDedupIndex } from "./dedup-index.js";
+import { type FactMetadata, factMetadata } from "./metadata.js";
+
 export type { FactMetadata, FactReview } from "./metadata.js";
 
 const LOCK_TIMEOUT_MS = 5_000;
@@ -44,10 +45,15 @@ function withFileLock<T>(filePath: string, fn: () => T): T {
 				} catch {}
 			}
 		} catch (err: unknown) {
-			const errCode = (err && typeof err === "object" && "code" in err) ? (err as { code: string }).code : "";
+			const errCode =
+				err && typeof err === "object" && "code" in err
+					? (err as { code: string }).code
+					: "";
 			if (errCode === "EEXIST" || errCode === "EPERM" || errCode === "EBUSY") {
 				if (Date.now() > deadline) {
-					try { unlinkSync(lockPath); } catch {}
+					try {
+						unlinkSync(lockPath);
+					} catch {}
 					throw new Error(`Lock timeout for ${filePath}`);
 				}
 				sleepSync(LOCK_RETRY_MS);
@@ -112,13 +118,8 @@ export function saveFact(
 	const path = filePath ?? getMemoryFilePath();
 	return withFileLock(path, () => {
 		const validatedMetadata = factMetadata(metadata, trimmed, path, true);
-		const existing = readFacts(path);
-
-		// Deduplication check
-		const isDuplicate = existing.some(
-			(f) => f.content.toLowerCase() === trimmed.toLowerCase(),
-		);
-		if (isDuplicate) return null;
+		const index = loadDedupIndex(path);
+		if (index.has(trimmed)) return null;
 
 		const record: FactRecord = {
 			id: `fact-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -130,6 +131,7 @@ export function saveFact(
 		};
 
 		appendFileSync(path, `${JSON.stringify(record)}\n`, "utf8");
+		index.add(trimmed);
 		return record;
 	});
 }
