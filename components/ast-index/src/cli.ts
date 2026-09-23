@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
+import { checkBlocking } from "./blocking-check.js";
 import { buildIncrementalASTGraph, loadASTGraph } from "./cache.js";
 import { computeBlastRadius, findCallers, findSymbols } from "./query.js";
 
@@ -15,7 +16,9 @@ function main() {
 		const graph = buildIncrementalASTGraph(targetDir);
 		const duration = Date.now() - start;
 		const fileCount = Object.keys(graph.files).length;
-		console.log(`[AST-Index] Indexed ${fileCount} files in ${duration}ms. Saved to .lazyantigravity/cache/ast-graph.json`);
+		console.log(
+			`[AST-Index] Indexed ${fileCount} files in ${duration}ms. Saved to .lazyantigravity/cache/ast-graph.json`,
+		);
 	} else if (command === "symbol") {
 		const name = args[1];
 		if (!name) {
@@ -26,7 +29,9 @@ function main() {
 		const results = findSymbols(graph, name);
 		console.log(`=== Found ${results.length} symbol(s) matching "${name}" ===`);
 		for (const s of results) {
-			console.log(`- [${s.kind}] ${s.name} in ${s.file}:${s.line} (Exported: ${s.isExported})`);
+			console.log(
+				`- [${s.kind}] ${s.name} in ${s.file}:${s.line} (Exported: ${s.isExported})`,
+			);
 		}
 	} else if (command === "callers") {
 		const callee = args[1];
@@ -54,6 +59,20 @@ function main() {
 		for (const f of blast.affectedFiles) {
 			console.log(`  * ${f}`);
 		}
+	} else if (command === "check-blocking") {
+		const targetDir = args[1] ? resolve(args[1]) : cwd;
+		const findings = checkBlocking(targetDir);
+		if (findings.length === 0) {
+			console.log(
+				"[AST-Index] check-blocking: clean — no sync-I/O-in-async or ignored Result patterns.",
+			);
+		} else {
+			console.log(`=== Blocking Check Findings (${findings.length}) ===`);
+			for (const f of findings) {
+				console.log(`- [${f.rule}] ${f.file}:${f.line} — ${f.detail}`);
+			}
+			process.exit(1);
+		}
 	} else if (command === "hook" && args[1] === "session-start") {
 		// Non-blocking preindex trigger on session start
 		try {
@@ -69,7 +88,9 @@ function main() {
 		);
 	} else {
 		console.log("LazyAntigravity AST Indexer CLI");
-		console.log("Commands: preindex [dir] | symbol <name> | callers <fn> | blast-radius <file> | hook session-start");
+		console.log(
+			"Commands: preindex [dir] | symbol <name> | callers <fn> | blast-radius <file> | hook session-start",
+		);
 	}
 }
 

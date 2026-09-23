@@ -1,4 +1,5 @@
-export * from "./types.js";
-export * from "./indexer.js";
+export * from "./blocking-check.js";
 export * from "./cache.js";
+export * from "./indexer.js";
 export * from "./query.js";
+export * from "./types.js";

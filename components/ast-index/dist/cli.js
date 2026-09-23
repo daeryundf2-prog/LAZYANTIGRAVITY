@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
+import { checkBlocking } from "./blocking-check.js";
 import { buildIncrementalASTGraph, loadASTGraph } from "./cache.js";
 import { computeBlastRadius, findCallers, findSymbols } from "./query.js";
 const args = process.argv.slice(2);
@@ -53,6 +54,20 @@ function main() {
         console.log(`- Total External Call Sites: ${blast.totalCallers}`);
         for (const f of blast.affectedFiles) {
             console.log(`  * ${f}`);
+        }
+    }
+    else if (command === "check-blocking") {
+        const targetDir = args[1] ? resolve(args[1]) : cwd;
+        const findings = checkBlocking(targetDir);
+        if (findings.length === 0) {
+            console.log("[AST-Index] check-blocking: clean — no sync-I/O-in-async or ignored Result patterns.");
+        }
+        else {
+            console.log(`=== Blocking Check Findings (${findings.length}) ===`);
+            for (const f of findings) {
+                console.log(`- [${f.rule}] ${f.file}:${f.line} — ${f.detail}`);
+            }
+            process.exit(1);
         }
     }
     else if (command === "hook" && args[1] === "session-start") {

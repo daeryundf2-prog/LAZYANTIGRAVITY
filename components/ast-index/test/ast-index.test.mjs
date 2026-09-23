@@ -88,3 +88,57 @@ export function handleRequest() {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
 });
+
+test("checkFileBlocking flags sync I/O inside async functions", async () => {
+	const { checkFileBlocking } = await import("../dist/blocking-check.js");
+	const tempDir = mkdtempSync(join(tmpdir(), "ast-index-blocking-"));
+	try {
+		const file = join(tempDir, "worker.ts");
+		writeFileSync(file, `
+import { readFileSync } from "node:fs";
+
+async function loadConfig() {
+	const raw = readFileSync("config.json", "utf8");
+	return raw;
+}
+
+function okSync() {
+	return readFileSync("x", "utf8"); // sync fn 안은 무시해야 한다
+}
+`);
+		const findings = checkFileBlocking(file);
+		const rules = findings.map((f) => f.rule);
+		assert.deepEqual(rules, ["sync-io-in-async"]);
+		assert.equal(findings[0].line, 5);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("checkFileBlocking flags ignored Result-returning calls", async () => {
+	const { checkFileBlocking } = await import("../dist/blocking-check.js");
+	const tempDir = mkdtempSync(join(tmpdir(), "ast-index-result-"));
+	try {
+		const file = join(tempDir, "svc.ts");
+		writeFileSync(file, `
+type Result<T> = { ok: true; value: T } | { ok: false; error: string };
+
+function validate(): Result<boolean> {
+	return { ok: true, value: true };
+}
+
+async function run() {
+	validate();              // 무시 — flag
+	await validate();        // awaited — ok
+	const r = validate();    // bound — ok
+	return validate();       // returned — ok
+}
+`);
+		const findings = checkFileBlocking(file);
+		assert.equal(findings.length, 1);
+		assert.equal(findings[0].rule, "ignored-result");
+		assert.equal(findings[0].line, 9);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
