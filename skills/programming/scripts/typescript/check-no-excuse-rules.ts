@@ -13,11 +13,17 @@
  *   no-mutable-export       - `export let` / `export var`
  *   no-any-annotation       - `: any` in annotations (opt out: `// no-excuse-ok: any`)
  *   no-explicit-any-return  - `(): any` return types (opt out: `// no-excuse-ok: any`)
+ *   no-default-export       - `export default` (exempt: *.config.ts, which frameworks require)
  *   empty-catch             - `catch { }` or `catch (e) { }` with empty body
  *   catch-without-narrowing - catch block that uses error without instanceof narrowing
  *
  * Usage:
- *   bun run scripts/check-no-excuse-rules.ts <file-or-dir>...
+ *   bun run scripts/check-no-excuse-rules.ts [--only=rule-id,rule-id] <file-or-dir>...
+ *
+ *   --only=<csv> restricts reporting to the listed rule IDs (exit code still
+ *   reflects only those rules), e.g. a repo that enforces only the AGENTS.md
+ *   forbidden list can pass
+ *   --only=no-any-assertion,no-unknown-assertion,no-ts-ignore,no-ts-expect-error,no-enum,no-non-null-assertion,no-default-export
  *
  * Exit codes:
  *   0 - no violations
@@ -41,6 +47,7 @@ type RuleId =
   | "no-mutable-export"
   | "no-any-annotation"
   | "no-explicit-any-return"
+  | "no-default-export"
   | "empty-catch"
   | "catch-without-narrowing"
 
@@ -156,6 +163,19 @@ function analyzeFile(filePath: string): Violation[] {
       }
     }
 
+    // ── export default (exempt: *.config.ts — frameworks require that shape) ──
+    if (!filePath.endsWith(".config.ts")) {
+      const isDefaultExport =
+        ts.isExportAssignment(node) ||
+        ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) &&
+          node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) === true &&
+          node.modifiers?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword) === true)
+      if (isDefaultExport && !(ts.isExportAssignment(node) && node.isExportEquals)) {
+        const p = pos(node)
+        violations.push({ ruleId: "no-default-export", filePath, ...p, message: "`export default` — use a named export" })
+      }
+    }
+
     // ── export let / export var ──
     if (ts.isVariableStatement(node)) {
       const hasExport = node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
@@ -254,18 +274,23 @@ function formatViolation(v: Violation): string {
 
 function main(): void {
   const args = process.argv.slice(2)
-  if (args.length === 0) {
-    console.error("usage: check-no-excuse-rules.ts <file-or-dir>...")
+  const onlyArg = args.find((a) => a.startsWith("--only="))
+  const onlyRules = onlyArg === undefined ? null : new Set(onlyArg.slice("--only=".length).split(","))
+  const inputs = args.filter((a) => !a.startsWith("--only="))
+  if (inputs.length === 0) {
+    console.error("usage: check-no-excuse-rules.ts [--only=rule-id,rule-id] <file-or-dir>...")
     process.exit(2)
   }
 
-  const files = discoverFiles(args)
+  const files = discoverFiles(inputs)
   if (files.length === 0) {
     console.error("No TypeScript files found.")
     process.exit(2)
   }
 
-  const violations = files.flatMap((f) => analyzeFile(f))
+  const violations = files
+    .flatMap((f) => analyzeFile(f))
+    .filter((v) => onlyRules === null || onlyRules.has(v.ruleId))
 
   if (violations.length === 0) {
     console.log(`No violations in ${files.length} file(s).`)
