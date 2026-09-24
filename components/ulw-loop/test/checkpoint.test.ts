@@ -597,15 +597,15 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 		};
 		const fp = calculateQualityFingerprint(evidenceEnvelope);
 
-		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required" as any, {
+		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required", {
 			consensusId: "c-1",
 			qualityInputFingerprint: fp,
 		});
-		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required" as any, {
+		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required", {
 			consensusId: "c-2",
 			qualityInputFingerprint: fp,
 		});
-		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required" as any, {
+		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required", {
 			consensusId: "c-3",
 			qualityInputFingerprint: fp,
 		});
@@ -631,15 +631,15 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 			result: { filesChanged: ["src/index.ts"], commandsRun: ["npm test"] },
 		});
 
-		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required" as any, {
+		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required", {
 			consensusId: "c-1",
 			qualityInputFingerprint: "different-fp",
 		});
-		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required" as any, {
+		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required", {
 			consensusId: "c-2",
 			qualityInputFingerprint: "different-fp",
 		});
-		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required" as any, {
+		await appendRunEvent(repo, "default-run", "quality_gate.consensus_rework_required", {
 			consensusId: "c-3",
 			qualityInputFingerprint: "different-fp",
 		});

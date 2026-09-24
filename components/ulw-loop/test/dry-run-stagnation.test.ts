@@ -20,8 +20,8 @@ describe("Dry-Run Stagnation Scenarios", () => {
 
 	beforeEach(() => {
 		output = "";
-		process.stdout.write = mockStdoutWrite as any;
-		process.stderr.write = mockStderrWrite as any;
+		process.stdout.write = mockStdoutWrite;
+		process.stderr.write = mockStderrWrite;
 	});
 
 	afterEach(() => {

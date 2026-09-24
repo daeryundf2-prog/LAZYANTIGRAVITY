@@ -10,6 +10,7 @@ import {
 	validateConsensusSchema,
 } from "../src/consensus-dispatcher.js";
 import { appendRunEvent, readRunEvents } from "../src/control-plane.js";
+import type { ConsensusPersona } from "../src/verification-pipeline-types.js";
 import { validateConsensusResultEnvelope } from "../src/verification-pipeline.js";
 
 let repoRoot: string;
@@ -223,11 +224,11 @@ describe("Consensus Live Invocation Tests", () => {
 
 		const cId = result.consensusId;
 		const aId = (p: string) => `${p}-${cId.substring(0, 8)}`;
-		const mockEnvelope = (p: string) => ({
+		const mockEnvelope = (p: ConsensusPersona) => ({
 			runId,
 			consensusId: cId,
 			agentId: aId(p),
-			persona: p as any,
+			persona: p,
 			verdict: "approve" as const,
 			reason: "mock approve",
 			requiresParentAck: true as const,
@@ -299,7 +300,7 @@ describe("Consensus Live Invocation Tests", () => {
 		expect(reported.length).toBe(4);
 
 		const timedOutReporter = reported.find((r) => r.persona === "security_state_reviewer");
-		expect((timedOutReporter?.result as any)?.verdict).toBe("inconclusive");
+		expect((timedOutReporter?.result as { verdict?: string } | undefined)?.verdict).toBe("inconclusive");
 	});
 
 	it("should handle entire consensus timeout (missing response)", async () => {
@@ -311,11 +312,11 @@ describe("Consensus Live Invocation Tests", () => {
 		// Report only 3 personas, leaving regression_reviewer missing
 		const cId = resTimeout.consensusId;
 		const aId = (p: string) => `${p}-${cId.substring(0, 8)}`;
-		const mockEnvelope = (p: string) => ({
+		const mockEnvelope = (p: ConsensusPersona) => ({
 			runId,
 			consensusId: cId,
 			agentId: aId(p),
-			persona: p as any,
+			persona: p,
 			verdict: "approve" as const,
 			reason: "mock approve",
 			requiresParentAck: true as const,

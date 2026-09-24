@@ -125,7 +125,9 @@ describe("Ledger hash-chain integrity", () => {
 			string,
 			unknown
 		>;
-		const replayed = (await reconstructStateFromEvents(testDir, runId)) as unknown as Record<string, unknown>;
+		const replayed: Record<string, unknown> = JSON.parse(
+			JSON.stringify(await reconstructStateFromEvents(testDir, runId)),
+		);
 		// updatedAt은 '재구성이 수행된 시각'이지 원장에서 유도되는 값이 아니므로 제외한다.
 		const { updatedAt: _savedUpdatedAt, ...savedRest } = savedState;
 		const { updatedAt: _replayedUpdatedAt, ...replayedRest } = replayed;

@@ -16,7 +16,16 @@ afterEach(async () => {
 });
 
 function goal(objective: string): UlwLoopItem {
-	return { id: "G1", objective } as unknown as UlwLoopItem;
+	return {
+		id: "G1",
+		title: "fixture goal",
+		objective,
+		status: "in_progress",
+		successCriteria: [],
+		attempt: 1,
+		createdAt: "2026-01-01T00:00:00.000Z",
+		updatedAt: "2026-01-01T00:00:00.000Z",
+	};
 }
 
 function envelope(
