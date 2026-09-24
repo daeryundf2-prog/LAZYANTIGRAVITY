@@ -11,9 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# ── windows probe ────────────────────────────────────────────────────────────
+# -- windows probe -----------------------------------------------------------
 # The plugin carries win32-specific code paths (named-pipe IPC, hook gating).
-# This job is non-blocking until it is known-green on the runner.
+# Blocking: Windows regressions fail CI.
 
 permissions:
   contents: read
@@ -30,6 +30,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify contract drift (checkout byte integrity)
+        run: node scripts/check_contract_drift.mjs
 
       - name: Setup Node ${{ matrix.node }}
         uses: actions/setup-node@v4
@@ -81,6 +84,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify contract drift (checkout byte integrity)
+        run: node scripts/check_contract_drift.mjs
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
