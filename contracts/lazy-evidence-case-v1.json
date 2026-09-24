@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/daeryundf2-prog/lazy-contracts/schemas/lazy-evidence-case-v1.json",
+  "title": "Lazy Evidence Case v1",
+  "description": "Lazy 생태계 레포 간 증거/사건 산출물 교환 계약. 레포를 합치지 않고 파일 기반으로만 통신한다 — 런타임 의존 없음.",
+  "type": "object",
+  "required": ["schema_version", "case_id", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "lazy-evidence-case-v1" },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$",
+      "description": "사건 식별자. 경로·URL에 쓸 수 있는 문자만 허용."
+    },
+    "created_utc": { "type": "string", "format": "date-time" },
+    "producer": {
+      "type": "object",
+      "required": ["repo", "tool"],
+      "properties": {
+        "repo": { "type": "string", "description": "생산 레포 (예: lazyforensic)" },
+        "tool": { "type": "string", "description": "생산 스크립트/컴포넌트 (예: scripts/merge_timeline.py)" },
+        "tool_version": { "type": "string" },
+        "commit": { "type": "string", "description": "생산 시점 git HEAD (가능하면)" }
+      },
+      "additionalProperties": true
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence_item" },
+      "minItems": 1
+    },
+    "lineage": {
+      "type": "array",
+      "description": "상위 산출물 체인 — acquisition→triage→screening→report 경로 추적",
+      "items": { "$ref": "#/$defs/lineage_link" }
+    }
+  },
+  "$defs": {
+    "evidence_item": {
+      "type": "object",
+      "required": ["evidence_id", "kind", "trust", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.:-]{1,128}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["file", "media", "transcript", "document", "timeline_event",
+                   "screening_result", "report", "audit_event", "other"]
+        },
+        "trust": {
+          "type": "string",
+          "enum": ["observed", "heuristic", "model-assisted",
+                   "examiner-verified", "cryptographically-anchored",
+                   "not_checked", "unavailable"],
+          "description": "trust-levels.md 참조. 무자격 'verified' 사용 금지."
+        },
+        "summary": { "type": "string", "maxLength": 2000 },
+        "source": {
+          "type": "object",
+          "properties": {
+            "path": { "type": "string", "description": "생산 레포 관점의 상대 경로" },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "size": { "type": "integer", "minimum": 0 },
+            "captured_utc": { "type": "string", "format": "date-time" }
+          },
+          "additionalProperties": true
+        },
+        "confidence": {
+          "type": "number", "minimum": 0, "maximum": 1,
+          "description": "모델/휴리스틱 신뢰도. observed/cryptographically-anchored에는 사용하지 않는다."
+        },
+        "limitations": {
+          "type": "array", "items": { "type": "string" },
+          "description": "알려진 한계 — 예: 'STT 상대시각, 앵커 없음'"
+        },
+        "reviewer": {
+          "type": "string",
+          "description": "examiner-verified일 때 검토한 분석관 식별자"
+        },
+        "ledger_ref": {
+          "type": "string",
+          "description": "audit_ledger 항목의 entry_hash — 감사 원장과 연결"
+        }
+      }
+    },
+    "lineage_link": {
+      "type": "object",
+      "required": ["from_evidence_id", "to_evidence_id", "relation"],
+      "properties": {
+        "from_evidence_id": { "type": "string" },
+        "to_evidence_id": { "type": "string" },
+        "relation": {
+          "type": "string",
+          "enum": ["derived_from", "screened_by", "transcribed_from",
+                   "included_in", "anchored_by"]
+        },
+        "by_repo": { "type": "string" },
+        "by_tool": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

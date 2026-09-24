@@ -1,0 +1,9 @@
+{
+  "upstream": "lazy-contracts",
+  "upstream_commit": "f4684a7",
+  "sha256": {
+    "lazy-evidence-case-v1.json": "fff669b9b9b1707e0b1357e3c7c547eedb8cdc0c2bbd9ebed0b8b1e48a6f62db",
+    "trust-levels.md": "e42ca36ccc20f7ff1c0701199b5701f99078233488c891c5d3f07ddc436360a9",
+    "confine-path.mjs": "94b68f7ae07748a7d9e4327308c8e3618a1c0c90fa8403cdc8cb96f6adb379e6"
+  }
+}
