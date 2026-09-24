@@ -1,7 +1,7 @@
 # LAZYANTIGRAVITY (v0.7.0)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Node 18+](https://img.shields.io/badge/Node-18%2B-brightgreen.svg?style=flat-square)](https://nodejs.org/)
+[![Node 20+](https://img.shields.io/badge/Node-20%2B-brightgreen.svg?style=flat-square)](https://nodejs.org/)
 [![Reproducible Builds](https://img.shields.io/badge/Builds-Reproducible-success.svg?style=flat-square)](package.json)
 [![Architecture: Agentic Core](https://img.shields.io/badge/Architecture-Agentic%20Core-orange.svg?style=flat-square)](AGENTS.md)
 
@@ -73,7 +73,7 @@ Keep the **session UI** on **Gemini 3.8 Flash (High)**. Pass `invoke_subagent` `
 ## What ships in this tree
 
 - **15 components** — rules engine, active memory, quick-lane, adaptive reasoning, comment checker, LSP feedback, ULW loop (evidence ledger + checkpoints + consensus), telemetry (opt-in), daemon bridge (token-authed IPC blackboard), symbol index, session tree (shadow-git snapshots), active learning, and helpers.
-- **13 workflow skills + 2 aliases** — every former component-manual skill now lives in its component's README; absorbed workflows are preserved as references inside the skill that owns them.
+- **19 shared workflow skills** — authored in `shared-skills/skills/` and materialized into `skills/` (`npm run sync:skills`, CI-checked). Plus component-owned materializations (`ulw-loop`, `ulw-plan`, `references`).
 - **7 bundled local MCP servers** — `git_bash` (workspace-confined, read-only-by-default git policy, no shell chaining), `ast_grep` (tree-sitter structural search/replace when the optional `@ast-grep/napi` dependency is installed; structural requests fail closed without it — `regex=true` selects explicit line-based regex, never a silent fallback), `lsp` (compiler diagnostics), `workspace` (memory search, blackboard, session tree), `media` (ffprobe metadata, ffmpeg frame extraction for native-vision analysis, tesseract OCR kor+eng, whisper.cpp transcription with an opt-in `backend=gemini` path to Gemini 3.5 Transcribe; `media_youtube` via yt-dlp requires `LAZYANTIGRAVITY_MEDIA_NETWORK=1`, and the gemini backend — which uploads audio — requires `LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1`, `GEMINI_API_KEY`, and a per-call `confirmNotClientData=true` attestation after asking the user; any denial falls back to local whisper automatically, and `LAZYANTIGRAVITY_MEDIA_LOCAL_ONLY_DIRS` hard-blocks workspace subdirs from upload), `research` (web_read via Jina Reader/direct fetch, web_search via provider chain Tavily/Brave/Jina/DuckDuckGo, fetch_json for public APIs with SSRF protection; requires `LAZYANTIGRAVITY_RESEARCH_NETWORK=1`), `korean_law_offline` (local statute/precedent lookup). Remote MCP servers (`notebooklm` via `npx`, grep_app, context7) ship in `mcp_config.remote.example.json` only. `npx` servers are classified `remote-npx`, never `local-bundled`.
 
 ## Evidence, not claims

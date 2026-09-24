@@ -10,6 +10,7 @@ Conventions for human contributors and AI agents working on this repository.
 - Biome 2 linting and formatting.
 
 ## Omniscient Mode & Two-Step Strike
+- **Trust level: 프롬프트 계약(advisory).** The items below are behavioral guidance, not mechanically enforced rules. Implementation is `scripts/awt-guard.mjs` injecting fixed advisory phrases (`additionalContext`) plus a regex that detects meta-excuse phrases — it advises, it cannot guarantee.
 - **Assume Agent Correctness**: Proceed decisively in Omniscient Mode without second-guessing routine actions.
 - **Eliminate Attention Dispersion**: Avoid wandering into unrelated files out of self-doubt.
 - **Two-Step Strike**: High-focus generation (Gemini 3.8 Flash) + mechanical error capture (PostToolUse hooks & Oracles).
@@ -25,16 +26,18 @@ Conventions for human contributors and AI agents working on this repository.
 
 Two runner conventions coexist; pick by component type:
 
-1. **Legacy/full components (`vitest`)** — `components/rules`, `components/telemetry`, `components/lsp`, `components/git-bash`, `components/comment-checker`, `components/start-work-continuation`, `components/ultrawork`, `components/ulw-loop`.
+1. **Legacy/full components (`vitest`)** — `components/comment-checker`, `components/git-bash`, `components/rules`, `components/start-work-continuation`, `components/telemetry`, `components/ultrawork`, `components/ulw-loop`.
    - `package.json` `test` script is `vitest --run`.
    - Tests are TypeScript files under `test/*.test.ts` and import from `vitest` (`describe`, `it`, `expect`, `vi`).
    - Nested `describe` names use `#given`, `#when`, `#then` form, or inline `// given`, `// when`, `// then` comments. Never use Arrange-Act-Assert comments. Keep fixtures in `test/fixtures/`.
 
-2. **New/native components (`node:test`)** — `components/adaptive-reasoning`, `components/quick-lane`, `components/memory`.
+2. **New/native components (`node:test`)** — `components/active-learning`, `components/adaptive-reasoning`, `components/ast-index`, `components/daemon-bridge`, `components/memory`, `components/quick-lane`, `components/session-tree`.
    - `package.json` `test` script is `node --test test/*.test.mjs`.
    - Tests are JavaScript ESM files under `test/*.test.mjs` importing `node:test` and `node:assert/strict`.
    - No `vitest` devDependency. Use Node's built-in runner so no third-party test framework is required.
    - Do not regress these to `vitest --run`: `node:test` files are invisible to vitest's collector and `npm test` exits 1 with "No test suite found".
+
+3. **Hybrid (`components/lsp`)** — `package.json` `test` script is `node scripts/test.mjs`, a wrapper that runs `vitest --run` then `node --test scripts/*.test.mjs`. Keep both suites green.
 
 ## Forbidden
 
@@ -70,6 +73,7 @@ Two runner conventions coexist; pick by component type:
 
 ## Subagents: `fact-mentor` Adversarial Audit Subagent (Feature 05)
 
+- **Trust level: 프롬프트 계약(advisory).** `fact-mentor` is a role defined in skill prompts (`shared-skills/skills/review-work`, `shared-skills/skills/boost`), not a runtime subagent binary. The host agent dispatches it by prompt contract; the constraints below are advisory unless the host enforces them.
 - **Identity**: `fact-mentor` (Pro-tier adversarial falsification oracle, `Model: "pro"`).
 - **Sole Mandate**: Adversarial falsification of executor claims, file paths, SemVer versions, and benchmark metrics.
 - **Trigger**: Dispatched automatically during `skills/review-work` (Phase 1) and `skills/boost` (Stage 4).
