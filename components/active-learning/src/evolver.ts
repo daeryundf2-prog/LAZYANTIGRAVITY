@@ -68,7 +68,8 @@ function verifyDiskFilesAndHashes(raw: Record<string, unknown>, cwd: string): st
 		const actualSha = createHash("sha256").update(readFileSync(file)).digest("hex");
 		if (actualSha !== item["sha256"].trim().toLowerCase()) return `SHA-256 mismatch for ${item["file"]}`;
 	}
-	for (const audit of raw["commandAudits"] as unknown[]) {
+	const commandAudits = Array.isArray(raw["commandAudits"]) ? raw["commandAudits"] : [];
+	for (const audit of commandAudits) {
 		if (!audit || typeof audit !== "object") return "Invalid command audit entry";
 		const record = audit as Record<string, unknown>;
 		if (typeof record["command"] !== "string" || record["exitCode"] !== 0) return "Every command audit must have exitCode 0";

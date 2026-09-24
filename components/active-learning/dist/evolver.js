@@ -85,7 +85,8 @@ function verifyDiskFilesAndHashes(raw, cwd) {
         if (actualSha !== item["sha256"].trim().toLowerCase())
             return `SHA-256 mismatch for ${item["file"]}`;
     }
-    for (const audit of raw["commandAudits"]) {
+    const commandAudits = Array.isArray(raw["commandAudits"]) ? raw["commandAudits"] : [];
+    for (const audit of commandAudits) {
         if (!audit || typeof audit !== "object")
             return "Invalid command audit entry";
         const record = audit;
