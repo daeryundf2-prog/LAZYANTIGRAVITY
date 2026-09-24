@@ -1,8 +1,15 @@
+import { auditEgressRequest } from "./network-sandbox.js";
+import { UlwLoopError } from "./types.js";
 export class OpenCodeLiveConsensusClient {
-    constructor(baseUrl) {
+    constructor(baseUrl, egressWhitelist) {
         this.baseUrl = baseUrl;
+        this.egressWhitelist = egressWhitelist;
     }
     async init() {
+        const audit = auditEgressRequest(this.baseUrl, this.egressWhitelist);
+        if (!audit.allowed) {
+            throw new UlwLoopError(`Consensus egress blocked: ${audit.reason}`, "ULW_LOOP_EGRESS_BLOCKED");
+        }
         const sdkModule = "@opencode-ai/sdk";
         const sdk = (await import(sdkModule));
         if (typeof sdk.createOpencodeClient === "function") {

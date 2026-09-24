@@ -5,6 +5,7 @@ import { MockLiveConsensusClient } from "./consensus-mock-client.js";
 import { OpenCodeLiveConsensusClient } from "./consensus-opencode-client.js";
 import { ALL_PERSONAS } from "./consensus-types.js";
 import { appendRunEvent, readRunEvents, reconstructStateFromEvents } from "./control-plane.js";
+import { auditEgressRequest } from "./network-sandbox.js";
 import { UlwLoopError } from "./types.js";
 import { validateConsensusResultEnvelope } from "./verification-pipeline.js";
 export async function dispatchConsensus(repoRoot, runId, qualityInputFingerprint, options = {}) {
@@ -63,9 +64,22 @@ export async function dispatchConsensus(repoRoot, runId, qualityInputFingerprint
         const voterTimeout = options.voterTimeoutMs || 120000;
         const consensusTimeout = options.consensusTimeoutMs || 150000;
         const opencodeBaseUrl = options.opencodeBaseUrl || process.env["OPENCODE_API_URL"] || "http://127.0.0.1:4096";
+        // 자체 호스팅 opencode 서버는 명시 허용 목록으로만 외부 도메인을 연다.
+        const egressWhitelist = (process.env["OMO_ULW_LOOP_EGRESS_ALLOW"] ?? "")
+            .split(",")
+            .map((d) => d.trim())
+            .filter(Boolean);
         let client;
         if (options.live) {
-            const activeClient = new OpenCodeLiveConsensusClient(opencodeBaseUrl);
+            const audit = auditEgressRequest(opencodeBaseUrl, egressWhitelist);
+            if (!audit.allowed) {
+                await appendRunEvent(repoRoot, runId, "quality_gate.consensus_egress_blocked", {
+                    consensusId,
+                    reason: audit.reason ?? "egress audit failed",
+                });
+                throw new UlwLoopError(`Consensus egress blocked: ${audit.reason}`, "ULW_LOOP_EGRESS_BLOCKED");
+            }
+            const activeClient = new OpenCodeLiveConsensusClient(opencodeBaseUrl, egressWhitelist);
             await activeClient.init();
             client = activeClient;
         }

@@ -1,4 +1,6 @@
 import type { LiveConsensusClient } from "./consensus-types.js";
+import { auditEgressRequest } from "./network-sandbox.js";
+import { UlwLoopError } from "./types.js";
 
 export interface OpencodeSdkClient {
 	session: {
@@ -24,9 +26,16 @@ interface SdkMessage {
 
 export class OpenCodeLiveConsensusClient implements LiveConsensusClient {
 	private client: OpencodeSdkClient | undefined;
-	constructor(private baseUrl: string) {}
+	constructor(
+		private baseUrl: string,
+		private egressWhitelist?: readonly string[],
+	) {}
 
 	async init(): Promise<void> {
+		const audit = auditEgressRequest(this.baseUrl, this.egressWhitelist);
+		if (!audit.allowed) {
+			throw new UlwLoopError(`Consensus egress blocked: ${audit.reason}`, "ULW_LOOP_EGRESS_BLOCKED");
+		}
 		const sdkModule = "@opencode-ai/sdk";
 		const sdk = (await import(sdkModule)) as {
 			createOpencodeClient?: (opts: { baseUrl: string }) => OpencodeSdkClient;

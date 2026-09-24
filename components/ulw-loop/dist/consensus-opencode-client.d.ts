@@ -45,8 +45,9 @@ export interface OpencodeSdkClient {
 }
 export declare class OpenCodeLiveConsensusClient implements LiveConsensusClient {
     private baseUrl;
+    private egressWhitelist?;
     private client;
-    constructor(baseUrl: string);
+    constructor(baseUrl: string, egressWhitelist?: readonly string[] | undefined);
     init(): Promise<void>;
     private requireClient;
     createSession(runId: string, title: string): Promise<string>;

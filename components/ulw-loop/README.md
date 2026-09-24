@@ -85,6 +85,21 @@ enabled = true
 
 This plugin runs locally. The scaffold does not call a network service by itself.
 
+### Egress sandbox
+
+Live consensus is the only outbound path: `OpenCodeLiveConsensusClient`
+audits its `baseUrl` against the `network-sandbox.ts` domain whitelist
+before the SDK is touched. Non-whitelisted domains throw
+`ULW_LOOP_EGRESS_BLOCKED` and write a
+`quality_gate.consensus_egress_blocked` ledger event. Defaults cover
+loopback plus the repo's infra domains; a self-hosted opencode server on
+a custom domain requires an explicit allowlist:
+
+```bash
+# comma-separated extra domains for live consensus egress
+export OMO_ULW_LOOP_EGRESS_ALLOW="internal.corp,opencode.example.org"
+```
+
 ## License
 
 [MIT](LICENSE).

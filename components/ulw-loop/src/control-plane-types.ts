@@ -48,6 +48,7 @@ export type EventType =
 	| "quality_gate.consensus_passed"
 	| "quality_gate.consensus_failed"
 	| "quality_gate.consensus_rework_required"
+	| "quality_gate.consensus_egress_blocked"
 	| "quality_gate.consensus_inconclusive"
 	| "quality_gate.completed"
 	| "quality_gate.failed"
