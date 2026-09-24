@@ -91,7 +91,25 @@ npm run provenance -- --json       # product / generated / vendored provenance
 npm run evidence:map -- --json     # docs claims mapped to their local evidence
 npm run bench                      # daemon IPC + ast-index benchmark; starts a sandbox daemon
 npm run bench:hooks                # warm pure hook paths only; not full host cold startup
+npm run bench:hooks -- --update-readme   # refresh the measured table below
 ```
+
+### Hook-path benchmark (measured)
+
+<!-- BENCH_HOOKS:START -->
+
+Measured 2026-09-24 on Node v24.19.0 (win32), baseline e7a294d. Values are µs/call batch means.
+
+| Hook path | p50 current | p95 current | p50 baseline |
+|---|---|---|---|
+| `payloadNormalization` | 2.3 | 6.5 | 2.3 |
+| `shellPermissionPolicy` | 0.6 | 1.6 | 0.6 |
+| `workingMemoryFormatting` | 0.5 | 1.3 | 0.5 |
+| `evidenceContractValidation` | 2.6 | 4.3 | 2.5 |
+
+_Warm in-process synthetic function comparison, alternating batch order. Includes loop/timer overhead; percentiles describe batch means, not individual calls. No host, cold startup, network, daemon, filesystem operation, or subprocess latency measured. Different outputs are not equivalent-work speedups. No performance threshold or improvement claim._
+
+<!-- BENCH_HOOKS:END -->
 
 ## Offline profile
 
