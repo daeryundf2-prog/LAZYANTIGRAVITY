@@ -81,6 +81,18 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Generate CycloneDX SBOM
+        if: matrix.node == '22'
+        run: node scripts/gen-sbom.mjs --output sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        if: matrix.node == '22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          retention-days: 30
+
   windows-probe:
     name: windows (node 22)
     runs-on: windows-latest

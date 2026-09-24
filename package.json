@@ -57,6 +57,7 @@
 		"audit:hallucination": "node scripts/enterprise_pipeline_health_check.mjs",
 		"health:hallucination": "node scripts/enterprise_pipeline_health_check.mjs",
 		"bench": "node scripts/bench-ast-index.mjs && node scripts/bench-daemon-rtt.mjs",
-		"bench:hooks": "node scripts/bench-hook-paths.mjs"
+		"bench:hooks": "node scripts/bench-hook-paths.mjs",
+		"sbom": "node scripts/gen-sbom.mjs"
 	}
 }
