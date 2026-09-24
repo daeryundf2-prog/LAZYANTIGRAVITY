@@ -43,18 +43,26 @@ test("cove_verify CLI runs with --json and blocks contradictions with --strict",
 	const dir = mkdtempSync(join(tmpdir(), "cove-"));
 	const draftFile = join(dir, "draft.md");
 	writeFileSync(draftFile, "React 19 was released in 2024.\nTypeScript 6 is enforced.\n", "utf8");
+	const kbFile = join(dir, "kb.txt");
+	writeFileSync(kbFile, "React 19 was released in 2024. TypeScript 6 is enforced.\n", "utf8");
 
-	// 1. JSON mode passes when verified
-	const resJson = spawnSync("node", [SCRIPT, draftFile, "--json"], { encoding: "utf8" });
+	// 1. JSON mode passes when verified against KB
+	const resJson = spawnSync("node", [SCRIPT, draftFile, "--kb", kbFile, "--json"], { encoding: "utf8" });
 	assert.equal(resJson.status, 0);
 	const data = JSON.parse(resJson.stdout);
 	assert.equal(data.all_verified, true);
 	assert.ok(data.total_verification_questions >= 2);
 
+	// 1b. without KB, nothing is "verified" — unchecked marks it unverified
+	const resNoKb = spawnSync("node", [SCRIPT, draftFile, "--json"], { encoding: "utf8" });
+	assert.equal(resNoKb.status, 0);
+	const noKb = JSON.parse(resNoKb.stdout);
+	assert.equal(noKb.all_verified, false);
+	assert.ok(noKb.unchecked_count >= 1);
+
 	// 2. KB mismatch in strict mode blocks with exit 1
 	const badDraft = join(dir, "bad_draft.md");
 	writeFileSync(badDraft, "The fake hallucinated module v99 was created in 2030.\n", "utf8");
-	const kbFile = join(dir, "kb.txt");
 	writeFileSync(kbFile, "Official modules: core-v1, core-v2.", "utf8");
 
 	const resStrict = spawnSync("node", [SCRIPT, badDraft, "--kb", kbFile, "--strict"], { encoding: "utf8" });

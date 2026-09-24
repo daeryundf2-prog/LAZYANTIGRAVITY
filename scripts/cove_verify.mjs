@@ -40,19 +40,25 @@ export function planVerificationQuestions(draftText) {
 export function executeVerification(questions, factLookupFn) {
 	return questions.map((q) => {
 		const fact = factLookupFn ? factLookupFn(q.verification_question, q.target_claim) : null;
-		const answer = fact?.answer || "Fact verified against primary sources";
-		const isConsistent = fact?.is_consistent !== undefined ? fact.is_consistent : true;
+		// factLookupFn 부재 시 검증 미수행 — 무자격 "verified" 판정 금지
+		// (lazy-contracts trust-levels: not_checked / unavailable)
+		const checked = fact !== null;
+		const answer = checked ? fact.answer : "Not checked — no fact lookup source provided";
+		// 미검증은 contradiction이 아니다 — verification_status로만 추적
+		const isConsistent = checked ? (fact.is_consistent !== undefined ? fact.is_consistent : true) : true;
 
 		return {
 			...q,
 			verified_answer: answer,
-			is_consistent: isConsistent
+			is_consistent: isConsistent,
+			verification_status: checked ? "checked" : "not_checked"
 		};
 	});
 }
 
 export function synthesizeVerifiedOutput(draftText, verificationResults) {
 	const contradictions = verificationResults.filter((r) => !r.is_consistent);
+	const unchecked = verificationResults.filter((r) => r.verification_status === "not_checked");
 
 	let verifiedText = draftText;
 	if (contradictions.length > 0) {
@@ -68,8 +74,9 @@ export function synthesizeVerifiedOutput(draftText, verificationResults) {
 		original_draft: draftText,
 		total_verification_questions: verificationResults.length,
 		contradictions_found: contradictions.length,
+		unchecked_count: unchecked.length,
 		verified_output: verifiedText,
-		all_verified: contradictions.length === 0
+		all_verified: contradictions.length === 0 && unchecked.length === 0
 	};
 }
 
@@ -141,7 +148,10 @@ async function main() {
 		console.log(JSON.stringify(synthesized, null, 2));
 	} else {
 		console.log(`[CoVe VERIFY] Questions Formulated: ${synthesized.total_verification_questions} | Contradictions: ${synthesized.contradictions_found}`);
-		console.log(`Status: ${synthesized.all_verified ? "PASSED (100% Verified)" : "CORRECTIONS APPLIED"}`);
+		const status = synthesized.all_verified
+			? "PASSED (all claims checked against KB)"
+			: (synthesized.unchecked_count > 0 ? `NOT VERIFIED (${synthesized.unchecked_count} unchecked)` : "CORRECTIONS APPLIED");
+		console.log(`Status: ${status}`);
 	}
 
 	if ((isHighFidelity || args.includes('--strict')) && !synthesized.all_verified) {

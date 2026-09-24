@@ -88,13 +88,23 @@ test("safe_evaluator CLI outputs JSON with --json flag", () => {
 	const dir = mkdtempSync(join(tmpdir(), "safe-json-"));
 	const testFile = join(dir, "doc.md");
 	writeFileSync(testFile, "Gemini 3.8 supports thinking mode.\nIt has 2M tokens context.\n", "utf8");
+	const kbFile = join(dir, "kb.txt");
+	writeFileSync(kbFile, "Gemini 3.8 supports thinking mode. It has 2M tokens context.\n", "utf8");
 
-	const res = spawnSync("node", [SCRIPT, testFile, "--json"], { encoding: "utf8" });
+	// KB와 일치 → Supported, factuality 1.0
+	const res = spawnSync("node", [SCRIPT, testFile, "--kb", kbFile, "--json"], { encoding: "utf8" });
 	assert.equal(res.status, 0);
 	const data = JSON.parse(res.stdout);
 	assert.ok(data.total_atomic_facts >= 2);
 	assert.ok(typeof data.factuality_score === "number");
 	assert.ok(data.factuality_score >= 0.85);
+
+	// KB 없으면 검증 미수행 — 무자격 Supported 금지 (not_checked)
+	const resNoKb = spawnSync("node", [SCRIPT, testFile, "--json"], { encoding: "utf8" });
+	assert.equal(resNoKb.status, 0);
+	const noKb = JSON.parse(resNoKb.stdout);
+	assert.equal(noKb.factuality_score, 0);
+	assert.ok(noKb.not_checked_count >= 2);
 });
 
 test("ulw-loop CLI exposes cove-verify and safe-eval subcommands", () => {
@@ -102,15 +112,17 @@ test("ulw-loop CLI exposes cove-verify and safe-eval subcommands", () => {
 	const dir = mkdtempSync(join(tmpdir(), "ulw-cli-"));
 	const testFile = join(dir, "eval_target.md");
 	writeFileSync(testFile, "React 19 was launched in 2024.\nTypeScript 6 is enforced.\n", "utf8");
+	const kbFile = join(dir, "kb.txt");
+	writeFileSync(kbFile, "React 19 was launched in 2024. TypeScript 6 is enforced.\n", "utf8");
 
-	// 1. ulw-loop safe-eval
-	const resSafe = spawnSync("node", [CLI, "ulw-loop", "safe-eval", testFile, "--json"], { encoding: "utf8" });
+	// 1. ulw-loop safe-eval (KB 제공 — 검증 경로 실행)
+	const resSafe = spawnSync("node", [CLI, "ulw-loop", "safe-eval", testFile, "--kb", kbFile, "--json"], { encoding: "utf8" });
 	assert.equal(resSafe.status, 0, resSafe.stderr);
 	const safeData = JSON.parse(resSafe.stdout);
 	assert.ok(safeData.total_atomic_facts >= 2);
 
-	// 2. ulw-loop cove-verify
-	const resCove = spawnSync("node", [CLI, "ulw-loop", "cove-verify", testFile, "--json"], { encoding: "utf8" });
+	// 2. ulw-loop cove-verify (KB 제공)
+	const resCove = spawnSync("node", [CLI, "ulw-loop", "cove-verify", testFile, "--kb", kbFile, "--json"], { encoding: "utf8" });
 	assert.equal(resCove.status, 0, resCove.stderr);
 	const coveData = JSON.parse(resCove.stdout);
 	assert.equal(coveData.all_verified, true);

@@ -65,6 +65,7 @@ export function evaluateAtomicFacts(atomicFacts, knowledgeBase = '') {
 	let supported = 0;
 	let refuted = 0;
 	let unclear = 0;
+	let notChecked = 0;
 
 	const evaluated = atomicFacts.map((fact) => {
 		const propLower = fact.proposition.toLowerCase();
@@ -111,8 +112,9 @@ export function evaluateAtomicFacts(atomicFacts, knowledgeBase = '') {
 			return { ...fact, verdict: 'Refuted', rationale: 'Contains marker of falsification' };
 		}
 
-		supported += 1;
-		return { ...fact, verdict: 'Supported', rationale: 'Plausible verified proposition' };
+		// 지식베이스 없이는 검증 불가 — 무자격 Supported 판정 금지 (lazy-contracts trust-levels)
+		notChecked += 1;
+		return { ...fact, verdict: 'NotChecked', rationale: 'No knowledge base provided — verification not performed' };
 	});
 
 	const total = evaluated.length;
@@ -124,6 +126,7 @@ export function evaluateAtomicFacts(atomicFacts, knowledgeBase = '') {
 		supported_count: supported,
 		refuted_count: refuted,
 		unclear_count: unclear,
+		not_checked_count: notChecked,
 		precision,
 		factuality_score: factualityScore,
 		facts: evaluated
@@ -171,7 +174,7 @@ async function main() {
 	if (args.includes('--json')) {
 		console.log(JSON.stringify(evaluation, null, 2));
 	} else {
-		console.log(`[SAFE EVALUATOR] Total Facts: ${evaluation.total_atomic_facts} | Supported: ${evaluation.supported_count} | Refuted: ${evaluation.refuted_count} | Unclear: ${evaluation.unclear_count}`);
+		console.log(`[SAFE EVALUATOR] Total Facts: ${evaluation.total_atomic_facts} | Supported: ${evaluation.supported_count} | Refuted: ${evaluation.refuted_count} | Unclear: ${evaluation.unclear_count} | NotChecked: ${evaluation.not_checked_count}`);
 		console.log(`[SAFE EVALUATOR] Factuality Score: ${(evaluation.factuality_score * 100).toFixed(1)}% | Precision: ${(evaluation.precision * 100).toFixed(1)}%`);
 	}
 
