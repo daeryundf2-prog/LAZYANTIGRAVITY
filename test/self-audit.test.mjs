@@ -29,12 +29,13 @@ test("#given uncommitted mistake in repo #when self-audit --rollback is triggere
 	const tempDir = mkdtempSync(join(tmpdir(), "self-audit-test-"));
 	try {
 		execSync("git init -b main", { cwd: tempDir, encoding: "utf8" });
-		execSync("git config user.name 'Test Runner'", { cwd: tempDir, encoding: "utf8" });
-		execSync("git config user.email 'test@example.com'", { cwd: tempDir, encoding: "utf8" });
+		execSync("git config core.autocrlf false", { cwd: tempDir, encoding: "utf8" });
+		execSync('git config user.name "Test Runner"', { cwd: tempDir, encoding: "utf8" });
+		execSync('git config user.email "test@example.com"', { cwd: tempDir, encoding: "utf8" });
 
 		const baselineFile = join(tempDir, "baseline.txt");
 		writeFileSync(baselineFile, "baseline clean content\n", "utf8");
-		execSync("git add baseline.txt && git commit -m 'Initial commit'", { cwd: tempDir, encoding: "utf8" });
+		execSync('git add baseline.txt && git commit -m "Initial commit"', { cwd: tempDir, encoding: "utf8" });
 
 		// inject an uncommitted mistake into baseline file
 		writeFileSync(baselineFile, "baseline clean content\n[INJECTED_USELESS_MISTAKE]\n", "utf8");
