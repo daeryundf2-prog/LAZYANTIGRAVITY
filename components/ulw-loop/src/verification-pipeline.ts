@@ -220,7 +220,11 @@ export function createVerificationContext(params: {
 		destructiveChange: isDest,
 		publicRelease: isPub,
 		securitySensitive: isSec,
-		lspDiagnostics: params.lspDiagnostics as any,
-		rulesViolations: params.rulesViolations as any,
+		lspDiagnostics: toStringList(params.lspDiagnostics),
+		rulesViolations: toStringList(params.rulesViolations),
 	};
+}
+
+function toStringList(values: readonly unknown[]): string[] {
+	return values.filter((v): v is string => typeof v === "string");
 }

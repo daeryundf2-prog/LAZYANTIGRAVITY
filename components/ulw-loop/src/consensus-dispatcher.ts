@@ -1,6 +1,6 @@
 import { aggregateConsensus } from "./consensus-aggregate.js";
 import { reportConsensusResult } from "./consensus-dispatch.js";
-import { validateConsensusSchema } from "./consensus-helpers.js";
+import { isConsensusResultEnvelope, validateConsensusSchema } from "./consensus-helpers.js";
 import { MockLiveConsensusClient, mockSessionToPersona } from "./consensus-mock-client.js";
 import type { LiveConsensusClient } from "./consensus-types.js";
 import { ALL_PERSONAS, CONSENSUS_RESULT_SCHEMA } from "./consensus-types.js";
@@ -114,8 +114,11 @@ export async function triggerLiveConsensus(
 
 			if (structuredOutput) {
 				try {
-					validateConsensusSchema(structuredOutput as Record<string, unknown>);
-					parsedEnvelope = structuredOutput as unknown as ConsensusResultEnvelope;
+					validateConsensusSchema(structuredOutput);
+					if (!isConsensusResultEnvelope(structuredOutput)) {
+						throw new Error("Envelope passed schema validation but failed type narrowing");
+					}
+					parsedEnvelope = structuredOutput;
 				} catch (err: unknown) {
 					schemaValidationError = err instanceof Error ? err : new Error(String(err));
 				}
@@ -132,8 +135,10 @@ export async function triggerLiveConsensus(
 				}
 				try {
 					const textEnvelope: unknown = JSON.parse(match[0]);
-					validateConsensusSchema(textEnvelope as Record<string, unknown>);
-					parsedEnvelope = textEnvelope as ConsensusResultEnvelope;
+					if (!isConsensusResultEnvelope(textEnvelope)) {
+						throw new Error("Text JSON block failed consensus envelope narrowing");
+					}
+					parsedEnvelope = textEnvelope;
 				} catch (err: unknown) {
 					throw schemaValidationError || (err instanceof Error ? err : new Error(String(err)));
 				}

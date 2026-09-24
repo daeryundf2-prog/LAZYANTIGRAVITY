@@ -169,7 +169,10 @@ export function createVerificationContext(params) {
         destructiveChange: isDest,
         publicRelease: isPub,
         securitySensitive: isSec,
-        lspDiagnostics: params.lspDiagnostics,
-        rulesViolations: params.rulesViolations,
+        lspDiagnostics: toStringList(params.lspDiagnostics),
+        rulesViolations: toStringList(params.rulesViolations),
     };
+}
+function toStringList(values) {
+    return values.filter((v) => typeof v === "string");
 }

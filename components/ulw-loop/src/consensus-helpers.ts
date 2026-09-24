@@ -32,6 +32,16 @@ export function validateConsensusSchema(envelope: Record<string, unknown>): void
 	}
 }
 
+export function isConsensusResultEnvelope(x: unknown): x is ConsensusResultEnvelope {
+	if (typeof x !== "object" || x === null || Array.isArray(x)) return false;
+	try {
+		validateConsensusSchema(x as Record<string, unknown>);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export function getEnvelopeHash(envelope: ConsensusResultEnvelope): string {
 	const normalized = {
 		runId: envelope["runId"],

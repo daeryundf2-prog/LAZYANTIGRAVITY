@@ -23,7 +23,7 @@ interface SdkMessage {
 }
 
 export class OpenCodeLiveConsensusClient implements LiveConsensusClient {
-	private client!: OpencodeSdkClient;
+	private client: OpencodeSdkClient | undefined;
 	constructor(private baseUrl: string) {}
 
 	async init(): Promise<void> {
@@ -44,8 +44,15 @@ export class OpenCodeLiveConsensusClient implements LiveConsensusClient {
 		}
 	}
 
+	private requireClient(): OpencodeSdkClient {
+		if (!this.client) {
+			throw new Error("OpenCodeLiveConsensusClient.init() must be called before use");
+		}
+		return this.client;
+	}
+
 	async createSession(runId: string, title: string): Promise<string> {
-		const res = await this.client.session.create({ body: { parentID: runId, title } });
+		const res = await this.requireClient().session.create({ body: { parentID: runId, title } });
 		const id = res?.data?.id || res?.id;
 		if (!id) {
 			throw new Error("Failed to create subagent session - no session ID returned");
@@ -54,13 +61,14 @@ export class OpenCodeLiveConsensusClient implements LiveConsensusClient {
 	}
 
 	async sendMessage(sessionId: string, text: string, schema?: Record<string, unknown>): Promise<void> {
-		if (typeof this.client.session.prompt === "function" && schema) {
-			await this.client.session.prompt({
+		const client = this.requireClient();
+		if (typeof client.session.prompt === "function" && schema) {
+			await client.session.prompt({
 				path: { id: sessionId },
 				body: { parts: [{ type: "text", text }], json_schema: schema },
 			});
 		} else {
-			await this.client.session.message({
+			await client.session.message({
 				path: { id: sessionId },
 				body: { parts: [{ type: "text", text }] },
 			});
@@ -71,7 +79,7 @@ export class OpenCodeLiveConsensusClient implements LiveConsensusClient {
 		sessionId: string,
 		timeoutMs: number,
 	): Promise<{ text: string; structuredOutput?: Record<string, unknown> }> {
-		return waitForResult(this.client, sessionId, timeoutMs);
+		return waitForResult(this.requireClient(), sessionId, timeoutMs);
 	}
 }
 

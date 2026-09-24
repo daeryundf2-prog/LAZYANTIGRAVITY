@@ -33,6 +33,17 @@ export function validateConsensusSchema(envelope) {
         }
     }
 }
+export function isConsensusResultEnvelope(x) {
+    if (typeof x !== "object" || x === null || Array.isArray(x))
+        return false;
+    try {
+        validateConsensusSchema(x);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
 export function getEnvelopeHash(envelope) {
     const normalized = {
         runId: envelope["runId"],

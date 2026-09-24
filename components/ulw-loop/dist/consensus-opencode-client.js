@@ -18,8 +18,14 @@ export class OpenCodeLiveConsensusClient {
             throw new Error("No client factory function found in @opencode-ai/sdk");
         }
     }
+    requireClient() {
+        if (!this.client) {
+            throw new Error("OpenCodeLiveConsensusClient.init() must be called before use");
+        }
+        return this.client;
+    }
     async createSession(runId, title) {
-        const res = await this.client.session.create({ body: { parentID: runId, title } });
+        const res = await this.requireClient().session.create({ body: { parentID: runId, title } });
         const id = res?.data?.id || res?.id;
         if (!id) {
             throw new Error("Failed to create subagent session - no session ID returned");
@@ -27,21 +33,22 @@ export class OpenCodeLiveConsensusClient {
         return id;
     }
     async sendMessage(sessionId, text, schema) {
-        if (typeof this.client.session.prompt === "function" && schema) {
-            await this.client.session.prompt({
+        const client = this.requireClient();
+        if (typeof client.session.prompt === "function" && schema) {
+            await client.session.prompt({
                 path: { id: sessionId },
                 body: { parts: [{ type: "text", text }], json_schema: schema },
             });
         }
         else {
-            await this.client.session.message({
+            await client.session.message({
                 path: { id: sessionId },
                 body: { parts: [{ type: "text", text }] },
             });
         }
     }
     async pollMessages(sessionId, timeoutMs) {
-        return waitForResult(this.client, sessionId, timeoutMs);
+        return waitForResult(this.requireClient(), sessionId, timeoutMs);
     }
 }
 function getLatestAssistantMessage(messages) {

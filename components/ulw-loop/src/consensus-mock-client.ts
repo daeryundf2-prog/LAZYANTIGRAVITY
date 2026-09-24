@@ -50,50 +50,36 @@ export class MockLiveConsensusClient implements LiveConsensusClient {
 		};
 
 		if (mockVerdict === "invalid_envelope") {
-			const badEnvelope = { ...envelope, verdict: "bad-verdict" as ConsensusResultEnvelope["verdict"] };
-			return {
-				text: JSON.stringify(badEnvelope),
-				structuredOutput: badEnvelope as unknown as Record<string, unknown>,
-			};
+			const badEnvelope: Record<string, unknown> = { ...envelope, verdict: "bad-verdict" };
+			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope };
 		}
 
 		if (mockVerdict === "invalid_schema") {
-			const badEnvelope = { runId: this.runId, consensusId: this.consensusId };
-			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope as Record<string, unknown> };
+			const badEnvelope: Record<string, unknown> = { runId: this.runId, consensusId: this.consensusId };
+			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope };
 		}
 
 		if (mockVerdict === "sandbox_violation_finalize") {
-			const badEnvelope = { ...envelope, mayFinalizeRun: true };
-			return {
-				text: JSON.stringify(badEnvelope),
-				structuredOutput: badEnvelope as unknown as Record<string, unknown>,
-			};
+			const badEnvelope: Record<string, unknown> = { ...envelope, mayFinalizeRun: true };
+			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope };
 		}
 
 		if (mockVerdict === "sandbox_violation_model") {
-			const badEnvelope = { ...envelope, mayChangeModel: true };
-			return {
-				text: JSON.stringify(badEnvelope),
-				structuredOutput: badEnvelope as unknown as Record<string, unknown>,
-			};
+			const badEnvelope: Record<string, unknown> = { ...envelope, mayChangeModel: true };
+			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope };
 		}
 
 		if (mockVerdict === "sandbox_violation_switch") {
-			const badEnvelope = { ...envelope, wouldSwitchModel: true };
-			return {
-				text: JSON.stringify(badEnvelope),
-				structuredOutput: badEnvelope as unknown as Record<string, unknown>,
-			};
+			const badEnvelope: Record<string, unknown> = { ...envelope, wouldSwitchModel: true };
+			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope };
 		}
 
 		if (mockVerdict === "forbidden_phrase") {
-			const badEnvelope = { ...envelope, reason: "I have finished the entire /ulw task" };
-			return {
-				text: JSON.stringify(badEnvelope),
-				structuredOutput: badEnvelope as unknown as Record<string, unknown>,
-			};
+			const badEnvelope: Record<string, unknown> = { ...envelope, reason: "I have finished the entire /ulw task" };
+			return { text: JSON.stringify(badEnvelope), structuredOutput: badEnvelope };
 		}
 
-		return { text: JSON.stringify(envelope), structuredOutput: envelope as unknown as Record<string, unknown> };
+		const output: Record<string, unknown> = { ...envelope };
+		return { text: JSON.stringify(envelope), structuredOutput: output };
 	}
 }

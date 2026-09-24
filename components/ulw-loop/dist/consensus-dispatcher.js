@@ -1,6 +1,6 @@
 import { aggregateConsensus } from "./consensus-aggregate.js";
 import { reportConsensusResult } from "./consensus-dispatch.js";
-import { validateConsensusSchema } from "./consensus-helpers.js";
+import { isConsensusResultEnvelope, validateConsensusSchema } from "./consensus-helpers.js";
 import { MockLiveConsensusClient, mockSessionToPersona } from "./consensus-mock-client.js";
 import { ALL_PERSONAS, CONSENSUS_RESULT_SCHEMA } from "./consensus-types.js";
 import { validateConsensusResultEnvelope } from "./verification-pipeline.js";
@@ -88,6 +88,9 @@ export async function triggerLiveConsensus(repoRoot, runId, consensusId, prompt,
             if (structuredOutput) {
                 try {
                     validateConsensusSchema(structuredOutput);
+                    if (!isConsensusResultEnvelope(structuredOutput)) {
+                        throw new Error("Envelope passed schema validation but failed type narrowing");
+                    }
                     parsedEnvelope = structuredOutput;
                 }
                 catch (err) {
@@ -103,7 +106,9 @@ export async function triggerLiveConsensus(repoRoot, runId, consensusId, prompt,
                 }
                 try {
                     const textEnvelope = JSON.parse(match[0]);
-                    validateConsensusSchema(textEnvelope);
+                    if (!isConsensusResultEnvelope(textEnvelope)) {
+                        throw new Error("Text JSON block failed consensus envelope narrowing");
+                    }
                     parsedEnvelope = textEnvelope;
                 }
                 catch (err) {

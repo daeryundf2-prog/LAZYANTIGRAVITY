@@ -48,6 +48,7 @@ export declare class OpenCodeLiveConsensusClient implements LiveConsensusClient 
     private client;
     constructor(baseUrl: string);
     init(): Promise<void>;
+    private requireClient;
     createSession(runId: string, title: string): Promise<string>;
     sendMessage(sessionId: string, text: string, schema?: Record<string, unknown>): Promise<void>;
     pollMessages(sessionId: string, timeoutMs: number): Promise<{
