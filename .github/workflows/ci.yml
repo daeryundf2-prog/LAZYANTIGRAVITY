@@ -48,6 +48,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Check forbidden TypeScript syntax (AGENTS.md)
+        # --experimental-strip-types needs Node >=20.19/22.6 (setup-node latest satisfies this)
+        run: node --experimental-strip-types shared-skills/skills/programming/scripts/typescript/check-no-excuse-rules.ts --only=no-any-assertion,no-unknown-assertion,no-ts-ignore,no-ts-expect-error,no-enum,no-non-null-assertion,no-default-export components
+
       - name: Configure Git for tests
         run: |
           git config --global user.name "github-actions[bot]"
@@ -96,6 +100,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
+
+      - name: Check forbidden TypeScript syntax (AGENTS.md)
+        # --experimental-strip-types needs Node >=20.19/22.6 (setup-node latest satisfies this)
+        run: node --experimental-strip-types shared-skills/skills/programming/scripts/typescript/check-no-excuse-rules.ts --only=no-any-assertion,no-unknown-assertion,no-ts-ignore,no-ts-expect-error,no-enum,no-non-null-assertion,no-default-export components
 
       - name: Install ast-grep-mcp engine dependency
         run: npm --prefix ast-grep-mcp ci --ignore-scripts
