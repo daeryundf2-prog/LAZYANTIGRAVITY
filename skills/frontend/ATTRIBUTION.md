@@ -233,3 +233,13 @@ MIT-licensed `JCodesMore/ai-website-cloner-template` clone-website workflow that
 cites; no source from that template is copied. It carries no third-party attribution beyond
 that lineage note, and it grants no license to copy any target site's trademarks, brand
 assets, or proprietary copy.
+
+`frontend/references/design/layout-skill.md` and
+`frontend/references/design/print-paged-media.md` are project-original operating references
+covering app-shell layout mechanics and CSS paged-media fragmentation respectively; no
+third-party source is vendored.
+
+`frontend/references/design/stylegallery.md` is a project-original, curl-only operating
+guide for consulting the StyleGallery spatial-pattern registry during layout work; no
+StyleGallery source or pattern text is vendored, and the guide instructs reading pattern
+contracts for mechanism extraction only.

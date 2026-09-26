@@ -69,7 +69,7 @@ Beyond the 12-file Layer A library, the design ruleset carries project-original 
 
 ## Layer B — Design Systems (70)
 
-Most Layer B files are materialized from [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md), based on [Google Stitch DESIGN.md format](https://stitch.withgoogle.com/docs/design-md/overview/). Project-original entries such as `aside.md` are listed here only when `ATTRIBUTION.md` and `frontend-refs-manifest.mjs` mark them as original. Each file captures one website's complete visual language: color palette, typography, components, layout principles, depth, do/don't, responsive behavior, and an agent prompt guide.
+Most Layer B files are materialized from [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md), based on [Google Stitch DESIGN.md format](https://stitch.withgoogle.com/docs/design-md/overview/). Project-original entries such as `aside.md` are listed here only when `ATTRIBUTION.md` (section 5) marks them as original. Each file captures one website's complete visual language: color palette, typography, components, layout principles, depth, do/don't, responsive behavior, and an agent prompt guide.
 
 ### How to use
 
