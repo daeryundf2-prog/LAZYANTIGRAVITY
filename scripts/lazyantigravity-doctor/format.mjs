@@ -9,6 +9,7 @@ export function toText(report) {
 		...sectionLines("skills", report.skills),
 		...sectionLines("bundles", report.bundles),
 		...sectionLines("versions", report.versions),
+		...sectionLines("runtime", report.runtime),
 	];
 	if (report.warnings.items.length > 0) {
 		lines.push("", "warnings:");
