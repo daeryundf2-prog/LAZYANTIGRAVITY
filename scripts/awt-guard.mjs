@@ -20,6 +20,11 @@ const cwd = process.env.OMO_REPO_ROOT?.trim() || process.cwd();
 // Metacognitive Loop Breaker pattern (Korean & English)
 const META_EXCUSE_REGEX = /(?:흥미롭군요|That['’]s interesting|예상과 다르게|왜 그런지 살펴봅시다|Let me think why that happened)/i;
 
+// Capability-claim detector: strong usability/completion assertions that require
+// execution evidence under the claim-evidence contract (registered / loadable / verified).
+const CAPABILITY_CLAIM_REGEX =
+	/(?:immediately (?:usable|available)|ready to use|fully (?:verified|compatible|identical|functional)|verified (?:and )?(?:working|complete|correct)|works (?:perfectly|flawlessly)|즉시 사용 가능|바로 사용 가능|이제 사용 가능|완벽히 동일|완전히 동일|완벽하게 작동|모두 정상 작동|전부 정상)/i;
+
 async function readAllStdin() {
 	return new Promise((resolve) => {
 		let data = "";
@@ -48,7 +53,14 @@ async function main() {
 		);
 	}
 
-	// 2. Active Workflow Trimming: Ensure Omniscient Mode and scope adherence
+	// 2. Capability-claim check: strong assertions require execution evidence
+	if (CAPABILITY_CLAIM_REGEX.test(fullPayload)) {
+		lines.push(
+			"LazyAntigravity CLAIM EVIDENCE: Detected a capability assertion ('immediately usable' / 'verified working' / '즉시 사용 가능' / '완벽히 동일'). Report the evidence tier instead: registered (config written), loadable (target resolves), or verified (entry command executed and output observed). Cite the exact command and its output — registration is not capability."
+		);
+	}
+
+	// 3. Active Workflow Trimming: Ensure Omniscient Mode and scope adherence
 	lines.push(
 		"LazyAntigravity AWT Contract: Assume agent is correct in Omniscient Mode. Do not engage in defensive over-exploration. If 1 degree of trajectory drift occurs from the task scope, trim immediately to the original contract vector."
 	);

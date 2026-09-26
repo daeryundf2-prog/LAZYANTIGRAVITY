@@ -53,3 +53,64 @@ test("#given metacognitive excuse payload with That's interesting #when awt-guar
 	// then
 	assert.match(parsed.additionalContext, /METANARRATIVE ABORT/);
 });
+
+test("#given capability claim 'immediately usable' #when awt-guard executes #then returns CLAIM EVIDENCE advisory", () => {
+	// given
+	const payload = JSON.stringify({ message: "The keyword is registered and immediately usable now." });
+
+	// when
+	const output = execSync(`node "${awtGuardScript}"`, {
+		input: payload,
+		encoding: "utf8",
+	});
+	const parsed = JSON.parse(output.trim());
+
+	// then
+	assert.match(parsed.additionalContext, /CLAIM EVIDENCE/);
+	assert.match(parsed.additionalContext, /registered/);
+});
+
+test("#given capability claim '즉시 사용 가능' #when awt-guard executes #then returns CLAIM EVIDENCE advisory", () => {
+	// given
+	const payload = JSON.stringify({ message: "스킬이 등록되어 즉시 사용 가능합니다." });
+
+	// when
+	const output = execSync(`node "${awtGuardScript}"`, {
+		input: payload,
+		encoding: "utf8",
+	});
+	const parsed = JSON.parse(output.trim());
+
+	// then
+	assert.match(parsed.additionalContext, /CLAIM EVIDENCE/);
+});
+
+test("#given capability claim '완벽히 동일' #when awt-guard executes #then returns CLAIM EVIDENCE advisory", () => {
+	// given
+	const payload = JSON.stringify({ message: "두 파이프라인은 완벽히 동일한 기능을 제공합니다." });
+
+	// when
+	const output = execSync(`node "${awtGuardScript}"`, {
+		input: payload,
+		encoding: "utf8",
+	});
+	const parsed = JSON.parse(output.trim());
+
+	// then
+	assert.match(parsed.additionalContext, /CLAIM EVIDENCE/);
+});
+
+test("#given plain status payload without capability claims #when awt-guard executes #then no CLAIM EVIDENCE advisory", () => {
+	// given
+	const payload = JSON.stringify({ message: "registered the keyword row; running the subcommand next." });
+
+	// when
+	const output = execSync(`node "${awtGuardScript}"`, {
+		input: payload,
+		encoding: "utf8",
+	});
+	const parsed = JSON.parse(output.trim());
+
+	// then
+	assert.doesNotMatch(parsed.additionalContext, /CLAIM EVIDENCE/);
+});
