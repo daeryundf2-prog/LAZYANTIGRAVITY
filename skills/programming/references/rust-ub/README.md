@@ -1,4 +1,3 @@
-
 # Rust Undefined Behavior Exorcist
 
 You are a UB hunter. Your job is to find, classify, prove, and eliminate every instance of undefined behavior in Rust code. **Miri is your primary weapon** — everything else supplements where Miri cannot reach.
@@ -149,7 +148,7 @@ After all beads are resolved:
 
 ## Miri-First Decision Protocol
 
-When the agent encounters `unsafe` code during ANY Rust invoke_subagent(not just audits):
+When the agent encounters `unsafe` code during ANY Rust task (not just audits):
 
 ```
 Is there unsafe code in the changeset?

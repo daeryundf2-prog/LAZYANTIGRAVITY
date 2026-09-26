@@ -31,12 +31,14 @@ This skill is an index. Detailed per-language rules live under `references/`. Lo
 
 ## Shared Philosophy (All Languages)
 
+0. **The best code is the code never written.** Before writing, stop at the first rung that holds: (1) does this need to exist at all? (YAGNI) (2) does this codebase already have it? — reuse the helper or pattern, do not re-implement. (3) does the standard library do it? (4) does a native platform feature cover it? (5) does an installed dependency solve it? (6) can it be one line? (7) only then, write the minimum that works. Bug fix = root cause, not symptom; fix at the shared seam.
 1. **The type system is your proof system.** Make illegal states unrepresentable. Express bugs as compile-time type errors.
 2. **Parse, don't validate.** Untrusted input crosses a boundary once (Pydantic v2, `serde`, Zod, `validator/v10`). Inside the boundary, code receives typed values.
 3. **One name = one concept.** Use branded types / newtypes (`UserId = NewType(...)`, `struct UserId(u64)`, `type UserId = Brand<...>`).
 4. **Exhaustive variant matching, always.** Match unions/enums exhaustively with `assert_never` / `assertNever`. Never use `if/elif` variant chains.
 5. **Trust framework guarantees.** Validate only at boundaries; avoid redundant null checks for proven non-null types.
-6. **Test-driven (TDD).** Red (failing test) → Green (minimal code) → Refactor (clean structure).
+6. **Tests are the behavior of record, and only tests that can fail count.** Read existing tests covering the area before changing code. Reproduce a bug before fixing it. The run proves the change; add a test only where the repository keeps tests for this behavior and a regression would otherwise pass unnoticed — sized like its neighbors, never restating trivial changes.
+
 
 ---
 
@@ -48,6 +50,8 @@ This skill is an index. Detailed per-language rules live under `references/`. Lo
 - 200 - 250 LOC: Warning band (propose split)
 - \> 250 LOC: **DEFECT** — split by responsibility into smaller cohesive units immediately.
 
+The 250 ceiling is Smell 1 of the full taxonomy. `references/code-smells.md` owns the complete set — >3 parameters, redundant post-destructive verification, negative-form naming, and the rest — with the measurement method and per-language split examples. Read it before reshaping a file, not after.
+
 ---
 
 ## Mandatory Post-Write Review Loop
@@ -57,6 +61,7 @@ Before declaring any coding task complete:
 2. **Single Responsibility**: Name the file's single domain responsibility in one noun phrase.
 3. **Type Purity**: Check for zero `any`, `# type: ignore`, `unwrap()`, or unhandled union cases.
 4. **Regression Locked**: Verify tests fail if new behavior is reverted.
+5. **Smells & Logging**: No smell from `references/code-smells.md` fired (250+ LOC, >3 params, redundant verification, negative naming); every added or modified log line follows `references/logging.md` — level chosen by naming the consumer, placed at a decision point, data in fields not interpolation, and the project's existing logging practice (including its absence) wins.
 
 ---
 
@@ -70,6 +75,11 @@ Before declaring any coding task complete:
 | **Go** | `validator/v10` | gin / connect-go | `sqlc` + `pgx/v5` | `golangci-lint v2` + `nilaway` | `go test -race` + `goleak` |
 
 ---
+
+## Cross-Language References
+
+- `references/code-smells.md` — full smell taxonomy with measurement and per-language examples; fire `/refactor` or `remove-ai-slops` protocol when one trips, never improvise a structural change.
+- `references/logging.md` — stack-agnostic logging contract; read BEFORE the change whenever an edit adds or modifies log lines, sets up a logger, or handles errors at a boundary.
 
 ## Per-Language Jump Table
 
