@@ -7,3 +7,5 @@ sbom.cdx.json
 .lazycodex/
 .omo/
 .lazyantigravity/
+__pycache__/
+*.pyc
