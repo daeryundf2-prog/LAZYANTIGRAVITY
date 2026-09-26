@@ -22,25 +22,102 @@ export function findCallers(graph, calleeName) {
     return callers;
 }
 export function computeBlastRadius(graph, targetFilePath) {
-    const targetIndex = graph.files[targetFilePath];
-    if (!targetIndex) {
-        return { affectedFiles: [], totalCallers: 0 };
-    }
-    const exportedSymbols = new Set(targetIndex.symbols.filter((s) => s.isExported).map((s) => s.name));
+    const transitive = computeTransitiveBlastRadius(graph, targetFilePath, "file");
+    return {
+        affectedFiles: transitive.affectedFiles,
+        totalCallers: transitive.totalCallSites,
+    };
+}
+export function computeTransitiveBlastRadius(graph, target, targetType = "file") {
+    const directCallers = [];
+    const indirectCallers = [];
     const affectedFilesSet = new Set();
-    let totalCallers = 0;
-    for (const [file, index] of Object.entries(graph.files)) {
-        if (file === targetFilePath)
-            continue;
-        for (const edge of index.calls) {
-            if (exportedSymbols.has(edge.callee)) {
-                affectedFilesSet.add(file);
-                totalCallers++;
+    const visitedFunctions = new Set();
+    const queue = [];
+    if (targetType === "file") {
+        let targetIndex = graph.files[target];
+        if (!targetIndex) {
+            for (const [f, idx] of Object.entries(graph.files)) {
+                if (f.endsWith(target) || target.endsWith(f)) {
+                    targetIndex = idx;
+                    break;
+                }
+            }
+        }
+        const exportedSymbols = targetIndex
+            ? new Set(targetIndex.symbols.filter((s) => s.isExported).map((s) => s.name))
+            : new Set();
+        for (const [file, index] of Object.entries(graph.files)) {
+            if (file === target || (targetIndex && file === targetIndex.file))
+                continue;
+            for (const edge of index.calls) {
+                if (exportedSymbols.has(edge.callee)) {
+                    directCallers.push(edge);
+                    affectedFilesSet.add(file);
+                    if (edge.caller !== "global" && !visitedFunctions.has(edge.caller)) {
+                        visitedFunctions.add(edge.caller);
+                        queue.push({ funcName: edge.caller, depth: 1 });
+                    }
+                }
             }
         }
     }
+    else {
+        for (const [file, index] of Object.entries(graph.files)) {
+            for (const edge of index.calls) {
+                if (edge.callee === target) {
+                    directCallers.push(edge);
+                    affectedFilesSet.add(file);
+                    if (edge.caller !== "global" && !visitedFunctions.has(edge.caller)) {
+                        visitedFunctions.add(edge.caller);
+                        queue.push({ funcName: edge.caller, depth: 1 });
+                    }
+                }
+            }
+        }
+    }
+    while (queue.length > 0) {
+        const item = queue.shift();
+        if (!item)
+            break;
+        const { funcName, depth } = item;
+        if (depth >= 5)
+            continue;
+        for (const [file, index] of Object.entries(graph.files)) {
+            for (const edge of index.calls) {
+                if (edge.callee === funcName) {
+                    indirectCallers.push(edge);
+                    affectedFilesSet.add(file);
+                    if (edge.caller !== "global" && !visitedFunctions.has(edge.caller)) {
+                        visitedFunctions.add(edge.caller);
+                        queue.push({ funcName: edge.caller, depth: depth + 1 });
+                    }
+                }
+            }
+        }
+    }
+    const isTestFile = (pathStr) => {
+        const norm = pathStr.toLowerCase().replace(/\\/g, "/");
+        return (norm.includes("/test/") ||
+            norm.includes("/tests/") ||
+            norm.includes("/__tests__/") ||
+            norm.endsWith(".test.ts") ||
+            norm.endsWith(".test.js") ||
+            norm.endsWith(".test.mjs") ||
+            norm.endsWith("_test.go") ||
+            norm.endsWith("_test.py") ||
+            norm.endsWith("test.rs"));
+    };
+    const affectedFiles = Array.from(affectedFilesSet);
+    const affectedTestFiles = affectedFiles.filter(isTestFile);
+    const totalCallSites = directCallers.length + indirectCallers.length;
     return {
-        affectedFiles: Array.from(affectedFilesSet),
-        totalCallers,
+        target,
+        targetType,
+        directCallers,
+        indirectCallers,
+        affectedFiles,
+        affectedTestFiles,
+        totalCallSites,
     };
 }

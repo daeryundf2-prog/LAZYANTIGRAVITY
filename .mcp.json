@@ -55,6 +55,14 @@
 				"mcp"
 			],
 			"cwd": "."
+		},
+		"ast_index": {
+			"command": "node",
+			"args": [
+				"./ast-index-mcp/dist/cli.js",
+				"mcp"
+			],
+			"cwd": "."
 		}
 	}
 }

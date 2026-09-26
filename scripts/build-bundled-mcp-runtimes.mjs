@@ -43,6 +43,11 @@ const runtimes = [
 		packageRoot: join(repoPackagesRoot, "korean-law-mcp"),
 		requiredOutputs: ["dist/cli.js"],
 	},
+	{
+		label: "ast-index-mcp",
+		packageRoot: join(repoPackagesRoot, "ast-index-mcp"),
+		requiredOutputs: ["dist/cli.js"],
+	},
 ];
 
 for (const runtime of runtimes) {

@@ -38,7 +38,7 @@ export function scanSourceFiles(dir: string, fileList: string[] = []): string[] 
 			}
 			scanSourceFiles(fullPath, fileList);
 		} else if (entry.isFile()) {
-			if (/\.(ts|tsx|js|mjs|cjs|py)$/.test(entry.name) && !entry.name.endsWith(".d.ts")) {
+			if (/\.(ts|tsx|js|jsx|mjs|cjs|py|pyi|rs|go)$/.test(entry.name) && !entry.name.endsWith(".d.ts")) {
 				fileList.push(resolve(fullPath));
 			}
 		}

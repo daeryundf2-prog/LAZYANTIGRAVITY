@@ -1,4 +1,4 @@
-export type SymbolKind = "function" | "class" | "interface" | "type" | "variable" | "method";
+export type SymbolKind = "function" | "class" | "interface" | "type" | "variable" | "method" | "struct" | "enum" | "trait";
 
 export interface ASTSymbol {
 	name: string;
@@ -28,4 +28,14 @@ export interface ProjectASTGraph {
 	version: string;
 	generatedAt: number;
 	files: Record<string, FileASTIndex>;
+}
+
+export interface TransitiveImpactResult {
+	target: string;
+	targetType: "file" | "symbol";
+	directCallers: CallEdge[];
+	indirectCallers: CallEdge[];
+	affectedFiles: string[];
+	affectedTestFiles: string[];
+	totalCallSites: number;
 }

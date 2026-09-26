@@ -1,4 +1,4 @@
-import { ASTSymbol, CallEdge, ProjectASTGraph } from "./types.js";
+import { ASTSymbol, CallEdge, ProjectASTGraph, TransitiveImpactResult } from "./types.js";
 
 export function findSymbols(graph: ProjectASTGraph, symbolName: string): ASTSymbol[] {
 	const results: ASTSymbol[] = [];
@@ -26,29 +26,116 @@ export function findCallers(graph: ProjectASTGraph, calleeName: string): CallEdg
 	return callers;
 }
 
-export function computeBlastRadius(graph: ProjectASTGraph, targetFilePath: string): { affectedFiles: string[]; totalCallers: number } {
-	const targetIndex = graph.files[targetFilePath];
-	if (!targetIndex) {
-		return { affectedFiles: [], totalCallers: 0 };
-	}
+export function computeBlastRadius(
+	graph: ProjectASTGraph,
+	targetFilePath: string,
+): { affectedFiles: string[]; totalCallers: number } {
+	const transitive = computeTransitiveBlastRadius(graph, targetFilePath, "file");
+	return {
+		affectedFiles: transitive.affectedFiles,
+		totalCallers: transitive.totalCallSites,
+	};
+}
 
-	const exportedSymbols = new Set(targetIndex.symbols.filter((s) => s.isExported).map((s) => s.name));
+export function computeTransitiveBlastRadius(
+	graph: ProjectASTGraph,
+	target: string,
+	targetType: "file" | "symbol" = "file",
+): TransitiveImpactResult {
+	const directCallers: CallEdge[] = [];
+	const indirectCallers: CallEdge[] = [];
 	const affectedFilesSet = new Set<string>();
-	let totalCallers = 0;
+	const visitedFunctions = new Set<string>();
+	const queue: { funcName: string; depth: number }[] = [];
 
-	for (const [file, index] of Object.entries(graph.files)) {
-		if (file === targetFilePath) continue;
+	if (targetType === "file") {
+		let targetIndex = graph.files[target];
+		if (!targetIndex) {
+			for (const [f, idx] of Object.entries(graph.files)) {
+				if (f.endsWith(target) || target.endsWith(f)) {
+					targetIndex = idx;
+					break;
+				}
+			}
+		}
+		const exportedSymbols = targetIndex
+			? new Set(targetIndex.symbols.filter((s) => s.isExported).map((s) => s.name))
+			: new Set<string>();
 
-		for (const edge of index.calls) {
-			if (exportedSymbols.has(edge.callee)) {
-				affectedFilesSet.add(file);
-				totalCallers++;
+		for (const [file, index] of Object.entries(graph.files)) {
+			if (file === target || (targetIndex && file === targetIndex.file)) continue;
+			for (const edge of index.calls) {
+				if (exportedSymbols.has(edge.callee)) {
+					directCallers.push(edge);
+					affectedFilesSet.add(file);
+					if (edge.caller !== "global" && !visitedFunctions.has(edge.caller)) {
+						visitedFunctions.add(edge.caller);
+						queue.push({ funcName: edge.caller, depth: 1 });
+					}
+				}
+			}
+		}
+	} else {
+		for (const [file, index] of Object.entries(graph.files)) {
+			for (const edge of index.calls) {
+				if (edge.callee === target) {
+					directCallers.push(edge);
+					affectedFilesSet.add(file);
+					if (edge.caller !== "global" && !visitedFunctions.has(edge.caller)) {
+						visitedFunctions.add(edge.caller);
+						queue.push({ funcName: edge.caller, depth: 1 });
+					}
+				}
 			}
 		}
 	}
 
+	while (queue.length > 0) {
+		const item = queue.shift();
+		if (!item) break;
+		const { funcName, depth } = item;
+		if (depth >= 5) continue;
+
+		for (const [file, index] of Object.entries(graph.files)) {
+			for (const edge of index.calls) {
+				if (edge.callee === funcName) {
+					indirectCallers.push(edge);
+					affectedFilesSet.add(file);
+					if (edge.caller !== "global" && !visitedFunctions.has(edge.caller)) {
+						visitedFunctions.add(edge.caller);
+						queue.push({ funcName: edge.caller, depth: depth + 1 });
+					}
+				}
+			}
+		}
+	}
+
+	const isTestFile = (pathStr: string) => {
+		const norm = pathStr.toLowerCase().replace(/\\/g, "/");
+		return (
+			norm.includes("/test/") ||
+			norm.includes("/tests/") ||
+			norm.includes("/__tests__/") ||
+			norm.endsWith(".test.ts") ||
+			norm.endsWith(".test.js") ||
+			norm.endsWith(".test.mjs") ||
+			norm.endsWith("_test.go") ||
+			norm.endsWith("_test.py") ||
+			norm.endsWith("test.rs")
+		);
+	};
+
+	const affectedFiles = Array.from(affectedFilesSet);
+	const affectedTestFiles = affectedFiles.filter(isTestFile);
+	const totalCallSites = directCallers.length + indirectCallers.length;
+
 	return {
-		affectedFiles: Array.from(affectedFilesSet),
-		totalCallers,
+		target,
+		targetType,
+		directCallers,
+		indirectCallers,
+		affectedFiles,
+		affectedTestFiles,
+		totalCallSites,
 	};
 }

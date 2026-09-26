@@ -142,3 +142,63 @@ async function run() {
 		rmSync(tempDir, { recursive: true, force: true });
 	}
 });
+
+test("computeTransitiveBlastRadius traces multi-hop callers and flags test files", async () => {
+	const { computeTransitiveBlastRadius } = await import("../dist/query.js");
+	const tempDir = mkdtempSync(join(tmpdir(), "ast-transitive-test-"));
+	try {
+		const fCore = join(tempDir, "core.ts");
+		const fService = join(tempDir, "service.ts");
+		const fController = join(tempDir, "controller.ts");
+		const fTest = join(tempDir, "service.test.ts");
+
+		writeFileSync(fCore, "export function executeQuery() { return 42; }\n");
+		writeFileSync(fService, "import { executeQuery } from './core.js';\nexport function fetchUser() { executeQuery(); }\n");
+		writeFileSync(fController, "import { fetchUser } from './service.js';\nexport function handleUser() { fetchUser(); }\n");
+		writeFileSync(fTest, "import { fetchUser } from './service.js';\nfunction testUser() { fetchUser(); }\n");
+
+		const graph = buildIncrementalASTGraph(tempDir);
+		const blast = computeTransitiveBlastRadius(graph, fCore, "file");
+
+		assert.equal(blast.target, fCore);
+		assert.ok(blast.affectedFiles.includes(fService));
+		assert.ok(blast.affectedFiles.includes(fController));
+		assert.ok(blast.affectedFiles.includes(fTest));
+		assert.ok(blast.affectedTestFiles.includes(fTest));
+		assert.ok(!blast.affectedTestFiles.includes(fService));
+		assert.ok(blast.totalCallSites >= 3);
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("indexSourceFile extracts Python, Rust, and Go symbols and calls", () => {
+	const tempDir = mkdtempSync(join(tmpdir(), "ast-multilang-test-"));
+	try {
+		// Python
+		const pyFile = join(tempDir, "app.py");
+		writeFileSync(pyFile, "import os\nclass UserManager:\n    def get_user(self):\n        os.listdir()\n");
+		const pyRes = indexSourceFile(pyFile);
+		assert.equal(pyRes.symbols.length, 2);
+		assert.ok(pyRes.symbols.some((s) => s.name === "UserManager" && s.kind === "class"));
+		assert.ok(pyRes.symbols.some((s) => s.name === "get_user" && s.kind === "function"));
+		assert.ok(pyRes.imports.includes("os"));
+
+		// Rust
+		const rsFile = join(tempDir, "lib.rs");
+		writeFileSync(rsFile, "use std::sync::Arc;\npub struct Config;\npub fn run() { helper(); }\nfn helper() {}\n");
+		const rsRes = indexSourceFile(rsFile);
+		assert.ok(rsRes.symbols.some((s) => s.name === "Config" && s.kind === "struct"));
+		assert.ok(rsRes.symbols.some((s) => s.name === "run" && s.isExported));
+		assert.ok(rsRes.calls.some((c) => c.caller === "run" && c.callee === "helper"));
+
+		// Go
+		const goFile = join(tempDir, "main.go");
+		writeFileSync(goFile, "package main\nimport \"fmt\"\ntype Server struct {}\nfunc Start() { fmt.Println() }\n");
+		const goRes = indexSourceFile(goFile);
+		assert.ok(goRes.symbols.some((s) => s.name === "Server" && s.kind === "struct"));
+		assert.ok(goRes.symbols.some((s) => s.name === "Start" && s.isExported));
+	} finally {
+		rmSync(tempDir, { recursive: true, force: true });
+	}
+});
