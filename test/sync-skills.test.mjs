@@ -36,6 +36,7 @@ const expectedSkills = [
 	"ulw",
 	"ulw-loop",
 	"ulw-plan",
+	"ulw-research",
 	"visual-qa",
 ];
 
