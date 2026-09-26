@@ -62,54 +62,56 @@ If two hypotheses have identical distinguishing evidence, they aren't actually d
 
 Branch depending on what's available.
 
-### Path A: Team mode ENABLED
+### Path A: Parallel investigation wave (default)
 
-When the `team_*` tools are present, create a **debug-squad** team and split investigation across members working on different evidence sources. This is the right default whenever you have ≥3 hypotheses and any of them would take >10 minutes to investigate single-threaded.
+Launch one `invoke_subagent` call — one member per evidence source, hypotheses split across them. This is the right default whenever you have ≥3 hypotheses and any of them would take >10 minutes to investigate single-threaded.
 
-**Team spec** — write to `~/.omo/teams/debug-squad/config.json`:
+**Wave spec** — one `invoke_subagent` call whose `Subagents` array carries these role briefs:
 
 ```json
 {
-  "name": "debug-squad",
-  "lead": { "kind": "subagent_type", "subagent_type": "sisyphus" },
-  "members": [
+  "Subagents": [
     {
-      "kind": "category",
-      "category": "deep",
-      "prompt": "You are the Runtime State Inspector. Your job: attach to the live process, hit breakpoints, read program state (variables, heap, goroutines, stack, registers depending on runtime), and report observed values verbatim. Never guess — if you don't see the value, say so. Report back via team_send_message with file:line / address references and captured values. Never edit source code. Never run git commands. If you need an instrumentation statement added (breakpoint(), debugger;, dbg!, etc.), ask the Lead first."
+      "TypeName": "self",
+      "Role": "Runtime State Inspector",
+      "Model": "flash",
+      "Prompt": "You are the Runtime State Inspector. Your job: attach to the live process, hit breakpoints, read program state (variables, heap, goroutines, stack, registers depending on runtime), and report observed values verbatim. Never guess — if you don't see the value, say so. Report back with file:line / address references and captured values. Never edit source code. Never run git commands. If you need an instrumentation statement added (breakpoint(), debugger;, dbg!, etc.), say so in your reply — the Lead approves all edits."
     },
     {
-      "kind": "category",
-      "category": "deep",
-      "prompt": "You are the Log Archaeologist. Your job: grep server logs, stderr streams, SDK-internal debug output (DEBUG env, RUST_LOG, GODEBUG, PYTHONASYNCIODEBUG), and correlate timestamps. Produce a timeline of events with latencies. Flag anything that looks like a silent catch, a swallowed rejection, a panic recovered-and-ignored, a success response that contains failure signals (HTTP 200 with empty body, stopReason=error, exit 0 with error-in-stdout). Never edit source code."
+      "TypeName": "self",
+      "Role": "Log Archaeologist",
+      "Model": "flash",
+      "Prompt": "You are the Log Archaeologist. Your job: grep server logs, stderr streams, SDK-internal debug output (DEBUG env, RUST_LOG, GODEBUG, PYTHONASYNCIODEBUG), and correlate timestamps. Produce a timeline of events with latencies. Flag anything that looks like a silent catch, a swallowed rejection, a panic recovered-and-ignored, a success response that contains failure signals (HTTP 200 with empty body, stopReason=error, exit 0 with error-in-stdout). Never edit source code."
     },
     {
-      "kind": "category",
-      "category": "deep",
-      "prompt": "You are the Reproduction Engineer. Your job: build the smallest reliable repro — a curl command, a vitest/pytest/go test, a tmux script, a Playwright script for browser bugs, a pwntools script for binary targets. It must reproduce on first try and be copy-pasteable by the Lead. Document exact input, expected output, observed output. Save repro artifacts under /tmp/ and tell the Lead to journal them. If the bug is browser-based you MUST use Playwright CLI — do not simulate with curl."
+      "TypeName": "self",
+      "Role": "Reproduction Engineer",
+      "Model": "flash",
+      "Prompt": "You are the Reproduction Engineer. Your job: build the smallest reliable repro — a curl command, a vitest/pytest/go test, a shell script, a Playwright script for browser bugs, a pwntools script for binary targets. It must reproduce on first try and be copy-pasteable by the Lead. Document exact input, expected output, observed output. Save repro artifacts under /tmp/ and report their paths so the Lead can journal them. If the bug is browser-based you MUST use Playwright CLI — do not simulate with curl."
     },
     {
-      "kind": "category",
-      "category": "deep",
-      "prompt": "You are the Trace Correlator. Your job: take findings from the other members and cross-link them. Build a causal chain from symptom to suspected cause. Identify missing evidence. Propose the next single most-decisive runtime query. Never edit source code; only reason across already-captured evidence. If hypotheses diverge sharply after correlation, tell the Lead immediately — that is the signal for the Oracle Triple."
+      "TypeName": "self",
+      "Role": "Trace Correlator",
+      "Model": "flash",
+      "Prompt": "You are the Trace Correlator. Your job: take findings from the other members (quoted in this prompt) and cross-link them. Build a causal chain from symptom to suspected cause. Identify missing evidence. Propose the next single most-decisive runtime query. Never edit source code; only reason across already-captured evidence. If hypotheses diverge sharply after correlation, say so explicitly — that is the signal for the Oracle Triple."
     }
   ]
 }
 ```
 
-**Assignment rule**: one hypothesis → one `team_task_create`. Give each hypothesis to the member whose evidence source is most likely to confirm or refute it. Broadcast the full hypothesis list once via `team_send_message(to="*")` so members know what the others are testing.
+**Assignment rule**: one hypothesis per subagent `Prompt`. Give each hypothesis to the member whose evidence source is most likely to confirm or refute it, and embed the full hypothesis list in every brief — Antigravity subagents cannot message each other mid-run, so each prompt carries the shared context. The Trace Correlator runs in the wave AFTER the evidence lanes return, with their findings quoted into its prompt.
 
 **Lead responsibilities**:
-- Maintain the journal (members do not write to it).
+- Maintain the journal (subagents do not write to it).
 - Approve any source-code edits (including `debugger;` / `breakpoint()` / `dbg!` statements).
-- Synthesize member reports into updated hypothesis statuses.
-- Decide when to disband: `team_shutdown_request` → `team_approve_shutdown` → `team_delete`.
+- Synthesize member replies into updated hypothesis statuses.
+- Done-condition: every spawned subagent's result journaled before synthesis — members terminate on completion, so "done" is accounting for every result, not deleting a team.
 
-**Team does NOT include Oracle** — Oracle is a hard-reject team member type. Oracle is used separately in Phase 4 (see `04-oracle-triple.md`).
+**The wave does NOT include Oracle** — Oracle runs as a separate adversarial lane (`Model: "pro"`) in Phase 4 (see `04-oracle-triple.md`).
 
-### Path B: Team mode DISABLED
+### Path B: Reduced parallelism
 
-Fan out async explore/deep subagents instead. Same rule: one hypothesis per subagent.
+When the runtime rejects a large `Subagents` array or concurrency is constrained, fan out fewer `invoke_subagent` lanes — or investigate single-threaded yourself. Same rule: one hypothesis per lane.
 
 ```
 invoke_subagent(
