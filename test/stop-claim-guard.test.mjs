@@ -176,3 +176,42 @@ test("correctly parses jsonl files without truncation to js", () => {
 	assert.match(out.reason, /nonexistent_data\.jsonl/);
 	assert.doesNotMatch(out.reason, /nonexistent_data\.js[^\w]/);
 });
+
+test("blocks capability claim '즉시 사용 가능' without evidence", () => {
+	const res = runGuard(
+		stopPayload({ last_assistant_message: "키워드를 등록했습니다. 이제 즉시 사용 가능합니다." }),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+});
+
+test("blocks capability claim 'immediately usable' without evidence", () => {
+	const res = runGuard(
+		stopPayload({ last_assistant_message: "The skill is registered and immediately usable." }),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.equal(out.decision, "block");
+});
+
+test("passes capability claim backed by executed command evidence", () => {
+	const res = runGuard(
+		stopPayload({
+			last_assistant_message:
+				"즉시 사용 가능: `lazyantigravity ulw-loop status` 실행 → exit 0, goals 목록 출력 확인.",
+		}),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.notEqual(out.decision, "block");
+});
+
+test("does not fire on negated capability statements", () => {
+	const res = runGuard(
+		stopPayload({ last_assistant_message: "스크립트가 정상 작동하지 않아 원인을 조사했습니다." }),
+	);
+	assert.equal(res.status, 0);
+	const out = JSON.parse(res.stdout);
+	assert.notEqual(out.decision, "block");
+});

@@ -22,6 +22,18 @@ Conventions for human contributors and AI agents working on this repository.
   audit and is forbidden — the tool refuses to run without `--source`. The receipt keeps a per-item
   source-line → target-location mapping. (GUARD_PACK_VERSION 1.0.0, canonical: lazyforensic)
 
+## Claim-Evidence Enforcement
+
+Capability and completion claims are mechanically gated — report `registered` / `loadable` / `verified` honestly:
+
+- **`scripts/stop_claim_guard.mjs`** (Stop/SubagentStop hook): blocks final messages that assert completion **or capability** ("완료", "전수", "즉시 사용 가능", "immediately usable", "완벽히 동일", …) with no falsifiable evidence (command output, test counts, artifact path, commit SHA). It also fact-retraces claimed artifact paths against disk and rejects stale/zero-byte receipts.
+- **`scripts/awt-guard.mjs`** (PreToolUse): emits a CLAIM EVIDENCE advisory when capability-assertion phrasing appears in tool payloads, demanding the three-tier report (`registered` ≠ `usable`).
+- **`scripts/lazyantigravity-doctor.mjs`** (`runtime` section): probes the PATH-resolved `lazyantigravity`/`omo` binaries for the subcommands skills actually invoke (`research-claims`, `create-goals`, `status`). A stale shadow binary that answers with a usage fallback is recorded per-capability; doctor warns only when no binary serves the capability.
+- **`scripts/check-keyword-skills.mjs`**: resolves every `$name` referenced by keyword tables to a real skill file or reference — dangling registrations fail the run.
+- **`scripts/check-skill-links.mjs`**: resolves every relative markdown link under `skills/` — docs must not reference files that were never shipped.
+- **`scripts/check-skills-drift.mjs`** (`npm run audit:skills-drift`, wired into `npm run check`): byte-exact audit of every file under `skills/` against its source (shared-skills or component skill). A "shared↔skills 무결성/1바이트" claim is only valid while this reports zero drift — it also catches unsourced runtime artifacts (e.g. `__pycache__`) left in the materialized tree.
+- **`skills/*/SKILL.md` ≤ 30KB**: doctor flags oversized instruction files as `instruction_truncation_hazard`; keep detail in `references/` and link it.
+
 ## Test Runners
 
 Two runner conventions coexist; pick by component type:

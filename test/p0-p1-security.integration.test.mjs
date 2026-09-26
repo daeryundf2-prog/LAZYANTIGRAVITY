@@ -105,7 +105,7 @@ test("P1-2: ast-grep-mcp performs a real metavariable search over MCP", { skip: 
 			},
 		}),
 		encoding: "utf8",
-		timeout: 5000,
+		timeout: 15000, // cold napi/wasm load is ~4.3s standalone; parallel suite load pushes past 5s
 		cwd: ROOT,
 	});
 	assert.equal(res.status, 0);

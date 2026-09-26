@@ -17,6 +17,16 @@ const CAPABILITY_PROBES = [
 		args: ["ulw-loop", "research-claims", "--json"],
 		supportedPattern: /Missing --file|claim-ledger/i,
 	},
+	{
+		capability: "ulw-loop create-goals",
+		args: ["ulw-loop", "create-goals"],
+		supportedPattern: /Missing brief text|--brief/i,
+	},
+	{
+		capability: "ulw-loop status",
+		args: ["ulw-loop", "status"],
+		supportedPattern: /ulw-loop status|goals:/i,
+	},
 ];
 
 // Resolve like a shell would, without depending on `which`/`command -v`

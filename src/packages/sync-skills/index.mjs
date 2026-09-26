@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sharedSkillsRootPath } from "@lazyantigravity/shared-skills";
 
-const componentSkillSources = [
+export const componentSkillSources = [
 	["ulw-loop", "components/ulw-loop/skills/ulw-loop"],
 	["ulw-plan", "components/ultrawork/skills/ulw-plan"],
 ];

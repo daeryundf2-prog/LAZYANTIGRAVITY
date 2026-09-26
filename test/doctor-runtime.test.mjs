@@ -10,10 +10,24 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 function fakeBinary(dir, name, output) {
 	mkdirSync(dir, { recursive: true });
 	const path = join(dir, name);
-	writeFileSync(path, `#!/bin/sh\necho '${output}'\n`);
+	// Respond per subcommand so multi-probe inspection sees a real surface:
+	// `output` may be a string (echoed for every call) or a map keyed on argv.
+	const script =
+		typeof output === "string"
+			? `#!/bin/sh\necho '${output}'\n`
+			: `#!/bin/sh\ncase "$*" in\n${Object.entries(output)
+					.map(([argv, text]) => `  *"${argv}"*) echo '${text}' ;;\n`)
+					.join("")}  *) echo 'Usage: ${name} <command>' ;;\nesac\n`;
+	writeFileSync(path, script);
 	chmodSync(path, 0o755);
 	return path;
 }
+
+const CURRENT_CLI = {
+	"ulw-loop research-claims --json": "[ulw-loop] Missing --file (path to claim-ledger.md)",
+	"ulw-loop create-goals": "[ulw-loop] Missing brief text. Pass --brief, --brief-file, --from-stdin, or positional text.",
+	"ulw-loop status": "ulw-loop status\\n\\ngoals:",
+};
 
 function withPath(pathDir, fn) {
 	const original = process.env.PATH;
@@ -33,7 +47,7 @@ async function buildRuntime(pathDir) {
 
 test("#given a current lazyantigravity binary #when runtime is inspected #then the probe selects it", async () => {
 	const dir = mkdtempSync(join(tmpdir(), "doctor-rt-"));
-	fakeBinary(dir, "lazyantigravity", "[ulw-loop] Missing --file (path to claim-ledger.md)");
+	fakeBinary(dir, "lazyantigravity", CURRENT_CLI);
 
 	const section = await buildRuntime(dir);
 	const probe = section.capabilities.find((c) => c.capability === "ulw-loop research-claims");
@@ -45,7 +59,7 @@ test("#given a current lazyantigravity binary #when runtime is inspected #then t
 
 test("#given a stale omo binary shadowed by a current lazyantigravity #when inspected #then the stale fallback is recorded without degrading the section", async () => {
 	const dir = mkdtempSync(join(tmpdir(), "doctor-rt-"));
-	fakeBinary(dir, "lazyantigravity", "[ulw-loop] Missing --file (path to claim-ledger.md)");
+	fakeBinary(dir, "lazyantigravity", CURRENT_CLI);
 	fakeBinary(dir, "omo", "Usage:\n  omo ulw-loop create-goals --brief ...");
 
 	const section = await buildRuntime(dir);

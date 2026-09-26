@@ -79,11 +79,15 @@ indentation is also how markdown continues a list item.
 ## Scoring our own docs
 
 ```bash
-npm run self-scan          # table
-npm run self-scan:check    # exits 1 if a document is over budget (runs in CI)
+node scripts/self-scan.js           # table
+node scripts/self-scan.js --check   # exits 1 if a document is over budget
 ```
 
-Results and the findings it surfaced are in [`../PROOF.md`](../PROOF.md).
+The upstream repository keeps the generated results in a top-level `PROOF.md`
+and budgets for files that are not shipped with this port (`README.md`,
+`CONTRIBUTING.md`, `CHANGELOG.md`, `examples/`), so the scan cannot run to
+completion in this tree — the script exits on the missing budget files. Treat
+the scan as upstream dev tooling, not a runnable gate here.
 
 ## Design notes
 

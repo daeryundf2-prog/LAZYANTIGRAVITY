@@ -24,8 +24,14 @@ const CLAIM_RE = new RegExp(
 	[
 		'완료', '완성', '다\\s*(했|끝냈)', '전부\\s*(했|완료|수정|추가)', '전수', '무결점', '완벽',
 		'100\\s*%', '모두\\s*(통과|반영|수정|추가|검증)', '검증\\s*(완료|끝|했)', '통과\\s*(했습니다|했다)',
-		'all\\s*(tests?\\s*)?(pass|passed|done|complete|finished)', 'fully\\s*(verified|tested|implemented|reviewed)',
+		'all\\s*(tests?\\s*)?(pass|passed|done|complete|finished)', 'fully\\s*(verified|tested|implemented|reviewed|compatible|identical|functional)',
 		'100%\\s*(pass|coverage|complete)', 'complete\\s*and\\s*verified', 'zero\\s*(issues|failures)',
+		// capability assertions — registration is not capability; these require the
+		// same execution evidence as completion claims (the "즉시 사용 가능" case).
+		'즉시\\s*사용\\s*가능', '바로\\s*사용\\s*가능', '즉시\\s*실행\\s*가능', '바로\\s*쓸\\s*수',
+		'정상\\s*작동(?!\\s*하지)(?!\\s*여부)', '완벽히?\\s*동일(?!한가)', '완전히?\\s*동일', '완벽하게?\\s*(작동|호환)',
+		'immediately\\s*(usable|available)', 'ready\\s*to\\s*use', 'usable\\s*now',
+		'works?\\s*(now|perfectly|flawlessly)', 'fully\\s*supported',
 	].join('|'),
 	'i',
 );
