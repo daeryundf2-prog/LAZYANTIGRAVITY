@@ -14,8 +14,8 @@ This skill is intentionally compact. The full planning workflow lives in `refere
 ## Required First Steps
 
 1. Open `references/full-workflow.md`.
-2. Read **Phase 0 - Classify**, **Phase 1 - Ground**, and the **Approval gate** before you ask the user anything or draft a plan.
-3. Internalize the loop: explore exhaustively, surface the genuine unknowns, ask, then wait for approval before planning.
+2. Read **Phase 0 - Classify**, **Phase 1 - Ground**, **Phase 2 - Route on intent**, and the **Approval gate** before you ask the user anything or draft a plan.
+3. Internalize the loop: explore exhaustively, announce the intent verdict (CLEAR -> interview surviving forks per `references/intent-clear.md`; UNCLEAR -> research to best-practice defaults per `references/intent-unclear.md`), then wait for approval before planning. Question delivery is calibrated per `references/stance-calibration.md`.
 
 ## The Gate (non-negotiable behavior)
 

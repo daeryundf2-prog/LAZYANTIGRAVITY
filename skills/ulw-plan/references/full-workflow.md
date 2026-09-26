@@ -43,10 +43,23 @@ Two kinds of unknowns:
 
 Exhaust exploration first. "I could not find it" is true only after you actually looked.
 
-## Phase 2 - Interview (ask only what exploration cannot resolve)
-Record everything to `.omo/drafts/<slug>.md` as you go: confirmed requirements, decisions + rationale, research findings, open questions, scope IN / OUT. The draft is your durable memory across turns.
+### User Impact & Ideal-State Contract (beta.89)
+Before drafting questions or finalizing scope, define:
+1. **Affected Entity**: Who does the change touch (end customer, other developer, or downstream agent)?
+2. **Current Usage**: How do they use or interact with it today?
+3. **Ideal State**: The friction-free state where nothing snags, regresses, or degrades for them.
+4. **Gap Analysis**: Every concrete gap between today and the ideal state with its root cause.
 
-Ask focused questions ONLY for genuine unknowns surfaced by Phase 1: goal + definition of done, scope boundaries, preference tradeoffs, test strategy (TDD / tests-after / none - agent-executed QA is always included), and hard constraints. Every question must materially change the plan. Never ask what a read-only search would answer.
+## Phase 2 - Route on intent, then interview or research
+Make ONE routing judgment and announce it, then follow ONE reference:
+- **CLEAR** -> `references/intent-clear.md`: the user knows the desired outcome. Run the two filters on every candidate question; ask only the surviving forks (owner-decisions), with WHY.
+- **UNCLEAR** -> `references/intent-unclear.md`: the desired outcome is fuzzy (vague request, bootstrap, unarticulable goal). Do NOT interrogate; research maximally, adopt announced best-practice defaults into an Open-assumptions ledger, and run the Phase 4 review automatically (suppressed only at Trivial size).
+
+When on the fence, ask exactly one tie-break question ("do you have a specific outcome in mind, or should I derive best practice?"), then commit to a path. Review modifiers (`high accuracy`, `고정밀`) are not routing signals: they set the Phase 4 review flag, then the CLEAR/UNCLEAR test still decides the path.
+
+Read `references/stance-calibration.md` before the first user-facing question: it picks HOW surviving forks reach this user (batch / one-by-one / examples-first renderer) and classifies every reply. Record `intent`, the review flag, decisions, research findings, open questions, and scope IN / OUT to `.omo/drafts/<slug>.md` as you go - the draft is your durable memory across turns. As soon as `<slug>`, intent, and classification are known, run `node scripts/scaffold-plan.mjs <slug> --clear|--unclear --draft-only` to persist the request state.
+
+CLEAR-path mechanics, in brief (full protocol in `intent-clear.md`): ask focused questions ONLY for genuine unknowns surfaced by Phase 1 - goal + definition of done, scope boundaries, preference tradeoffs, test strategy (TDD / tests-after / none - agent-executed QA is always included), and hard constraints. Every question must materially change the plan. Never ask what a read-only search would answer.
 
 Keep each turn conversational: 3-6 sentences plus 1-3 questions. Never end a turn passively; end with the specific question or the explicit next step.
 
@@ -76,6 +89,10 @@ Narrow `$start-work` bootstrap exception: if `$start-work` invoked this skill be
 > Risk:         <Low | Medium | High> - <driver>
 
 ## Scope
+### Affected User & Ideal State
+- User / Consumer: <customer | developer | downstream agent> - <how they interact today>
+- Ideal State: <friction-free state where nothing snags, degrades, or regresses>
+- Gaps to Bridge: <concrete items to change>
 ### Must have
 ### Must NOT have (guardrails, anti-slop, scope boundaries)
 
@@ -109,11 +126,15 @@ Critical path: ...
 - [ ] F1. Plan compliance audit
 - [ ] F2. Code quality review
 - [ ] F3. Real manual QA
-- [ ] F4. Scope fidelity
+- [ ] F4. Scope fidelity & Ideal-state verification (proves zero regressions against Ideal State)
 
 ## Commit strategy
 ## Success criteria
+| Ideal-State / Requirement Row | Delivering Task (Todo #) | Proving QA Scenario |
+|---|---|---|
+| <Requirement 1> | Todo <N> | Scenario <N>.1 |
 ```
+
 
 ## Phase 4 - High-accuracy review (optional)
 If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the plan path only. Fix every cited issue and resubmit until it approves. `Model` is an agent hint; the host does not switch the session UI model.
