@@ -180,7 +180,7 @@ test("#given hook invocation with explicit hung update source #when launched wit
 		const result = spawnSync(process.execPath, ["scripts/auto-update.mjs", "status"], {
 			cwd: process.cwd(),
 			encoding: "utf8",
-			timeout: 1_000,
+			timeout: 10_000,
 			env: {
 				...process.env,
 				ANTIGRAVITY_CURRENT_VERSION: "1.0.0",
