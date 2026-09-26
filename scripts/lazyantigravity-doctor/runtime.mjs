@@ -93,14 +93,9 @@ export function inspectRuntime(context) {
 					`no ${BINARY_CANDIDATES.join("/")} binary on PATH; skills that invoke \`${probe.capability}\` cannot run. Repo dist exists but is not installed.`,
 				);
 			}
-		} else if (results.some((r) => r.status === "unsupported_subcommand")) {
-			const stale = results.find((r) => r.status === "unsupported_subcommand");
-			context.warn(
-				"runtime",
-				"shadowed_stale_binary",
-				`${stale.binary} (${stale.resolved}) does not support \`${probe.capability}\`; it is shadowed by the supporting ${selected} only while resolution order holds.`,
-			);
 		}
+		// A stale fallback next to a supported primary is recorded in `results`
+		// but does not degrade the capability — warn only when no binary serves it.
 		const { supportedPattern, ...rest } = probe;
 		return { ...rest, selected, results };
 	});

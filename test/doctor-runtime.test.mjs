@@ -43,7 +43,7 @@ test("#given a current lazyantigravity binary #when runtime is inspected #then t
 	assert.equal(section.status, "pass");
 });
 
-test("#given a stale omo binary shadowed by a current lazyantigravity #when inspected #then a shadow warning is raised", async () => {
+test("#given a stale omo binary shadowed by a current lazyantigravity #when inspected #then the stale fallback is recorded without degrading the section", async () => {
 	const dir = mkdtempSync(join(tmpdir(), "doctor-rt-"));
 	fakeBinary(dir, "lazyantigravity", "[ulw-loop] Missing --file (path to claim-ledger.md)");
 	fakeBinary(dir, "omo", "Usage:\n  omo ulw-loop create-goals --brief ...");
@@ -53,8 +53,8 @@ test("#given a stale omo binary shadowed by a current lazyantigravity #when insp
 	assert.equal(probe.selected, "lazyantigravity");
 	const omo = probe.results.find((r) => r.binary === "omo");
 	assert.equal(omo.status, "unsupported_subcommand");
-	assert.equal(section.status, "warn");
-	assert.ok(section.warnings.some((w) => w.code === "shadowed_stale_binary"));
+	assert.match(omo.detail, /usage fallback|stale/i);
+	assert.equal(section.status, "pass");
 });
 
 test("#given only a stale omo binary #when inspected #then a stale-cli warning is raised", async () => {
