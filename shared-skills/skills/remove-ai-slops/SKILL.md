@@ -32,7 +32,7 @@ The core safety invariant: **behavior is locked by green tests before a single l
 
 ## Categories (what counts as slop)
 
-The agent looks for these nine categories. The first three are stylistic, the next three are structural, the next two are about hidden cost, and the last is about behavior coverage.
+The agent looks for these ten categories. The first three are stylistic, the next four are structural, the next two are about hidden cost, and the last is about behavior coverage.
 
 ### Stylistic
 1. **Obvious comments** — comments restating code, trivial docstrings, section dividers, commented-out code, vague TODOs/Notes.
@@ -80,12 +80,12 @@ The agent looks for these nine categories. The first three are stylistic, the ne
 10. **Oversized modules** — any source file exceeding **250 pure LOC** (non-blank, non-comment lines). This is an architectural defect, not a style preference. Measure: `awk '!/^[[:space:]]*$/ && !/^[[:space:]]*(#|\/\/)/' <file> | wc -l`.
 
    **When found, do NOT just flag it. Execute a full modular refactoring:**
-   1. Run `check-no-excuse-rules.py` recursively on scope to list all violations.
+   1. Run the language-matching `check-no-excuse-rules` script recursively on scope to list all violations — `skills/programming/scripts/{python,rust}/check-no-excuse-rules.py`, `skills/programming/scripts/typescript/check-no-excuse-rules.ts`, or `skills/programming/scripts/{rust,go}/check-no-excuse-rules.sh`.
    2. For each oversized file, identify distinct responsibilities (single-responsibility principle).
    3. Plan the split: name each new file after the concept it owns (never `utils.py`, `helpers.py`, `common.py`, `part_1.py`).
    4. Present the split plan to the user before executing.
    5. Extract into clean modules with explicit `__init__.py` re-exports (re-exports ONLY, no logic in `__init__.py`).
-   6. Verify: run `check-no-excuse-rules.py` again — every file must be ≤250 pure LOC. Run tests, typecheck, lint.
+   6. Verify: run the same `check-no-excuse-rules` script again — every file must be ≤250 pure LOC. Run tests, typecheck, lint.
 
    **Forbidden escapes**:
    - Counting blanks/comments toward budget.
@@ -174,7 +174,7 @@ Order rule (safest → riskiest): comments → dead code → defensive → dupli
 
 ### Phase 4: Parallel slop removal via `invoke_subagent` (`Model: "flash"`) in batches of 5
 
-Files are processed by subagents (`Model: "flash"`), **batched up to 5 at a time in parallel** via a single `invoke_subagent` call. The `Model: "flash"` gives the agent high speed and thoroughness to correctly evaluate the 9 categories and respect the KEEP rules without slipping into surface fixes.
+Files are processed by subagents (`Model: "flash"`), **batched up to 5 at a time in parallel** via a single `invoke_subagent` call. The `Model: "flash"` gives the agent high speed and thoroughness to correctly evaluate the 10 categories and respect the KEEP rules without slipping into surface fixes.
 
 **Batching protocol** (strict):
 
