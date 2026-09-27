@@ -64,3 +64,37 @@ test("#given a missing AGENTS.md #when checked #then it reports missing-file and
 	assert.equal(status, 1);
 	assert.equal(report.results[0].status, "missing-file");
 });
+
+test("#given the same keyword routed twice #when checked #then it reports a keyword-collision warning", () => {
+	const dir = mkdtempSync(join(tmpdir(), "keyword-check-"));
+	const path = join(dir, "AGENTS.md");
+	writeFileSync(
+		path,
+		[
+			"<keyword_detection>",
+			"| Keyword | Skill | Purpose |",
+			"|---|---|---|",
+			'| "deep dive" | `$ulw-plan` | first row |',
+			'| "deep dive" | `$ultra-research` | second row |',
+			"</keyword_detection>",
+		].join("\n"),
+	);
+	const { status, report } = runChecker(path);
+	assert.equal(status, 0);
+	const collision = report.results.find((r) => r.status === "keyword-collision");
+	assert.ok(collision, "expected a keyword-collision entry");
+	assert.match(collision.detail, /deep dive/);
+	assert.match(collision.detail, /\$ulw-plan/);
+	assert.match(collision.detail, /\$ultra-research/);
+});
+
+test("#given a file with no keyword table #when checked #then it warns instead of passing vacuously", () => {
+	const dir = mkdtempSync(join(tmpdir(), "keyword-check-"));
+	const path = join(dir, "AGENTS.md");
+	writeFileSync(path, "# AGENTS\n\nNo keyword table here.\n");
+	const { status, report } = runChecker(path);
+	assert.equal(status, 0);
+	const noTable = report.results.find((r) => r.status === "no-table");
+	assert.ok(noTable, "expected a no-table entry");
+	assert.ok(report.warnings >= 1);
+});

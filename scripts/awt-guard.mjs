@@ -9,6 +9,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { CAPABILITY_CLAIM_RE } from "./claim-patterns.mjs";
 
 const pluginRoot =
 	process.env.PLUGIN_ROOT?.trim() ||
@@ -22,8 +23,8 @@ const META_EXCUSE_REGEX = /(?:흥미롭군요|That['’]s interesting|예상과 
 
 // Capability-claim detector: strong usability/completion assertions that require
 // execution evidence under the claim-evidence contract (registered / loadable / verified).
-const CAPABILITY_CLAIM_REGEX =
-	/(?:immediately (?:usable|available)|ready to use|fully (?:verified|compatible|identical|functional)|verified (?:and )?(?:working|complete|correct)|works (?:perfectly|flawlessly)|즉시 사용 가능|바로 사용 가능|이제 사용 가능|완벽히 동일|완전히 동일|완벽하게 작동|모두 정상 작동|전부 정상)/i;
+// Pattern source: ./claim-patterns.mjs (shared with stop_claim_guard).
+const CAPABILITY_CLAIM_REGEX = CAPABILITY_CLAIM_RE;
 
 async function readAllStdin() {
 	return new Promise((resolve) => {

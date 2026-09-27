@@ -38,6 +38,34 @@ function extractSkillRefs(content) {
 	return refs;
 }
 
+// Extract the quoted trigger literals from column 1 of each table row so
+// duplicate keywords routed to different skills surface as ambiguous.
+function extractKeywordCollisions(content) {
+	const block = content.match(/<keyword_detection>([\s\S]*?)<\/keyword_detection>/);
+	if (!block) return [];
+	const rows = block[1]
+		.split("\n")
+		.filter((line) => line.trimStart().startsWith("|") && !/^\s*\|[\s-:|]+\|?\s*$/.test(line));
+	const seen = new Map(); // keyword -> row targets
+	const collisions = [];
+	for (const row of rows) {
+		const cells = row.split("|").map((c) => c.trim()).filter(Boolean);
+		if (cells.length < 2) continue;
+		const targets = [...row.matchAll(/\$([A-Za-z][\w-]*)/g)].map((m) => m[1]);
+		for (const m of cells[0].matchAll(/"([^"]+)"/g)) {
+			const keyword = m[1].trim().toLowerCase();
+			if (!keyword) continue;
+			if (seen.has(keyword)) {
+				const first = seen.get(keyword);
+				collisions.push({ keyword, first, second: { targets, row: row.trim().slice(0, 100) } });
+			} else {
+				seen.set(keyword, { targets, row: row.trim().slice(0, 100) });
+			}
+		}
+	}
+	return collisions;
+}
+
 function* walk(dir, depth = 0) {
 	if (depth > 6) return;
 	let entries;
@@ -115,6 +143,14 @@ for (const agentsPath of agentsPaths) {
 	const content = readFileSync(abs, "utf8");
 	const refs = extractSkillRefs(content);
 	report.checked_files.push({ file: abs, refs: refs.length });
+	if (refs.length === 0) {
+		report.results.push({ file: agentsPath, ref: null, status: "no-table", detail: "no keyword_detection rows found" });
+		report.warnings += 1;
+	}
+	for (const collision of extractKeywordCollisions(content)) {
+		report.results.push({ file: agentsPath, ref: null, status: "keyword-collision", detail: `"${collision.keyword}" maps to ${collision.first.targets.map((t) => `$${t}`).join("+")} and ${collision.second.targets.map((t) => `$${t}`).join("+")}` });
+		report.warnings += 1;
+	}
 	const seen = new Set();
 	for (const ref of refs) {
 		const key = `${abs}:${ref.name}`;
@@ -144,7 +180,7 @@ if (json) {
 	}
 	for (const r of report.results) {
 		const mark = r.status === "dangling" || r.status === "missing-file" ? "FAIL" : r.status === "aggregate-skill" || r.status === "component-skill" ? " ok " : "warn";
-		console.log(`[${mark}] $${r.ref ?? "?"} -> ${r.status}${r.path ? ` (${r.path})` : ""}`);
+		console.log(`[${mark}] $${r.ref ?? "?"} -> ${r.status}${r.path ? ` (${r.path})` : ""}${r.detail ? ` — ${r.detail}` : ""}`);
 	}
 	console.log(`dangling: ${report.dangling}, warnings: ${report.warnings}`);
 }

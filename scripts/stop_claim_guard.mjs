@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * stop_claim_guard.mjs — Stop/SubagentStop 자기완료 선언 게이트
- * GUARD_PACK_VERSION: 1.0.0 (캐노니컬: lazyforensic/scripts — 수정 시 3레포 동기화)
+ * GUARD_PACK_VERSION: 1.0.0 (캐노니컬: lazyforensic/scripts — 수정 시 3레포 동기화,
+ * 의존 모듈 ./claim-patterns.mjs 도 함께 동기화할 것)
  *
  * 임무: 모델의 최종 메시지가 "완료/전수/100%/무결점/모두 통과" 류의 완료 선언을 하면서
  * 반증 가능한 증거(실행 명령, 테스트 수, 산출물 경로, 커밋 SHA)를 제시하지 않으면
@@ -28,10 +29,8 @@ const CLAIM_RE = new RegExp(
 		'100%\\s*(pass|coverage|complete)', 'complete\\s*and\\s*verified', 'zero\\s*(issues|failures)',
 		// capability assertions — registration is not capability; these require the
 		// same execution evidence as completion claims (the "즉시 사용 가능" case).
-		'즉시\\s*사용\\s*가능', '바로\\s*사용\\s*가능', '즉시\\s*실행\\s*가능', '바로\\s*쓸\\s*수',
-		'정상\\s*작동(?!\\s*하지)(?!\\s*여부)', '완벽히?\\s*동일(?!한가)', '완전히?\\s*동일', '완벽하게?\\s*(작동|호환)',
-		'immediately\\s*(usable|available)', 'ready\\s*to\\s*use', 'usable\\s*now',
-		'works?\\s*(now|perfectly|flawlessly)', 'fully\\s*supported',
+		// Single source: ./claim-patterns.mjs (shared with awt-guard). Sync together.
+		...CAPABILITY_CLAIM_SOURCES,
 	].join('|'),
 	'i',
 );
@@ -54,6 +53,7 @@ const EVIDENCE_RE = new RegExp(
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { CAPABILITY_CLAIM_SOURCES } from './claim-patterns.mjs';
 
 function readStdin(limitMs) {
 	return new Promise((resolve) => {
