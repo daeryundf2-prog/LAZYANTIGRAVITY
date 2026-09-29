@@ -34,6 +34,7 @@ for (const entry of readdirSync(componentsRoot, { withFileTypes: true }).sort((a
 		console.log(`PASS  ${entry.name}`);
 	} else {
 		console.log(`FAIL  ${entry.name}`);
+		if (res.error) console.error(`Error: ${res.error.message || res.error}`);
 		if (res.stdout) process.stdout.write(res.stdout + "\n");
 		if (res.stderr) process.stderr.write(res.stderr + "\n");
 	}

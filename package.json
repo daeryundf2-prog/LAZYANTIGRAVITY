@@ -51,7 +51,7 @@
 		"sync:skills": "node scripts/sync-skills.mjs",
 		"audit:skills-drift": "node scripts/check-skills-drift.mjs",
 		"audit:contract-drift": "node scripts/check_contract_drift.mjs",
-		"test": "node --test test/*.test.mjs && node --test components/daemon-bridge/test/daemon-bridge.test.mjs && npx vitest --run components/ulw-loop/test/checkpoint.test.ts",
+		"test": "node --test test/*.test.mjs && node --test components/daemon-bridge/test/daemon-bridge.test.mjs && npx vitest --root components/ulw-loop --run test/checkpoint.test.ts",
 		"verify:hook-policies": "node scripts/verify-hook-policies.mjs",
 		"probe:model-capabilities": "node scripts/model-capability-probe.mjs",
 		"verify:reproducible": "node scripts/verify-dist-sync.mjs",
