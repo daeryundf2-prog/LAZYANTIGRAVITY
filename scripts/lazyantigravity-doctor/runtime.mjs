@@ -25,7 +25,7 @@ const CAPABILITY_PROBES = [
 	{
 		capability: "ulw-loop status",
 		args: ["ulw-loop", "status"],
-		supportedPattern: /ulw-loop status|goals:/i,
+		supportedPattern: /ulw-loop status|goals:|No ulw-loop plan found/i,
 	},
 ];
 
