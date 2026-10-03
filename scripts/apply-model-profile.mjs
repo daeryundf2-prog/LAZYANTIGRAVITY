@@ -15,6 +15,14 @@ import {
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const REASONING_ROLES = ["planner", "verifier", "dual-verify", "hypothesis-tree", "arch-guard"];
 
+const VALUE_FLAGS = { "--display": "display", "--tiers": "tiers", "--context": "context", "--verify-lane": "verifyLane", "--root": "root" };
+const VERIFY_LANES = new Set(["pro", "inherit"]);
+
+function usageError(message) {
+	console.error(message);
+	process.exit(1);
+}
+
 function parseArgs(args) {
 	let profileName = null;
 	const options = {
@@ -30,13 +38,20 @@ function parseArgs(args) {
 		const arg = args[i];
 		if (arg === "--check") options.check = true;
 		else if (arg === "--no-build") options.noBuild = true;
-		else if (arg === "--display" && i + 1 < args.length) options.display = args[++i];
-		else if (arg === "--tiers" && i + 1 < args.length) options.tiers = args[++i];
-		else if (arg === "--context" && i + 1 < args.length) options.context = args[++i];
-		else if (arg === "--verify-lane" && i + 1 < args.length) options.verifyLane = args[++i];
-		else if (arg === "--root" && i + 1 < args.length) options.root = resolve(args[++i]);
-		else if (!arg.startsWith("-") && profileName === null) profileName = arg;
+		else if (arg in VALUE_FLAGS) {
+			const value = args[i + 1];
+			if (value === undefined || value.startsWith("--")) usageError(`${arg} requires a value`);
+			if (value.trim() === "") usageError(`${arg} must not be empty`);
+			options[VALUE_FLAGS[arg]] = arg === "--root" ? resolve(value) : value;
+			i++;
+		} else if (arg.startsWith("-")) usageError(`Unknown option '${arg}'`);
+		else if (profileName === null) profileName = arg;
+		else usageError(`Unexpected argument '${arg}'`);
 	}
+	if (options.verifyLane && !VERIFY_LANES.has(options.verifyLane)) {
+		usageError(`--verify-lane must be one of: ${[...VERIFY_LANES].join(", ")}`);
+	}
+	if (options.context && !/^[1-9]\d*$/.test(options.context)) usageError("--context must be a positive integer token count");
 	return { profileName, options };
 }
 

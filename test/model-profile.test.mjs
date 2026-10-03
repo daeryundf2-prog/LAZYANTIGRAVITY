@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -12,68 +12,94 @@ import { MARKER_FILES, getMarkerContent } from "../scripts/lib/model-profile-ren
 const execFile = promisify(execFileCallback);
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const scriptPath = join(root, "scripts", "apply-model-profile.mjs");
+const PLACEHOLDER_NAME = "Gemini 4 Pro Argon (High)";
 
-test("#given model-catalog.json #when inspected #then antigravity profile declarations are valid", async () => {
-	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
-	const antigravity = catalog.antigravity;
-
-	assert.equal(typeof antigravity?.activeProfile, "string");
-	assert.equal(antigravity.activeProfile, "gemini38-claude55");
-
-	const profiles = antigravity.profiles;
-	assert.ok(profiles);
-	assert.equal(profiles["gemini38-claude55"]?.status, "active");
-	assert.equal(profiles.argon?.status, "pending");
-
-	for (const profileName of ["gemini38-claude55", "argon"]) {
-		const prof = profiles[profileName];
-		assert.ok(prof.displayName);
-		assert.ok(prof.description);
-		assert.ok(prof.lanes);
-		assert.ok(prof.fallbackTable);
-	}
-
-	const plannerChain = antigravity.roles.planner.fallbackChain;
-	const sonnetIdx = plannerChain.indexOf("claude-sonnet-5.5-high");
-	const opusIdx = plannerChain.indexOf("claude-opus-5.5-high");
-	const geminiIdx = plannerChain.indexOf("gemini-3.1-pro-high");
-	assert.ok(geminiIdx !== -1 && sonnetIdx !== -1 && opusIdx !== -1);
-	assert.ok(geminiIdx < sonnetIdx, "Gemini before Sonnet in fallback");
-	assert.ok(sonnetIdx < opusIdx, "Sonnet before Opus in fallback");
-});
-
-test("#given pending profile argon #when activation attempted without --display #then CLI rejects with code 1", async () => {
-	let failed = false;
-	try {
-		await execFile(process.execPath, [scriptPath, "argon", "--no-build"], { cwd: root });
-	} catch (err) {
-		failed = true;
-		assert.equal(err.code, 1);
-		assert.match(err.stderr, /Cannot activate pending profile 'argon' without --display/);
-	}
-	assert.equal(failed, true, "Expected argon activation without --display to fail");
-});
-
-test("#given temporary workspace fixture #when round-tripping A -> argon -> A #then markers restore byte-identically", async () => {
+// Tests must pass on release day too (argon active), so every CLI run targets a temp fixture
+// whose catalog is reset to "argon pending, gemini38-claude55 active" regardless of the live state.
+async function makePendingFixture() {
 	const tmp = await mkdtemp(join(tmpdir(), "model-profile-test-"));
-	try {
-		await cp(join(root, "model-catalog.json"), join(tmp, "model-catalog.json"));
-		for (const fileInfo of MARKER_FILES) {
-			const targetPath = join(tmp, fileInfo.path);
-			await mkdir(dirname(targetPath), { recursive: true });
-			await cp(join(root, fileInfo.path), targetPath);
-		}
+	const catalog = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
+	const argon = catalog.antigravity.profiles.argon;
+	argon.status = "pending";
+	argon.modelName = PLACEHOLDER_NAME;
+	for (const pm of argon.pendingModels ?? []) pm.availability = "pending";
+	catalog.antigravity.activeProfile = "gemini38-claude55";
+	await writeFile(join(tmp, "model-catalog.json"), `${JSON.stringify(catalog, null, "\t")}\n`);
+	for (const fileInfo of MARKER_FILES) {
+		const targetPath = join(tmp, fileInfo.path);
+		await mkdir(dirname(targetPath), { recursive: true });
+		await cp(join(root, fileInfo.path), targetPath);
+	}
+	await runCli(["gemini38-claude55", "--no-build", "--root", tmp]);
+	return tmp;
+}
 
+function runCli(args) {
+	return execFile(process.execPath, [scriptPath, ...args], { cwd: root });
+}
+
+async function expectCliFailure(args, stderrPattern) {
+	await assert.rejects(runCli(args), (err) => {
+		assert.equal(err.code, 1);
+		assert.match(err.stderr, stderrPattern);
+		return true;
+	});
+}
+
+test("#given model-catalog.json #when inspected #then the active profile exists and both profiles are complete", async () => {
+	const { antigravity } = JSON.parse(await readFile(join(root, "model-catalog.json"), "utf8"));
+	const active = antigravity.profiles?.[antigravity.activeProfile];
+	assert.ok(active, `activeProfile '${antigravity.activeProfile}' must exist`);
+	assert.notEqual(active.status, "pending");
+
+	const markerIds = MARKER_FILES.flatMap((f) => f.markers).filter((id) => id !== "ulw-loop-fallback");
+	for (const name of ["gemini38-claude55", "argon"]) {
+		const prof = antigravity.profiles[name];
+		for (const field of ["displayName", "description", "lanes", "fallbackTable", "guide"]) {
+			assert.ok(prof[field], `${name}.${field} missing`);
+		}
+		for (const id of markerIds) assert.ok(Array.isArray(prof.guide[id]), `${name}.guide.${id} missing`);
+	}
+
+	const chain = antigravity.roles.planner.fallbackChain;
+	const [gemini, sonnet, opus] = ["gemini-3.1-pro-high", "claude-sonnet-5.5-high", "claude-opus-5.5-high"].map((id) =>
+		chain.indexOf(id),
+	);
+	assert.ok(gemini !== -1 && sonnet !== -1 && opus !== -1);
+	assert.ok(gemini < sonnet, "Gemini before Sonnet in fallback");
+	assert.ok(sonnet < opus, "Sonnet before Opus in fallback");
+});
+
+test("#given a pending argon fixture #when activated without --display #then the CLI rejects with code 1", async () => {
+	const tmp = await makePendingFixture();
+	try {
+		await expectCliFailure(["argon", "--no-build", "--root", tmp], /Cannot activate pending profile 'argon' without --display/);
+	} finally {
+		await rm(tmp, { recursive: true, force: true });
+	}
+});
+
+test("#given malformed flags #when the CLI parses them #then it rejects instead of ignoring them", async () => {
+	const tmp = await makePendingFixture();
+	try {
+		await expectCliFailure(["argon", "--root", tmp, "--no-build", "--display"], /--display requires a value/);
+		await expectCliFailure(["argon", "--display", "X (High)", "--tiers", "", "--root", tmp, "--no-build"], /--tiers/);
+		await expectCliFailure(["argon", "--verify-lane", "opus", "--root", tmp, "--no-build"], /--verify-lane/);
+		await expectCliFailure(["argon", "--bogus", "--root", tmp, "--no-build"], /Unknown option '--bogus'/);
+	} finally {
+		await rm(tmp, { recursive: true, force: true });
+	}
+});
+
+test("#given a pending argon fixture #when round-tripping A -> argon -> A #then markers restore byte-identically", async () => {
+	const tmp = await makePendingFixture();
+	try {
 		const originals = new Map();
 		for (const fileInfo of MARKER_FILES) {
 			originals.set(fileInfo.path, await readFile(join(tmp, fileInfo.path), "utf8"));
 		}
 
-		await execFile(
-			process.execPath,
-			[scriptPath, "argon", "--display", "Gemini 4 Argon (High)", "--tiers", "medium,high", "--no-build", "--root", tmp],
-			{ cwd: root },
-		);
+		await runCli(["argon", "--display", "Gemini 4 Argon (High)", "--tiers", "medium,high", "--no-build", "--root", tmp]);
 
 		for (const fileInfo of MARKER_FILES) {
 			const argonContent = await readFile(join(tmp, fileInfo.path), "utf8");
@@ -88,11 +114,7 @@ test("#given temporary workspace fixture #when round-tripping A -> argon -> A #t
 		assert.equal(activated.roles.verifier.fallbackChain[0], "gemini-4-argon-high");
 		assert.ok(activated.availableModels.some((m) => m.modelId === "gemini-4-argon-medium"));
 
-		await execFile(
-			process.execPath,
-			[scriptPath, "gemini38-claude55", "--no-build", "--root", tmp],
-			{ cwd: root },
-		);
+		await runCli(["gemini38-claude55", "--no-build", "--root", tmp]);
 
 		for (const fileInfo of MARKER_FILES) {
 			const restored = await readFile(join(tmp, fileInfo.path), "utf8");
@@ -104,6 +126,6 @@ test("#given temporary workspace fixture #when round-tripping A -> argon -> A #t
 });
 
 test("#given repository working tree #when apply-model-profile --check is executed #then check passes with code 0", async () => {
-	const { stdout } = await execFile(process.execPath, [scriptPath, "--check"], { cwd: root });
-	assert.match(stdout, /Active profile 'gemini38-claude55' check passed; no drift\./);
+	const { stdout } = await runCli(["--check"]);
+	assert.match(stdout, /Active profile '[\w-]+' check passed; no drift\./);
 });
