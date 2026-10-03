@@ -6,6 +6,14 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Removed
+
+- **OpenCode/OMO Mirror & Sync Scripts**: removed `plugins/omo` dist mirror (205 files) and `scripts/sync-omo-mirror.mjs`; removed `sync:omo` script and build pipeline step from `package.json`; relocated `plugins/scripts/sync-telemetry-component.mjs` to `scripts/sync-telemetry-component.mjs` and dropped `plugins/scripts`; removed `plugins/omo` fallback paths in `components/ulw-loop/src/lsp-rules-feedback.ts` and `scripts/verify-dist-sync.mjs`.
+- **Deprecated Skills**: removed `shared-skills/skills/lcx-report-bug` (legacy alias for `report-bug`) and `shared-skills/skills/archify` (unrouted vendored skill) along with their materialized artifacts in `skills/` and `test/archify-skill.test.mjs`.
+- **Dormant Codex-Only Code**: removed `scripts/auto-update.mjs`, `scripts/auto-update-state.mjs`, `scripts/spawn-command.mjs`, `scripts/migrate-codex-config.mjs`, tests (`test/auto-update.test.mjs`, `test/migrate-codex-config.test.mjs`), offline updater test in `test/component-safety-contracts.test.mjs`, and dormant `autoUpdateEnabled` / `configMigrationEnabled` fields in `scripts/runtime-adapter.mjs`. Marked `readme.auto-update-status-command` as removed in evidence map.
+- **Stale Documentation & Scripts**: removed `P0_P1_FIXES.md`, `LAZYANTIGRAVITY_CHEAT_SHEET.md`, and unused standalone script `scripts/ultra-research.mjs`.
+- **Version Bump**: bumped version from `0.8.0` to `0.9.0` across package, plugin, and lockfile manifests; synchronized aggregate hook status message labels.
+
 ### Added — switchable model profiles and 0.8.0 release
 
 - `model-catalog.json`: added `antigravity.activeProfile: "gemini38-claude55"`, switchable profile declarations (`gemini38-claude55` active, `argon` pending), and reordered static role `fallbackChains` (Sonnet before Opus, Gemini before Claude) to optimize Google AI Ultra quota allocation.

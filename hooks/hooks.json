@@ -7,7 +7,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook session-start",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Loading Project Rules"
+						"statusMessage": "LazyAntigravity(0.9.0): Loading Project Rules"
 					}
 				]
 			},
@@ -17,7 +17,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/memory/dist/cli.js\" hook session-start",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Loading Active Memory"
+						"statusMessage": "LazyAntigravity(0.9.0): Loading Active Memory"
 					}
 				]
 			},
@@ -27,7 +27,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/daemon-bridge/dist/cli.js\" hook session-start",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Initializing Ipc Daemon Bridge"
+						"statusMessage": "LazyAntigravity(0.9.0): Initializing Ipc Daemon Bridge"
 					}
 				]
 			},
@@ -37,7 +37,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ast-index/dist/cli.js\" hook session-start",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Pre-Indexing Ast Call Graph"
+						"statusMessage": "LazyAntigravity(0.9.0): Pre-Indexing Ast Call Graph"
 					}
 				]
 			},
@@ -47,7 +47,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/components/telemetry/dist/cli.js\" hook session-start",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Recording Session Telemetry",
+						"statusMessage": "LazyAntigravity(0.9.0): Recording Session Telemetry",
 						"failurePolicy": "FAIL_OPEN"
 					}
 				]
@@ -58,7 +58,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/update-check.mjs\"",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking For Plugin Updates"
+						"statusMessage": "LazyAntigravity(0.9.0): Checking For Plugin Updates"
 					}
 				]
 			}
@@ -70,7 +70,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/user-prompt-dispatcher.mjs\"",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.8.0): Running Userpromptsubmit Hooks (rules, Quick-Lane, Reasoning, Ultrawork, Steering)"
+						"statusMessage": "LazyAntigravity(0.9.0): Running Userpromptsubmit Hooks (rules, Quick-Lane, Reasoning, Ultrawork, Steering)"
 					}
 				]
 			}
@@ -83,7 +83,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook pre-tool-use",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Recommending Git Bash Mcp"
+						"statusMessage": "LazyAntigravity(0.9.0): Recommending Git Bash Mcp"
 					}
 				]
 			},
@@ -94,7 +94,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/awt-guard.mjs\"",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Verifying Awt Trajectory Integrity",
+						"statusMessage": "LazyAntigravity(0.9.0): Verifying Awt Trajectory Integrity",
 						"failurePolicy": "FAIL_OPEN"
 					}
 				]
@@ -108,26 +108,26 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/comment-checker/dist/cli.js\" hook post-tool-use",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking Comments"
+						"statusMessage": "LazyAntigravity(0.9.0): Checking Comments"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-tool-use",
 						"timeout": 10,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking LSP Diagnostics"
+						"statusMessage": "LazyAntigravity(0.9.0): Checking LSP Diagnostics"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Markdown Structure Guard (스트리핑/빈 링크/표 불일치)",
+						"statusMessage": "LazyAntigravity(0.9.0): Markdown Structure Guard (스트리핑/빈 링크/표 불일치)",
 						"failurePolicy": "FAIL_CLOSED"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/json_schema_guard.mjs\"",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Json Schema Guard (스키마 무결성 및 Instructor 자가 수정)",
+						"statusMessage": "LazyAntigravity(0.9.0): Json Schema Guard (스키마 무결성 및 Instructor 자가 수정)",
 						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
@@ -139,7 +139,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-tool-use",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Matching Project Rules"
+						"statusMessage": "LazyAntigravity(0.9.0): Matching Project Rules"
 					}
 				]
 			},
@@ -150,14 +150,14 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/markdown_structure_guard.mjs\"",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Markdown Structure Guard (bash 리다이렉트 쓰기 포함)",
+						"statusMessage": "LazyAntigravity(0.9.0): Markdown Structure Guard (bash 리다이렉트 쓰기 포함)",
 						"failurePolicy": "FAIL_CLOSED"
 					},
 					{
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/json_schema_guard.mjs\"",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Json Schema Guard (bash 리다이렉트 쓰기 포함)",
+						"statusMessage": "LazyAntigravity(0.9.0): Json Schema Guard (bash 리다이렉트 쓰기 포함)",
 						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
@@ -171,7 +171,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook post-compact",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Resetting Git Bash Mcp Reminder"
+						"statusMessage": "LazyAntigravity(0.9.0): Resetting Git Bash Mcp Reminder"
 					}
 				]
 			},
@@ -182,7 +182,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/rules/dist/cli.js\" hook post-compact",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Resetting Project Rule Cache"
+						"statusMessage": "LazyAntigravity(0.9.0): Resetting Project Rule Cache"
 					}
 				]
 			},
@@ -193,7 +193,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/lsp/dist/cli.js\" hook post-compact",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Resetting LSP Diagnostics Cache"
+						"statusMessage": "LazyAntigravity(0.9.0): Resetting LSP Diagnostics Cache"
 					}
 				]
 			},
@@ -204,7 +204,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/ulw-loop/dist/cli.js\" hook post-compact",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Restoring Ulw-Loop Context"
+						"statusMessage": "LazyAntigravity(0.9.0): Restoring Ulw-Loop Context"
 					}
 				]
 			}
@@ -216,7 +216,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_CLOSED none none node \"${PLUGIN_ROOT}/scripts/ulw-readiness.mjs\"",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking Ulw Readiness",
+						"statusMessage": "LazyAntigravity(0.9.0): Checking Ulw Readiness",
 						"failurePolicy": "FAIL_CLOSED"
 					}
 				]
@@ -227,7 +227,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook stop",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking Start-Work Continuation"
+						"statusMessage": "LazyAntigravity(0.9.0): Checking Start-Work Continuation"
 					}
 				]
 			},
@@ -237,7 +237,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/daemon-bridge/dist/cli.js\" hook stop",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking Ipc Daemon State"
+						"statusMessage": "LazyAntigravity(0.9.0): Checking Ipc Daemon State"
 					}
 				]
 			},
@@ -247,7 +247,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/session-tree/dist/cli.js\" hook stop",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Checkpointing Session Tree"
+						"statusMessage": "LazyAntigravity(0.9.0): Checkpointing Session Tree"
 					}
 				]
 			},
@@ -257,7 +257,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/active-learning/dist/cli.js\" hook stop",
 						"timeout": 2,
-						"statusMessage": "LazyAntigravity(0.8.0): Analyzing Failure Patterns (read-Only)"
+						"statusMessage": "LazyAntigravity(0.9.0): Analyzing Failure Patterns (read-Only)"
 					}
 				]
 			},
@@ -268,7 +268,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/stop_claim_guard.mjs\"",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Stop Claim Guard (무근거 완료 선언 차단)"
+						"statusMessage": "LazyAntigravity(0.9.0): Stop Claim Guard (무근거 완료 선언 차단)"
 					}
 				]
 			}
@@ -280,7 +280,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/components/start-work-continuation/dist/cli.js\" hook subagent-stop",
 						"timeout": 3,
-						"statusMessage": "LazyAntigravity(0.8.0): Checking Start-Work Continuation"
+						"statusMessage": "LazyAntigravity(0.9.0): Checking Start-Work Continuation"
 					}
 				]
 			},
@@ -291,7 +291,7 @@
 						"type": "command",
 						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/stop_claim_guard.mjs\"",
 						"timeout": 5,
-						"statusMessage": "LazyAntigravity(0.8.0): Stop Claim Guard (무근거 완료 선언 차단)"
+						"statusMessage": "LazyAntigravity(0.9.0): Stop Claim Guard (무근거 완료 선언 차단)"
 					}
 				]
 			}
