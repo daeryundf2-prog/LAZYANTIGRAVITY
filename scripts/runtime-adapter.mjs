@@ -131,9 +131,21 @@ export function readModelCatalogForRuntime(env = process.env) {
 	}
 	// Sensible defaults per platform
 	if (config.runtime === "antigravity") {
+		let rawCatalog = null;
+		try {
+			rawCatalog = JSON.parse(readFileSync(catalogPath, "utf8"));
+		} catch {
+			// ignore
+		}
+		const ag = rawCatalog?.antigravity ?? rawCatalog;
 		return {
-			current: { model: "gemini-3.8-flash-high", model_context_window: 1048576, model_reasoning_effort: "high", plan_mode_reasoning_effort: "high" },
-			roles: {
+			current: ag?.current ?? {
+				model: "gemini-3.8-flash-high",
+				model_context_window: 1048576,
+				model_reasoning_effort: "high",
+				plan_mode_reasoning_effort: "high",
+			},
+			roles: ag?.roles ?? {
 				default: { model: "gemini-3.8-flash-high", model_reasoning_effort: "high" },
 				planner: { model: "gemini-3.8-flash-high", model_reasoning_effort: "high" },
 				verifier: { model: "gemini-3.1-pro-high", model_reasoning_effort: "high" },
@@ -142,7 +154,7 @@ export function readModelCatalogForRuntime(env = process.env) {
 				fast: { model: "gemini-3.8-flash-medium", model_reasoning_effort: "medium" },
 				fallback: { model: "gemini-3.8-flash-low", model_reasoning_effort: "low" },
 			},
-			managedProfiles: [],
+			managedProfiles: ag?.managedProfiles ?? [],
 		};
 	}
 	return {

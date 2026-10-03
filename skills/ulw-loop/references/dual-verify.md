@@ -25,7 +25,7 @@ flowchart TD
 초고속으로 핵심 비즈니스 로직과 단위 테스트를 작성합니다 (`Model: "flash"`).
 
 ### Pass 2: Pro Adversarial Critic
-Pro 모델 오라클이 코드의 잠재적 취약점을 공격적으로 분석합니다 (`Model: "pro"`). 세션이 Claude 5.5일 경우 `Model: "inherit"`를 지정하여 Claude 5.5로 검증합니다.
+Pro 모델 오라클이 코드의 잠재적 취약점을 공격적으로 분석합니다 (`Model: "pro"`). verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra).
 
 ```
 invoke_subagent(

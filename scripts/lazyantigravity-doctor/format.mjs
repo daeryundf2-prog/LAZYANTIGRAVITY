@@ -10,6 +10,7 @@ export function toText(report) {
 		...sectionLines("bundles", report.bundles),
 		...sectionLines("versions", report.versions),
 		...sectionLines("runtime", report.runtime),
+		...(report.profiles ? sectionLines("profiles", report.profiles) : []),
 	];
 	if (report.warnings.items.length > 0) {
 		lines.push("", "warnings:");

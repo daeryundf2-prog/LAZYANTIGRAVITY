@@ -6,6 +6,15 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — switchable model profiles and 0.8.0 release
+
+- `model-catalog.json`: added `antigravity.activeProfile: "gemini38-claude55"`, switchable profile declarations (`gemini38-claude55` active, `argon` pending), and reordered static role `fallbackChains` (Sonnet before Opus, Gemini before Claude) to optimize Google AI Ultra quota allocation.
+- `scripts/apply-model-profile.mjs` & `scripts/lib/model-profile-renderer.mjs`: CLI to switch model profiles, validate pending activations, and render `<!-- MODEL-PROFILE:BEGIN <id> -->` marker blocks across source skills and guides.
+- Doctor (`scripts/lazyantigravity-doctor.mjs`): added `profiles` check ensuring `activeProfile` exists, is not pending, and source marker blocks have no drift.
+- Scripts: added `npm run model:profile` and `npm run audit:model-profile` (wired into `npm run check`).
+- Documentation & Skills: updated recommended routing and verify-lane guidance (only single final-verdict lane inherits on Claude sessions to preserve scarce Claude quota; standard verify lanes use `pro` on Gemini).
+- Bumped version to 0.8.0 across package and plugin manifests.
+
 ### Changed — Claude 5.5 model catalog update and session-neutral policy
 
 - `model-catalog.json`: retired `claude-opus-4.6` and `claude-sonnet-4.6`; added 6 entries for `claude-opus-5.5-{low,medium,high}` and `claude-sonnet-5.5-{low,medium,high}`. Replaced catalog fallbackChain references (`claude-opus-4.6` -> `claude-opus-5.5-high`, `claude-sonnet-4.6` -> `claude-sonnet-5.5-high`). Catalog version updated to `2026-10-03.antigravity-gemini38-claude55`.

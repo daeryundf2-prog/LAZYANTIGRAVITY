@@ -64,12 +64,38 @@ node "$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.
 
 Follow the user-selected **session model** (supported: Gemini 3.8 Flash (High), Claude Opus 5.5 (Low/Medium/High), Claude Sonnet 5.5 (Low/Medium/High)). Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite` / `inherit`) — that is an agent hint, the host never rewrites your session model.
 
+<!-- MODEL-PROFILE:BEGIN readme-table -->
 | Role | Recommendation |
 | :--- | :--- |
+| Session default | Gemini 3.8 Flash (High) — follow the model the user picked |
 | Bulk fan-out / worker / parser / search | `Model: "flash"` |
-| Verify / adversarial review / plan review | `Model: "inherit"` (when session is Claude 5.5) / `Model: "pro"` (when session is Gemini) |
+| Verify / adversarial review / plan review | `Model: "pro"` in any session |
+| Final verdict (one lane) | Claude Sonnet 5.5 (High), or Opus 5.5 (High) for design — UI switch + `Model: "inherit"` |
 | Rapid iterative fixes | Flash (Medium) or `Model: "flash_lite"` |
-| Deep reasoning / escape hatch | Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini) |
+<!-- MODEL-PROFILE:END readme-table -->
+
+The table above is generated from `model-catalog.json` (`antigravity.profiles`). Edit the catalog, not the table.
+
+### Switching model profiles
+
+| Profile | Status | Use |
+|---|---|---|
+| `gemini38-claude55` | active | Gemini 3.8 Flash workhorse, Claude 5.5 for one final-verdict lane |
+| `argon` | pending | Gemini 4 Pro Argon for hard design, Claude as optional second opinion |
+
+Argon release day:
+
+```bash
+# 1. read the exact picker label and tiers in the Antigravity model dropdown
+npm run model:profile -- argon --display "<picker label>" --tiers medium,high
+# 2. in an Argon session, spawn one Model:"pro" subagent and check its model name;
+#    if it is not Argon, re-apply with --verify-lane inherit
+npm run check && npm run doctor
+# roll back
+npm run model:profile -- gemini38-claude55
+```
+
+`--context <tokens>` adds a post-compact budget entry; omit it until the context limit is confirmed. Activating a pending profile without `--display` fails on purpose.
 
 ## What ships in this tree
 

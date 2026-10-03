@@ -8,7 +8,7 @@ LazyAntigravity runs on **Google Antigravity** (supporting Gemini 3.8 Flash, Cla
 | --- | --- |
 | Explore / research / plan / implement / QA / review | `invoke_subagent` with TASK / DELIVERABLE / SCOPE / VERIFY |
 | Role envelope | `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true` |
-| Child model hint (`canTierRoute`, not host-enforced) | `Subagents[].Model`: `flash` (bulk worker/research), `inherit` (verify on Claude 5.5) / `pro` (verify on Gemini), `flash_lite` (tiny chores) |
+| Child model hint (`canTierRoute`, not host-enforced) | `Subagents[].Model`: `flash` (bulk worker/research), `pro` (verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra)), `flash_lite` (tiny chores) |
 | ULW state / evidence | `node <plugin>/components/ulw-loop/dist/cli.js ulw-loop …` after Bootstrap |
 | Read / edit files | host Read / Write / Edit (or equivalent); do not invent `view_file` / `apply_patch` |
 | LSP | MCP `lsp.*` tools when the `lsp` server is configured |
@@ -38,7 +38,7 @@ ROLE ENVELOPE: mayFinalizeRun=false; mayModifyGlobalRunState=false; mustReturn=S
 )
 ```
 
-`Workspace` is optional. Embed role focus inside TASK text when useful (explorer / researcher / implementer / QA / reviewer). Follow the user-selected session model. For verify lanes pass `Model: "inherit"` when on Claude 5.5 or `Model: "pro"` when on Gemini instead of switching the whole session. Passing `Model` is an agent hint (`hostEnforced=false`); do not claim the child model changed unless host `modelName` differs.
+`Workspace` is optional. Embed role focus inside TASK text when useful (explorer / researcher / implementer / QA / reviewer). Follow the user-selected session model. For verify lanes, `Model: "pro"` (verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra)). Passing `Model` is an agent hint (`hostEnforced=false`); do not claim the child model changed unless host `modelName` differs.
 
 ## Do not
 

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { byName, createContext, finishSection, isDirectory, pathExists, readJson, safeReaddir, stripDotSlash } from "./common.mjs";
 import { collectCommandHooks, commandTargetPath } from "./hooks.mjs";
 import { mcpServerEntry } from "./mcp.mjs";
+import { inspectProfiles } from "./profiles.mjs";
 import { inspectRuntime } from "./runtime.mjs";
 
 const requiredMcpServers = ["ast_grep", "git_bash", "lsp"];
@@ -24,12 +25,13 @@ export async function buildDoctorReport(root) {
 	const bundles = await inspectBundles(root, context, components);
 	const versions = inspectVersions(context, packageJson, pluginJson, components);
 	const runtime = inspectRuntime(context);
+	const profiles = inspectProfiles(root, context);
 	const warnings = {
 		status: context.warnings.length > 0 ? "warn" : "pass",
 		items: context.warnings,
 	};
 	const optionalCapabilities = inspectOptionalCapabilities(root);
-	const sections = { manifests, hooks, mcp, skills, bundles, versions, runtime, optionalCapabilities, warnings };
+	const sections = { manifests, hooks, mcp, skills, bundles, versions, runtime, profiles, optionalCapabilities, warnings };
 
 	return {
 		product: {
@@ -48,7 +50,7 @@ export async function buildDoctorReport(root) {
 }
 
 export function hasFailures(report) {
-	return ["manifests", "hooks", "mcp", "skills", "bundles", "versions", "runtime", "warnings"].some(
+	return ["manifests", "hooks", "mcp", "skills", "bundles", "versions", "runtime", "profiles", "warnings"].some(
 		(section) => report[section]?.status === "fail",
 	);
 }

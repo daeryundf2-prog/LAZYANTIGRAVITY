@@ -48,7 +48,7 @@ Use `invoke_subagent` with a role envelope:
 | QA execution | worker | `flash` or `inherit` | Gemini 3.8 Flash (High) |
 | Read-only codebase search | researcher/explorer | `flash` | Gemini 3.8 Flash (High) |
 | Docs / library research | researcher | `flash` | Gemini 3.8 Flash (High) |
-| Final verification audit | verifier | `pro` (Gemini session) / `inherit` (Claude 5.5 session) | Prefer Gemini 3.1 Pro (High) or Claude Opus 5.5 (High) |
+| Final verification audit | verifier | `pro` (verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra)) | Prefer Gemini 3.1 Pro (High) or Claude Opus 5.5 (High) |
 
 Every worker message MUST carry: goal + exact files in scope; baseline characterization when touching existing code; constraints; verification commands; ONE Manual-QA channel + evidence path; for git-tracked edits require `git-master` style history inspection before commit.
 

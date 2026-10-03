@@ -132,10 +132,13 @@ Use `invoke_subagent` only. Read `skills/references/antigravity-tools.md` for th
 
 **Routing (AG-native):** follow the session model. Pass `invoke_subagent` `Subagents[].Model` as an agent hint (`canTierRoute`; host does not switch the session model):
 
+<!-- MODEL-PROFILE:BEGIN hephaestus-routing -->
 - Explore / research / plan / implement → `Model: "flash"` + focus inside TASK text
-- Verify / adversarial review → `Model: "pro"` (when the session is Gemini; when the session is Claude 5.5, use `Model: "inherit"` so the child stays on Claude)
+- Verify / adversarial review → `Model: "pro"` in any session
+- Final verdict on a high-risk change, ambiguous design, or debugging stuck after 2 rounds → Claude 5.5 session + `Model: "inherit"` for that one lane only (Claude quota is scarce on Ultra)
 - Tiny repetitive chores → `Model: "flash_lite"`
 - 5+ interdependent steps / ambiguous scope → `ulw-plan` or a planner lane (`flash`)
+<!-- MODEL-PROFILE:END hephaestus-routing -->
 
 Every child prompt MUST include TASK / DELIVERABLE / SCOPE / VERIFY and the role envelope (`mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`).
 

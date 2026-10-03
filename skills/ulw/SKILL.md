@@ -17,7 +17,7 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 
 ## Antigravity Routing Semantics (inherited from ulw-loop)
 
-- **Lane hints**: pass `invoke_subagent` `Subagents[].Model` (`canTierRoute=true`, `hostEnforced=false`) - `flash` for plan/code/research; `inherit` for verify/adversarial when the session is Claude 5.5 (child stays on Claude), `pro` when the session is Gemini (inherit would downgrade to Flash); `flash_lite` for tiny chores.
+- **Lane hints**: pass `invoke_subagent` `Subagents[].Model` (`canTierRoute=true`, `hostEnforced=false`) - `flash` for plan/code/research; verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra) (`pro` for verify); `flash_lite` for tiny chores.
 - **Session UI**: follow the user-selected session model (supported: Gemini 3.8 Flash (High), Claude Opus 5.5, Claude Sonnet 5.5). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
 - **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, pass `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`.
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.
@@ -27,14 +27,16 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 
 At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocation, output this message **exactly once**:
 
-> **Antigravity Recommended Model Configuration Guide**
-> - **Session options (plan + code + research)**: Gemini 3.8 Flash (High), Claude Opus 5.5 (High), Claude Sonnet 5.5 (High)
+<!-- MODEL-PROFILE:BEGIN ulw-guide -->
+> **Antigravity Recommended Model Configuration Guide** (profile `gemini38-claude55`)
+> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High). Claude Opus/Sonnet 5.5 also work; follow the model the user picked.
 > - **Bulk fan-out / researcher / worker**: `Model: "flash"`
-> - **Verify / adversarial lanes**: `Model: "inherit"` (when session is Claude 5.5) / `Model: "pro"` (when session is Gemini)
+> - **Verify / adversarial lanes**: `Model: "pro"` in any session
+> - **Final verdict (one lane only)**: switch the UI to Claude, then pass `Model: "inherit"` to that single lane. Use it for a high-risk change, an ambiguous design, or debugging stuck after 2 rounds. Default Claude Sonnet 5.5 (High); Claude Opus 5.5 (High) for design calls.
 > - **Rapid iterative bug fixes**: Flash (Medium) or `Model: "flash_lite"`
-> - **Escape hatch only** (still ambiguous / high-stakes design): Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini)
 >
-> *Antigravity routes lanes with model tiers. Follow the user-selected session model for the whole run.*
+> *Google AI Ultra: Gemini quota is abundant, Claude quota is scarce. Spend Claude on verdicts, not fan-out.*
+<!-- MODEL-PROFILE:END ulw-guide -->
 
 **Suppression**: If the user's message contains "quiet run", "skip model recommendation", "no model hint", or "quiet", skip this recommendation and proceed directly.
 

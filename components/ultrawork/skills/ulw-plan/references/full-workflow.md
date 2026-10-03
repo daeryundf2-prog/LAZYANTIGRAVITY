@@ -141,7 +141,7 @@ If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the p
 
 ## Delegation discipline (Antigravity)
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, `VERIFY`, plus the role envelope.
-- Follow the user-selected session model. Pass `Model: "flash"` for research, and for plan review use `Model: "inherit"` when the session is Claude 5.5 or `Model: "pro"` when the session is Gemini.
+- Follow the user-selected session model. Pass `Model: "flash"` for research. For plan review, `Model: "pro"` (verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra)).
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait/goal APIs.
 
 ## Stop rules

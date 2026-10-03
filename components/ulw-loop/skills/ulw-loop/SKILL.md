@@ -53,13 +53,16 @@ This skill is intentionally compact. The full workflow lives in `references/full
 
 Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 
-> **Antigravity Recommended Model Configuration Guide**
-> - **Session options (plan + code + research)**: Gemini 3.8 Flash (High), Claude Opus 5.5 (High), Claude Sonnet 5.5 (High)
-> - **Verify / adversarial lanes**: `invoke_subagent` with `Model: "inherit"` (when session is Claude 5.5) / `Model: "pro"` (when session is Gemini)
+<!-- MODEL-PROFILE:BEGIN ulw-loop-guide -->
+> **Antigravity Recommended Model Configuration Guide** (profile `gemini38-claude55`)
+> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High). Claude Opus/Sonnet 5.5 also work; follow the model the user picked.
+> - **Bulk fan-out / researcher / worker**: `Model: "flash"`
+> - **Verify / adversarial lanes**: `Model: "pro"` in any session
+> - **Final verdict (one lane only)**: switch the UI to Claude, then pass `Model: "inherit"` to that single lane. Use it for a high-risk change, an ambiguous design, or debugging stuck after 2 rounds. Default Claude Sonnet 5.5 (High); Claude Opus 5.5 (High) for design calls.
 > - **Rapid iterative bug fixes**: Flash (Medium) or `Model: "flash_lite"`
-> - **Escape hatch only** (still ambiguous / high-stakes design): Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini)
 >
-> *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`).*
+> *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`). Claude quota is scarce on Ultra.*
+<!-- MODEL-PROFILE:END ulw-loop-guide -->
 
 Suppress if the user says "quiet run", "skip model recommendation", "no model hint", or "quiet".
 
@@ -77,12 +80,13 @@ If rate limit/quota is detected:
 - Stop immediately; save checkpoint; recommend fallback models (3.7 High → 3.7 Medium → 3.1 Pro → Opus 5.5 escape hatch → Sonnet 5.5); user switches UI model; `/ulw resume`.
 
 Fallback sequence (exact):
-- **When Gemini 3.8 Flash (High) is limited**: 3.7 Flash → Medium → 3.1 Pro → Opus 5.5 → Sonnet 5.5
-- **When Gemini 3.8 Flash (Medium) is limited**: High → 3.7 Flash → 3.1 Pro → Sonnet 5.5
-- **When Gemini 3.1 Pro (High) is limited**: 3.7 High → 3.7 Medium → Opus 5.5
-- **When Claude Opus 5.5 is limited**: Gemini 3.8 Flash → 3.7 High → 3.7 Medium → 3.1 Pro → Sonnet 5.5
-- **When Claude Sonnet 5.5 is limited**: Gemini 3.8 Flash → 3.7 High → 3.7 Medium → 3.1 Pro
-- **When all exhausted**: wait for refresh or suggest enabling AI Credit Overages manually
+<!-- MODEL-PROFILE:BEGIN ulw-loop-fallback -->
+- **When Gemini 3.8 Flash (High) is limited**: 3.8 Flash (Medium) → 3.7 Flash (High) → 3.1 Pro (High) → Sonnet 5.5 → Opus 5.5
+- **When Gemini 3.1 Pro is limited**: 3.8 Flash (High) → 3.7 Flash (High) → Sonnet 5.5
+- **When Claude Opus 5.5 is limited**: Sonnet 5.5 (High) → Gemini 3.1 Pro (High) → 3.8 Flash (High)
+- **When Claude Sonnet 5.5 is limited**: Gemini 3.1 Pro (High) → 3.8 Flash (High)
+- **When all models is limited**: wait for the 5-hour refresh or enable AI Credit Overages manually
+<!-- MODEL-PROFILE:END ulw-loop-fallback -->
 
 ### 4. Compact Mode
 Use a 1M context model (e.g. Gemini 3.8 Flash (High)) if large window is needed. Summarize logs; slice files; compress outputs; save artifacts to disk.

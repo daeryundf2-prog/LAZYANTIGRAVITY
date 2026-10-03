@@ -112,7 +112,7 @@ METHOD: Conduct aggressive counter-search (e.g. site:github.com/issues OR site:r
 
 ### Phase 4: Executable Code Verification & Pro Oracle Review
 
-서로 다른 문서의 주장이 충돌하거나 성능/호환성 주장이 모호할 경우, 추측하지 않고 **직접 재현 코드를 실행**하여 검증합니다 (`Model: "pro"` 호출; 세션이 Claude 5.5일 경우 `Model: "inherit"`).
+서로 다른 문서의 주장이 충돌하거나 성능/호환성 주장이 모호할 경우, 추측하지 않고 **직접 재현 코드를 실행**하여 검증합니다 (`Model: "pro"` 호출; verify lanes stay pro; only the single final-verdict lane uses inherit on a Claude session (Claude quota is scarce on Ultra)).
 
 ```
 invoke_subagent(

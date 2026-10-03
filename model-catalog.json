@@ -132,6 +132,148 @@
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
 		},
+		"activeProfile": "gemini38-claude55",
+		"profiles": {
+			"gemini38-claude55": {
+				"status": "active",
+				"displayName": "Gemini 3.8 Flash + Claude 5.5",
+				"description": "Default Ultra profile: Gemini 3.8 Flash workhorse, Claude 5.5 reserved for single final verdict lane",
+				"sessionDefault": "gemini-3.8-flash-high",
+				"lanes": {
+					"fanout": "flash",
+					"chores": "flash_lite",
+					"verify": "pro",
+					"finalVerdict": "inherit"
+				},
+				"claudeVerdictTriggers": [
+					"high-risk/hard-to-reverse change",
+					"ambiguous design decision",
+					"debugging failed 2 rounds"
+				],
+				"claudeReviewDefault": "claude-sonnet-5.5-high",
+				"fallbackTable": {
+					"Gemini 3.8 Flash (High)": "3.8 Flash (Medium) → 3.7 Flash (High) → 3.1 Pro (High) → Sonnet 5.5 → Opus 5.5",
+					"Gemini 3.1 Pro": "3.8 Flash (High) → 3.7 Flash (High) → Sonnet 5.5",
+					"Claude Opus 5.5": "Sonnet 5.5 (High) → Gemini 3.1 Pro (High) → 3.8 Flash (High)",
+					"Claude Sonnet 5.5": "Gemini 3.1 Pro (High) → 3.8 Flash (High)",
+					"all models": "wait for the 5-hour refresh or enable AI Credit Overages manually"
+				},
+				"guide": {
+					"ulw-guide": [
+						"> **Antigravity Recommended Model Configuration Guide** (profile `gemini38-claude55`)",
+						"> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High). Claude Opus/Sonnet 5.5 also work; follow the model the user picked.",
+						"> - **Bulk fan-out / researcher / worker**: `Model: \"flash\"`",
+						"> - **Verify / adversarial lanes**: `Model: \"pro\"` in any session",
+						"> - **Final verdict (one lane only)**: switch the UI to Claude, then pass `Model: \"inherit\"` to that single lane. Use it for a high-risk change, an ambiguous design, or debugging stuck after 2 rounds. Default Claude Sonnet 5.5 (High); Claude Opus 5.5 (High) for design calls.",
+						"> - **Rapid iterative bug fixes**: Flash (Medium) or `Model: \"flash_lite\"`",
+						">",
+						"> *Google AI Ultra: Gemini quota is abundant, Claude quota is scarce. Spend Claude on verdicts, not fan-out.*"
+					],
+					"ulw-loop-guide": [
+						"> **Antigravity Recommended Model Configuration Guide** (profile `gemini38-claude55`)",
+						"> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High). Claude Opus/Sonnet 5.5 also work; follow the model the user picked.",
+						"> - **Bulk fan-out / researcher / worker**: `Model: \"flash\"`",
+						"> - **Verify / adversarial lanes**: `Model: \"pro\"` in any session",
+						"> - **Final verdict (one lane only)**: switch the UI to Claude, then pass `Model: \"inherit\"` to that single lane. Use it for a high-risk change, an ambiguous design, or debugging stuck after 2 rounds. Default Claude Sonnet 5.5 (High); Claude Opus 5.5 (High) for design calls.",
+						"> - **Rapid iterative bug fixes**: Flash (Medium) or `Model: \"flash_lite\"`",
+						">",
+						"> *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`). Claude quota is scarce on Ultra.*"
+					],
+					"readme-table": [
+						"| Role | Recommendation |",
+						"| :--- | :--- |",
+						"| Session default | Gemini 3.8 Flash (High) — follow the model the user picked |",
+						"| Bulk fan-out / worker / parser / search | `Model: \"flash\"` |",
+						"| Verify / adversarial review / plan review | `Model: \"pro\"` in any session |",
+						"| Final verdict (one lane) | Claude Sonnet 5.5 (High), or Opus 5.5 (High) for design — UI switch + `Model: \"inherit\"` |",
+						"| Rapid iterative fixes | Flash (Medium) or `Model: \"flash_lite\"` |"
+					],
+					"hephaestus-routing": [
+						"- Explore / research / plan / implement → `Model: \"flash\"` + focus inside TASK text",
+						"- Verify / adversarial review → `Model: \"pro\"` in any session",
+						"- Final verdict on a high-risk change, ambiguous design, or debugging stuck after 2 rounds → Claude 5.5 session + `Model: \"inherit\"` for that one lane only (Claude quota is scarce on Ultra)",
+						"- Tiny repetitive chores → `Model: \"flash_lite\"`",
+						"- 5+ interdependent steps / ambiguous scope → `ulw-plan` or a planner lane (`flash`)"
+					]
+				}
+			},
+			"argon": {
+				"status": "pending",
+				"displayName": "Gemini 4 Pro Argon + Gemini 3.8",
+				"description": "Pending profile: Gemini 4 Pro Argon for heavy reasoning/design, Gemini 3.8 Flash workhorse",
+				"pendingModels": [
+					{
+						"modelId": "gemini-4-pro-argon",
+						"displayName": "TBD",
+						"availability": "pending",
+						"provider": "google"
+					}
+				],
+				"sessionDefault": "gemini-3.8-flash-high",
+				"lanes": {
+					"fanout": "flash",
+					"chores": "flash_lite",
+					"verify": "pro",
+					"verifyLane": "pro",
+					"crossFamilyVerdict": "inherit"
+				},
+				"fallbackTable": {
+					"{modelBase}": "3.1 Pro (High) → 3.8 Flash (High) → Sonnet 5.5 → Opus 5.5",
+					"Gemini 3.8 Flash (High)": "3.8 Flash (Medium) → {modelBase} → 3.1 Pro (High) → Sonnet 5.5 → Opus 5.5",
+					"Gemini 3.1 Pro": "{modelBase} → 3.8 Flash (High) → Sonnet 5.5",
+					"Claude Opus 5.5": "Sonnet 5.5 (High) → {modelBase} → 3.8 Flash (High)",
+					"Claude Sonnet 5.5": "{modelBase} → 3.8 Flash (High)",
+					"all models": "wait for the 5-hour refresh or enable AI Credit Overages manually"
+				},
+				"modelName": "Gemini 4 Pro Argon (High)",
+				"verifyLaneText": {
+					"pro": "`Model: \"pro\"` in any session (on release day confirm the host maps `pro` to {modelBase}; otherwise re-apply with `--verify-lane inherit`)",
+					"inherit": "{modelBase} session + `Model: \"inherit\"`"
+				},
+				"guide": {
+					"ulw-guide": [
+						"> **Antigravity Recommended Model Configuration Guide** (profile `argon`)",
+						"> - **Session default (conversation + implementation)**: Gemini 3.8 Flash (High)",
+						"> - **Hard design / long-horizon reasoning**: switch the UI to {model}",
+						"> - **Bulk fan-out / researcher / worker**: `Model: \"flash\"`",
+						"> - **Verify / adversarial lanes**: {verifyLane}",
+						"> - **Cross-family second opinion (optional, one lane)**: Claude Sonnet 5.5 (High) / Opus 5.5 (High) session + `Model: \"inherit\"`",
+						"> - **Rapid iterative bug fixes**: Flash (Medium) or `Model: \"flash_lite\"`",
+						">",
+						"> *Google AI Ultra: Gemini quota is abundant, Claude quota is scarce. Spend Claude on verdicts, not fan-out.*"
+					],
+					"ulw-loop-guide": [
+						"> **Antigravity Recommended Model Configuration Guide** (profile `argon`)",
+						"> - **Session default (conversation + implementation)**: Gemini 3.8 Flash (High)",
+						"> - **Hard design / long-horizon reasoning**: switch the UI to {model}",
+						"> - **Bulk fan-out / researcher / worker**: `Model: \"flash\"`",
+						"> - **Verify / adversarial lanes**: {verifyLane}",
+						"> - **Cross-family second opinion (optional, one lane)**: Claude Sonnet 5.5 (High) / Opus 5.5 (High) session + `Model: \"inherit\"`",
+						"> - **Rapid iterative bug fixes**: Flash (Medium) or `Model: \"flash_lite\"`",
+						">",
+						"> *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`). Claude quota is scarce on Ultra.*"
+					],
+					"readme-table": [
+						"| Role | Recommendation |",
+						"| :--- | :--- |",
+						"| Session default | Gemini 3.8 Flash (High) — follow the model the user picked |",
+						"| Hard design / long-horizon reasoning | {model} via UI switch |",
+						"| Bulk fan-out / worker / parser / search | `Model: \"flash\"` |",
+						"| Verify / adversarial review / plan review | {verifyLane} |",
+						"| Cross-family second opinion (optional) | Claude Sonnet 5.5 (High) / Opus 5.5 (High) — UI switch + `Model: \"inherit\"`, one lane |",
+						"| Rapid iterative fixes | Flash (Medium) or `Model: \"flash_lite\"` |"
+					],
+					"hephaestus-routing": [
+						"- Explore / research / plan / implement → `Model: \"flash\"` + focus inside TASK text",
+						"- Verify / adversarial review → {verifyLane}",
+						"- Complex design / long-horizon reasoning → {model} (manual UI switch)",
+						"- Optional cross-family second opinion → Claude 5.5 session + `Model: \"inherit\"` for one lane",
+						"- Tiny repetitive chores → `Model: \"flash_lite\"`",
+						"- 5+ interdependent steps / ambiguous scope → `ulw-plan` or a planner lane (`flash`)"
+					]
+				}
+			}
+		},
 		"current": {
 			"model": "gemini-3.8-flash-high",
 			"model_context_window": 1048576,
@@ -161,6 +303,7 @@
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
+					"claude-sonnet-5.5-high",
 					"claude-opus-5.5-high"
 				],
 				"availabilitySource": "ui"
@@ -171,9 +314,10 @@
 				"reasoningLevel": "high",
 				"purpose": "교차 모델 검증 — 메인(3.8 Flash)과 다른 패밀리로 편향 방지",
 				"fallbackChain": [
-					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
-					"gemini-3.7-flash-high"
+					"gemini-3.7-flash-high",
+					"claude-sonnet-5.5-high",
+					"claude-opus-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
@@ -232,9 +376,10 @@
 				"reasoningLevel": "high",
 				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
 				"fallbackChain": [
-					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
-					"gemini-3.7-flash-high"
+					"gemini-3.7-flash-high",
+					"claude-sonnet-5.5-high",
+					"claude-opus-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
@@ -268,9 +413,10 @@
 				"reasoningLevel": "high",
 				"purpose": "직교 3대 가설 동시 반증 디버깅 — 논리 분기 및 불변식 락킹",
 				"fallbackChain": [
-					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
-					"gemini-3.7-flash-high"
+					"gemini-3.7-flash-high",
+					"claude-sonnet-5.5-high",
+					"claude-opus-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
@@ -304,9 +450,10 @@
 				"reasoningLevel": "high",
 				"purpose": "클린 아키텍처 계층 검증 — 1M 전역 import 그래프 및 AST 의존성 드리프트 차단",
 				"fallbackChain": [
-					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
-					"gemini-3.7-flash-high"
+					"gemini-3.7-flash-high",
+					"claude-sonnet-5.5-high",
+					"claude-opus-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
