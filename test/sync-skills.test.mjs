@@ -10,7 +10,6 @@ const repoRoot = join(root, "..", "..", "..");
 const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
-	"archify",
 	"ast-grep",
 	"avoid-ai-writing",
 	"boost",
@@ -22,7 +21,6 @@ const expectedSkills = [
 	"git-master",
 	"image-prompt",
 	"init-deep",
-	"lcx-report-bug",
 	"lsp-setup",
 	"media-analysis",
 	"programming",
@@ -248,22 +246,6 @@ test("#given synced report-bug skill #when inspected #then it files LazyAntigrav
 	assert.match(interfaceMetadata, /display_name: "report-bug \(lazyantigravity\)"/);
 	assert.match(interfaceMetadata, /- "lazyantigravity bug"/);
 	assert.match(interfaceMetadata, /- "antigravity plugin bug"/);
-});
-
-test("#given synced lcx-report-bug skill #when inspected #then it is an alias of report-bug", async () => {
-	// given
-	const skillRoot = join(root, "skills", "lcx-report-bug");
-
-	// when
-	const skill = await readFile(join(skillRoot, "SKILL.md"), "utf8");
-	const interfaceMetadata = await readFile(join(skillRoot, "agents", "openai.yaml"), "utf8");
-
-	// then
-	assert.match(skill, /^---\r?\nname: lcx-report-bug\r?\n/m);
-	assert.match(skill, /thin alias for `report-bug`/);
-	assert.match(skill, /\.\.\/report-bug\/SKILL\.md/);
-	assert.match(interfaceMetadata, /display_name: "lcx-report-bug \(alias\)"/);
-	assert.match(interfaceMetadata, /- "lcx-report-bug"/);
 });
 
 test("#given synced git-master skill #when inspected #then commits and git history route through it", async () => {

@@ -3,7 +3,6 @@ interface:
   short_description: "Route LazyAntigravity plugin bugs with source evidence"
   search_terms:
     - "report-bug"
-    - "lcx-report-bug"
     - "lazyantigravity bug"
     - "lazyantigravity issue"
     - "antigravity plugin bug"

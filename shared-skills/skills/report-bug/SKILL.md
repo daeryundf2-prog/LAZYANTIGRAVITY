@@ -159,7 +159,7 @@ Use this when a PR is the right artifact:
 Prefer `gh`:
 
 ```bash
-ISSUE_BODY="/tmp/lcx-report-bug-$(date +%Y%m%d-%H%M%S).md"
+ISSUE_BODY="/tmp/report-bug-$(date +%Y%m%d-%H%M%S).md"
 $EDITOR "$ISSUE_BODY"
 gh issue create --repo "$TARGET_REPO" --title "<clear title>" --body-file "$ISSUE_BODY"
 ```
@@ -169,14 +169,14 @@ If `$EDITOR` is not usable, write the file with the available file-editing tool,
 For an existing issue:
 
 ```bash
-COMMENT_BODY="/tmp/lcx-report-bug-comment-$(date +%Y%m%d-%H%M%S).md"
+COMMENT_BODY="/tmp/report-bug-comment-$(date +%Y%m%d-%H%M%S).md"
 gh issue comment "<issue-number>" --repo "$TARGET_REPO" --body-file "$COMMENT_BODY"
 ```
 
 For a PR from a branch pushed to the selected repo or fork:
 
 ```bash
-PR_BODY="/tmp/lcx-report-bug-pr-$(date +%Y%m%d-%H%M%S).md"
+PR_BODY="/tmp/report-bug-pr-$(date +%Y%m%d-%H%M%S).md"
 gh pr create --repo "$TARGET_REPO" --title "<clear title>" --body-file "$PR_BODY"
 ```
 
