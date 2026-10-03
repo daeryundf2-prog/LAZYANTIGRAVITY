@@ -57,7 +57,7 @@ Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 > - **Session default (plan + code + research)**: Gemini 3.8 Flash (High)
 > - **Verify / adversarial lanes**: `invoke_subagent` with `Model: "pro"` (Gemini 3.1 Pro family hint)
 > - **Rapid iterative bug fixes**: Gemini 3.8 Flash (Medium) or `Model: "flash_lite"`
-> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
+> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 5.5 (Thinking) via manual UI switch
 >
 > *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`).*
 

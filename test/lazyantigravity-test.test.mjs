@@ -102,8 +102,8 @@ test("#given ulw-loop skill pack #when antigravity workflow inspected #then spaw
 
 test("#given bundled model catalog #when antigravity planner inspected #then Claude Opus is fallback-only not primary", async () => {
 	const antigravity = await readAntigravityCatalog();
-	assert.notEqual(antigravity.roles?.planner?.modelId, "claude-opus-4.6");
-	assert.ok((antigravity.roles?.planner?.fallbackChain ?? []).includes("claude-opus-4.6"));
+	assert.notEqual(antigravity.roles?.planner?.modelId, "claude-opus-5.5");
+	assert.ok((antigravity.roles?.planner?.fallbackChain ?? []).includes("claude-opus-5.5"));
 });
 
 test("#given bundled model catalog #when antigravity fallback chains inspected #then every chain entry resolves to a known available model or a role modelId", async () => {

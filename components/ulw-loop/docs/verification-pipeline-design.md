@@ -24,7 +24,7 @@
   - 보안 취약점, AI Slop 포함 여부 체크.
 
 ### Stage 3: Deliberative Consensus (고위험/심층 리뷰 단계)
-- **주체**: 최고 성능 모델(예: Gemini 3.8 Flash High, 또는 모호한 고비용 설계 시 Claude Opus 4.6 Thinking) 또는 다중 페르소나 앙상블.
+- **주체**: 최고 성능 모델(예: Gemini 3.8 Flash High, 또는 모호한 고비용 설계 시 Claude Opus 5.5 Thinking) 또는 다중 페르소나 앙상블.
 - **작업**: 핵심 비즈니스 로직 수정, 아키텍처 변경 등 고위험 변경 시 작동.
 - **로직**:
   - **Advocate**: 이 변경사항이 어떻게 문제를 완벽히 해결하는지 주장.

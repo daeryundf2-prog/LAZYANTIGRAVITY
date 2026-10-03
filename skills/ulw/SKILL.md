@@ -31,7 +31,7 @@ At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocat
 > - **Session default (plan + code + research)**: Gemini 3.8 Flash (High) + `Model: "flash"`
 > - **Verify / adversarial lanes**: `Model: "pro"`
 > - **Rapid iterative bug fixes**: Gemini 3.8 Flash (Medium) or `Model: "flash_lite"`
-> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 4.6 (Thinking) via manual UI switch
+> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 5.5 (Thinking) via manual UI switch
 >
 > *Antigravity routes lanes with model tiers. Prefer a Flash parent session for the whole run.*
 

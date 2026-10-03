@@ -148,7 +148,7 @@
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
-					"claude-sonnet-4.6"
+					"claude-sonnet-5.5"
 				],
 				"availabilitySource": "ui"
 			},
@@ -161,7 +161,7 @@
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
-					"claude-opus-4.6"
+					"claude-opus-5.5"
 				],
 				"availabilitySource": "ui"
 			},
@@ -171,7 +171,7 @@
 				"reasoningLevel": "high",
 				"purpose": "교차 모델 검증 — 메인(3.8 Flash)과 다른 패밀리로 편향 방지",
 				"fallbackChain": [
-					"claude-opus-4.6",
+					"claude-opus-5.5",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -186,7 +186,7 @@
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
-					"claude-sonnet-4.6"
+					"claude-sonnet-5.5"
 				],
 				"availabilitySource": "ui"
 			},
@@ -232,7 +232,7 @@
 				"reasoningLevel": "high",
 				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
 				"fallbackChain": [
-					"claude-opus-4.6",
+					"claude-opus-5.5",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -268,7 +268,7 @@
 				"reasoningLevel": "high",
 				"purpose": "직교 3대 가설 동시 반증 디버깅 — 논리 분기 및 불변식 락킹",
 				"fallbackChain": [
-					"claude-opus-4.6",
+					"claude-opus-5.5",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -304,7 +304,7 @@
 				"reasoningLevel": "high",
 				"purpose": "클린 아키텍처 계층 검증 — 1M 전역 import 그래프 및 AST 의존성 드리프트 차단",
 				"fallbackChain": [
-					"claude-opus-4.6",
+					"claude-opus-5.5",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -400,16 +400,16 @@
 				"availabilitySource": "ui"
 			},
 			{
-				"modelId": "claude-sonnet-4.6",
-				"displayName": "Claude Sonnet 4.6 (Thinking)",
+				"modelId": "claude-sonnet-5.5",
+				"displayName": "Claude Sonnet 5.5 (Thinking)",
 				"provider": "anthropic",
 				"speed": "moderate",
 				"reasoningLevel": "thinking",
 				"availabilitySource": "ui"
 			},
 			{
-				"modelId": "claude-opus-4.6",
-				"displayName": "Claude Opus 4.6 (Thinking)",
+				"modelId": "claude-opus-5.5",
+				"displayName": "Claude Opus 5.5 (Thinking)",
 				"provider": "anthropic",
 				"speed": "slow",
 				"reasoningLevel": "thinking",

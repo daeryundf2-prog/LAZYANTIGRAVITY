@@ -36,10 +36,10 @@ Format: `provider:model-name`. The framework infers the provider from the prefix
 | Provider prefix | Example |
 |---|---|
 | `openai:` | `'openai:gpt-5.5'`, `'openai:gpt-4o'` |
-| `anthropic:` | `'anthropic:claude-sonnet-4-6'`, `'anthropic:claude-opus-4-1'` |
+| `anthropic:` | `'anthropic:claude-sonnet-5-5'`, `'anthropic:claude-opus-5-5'` |
 | `google-gla:` | `'google-gla:gemini-3-flash-preview'` |
 | `google-vertex:` | `'google-vertex:gemini-3-pro-preview'` |
-| `bedrock:` | `'bedrock:anthropic.claude-sonnet-4-6'` |
+| `bedrock:` | `'bedrock:anthropic.claude-sonnet-5-5'` |
 | `xai:` / `grok:` | `'xai:grok-3'`, `'grok:grok-3-fast'` |
 | `deepseek:` | `'deepseek:deepseek-chat'` |
 | `cohere:` | `'cohere:command-r-08-2024'` |

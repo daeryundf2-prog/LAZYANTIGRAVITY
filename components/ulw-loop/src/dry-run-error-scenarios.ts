@@ -37,7 +37,7 @@ function happyPath(ctx: DryRunContext, state: DryRunState): void {
 		process.stdout.write(`  - Gemini 3.8 Flash (High) - session default (plan + code)\n`);
 		process.stdout.write(`  - Gemini 3.8 Flash (Medium) - rapid iterative fixes\n`);
 		process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
-		process.stdout.write(`  - Claude Opus 4.6 (Thinking) - escape hatch only\n`);
+		process.stdout.write(`  - Claude Opus 5.5 (Thinking) - escape hatch only\n`);
 		process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner)\n`);
 		process.stdout.write(`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher)\n`);
 		process.stdout.write(`[Dry-Run] Running role: worker (would invoke: self / Hephaestus Worker)\n`);
@@ -59,13 +59,13 @@ async function quotaOpusExhausted(ctx: DryRunContext, state: DryRunState): Promi
 		process.stdout.write(`  - Gemini 3.8 Flash (High) - session default (plan + code)\n`);
 		process.stdout.write(`  - Gemini 3.8 Flash (Medium) - rapid iterative fixes\n`);
 		process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
-		process.stdout.write(`  - Claude Opus 4.6 (Thinking) - escape hatch only\n`);
+		process.stdout.write(`  - Claude Opus 5.5 (Thinking) - escape hatch only\n`);
 		process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner) - SUCCESS\n`);
 		process.stdout.write(
 			`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher) - SUCCESS\n`,
 		);
 		process.stdout.write(`[Dry-Run] Running role: worker (would invoke: self / Hephaestus Worker) - FAILED\n`);
-		process.stdout.write(`[Dry-Run] Error: model_rate_limited (Claude Opus 4.6 Thinking quota exhausted)\n`);
+		process.stdout.write(`[Dry-Run] Error: model_rate_limited (Claude Opus 5.5 Thinking quota exhausted)\n`);
 		process.stdout.write(`[Dry-Run] Quota/Rate limit detected in Antigravity: Immediately stopping loop.\n`);
 		process.stdout.write(
 			`[Dry-Run] Fallback Recommendation: Switch to Gemini 3.8 Flash (High) in Antigravity UI and run /ulw resume.\n`,
