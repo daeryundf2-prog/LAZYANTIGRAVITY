@@ -19,11 +19,13 @@ const MODEL_CONTEXT_BUDGETS = [
     { slug: "gemini-3.7-flash", contextWindowTokens: 1_000_000, effectivePercent: 90 },
     { slug: "gemini-3.1-pro", contextWindowTokens: 1_000_000, effectivePercent: 90 },
     {
+        // Antigravity host context limit unverified for Claude 5.5; keep conservative 200k tokens
         slug: "claude-sonnet-5.5",
         contextWindowTokens: 200_000,
         effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT,
     },
     {
+        // Antigravity host context limit unverified for Claude 5.5; keep conservative 200k tokens
         slug: "claude-opus-5.5",
         contextWindowTokens: 200_000,
         effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT,
@@ -59,11 +61,14 @@ function dynamicPostCompactMaxResultChars(context) {
 }
 function modelContextBudgetFor(model) {
     const normalizedModel = model.trim().toLowerCase();
+    const withoutTier = normalizedModel.replace(/-(?:low|medium|high|xhigh)$/, "");
     for (const budget of MODEL_CONTEXT_BUDGETS) {
-        if (normalizedModel === budget.slug ||
-            normalizedModel.endsWith(`.${budget.slug}`) ||
-            normalizedModel.endsWith(`/${budget.slug}`)) {
-            return budget;
+        for (const candidate of [normalizedModel, withoutTier]) {
+            if (candidate === budget.slug ||
+                candidate.endsWith(`.${budget.slug}`) ||
+                candidate.endsWith(`/${budget.slug}`)) {
+                return budget;
+            }
         }
     }
     return undefined;

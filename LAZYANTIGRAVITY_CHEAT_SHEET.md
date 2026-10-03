@@ -45,6 +45,8 @@ node components/daemon-bridge/dist/cli.js daemon stop
 ---
 
 ## 🎯 3. Model Routing Matrix
-- **Plan, Code & Fast Refactor**: Gemini 3.8 Flash (`Model: "flash"`)
-- **Adversarial Audit & Security Gate**: Gemini 3.1 Pro (`Model: "pro"`)
+- **Session UI**: Follow the user-selected session model (Gemini 3.8 Flash (High), Claude Opus 5.5, Claude Sonnet 5.5).
+- **Plan, Code & Bulk Worker**: `Model: "flash"`
+- **Adversarial Audit & Security Gate**: `Model: "inherit"` (when session is Claude 5.5) / `Model: "pro"` (when session is Gemini)
 - **Small Lint & Format Checks**: `Model: "flash_lite"`
+- **Escape Hatch**: Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini)

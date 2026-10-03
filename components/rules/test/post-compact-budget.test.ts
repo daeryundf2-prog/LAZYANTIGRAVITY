@@ -72,6 +72,30 @@ describe("post-compact context budget", () => {
 		expect(budget.maxResultChars).toBe(CONFIG.postCompactMaxResultChars);
 	});
 
+	it("#given tier-suffixed claude-opus-5.5-high model #when resolving post-compact budget #then matches 200k budget and handles moderate transcripts", () => {
+		// given
+		const transcriptPath = writeCompactedTranscript("small compacted summary");
+
+		// when
+		const budget = withPostCompactBudget(CONFIG, { model: "claude-opus-5.5-high", transcriptPath });
+
+		// then
+		expect(budget.maxRuleChars).toBe(CONFIG.postCompactMaxRuleChars);
+		expect(budget.maxResultChars).toBe(CONFIG.postCompactMaxResultChars);
+	});
+
+	it("#given claude-opus-5.5-high near 200k context limit #when resolving post-compact budget #then shrinks projected rule injection", () => {
+		// given
+		const transcriptPath = writeCompactedTranscript("A".repeat(550_000));
+
+		// when
+		const budget = withPostCompactBudget(CONFIG, { model: "claude-opus-5.5-high", transcriptPath });
+
+		// then
+		expect(budget.maxResultChars).toBeLessThan(1_000);
+		expect(budget.maxRuleChars).toBeLessThanOrEqual(budget.maxResultChars);
+	});
+
 	it("#given pure GPT-5.4 model near the fallback context window #when resolving post-compact budget #then treats it as non-preset metadata", () => {
 		// given
 		const transcriptPath = writeCompactedTranscript("A".repeat(600_000));

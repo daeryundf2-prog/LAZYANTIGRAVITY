@@ -30,7 +30,7 @@ flowchart TD
 - **Presentation / UI**: Controller/API만 호출, DB/Service 내부 구현 직접 우회 금지
 
 ### Step 2: Layer Boundary Inspection (오라클 검증)
-`Model: "pro"`를 사용하여 계층 규칙 위반을 엄격히 판정합니다.
+`Model: "pro"`(세션이 Claude 5.5일 경우 `Model: "inherit"`)를 사용하여 계층 규칙 위반을 엄격히 판정합니다.
 
 ```
 invoke_subagent(

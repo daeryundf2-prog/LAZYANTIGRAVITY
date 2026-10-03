@@ -70,7 +70,7 @@ SCOPE: configuration and external boundaries."""
 반증에 실패한(실제 버그가 발생하지 않은) 가설은 즉시 폐기하고, 재현에 성공한 단일 가설만 격리합니다.
 
 ### Step 4: Pro Oracle Verdict & Invariant Lock (오라클 검증)
-`Model: "pro"`를 호출하여 생존한 가설의 근본 원인을 비판적으로 재검증하고 불변식(Invariant) 회귀 테스트를 고정합니다.
+`Model: "pro"`(세션이 Claude 5.5일 경우 `Model: "inherit"`)를 호출하여 생존한 가설의 근본 원인을 비판적으로 재검증하고 불변식(Invariant) 회귀 테스트를 고정합니다.
 
 ```
 invoke_subagent(

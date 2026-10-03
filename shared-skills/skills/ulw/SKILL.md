@@ -17,8 +17,8 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 
 ## Antigravity Routing Semantics (inherited from ulw-loop)
 
-- **Lane hints**: pass `invoke_subagent` `Subagents[].Model` (`canTierRoute=true`, `hostEnforced=false`) - `flash` for plan/code/research, `pro` for verify, `flash_lite` for tiny chores.
-- **Session UI**: stay on Gemini 3.8 Flash (High). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
+- **Lane hints**: pass `invoke_subagent` `Subagents[].Model` (`canTierRoute=true`, `hostEnforced=false`) - `flash` for plan/code/research; `inherit` for verify/adversarial when the session is Claude 5.5 (child stays on Claude), `pro` when the session is Gemini (inherit would downgrade to Flash); `flash_lite` for tiny chores.
+- **Session UI**: follow the user-selected session model (supported: Gemini 3.8 Flash (High), Claude Opus 5.5, Claude Sonnet 5.5). Antigravity does not rewrite the session UI model per role (`canAutoRoute=false`).
 - **Subagent Control Plane Envelope**: When invoking subagents via `invoke_subagent`, pass `mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`.
 - Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs.
 - **Resume Guidance**: If execution is interrupted due to quota limits, switch the model manually in the Antigravity UI dropdown and type `/ulw resume`.
@@ -28,12 +28,13 @@ This is a thin alias for the full `ulw-loop` skill. When the user types `/ulw <t
 At the start of this session, if this is the first `/ulw` or `/ulw-loop` invocation, output this message **exactly once**:
 
 > **Antigravity Recommended Model Configuration Guide**
-> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High) + `Model: "flash"`
-> - **Verify / adversarial lanes**: `Model: "pro"`
-> - **Rapid iterative bug fixes**: Gemini 3.8 Flash (Medium) or `Model: "flash_lite"`
-> - **Escape hatch only** (still ambiguous / high-stakes design after a Flash pass): Claude Opus 5.5 (Thinking) via manual UI switch
+> - **Session options (plan + code + research)**: Gemini 3.8 Flash (High), Claude Opus 5.5 (High), Claude Sonnet 5.5 (High)
+> - **Bulk fan-out / researcher / worker**: `Model: "flash"`
+> - **Verify / adversarial lanes**: `Model: "inherit"` (when session is Claude 5.5) / `Model: "pro"` (when session is Gemini)
+> - **Rapid iterative bug fixes**: Flash (Medium) or `Model: "flash_lite"`
+> - **Escape hatch only** (still ambiguous / high-stakes design): Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini)
 >
-> *Antigravity routes lanes with model tiers. Prefer a Flash parent session for the whole run.*
+> *Antigravity routes lanes with model tiers. Follow the user-selected session model for the whole run.*
 
 **Suppression**: If the user's message contains "quiet run", "skip model recommendation", "no model hint", or "quiet", skip this recommendation and proceed directly.
 

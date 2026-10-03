@@ -4,7 +4,7 @@ description: "Post-implementation review orchestrator. Launches 5 parallel backg
 ---
 ## Antigravity Multi-Tier Oracle Mapping (default)
 
-This plugin defaults to **Google Antigravity** with **Gemini 3.8 Flash (High)** as parent orchestrator.
+This plugin runs on **Google Antigravity**; follow the user-selected session model (supported: Gemini 3.8 Flash (High), Claude Opus 5.5, Claude Sonnet 5.5). For deep review lanes, use `Model: "inherit"` when the session is Claude 5.5 (child stays on Claude) or `Model: "pro"` when the session is Gemini (inherit would downgrade to Flash).
 
 | Oracle / Lane | Tier | Model | Policy |
 | --- | --- | --- | --- |

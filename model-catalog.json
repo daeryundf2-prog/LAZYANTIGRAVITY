@@ -1,5 +1,5 @@
 {
-	"version": "2026-09-04.antigravity-gemini38-ag-first",
+	"version": "2026-10-03.antigravity-gemini38-claude55",
 	"_legacyFlatNote": "Top-level current/roles mirror Antigravity Gemini 3.8 Flash defaults. Legacy Codex readers should prefer the codex section. Antigravity adapters should prefer the antigravity section via modelCatalogKey.",
 	"current": {
 		"model": "gemini-3.8-flash-high",
@@ -148,7 +148,7 @@
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
-					"claude-sonnet-5.5"
+					"claude-sonnet-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
@@ -156,12 +156,12 @@
 				"modelId": "gemini-3.8-flash-high",
 				"displayName": "Gemini 3.8 Flash (High)",
 				"reasoningLevel": "high",
-				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.8 Flash; 모호한 고비용 설계만 Claude Opus로 수동 전환",
+				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.8 Flash; 모호한 고비용 설계만 Claude Opus 5.5 (High)로 수동 전환 (Gemini 세션일 때만 필요)",
 				"fallbackChain": [
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
-					"claude-opus-5.5"
+					"claude-opus-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
@@ -171,7 +171,7 @@
 				"reasoningLevel": "high",
 				"purpose": "교차 모델 검증 — 메인(3.8 Flash)과 다른 패밀리로 편향 방지",
 				"fallbackChain": [
-					"claude-opus-5.5",
+					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -186,7 +186,7 @@
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
-					"claude-sonnet-5.5"
+					"claude-sonnet-5.5-high"
 				],
 				"availabilitySource": "ui"
 			},
@@ -232,7 +232,7 @@
 				"reasoningLevel": "high",
 				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
 				"fallbackChain": [
-					"claude-opus-5.5",
+					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -268,7 +268,7 @@
 				"reasoningLevel": "high",
 				"purpose": "직교 3대 가설 동시 반증 디버깅 — 논리 분기 및 불변식 락킹",
 				"fallbackChain": [
-					"claude-opus-5.5",
+					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -304,7 +304,7 @@
 				"reasoningLevel": "high",
 				"purpose": "클린 아키텍처 계층 검증 — 1M 전역 import 그래프 및 AST 의존성 드리프트 차단",
 				"fallbackChain": [
-					"claude-opus-5.5",
+					"claude-opus-5.5-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high"
 				],
@@ -400,19 +400,51 @@
 				"availabilitySource": "ui"
 			},
 			{
-				"modelId": "claude-sonnet-5.5",
-				"displayName": "Claude Sonnet 5.5 (Thinking)",
+				"modelId": "claude-opus-5.5-low",
+				"displayName": "Claude Opus 5.5 (Low)",
 				"provider": "anthropic",
-				"speed": "moderate",
-				"reasoningLevel": "thinking",
+				"speed": "slow",
+				"reasoningLevel": "low",
 				"availabilitySource": "ui"
 			},
 			{
-				"modelId": "claude-opus-5.5",
-				"displayName": "Claude Opus 5.5 (Thinking)",
+				"modelId": "claude-opus-5.5-medium",
+				"displayName": "Claude Opus 5.5 (Medium)",
 				"provider": "anthropic",
 				"speed": "slow",
-				"reasoningLevel": "thinking",
+				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "claude-opus-5.5-high",
+				"displayName": "Claude Opus 5.5 (High)",
+				"provider": "anthropic",
+				"speed": "slow",
+				"reasoningLevel": "high",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "claude-sonnet-5.5-low",
+				"displayName": "Claude Sonnet 5.5 (Low)",
+				"provider": "anthropic",
+				"speed": "moderate",
+				"reasoningLevel": "low",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "claude-sonnet-5.5-medium",
+				"displayName": "Claude Sonnet 5.5 (Medium)",
+				"provider": "anthropic",
+				"speed": "moderate",
+				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "claude-sonnet-5.5-high",
+				"displayName": "Claude Sonnet 5.5 (High)",
+				"provider": "anthropic",
+				"speed": "moderate",
+				"reasoningLevel": "high",
 				"availabilitySource": "ui"
 			},
 			{
@@ -438,11 +470,12 @@
 			"hostEnforced": false,
 			"routingMode": "agent-tier-hint",
 			"mechanism": "Agents pass invoke_subagent Subagents[].Model (flash | pro | flash_lite | inherit). The host does not switch the session UI model. There is no model_tier field.",
-			"note": "canAutoRoute=false: session UI stays on whatever the user picked. canTierRoute=true means skills MUST pass Subagents[].Model; it is not a guarantee the child model changed.",
+			"note": "canAutoRoute=false: session UI follows whatever model the user picked. canTierRoute=true means skills MUST pass Subagents[].Model; it is not a guarantee the child model changed. Claude child subagents run only via session=Claude + Model: 'inherit'.",
 			"limitations": [
 				"Session UI model is not auto-switched per catalog role",
 				"Subagents[].Model is an agent hint, not host-enforced routing",
-				"Escape-hatch Claude Opus still requires a manual UI switch"
+				"Claude child subagent only via session=Claude + Model: 'inherit'",
+				"Escape-hatch Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini)"
 			]
 		}
 	}

@@ -40,7 +40,7 @@ export const DRY_RUN_HELP = `Usage:
 
 Scenarios:
   happy-path                 Simulates a fully successful role execution flow without errors
-  quota-opus-exhausted       Simulates a Claude Opus quota exhausted / model_rate_limited failure
+  quota-opus-exhausted       Simulates a Claude Opus 5.5 quota exhausted / model_rate_limited failure
   context-window-exceeded    Simulates context window limit hit with Compact Mode transition
   output-token-limit         Simulates output token limit hit with Batch Mode transition
   provider-unavailable       Simulates provider API endpoint down with retry mitigation

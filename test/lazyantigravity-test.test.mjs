@@ -102,8 +102,23 @@ test("#given ulw-loop skill pack #when antigravity workflow inspected #then spaw
 
 test("#given bundled model catalog #when antigravity planner inspected #then Claude Opus is fallback-only not primary", async () => {
 	const antigravity = await readAntigravityCatalog();
-	assert.notEqual(antigravity.roles?.planner?.modelId, "claude-opus-5.5");
-	assert.ok((antigravity.roles?.planner?.fallbackChain ?? []).includes("claude-opus-5.5"));
+	assert.notEqual(antigravity.roles?.planner?.modelId, "claude-opus-5.5-high");
+	assert.ok((antigravity.roles?.planner?.fallbackChain ?? []).includes("claude-opus-5.5-high"));
+});
+
+test("#given bundled model catalog #when Claude models inspected #then no 4.6 ids remain and both 5.5 families exist across all tiers", async () => {
+	const antigravity = await readAntigravityCatalog();
+	const available = antigravity.availableModels ?? [];
+	const availableIds = available.map((m) => m.modelId);
+	const staleIds = availableIds.filter((id) => /claude-.*-4\.6/.test(id));
+	assert.deepEqual(staleIds, [], "no claude-*-4.6 model should remain in availableModels");
+
+	for (const family of ["claude-opus-5.5", "claude-sonnet-5.5"]) {
+		for (const tier of ["low", "medium", "high"]) {
+			const expectedId = `${family}-${tier}`;
+			assert.ok(availableIds.includes(expectedId), `missing model ${expectedId} in availableModels`);
+		}
+	}
 });
 
 test("#given bundled model catalog #when antigravity fallback chains inspected #then every chain entry resolves to a known available model or a role modelId", async () => {

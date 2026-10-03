@@ -1,6 +1,6 @@
 {
 	"name": "lazyantigravity",
-	"version": "0.7.0",
+	"version": "0.7.1",
 	"description": "Open-source agent orchestration framework providing deterministic multi-agent workflows, AST verification gates, and maintainer automation pipelines.",
 	"type": "module",
 	"packageManager": "npm@11.12.1",

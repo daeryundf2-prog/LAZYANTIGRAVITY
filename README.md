@@ -62,13 +62,14 @@ node "$HOME/.gemini/config/plugins/lazyantigravity/components/ulw-loop/dist/cli.
 
 ## Recommended models (Antigravity)
 
-Keep the **session UI** on **Gemini 3.8 Flash (High)**. Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite`) — that is an agent hint, the host never rewrites your session model.
+Follow the user-selected **session model** (supported: Gemini 3.8 Flash (High), Claude Opus 5.5 (Low/Medium/High), Claude Sonnet 5.5 (Low/Medium/High)). Pass `invoke_subagent` `Subagents[].Model` (`flash` / `pro` / `flash_lite` / `inherit`) — that is an agent hint, the host never rewrites your session model.
 
 | Role | Recommendation |
 | :--- | :--- |
-| Session default / planner / worker | **Gemini 3.8 Flash (High)** + `Model: "flash"` |
-| Verify / adversarial review | `Model: "pro"` |
+| Bulk fan-out / worker / parser / search | `Model: "flash"` |
+| Verify / adversarial review / plan review | `Model: "inherit"` (when session is Claude 5.5) / `Model: "pro"` (when session is Gemini) |
 | Rapid iterative fixes | Flash (Medium) or `Model: "flash_lite"` |
+| Deep reasoning / escape hatch | Claude Opus 5.5 (High) via manual UI switch (only needed when the session is Gemini) |
 
 ## What ships in this tree
 

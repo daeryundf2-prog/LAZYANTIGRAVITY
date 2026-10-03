@@ -6,6 +6,14 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Changed — Claude 5.5 model catalog update and session-neutral policy
+
+- `model-catalog.json`: retired `claude-opus-4.6` and `claude-sonnet-4.6`; added 6 entries for `claude-opus-5.5-{low,medium,high}` and `claude-sonnet-5.5-{low,medium,high}`. Replaced catalog fallbackChain references (`claude-opus-4.6` -> `claude-opus-5.5-high`, `claude-sonnet-4.6` -> `claude-sonnet-5.5-high`). Catalog version updated to `2026-10-03.antigravity-gemini38-claude55`.
+- `post-compact-budget.ts`: replaced `claude-sonnet-4.6` / `claude-opus-4.6` slugs with `claude-sonnet-5.5` / `claude-opus-5.5`, keeping conservative 200k token budget. Added tier-suffix model ID matching (`-low`, `-medium`, `-high`, `-xhigh`).
+- Session UI policy: removed mandates to keep session UI locked to Gemini 3.8 Flash; updated guidelines across README, AGENTS.md, cheat sheet, directives, and skills to follow the user-selected session model (supported: Gemini 3.8 Flash (High), Claude Opus 5.5 (Low/Medium/High), Claude Sonnet 5.5 (Low/Medium/High)).
+- Subagent lane routing: documented session-conditional verification lanes (`Model: "inherit"` when session is Claude 5.5 so child stays on Claude; `Model: "pro"` when session is Gemini).
+- Neutral dry-run and lsp feedback copy: removed "switch to Gemini" mandates, updated escape hatch and fallback copy from Opus 4.6 to Opus 5.5 / Sonnet 5.5.
+
 ### Added — opt-in Gemini 3.5 Transcribe backend
 
 - `media_transcribe` accepts `backend=gemini` (default stays local `whisper`). The Gemini path uploads workspace audio to `gemini-3.5-transcribe` and is gated behind `LAZYANTIGRAVITY_MEDIA_EXTERNAL_STT=1` + `GEMINI_API_KEY`/`GOOGLE_API_KEY` — separate from the YouTube download gate because uploading evidence-class audio is a higher consent class. Supports `diarization` (≤8 speakers), `wordTimestamps`, `languageCodes`, `customVocabulary`, and `mode=verbatim|smart`; verbatim is the default and preserves disfluencies, smart mode strips fillers and is unsuitable for evidence. Per-request limits (60 min, 30 min with diarization/word timestamps) are enforced before egress via ffprobe. Audio is uploaded inline under 18 MB or through the Files API otherwise; remote Files API objects are deleted after transcription. Two consent layers apply per call: `confirmNotClientData=true` must be passed only after asking the user whether the audio contains client data, and `LAZYANTIGRAVITY_MEDIA_LOCAL_ONLY_DIRS` (comma-separated workspace subdirs) hard-blocks those paths from upload even when the gate is on. Any denial (gate off, missing key, local-only dir, no confirmation) falls back to the local whisper backend instead of failing; the result then carries `requestedBackend`/`fallbackReason`. The model id defaults to `gemini-3.5-transcribe` and is overridable via `LAZYANTIGRAVITY_GEMINI_STT_MODEL`.
