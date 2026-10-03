@@ -5,16 +5,8 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runAutoUpdateCheck, runLazyCodexManualUpdate, resolveAutoUpdatePlan } from "../scripts/auto-update.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-
-test("offline updater overrides opt-ins before state writes or commands", async () => {
-	const env = { LAZYANTIGRAVITY_OFFLINE: "1", ANTIGRAVITY_AUTO_UPDATE_SOURCE: "fake-package" };
-	assert.equal(resolveAutoUpdatePlan({ env }).reason, "offline");
-	assert.deepEqual(await runAutoUpdateCheck({ env }), { started: false, reason: "offline" });
-	assert.equal(await runLazyCodexManualUpdate({ env, runCommand: () => { assert.fail("must not execute"); } }), 1);
-});
 
 test("startup updater does not attempt git by default or offline", () => {
 	for (const extra of [{ LAZYANTIGRAVITY_UPDATE_CHECK: "" }, { LAZYANTIGRAVITY_UPDATE_CHECK: "1", LAZYANTIGRAVITY_OFFLINE: "1" }]) {

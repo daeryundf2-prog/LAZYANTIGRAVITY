@@ -56,7 +56,6 @@ test("#given isolated components #when hooks are inspected #then commands stay i
 	const dispatcherSource = await readFile("scripts/user-prompt-dispatcher.mjs", "utf8");
 	assert.match(dispatcherSource, /ultrawork/, "dispatcher must wire the ultrawork handler");
 	assert.doesNotMatch(text, /codex-(comment-checker|lsp|rules|telemetry|ulw-loop|ultrawork)@/);
-	assert.equal(await exists("scripts/migrate-codex-config.mjs"), true);
 });
 
 test("#given aggregate PostCompact hooks #when hooks are inspected #then LSP diagnostics cache reset is registered", async () => {
@@ -176,6 +175,4 @@ test("#given aggregate SessionStart hooks #when inspected #then LazyAntigravity 
 			false,
 			"auto-update.mjs must not be wired as a SessionStart hook in the antigravity-only manifest"
 		);
-		// auto-update.mjs file itself remains for CLI status/dry-run use (`npm run` + test surfaces)
-		assert.equal(await exists("scripts/auto-update.mjs"), true);
 	});

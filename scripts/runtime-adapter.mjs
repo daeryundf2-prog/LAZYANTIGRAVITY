@@ -61,8 +61,6 @@ export function detectRuntime(env = process.env) {
  *   homePath: string,
  *   configFormat: "toml" | "json",
  *   sessionEnvKeys: readonly string[],
- *   autoUpdateEnabled: boolean,
- *   configMigrationEnabled: boolean,
  * }}
  */
 export function getRuntimeConfig(env = process.env) {
@@ -82,8 +80,6 @@ export function getRuntimeConfig(env = process.env) {
 				"CODEX_SESSION_ID",
 				"CODEX_THREAD_ID",
 			],
-			autoUpdateEnabled: false,
-			configMigrationEnabled: false,
 		};
 	}
 
@@ -98,8 +94,6 @@ export function getRuntimeConfig(env = process.env) {
 			"CODEX_SESSION_ID",
 			"CODEX_THREAD_ID",
 		],
-		autoUpdateEnabled: true,
-		configMigrationEnabled: true,
 	};
 }
 

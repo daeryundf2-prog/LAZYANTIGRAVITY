@@ -16,7 +16,6 @@ const scannedFiles = [
 	"components/telemetry/README.md",
 	"components/telemetry/src/env-flags.ts",
 	"components/telemetry/src/diagnostics.ts",
-	"scripts/auto-update.mjs",
 ];
 
 const commandClaims = [
@@ -46,7 +45,7 @@ export async function buildEvidenceMap(repoRoot = root) {
 	));
 	const claims = [
 		...checkedCommandClaims,
-		await autoUpdateClaim(files, repoRoot),
+		autoUpdateClaim(files),
 		telemetryOptOutClaim(files),
 		telemetryDiagnosticsClaim(files),
 		skillClaim(files, "skills.ulw-loop-evidence-loop", "skills/ulw-loop/SKILL.md", ["evidence", "Manual-QA"]),
@@ -108,20 +107,16 @@ async function commandClaim({ id, command, scriptName, scriptPath, files, packag
 	});
 }
 
-async function autoUpdateClaim(files, repoRoot) {
+function autoUpdateClaim(files) {
 	const readme = files.get("README.md");
-	const source = files.get("scripts/auto-update.mjs");
 	const statusCommand = "node scripts/auto-update.mjs --status --json";
-	const scriptExists = await exists(repoRoot, "scripts/auto-update.mjs");
-	const sourceSupportsStatus = source.includes("resolveAutoUpdateStatus") && source.includes("mutating: false");
 	return claim({
 		id: "readme.auto-update-status-command",
 		source: "README.md",
-		status: readme.includes(statusCommand) && scriptExists && sourceSupportsStatus ? "verified" : "deferred",
+		status: "removed",
 		evidence: [
 			`README mentions ${statusCommand}: ${readme.includes(statusCommand)}`,
-			"auto-update status source reports mutating:false: " + sourceSupportsStatus,
-			`scripts/auto-update.mjs exists: ${scriptExists}`,
+			"scripts/auto-update.mjs removed as dormant Codex-only code",
 		],
 	});
 }
