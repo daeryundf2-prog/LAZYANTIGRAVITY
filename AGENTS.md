@@ -83,7 +83,7 @@ Two runner conventions coexist; pick by component type:
 ## Build and Hooks
 
 - Component build output goes to `dist/` and is committed.
-- Root `npm run build` aggregates: sync-mcp-config, sync-hook-status-messages, build-bundled-mcp-runtimes, sync-skills, sync-telemetry, build-components, materialize-shared-skills, sync-omo-mirror.
+- Root `npm run build` aggregates: sync-mcp-config, sync-hook-status-messages, build-bundled-mcp-runtimes, sync-skills, sync-telemetry, build-components, materialize-shared-skills.
 - Hooks live under `components/*/hooks/hooks.json` and are aggregated into the root `hooks.json`.
 - Skills are authored in `shared-skills/skills/*/SKILL.md` and materialized into `skills/`; keep them in sync (`npm run sync:skills`).
 

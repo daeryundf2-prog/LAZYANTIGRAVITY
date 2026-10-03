@@ -9,7 +9,7 @@ import { access } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const telemetryCli = join(root, "components", "telemetry", "dist", "cli.js");
 const telemetrySrc = join(root, "components", "telemetry", "src");
 

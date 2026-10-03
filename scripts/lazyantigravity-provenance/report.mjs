@@ -164,15 +164,6 @@ async function sourceRootEntries(root, dirtyState, componentPackages) {
 			exists: existsSync(join(root, "scripts")),
 			status: dirtyState.classifyPath("scripts", dirtyState.dirtyEntriesForPath("scripts")),
 		},
-		{
-			path: "plugins/scripts",
-			kind: "telemetry-build-scripts-symlink",
-			owner: "telemetry component sync scripts",
-			build_step: "telemetry-component-sync",
-			classification: "vendored-script-reference",
-			exists: existsSync(join(root, "plugins/scripts")),
-			status: dirtyState.classifyPath("plugins/scripts", dirtyState.dirtyEntriesForPath("plugins/scripts")),
-		},
 	];
 	return entries.sort(compareByPath);
 }

@@ -16,7 +16,6 @@ if (buildRes.status !== 0) {
 // 대상에 포함한다 — 구버전은 components/*만 봐서 MCP dist가 벗어나도 몰랐다.
 const DIST_PATHS = [
 	"components/*/dist",
-	"plugins/omo/components/*/dist",
 	"git-bash-mcp/dist",
 	"ast-grep-mcp/dist",
 	"lsp-tools-mcp/dist",

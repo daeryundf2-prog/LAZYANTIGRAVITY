@@ -20,7 +20,7 @@ export const buildSteps = [
 	{
 		id: "telemetry-component-sync",
 		owner: "telemetry component sync",
-		command: "node plugins/scripts/sync-telemetry-component.mjs",
+		command: "node scripts/sync-telemetry-component.mjs",
 		description: "Copies selected upstream telemetry sources into the telemetry component.",
 	},
 ];
@@ -76,7 +76,7 @@ export const buildScriptSurfaces = [
 		build_step: "skill-sync",
 	},
 	{
-		path: "plugins/scripts/sync-telemetry-component.mjs",
+		path: "scripts/sync-telemetry-component.mjs",
 		kind: "build-script",
 		owner: "telemetry component source sync",
 		build_step: "telemetry-component-sync",

@@ -37,7 +37,7 @@
 		"@lazyantigravity/sync-skills": "file:./src/packages/sync-skills"
 	},
 	"scripts": {
-		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node plugins/scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack && node scripts/sync-omo-mirror.mjs",
+		"build": "node scripts/sync-mcp-config.mjs && node scripts/sync-hook-status-messages.mjs && node scripts/build-bundled-mcp-runtimes.mjs && node scripts/sync-skills.mjs && node scripts/sync-telemetry-component.mjs && node scripts/build-components.mjs && node scripts/materialize-shared-skills.mjs --pack",
 		"check": "npm run build && npm run verify:hook-policies && npm run audit:model-profile && npm run audit:skills-drift && npm run audit:contract-drift && npm test && npm run test:components",
 		"model:profile": "node scripts/apply-model-profile.mjs",
 		"audit:model-profile": "node scripts/apply-model-profile.mjs --check",
@@ -49,7 +49,6 @@
 		"prepack": "node scripts/materialize-shared-skills.mjs --pack",
 		"postpack": "node scripts/materialize-shared-skills.mjs --restore",
 		"provenance": "node scripts/lazyantigravity-provenance.mjs",
-		"sync:omo": "node scripts/sync-omo-mirror.mjs",
 		"sync:skills": "node scripts/sync-skills.mjs",
 		"audit:skills-drift": "node scripts/check-skills-drift.mjs",
 		"audit:contract-drift": "node scripts/check_contract_drift.mjs",

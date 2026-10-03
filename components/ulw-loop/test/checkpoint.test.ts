@@ -539,7 +539,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 
 	it("triggers consensus and injects feedback when there are LSP or rules violations", async () => {
 		const repo = await repoWith(plan([passGoal("G001"), goal({ id: "G002", status: "pending" })]));
-		const lspDir = join(repo, "plugins/omo/components/lsp/dist");
+		const lspDir = join(repo, "components/lsp/dist");
 		await mkdir(lspDir, { recursive: true });
 		await writeFile(
 			join(lspDir, "codex-hook.js"),
@@ -547,7 +547,7 @@ describe("checkpointUlwLoop Phase 1 - Quality Gate Auto-Orchestration", () => {
 			"utf8",
 		);
 
-		const rulesDir = join(repo, "plugins/omo/components/rules/dist");
+		const rulesDir = join(repo, "components/rules/dist");
 		await mkdir(rulesDir, { recursive: true });
 		await writeFile(
 			join(rulesDir, "rules-engine-factory.js"),

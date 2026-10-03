@@ -12,7 +12,6 @@ export async function collectLspDiagnostics(repoRoot, filesChanged) {
     try {
         const lspPath = resolveBundledModule(repoRoot, [
             "components/lsp/dist/codex-hook.js",
-            "plugins/omo/components/lsp/dist/codex-hook.js",
         ]);
         if (!lspPath)
             return [];
@@ -44,7 +43,6 @@ export async function collectRulesViolations(repoRoot, filesChanged) {
     try {
         const rulesPath = resolveBundledModule(repoRoot, [
             "components/rules/dist/rules-engine-factory.js",
-            "plugins/omo/components/rules/dist/rules-engine-factory.js",
         ]);
         if (!rulesPath)
             return [];
