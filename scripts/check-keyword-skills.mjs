@@ -13,8 +13,8 @@
 //   node scripts/check-keyword-skills.mjs [AGENTS.md ...] [--json]
 // With no paths, checks <repo>/AGENTS.md only.
 
-import { readdirSync, readFileSync, existsSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -76,7 +76,13 @@ function* walk(dir, depth = 0) {
 	}
 	for (const entry of entries) {
 		const full = join(dir, entry.name);
-		if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules") {
+		let isDir = entry.isDirectory();
+		if (!isDir && entry.isSymbolicLink()) {
+			try {
+				isDir = statSync(full).isDirectory();
+			} catch {}
+		}
+		if (isDir && !entry.name.startsWith(".") && entry.name !== "node_modules" && entry.name !== ".venv") {
 			yield full;
 			yield* walk(full, depth + 1);
 		}
@@ -86,21 +92,43 @@ function* walk(dir, depth = 0) {
 function buildIndex(root) {
 	const skillsIndex = new Map(); // name -> path
 	const referenceIndex = new Map(); // name -> path
-	for (const dir of [join(root, "skills"), join(root, "shared-skills", "skills"), ...componentSkillDirs(root)]) {
-		if (!existsSync(dir)) continue;
-		for (const entry of readdirSync(dir, { withFileTypes: true })) {
-			if (!entry.isDirectory()) continue;
-			const manifest = join(dir, entry.name, "SKILL.md");
-			if (existsSync(manifest) && !skillsIndex.has(entry.name)) {
-				skillsIndex.set(entry.name, manifest);
+	const searchRoots = [root];
+	const pluginsParent = dirname(root);
+	if (existsSync(pluginsParent)) {
+		for (const entry of readdirSync(pluginsParent, { withFileTypes: true })) {
+			if (!entry.name.startsWith(".") && entry.name !== basename(root)) {
+				const full = join(pluginsParent, entry.name);
+				try {
+					if (statSync(full).isDirectory()) searchRoots.push(full);
+				} catch {}
 			}
-			const refsRoot = join(dir, entry.name, "references");
-			if (!existsSync(refsRoot)) continue;
-			for (const refDir of [refsRoot, ...walk(refsRoot)]) {
-				for (const f of readdirSync(refDir, { withFileTypes: true })) {
-					if (f.isFile() && f.name.endsWith(".md")) {
-						const key = f.name.replace(/\.md$/, "");
-						if (!referenceIndex.has(key)) referenceIndex.set(key, join(refDir, f.name));
+		}
+	}
+
+	for (const r of searchRoots) {
+		for (const dir of [join(r, "skills"), join(r, "shared-skills", "skills"), ...componentSkillDirs(r)]) {
+			if (!existsSync(dir)) continue;
+			for (const entry of readdirSync(dir, { withFileTypes: true })) {
+				const entryPath = join(dir, entry.name);
+				let isDir = entry.isDirectory();
+				if (!isDir && entry.isSymbolicLink()) {
+					try {
+						isDir = statSync(entryPath).isDirectory();
+					} catch {}
+				}
+				if (!isDir) continue;
+				const manifest = join(dir, entry.name, "SKILL.md");
+				if (existsSync(manifest) && !skillsIndex.has(entry.name)) {
+					skillsIndex.set(entry.name, manifest);
+				}
+				const refsRoot = join(dir, entry.name, "references");
+				if (!existsSync(refsRoot)) continue;
+				for (const refDir of [refsRoot, ...walk(refsRoot)]) {
+					for (const f of readdirSync(refDir, { withFileTypes: true })) {
+						if (f.isFile() && f.name.endsWith(".md")) {
+							const key = f.name.replace(/\.md$/, "");
+							if (!referenceIndex.has(key)) referenceIndex.set(key, join(refDir, f.name));
+						}
 					}
 				}
 			}
