@@ -22,6 +22,7 @@ const expectedSkills = [
 	"image-prompt",
 	"init-deep",
 	"lsp-setup",
+	"mass-ulw",
 	"media-analysis",
 	"programming",
 	"refactor",

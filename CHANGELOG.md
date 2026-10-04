@@ -6,6 +6,12 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — explore/librarian subagents and mass-ulw skill
+
+- `agents/explore.md`, `agents/librarian.md`: Antigravity-loadable read-only subagents (root `agents/*.md` convention, same as lazyothers). `explore` locates in-workspace code with a `<results>` contract; `librarian` researches upstream code/docs with commit-pinned permalinks. Independent rewrites; concept credit to code-yeongyu/oh-my-openagent (Sustainable Use License, no text copied). The Codex-only `components/ultrawork/agents/*.toml` are unchanged.
+- `shared-skills/skills/mass-ulw/` (+ `references/planning.md`): wave-based DAG orchestration over `invoke_subagent` with disjoint write scopes, five-field node prompts, ledger at `.omo/mass-ulw/<key>/ledger.md`, and a mandatory verification wave.
+- `test/mass-ulw-and-agents.test.mjs`; `package.json` `files` now ships `agents/`.
+
 ### Removed
 
 - **OpenCode/OMO Mirror & Sync Scripts**: removed `plugins/omo` dist mirror (205 files) and `scripts/sync-omo-mirror.mjs`; removed `sync:omo` script and build pipeline step from `package.json`; relocated `plugins/scripts/sync-telemetry-component.mjs` to `scripts/sync-telemetry-component.mjs` and dropped `plugins/scripts`; removed `plugins/omo` fallback paths in `components/ulw-loop/src/lsp-rules-feedback.ts` and `scripts/verify-dist-sync.mjs`.

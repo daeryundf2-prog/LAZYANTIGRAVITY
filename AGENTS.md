@@ -86,6 +86,7 @@ Two runner conventions coexist; pick by component type:
 - Root `npm run build` aggregates: sync-mcp-config, sync-hook-status-messages, build-bundled-mcp-runtimes, sync-skills, sync-telemetry, build-components, materialize-shared-skills.
 - Hooks live under `components/*/hooks/hooks.json` and are aggregated into the root `hooks.json`.
 - Skills are authored in `shared-skills/skills/*/SKILL.md` and materialized into `skills/`; keep them in sync (`npm run sync:skills`).
+- Antigravity subagents live in root `agents/*.md` (frontmatter `name`, `description`, `tools`); keep them read-only unless the role must write. `components/ultrawork/agents/*.toml` are Codex-only and are not loaded by Antigravity.
 
 ## Subagents: `fact-mentor` Adversarial Audit Subagent (Feature 05)
 
