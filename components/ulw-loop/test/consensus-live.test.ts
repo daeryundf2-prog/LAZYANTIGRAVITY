@@ -10,8 +10,8 @@ import {
 	validateConsensusSchema,
 } from "../src/consensus-dispatcher.js";
 import { appendRunEvent, readRunEvents } from "../src/control-plane.js";
-import type { ConsensusPersona } from "../src/verification-pipeline-types.js";
 import { validateConsensusResultEnvelope } from "../src/verification-pipeline.js";
+import type { ConsensusPersona } from "../src/verification-pipeline-types.js";
 
 let repoRoot: string;
 const runId = "test-live-run-id";

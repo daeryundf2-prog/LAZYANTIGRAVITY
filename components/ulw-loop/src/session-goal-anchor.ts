@@ -41,6 +41,6 @@ function normalizeAnchorText(value: string): string {
 	return value
 		.toLowerCase()
 		.replace(/\s+/g, " ")
-		.replace(/[.,;:!?"'`()\[\]{}·、。？！「」『』]/g, "")
+		.replace(/[.,;:!?"'`()[\]{}·、。？！「」『』]/g, "")
 		.trim();
 }

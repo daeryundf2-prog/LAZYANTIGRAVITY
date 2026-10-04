@@ -37,7 +37,9 @@ function happyPath(ctx: DryRunContext, state: DryRunState): void {
 		process.stdout.write(`  - Gemini 3.8 Flash (High) - fast bulk workhorse (plan + code)\n`);
 		process.stdout.write(`  - Gemini 3.8 Flash (Medium) - rapid iterative fixes\n`);
 		process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
-		process.stdout.write(`  - Claude Opus 5.5 (High) - deep reasoning / escape hatch (manual UI switch when on Gemini)\n`);
+		process.stdout.write(
+			`  - Claude Opus 5.5 (High) - deep reasoning / escape hatch (manual UI switch when on Gemini)\n`,
+		);
 		process.stdout.write(`  - Claude Sonnet 5.5 (High) - balanced reasoning alternative\n`);
 		process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner)\n`);
 		process.stdout.write(`[Dry-Run] Running role: researcher (would invoke: research / Codebase Researcher)\n`);
@@ -60,7 +62,9 @@ async function quotaOpusExhausted(ctx: DryRunContext, state: DryRunState): Promi
 		process.stdout.write(`  - Gemini 3.8 Flash (High) - fast bulk workhorse (plan + code)\n`);
 		process.stdout.write(`  - Gemini 3.8 Flash (Medium) - rapid iterative fixes\n`);
 		process.stdout.write(`  - Gemini 3.1 Pro (High) - cross-model verification\n`);
-		process.stdout.write(`  - Claude Opus 5.5 (High) - deep reasoning / escape hatch (manual UI switch when on Gemini)\n`);
+		process.stdout.write(
+			`  - Claude Opus 5.5 (High) - deep reasoning / escape hatch (manual UI switch when on Gemini)\n`,
+		);
 		process.stdout.write(`  - Claude Sonnet 5.5 (High) - balanced reasoning alternative\n`);
 		process.stdout.write(`[Dry-Run] Running role: planner (would invoke: self / Prometheus Planner) - SUCCESS\n`);
 		process.stdout.write(

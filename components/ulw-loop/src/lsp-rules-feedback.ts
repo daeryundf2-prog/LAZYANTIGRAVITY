@@ -11,9 +11,7 @@ function resolveBundledModule(repoRoot: string, relativeCandidates: string[]): s
 
 export async function collectLspDiagnostics(repoRoot: string, filesChanged: string[]): Promise<string[]> {
 	try {
-		const lspPath = resolveBundledModule(repoRoot, [
-			"components/lsp/dist/codex-hook.js",
-		]);
+		const lspPath = resolveBundledModule(repoRoot, ["components/lsp/dist/codex-hook.js"]);
 		if (!lspPath) return [];
 		const { runLspDiagnosticsText } = await import(new URL(`file://${lspPath}`).href);
 
@@ -41,9 +39,7 @@ export async function collectLspDiagnostics(repoRoot: string, filesChanged: stri
 
 export async function collectRulesViolations(repoRoot: string, filesChanged: string[]): Promise<string[]> {
 	try {
-		const rulesPath = resolveBundledModule(repoRoot, [
-			"components/rules/dist/rules-engine-factory.js",
-		]);
+		const rulesPath = resolveBundledModule(repoRoot, ["components/rules/dist/rules-engine-factory.js"]);
 		if (!rulesPath) return [];
 		const { createRulesEngine } = await import(new URL(`file://${rulesPath}`).href);
 
