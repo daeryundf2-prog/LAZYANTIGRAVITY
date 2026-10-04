@@ -8,7 +8,8 @@ rules and the verification gates a change must pass.
 
 - Node >= 20 (CI runs Node 20 and 22).
 - npm workspaces under `components/*`; root-level bundled MCP servers in
-  `ast-grep-mcp/`, `git-bash-mcp/`, `lsp-tools-mcp/`, `workspace-mcp/`.
+  `ast-grep-mcp/`, `git-bash-mcp/`, `lsp-tools-mcp/`, `workspace-mcp/`,
+  `media-mcp/`, `research-mcp/`, `korean-law-mcp/`, `ast-index-mcp/`.
 - TypeScript per component (`tsc`), tests via `node:test` and `vitest`.
 
 ## Verification gates
@@ -21,14 +22,20 @@ npm run check
 
 which runs, in order:
 
-1. `npm run build` — 8-stage pipeline (MCP config sync, hook status messages,
-   bundled MCP runtimes, skills sync, component builds, shared-skills
-   materialization, omo mirror).
+1. `npm run build` — 7-stage pipeline (MCP config sync, hook status messages,
+   bundled MCP runtimes, skills sync, telemetry component sync, component
+   builds, shared-skills materialization).
 2. `npm run verify:hook-policies` — FAIL_OPEN hooks are restricted to
    telemetry/guard wrappers.
-3. `npm test` — root test suite (`test/*.test.mjs`), the daemon-bridge suite,
+3. `npm run audit:model-profile` — model-catalog profile and generated
+   marker-block drift check.
+4. `npm run audit:skills-drift` — materialized `skills/` tree must match its
+   shared-skills/component sources byte-for-byte.
+5. `npm run audit:contract-drift` — vendored `contracts/` files must match
+   their `PIN.json` SHA-256 pins.
+6. `npm test` — root test suite (`test/*.test.mjs`), the daemon-bridge suite,
    and the ulw-loop checkpoint vitest suite.
-4. `npm run test:components` — every component workspace's own test suite;
+7. `npm run test:components` — every component workspace's own test suite;
    any failure fails the run.
 
 Two additional gates run in CI and locally before a release:
