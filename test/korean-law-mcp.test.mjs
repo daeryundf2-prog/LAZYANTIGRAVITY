@@ -113,7 +113,7 @@ test("lookup_statute rejects fabricated out-of-bounds statute articles", () => {
 });
 
 test("lookup_precedent rejects future year precedents and invalid case codes", () => {
-	const resFuture = callTool("lookup_precedent", { case_number: "2030다12345" });
+	const resFuture = callTool("lookup_precedent", { case_number: `${new Date().getFullYear() + 10}다12345` });
 	assert.equal(resFuture.ok, false);
 	assert.equal(resFuture.grounding_status, "INVALID_FUTURE_PRECEDENT");
 	assert.match(resFuture.error, /미래 연도 판결 인용/);
@@ -127,6 +127,26 @@ test("lookup_precedent rejects future year precedents and invalid case codes", (
 	assert.equal(resFakeCode.ok, false);
 	assert.equal(resFakeCode.grounding_status, "INVALID_CASE_CODE");
 	assert.match(resFakeCode.error, /비표준 사건부호/);
+});
+
+test("lookup_statute rejects non-numeric garbage article_number instead of listing all articles", () => {
+	const res = callTool("lookup_statute", { statute_name: "민법", article_number: "abc" });
+	assert.equal(res.ok, false);
+	assert.equal(res.grounding_status, "INVALID_ARTICLE_FORMAT");
+	assert.match(res.error, /INVALID_ARTICLE_FORMAT/);
+});
+
+test("lookup_precedent supports keyword search over bundled precedent summaries", () => {
+	const resHit = callTool("lookup_precedent", { keyword: "위약벌" });
+	assert.equal(resHit.ok, true);
+	assert.equal(resHit.grounding_status, "CACHED_SUMMARY_UNVERIFIED");
+	assert.ok(resHit.match_count >= 1);
+	assert.ok(resHit.matches.some((p) => p.case_number === "2017다220744"));
+
+	const resMiss = callTool("lookup_precedent", { keyword: "no-such-precedent-xyzzy" });
+	assert.equal(resMiss.ok, false);
+	assert.equal(resMiss.grounding_status, "UNVERIFIED");
+	assert.match(resMiss.error, /INSUFFICIENT_DATA/);
 });
 
 

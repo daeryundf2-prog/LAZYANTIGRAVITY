@@ -172,7 +172,18 @@ async function lookupStatute(args) {
 		}, true);
 	}
 
-	const articleNum = args.article_number ? normalizeArticleNumber(args.article_number) : "";
+	const articleProvided =
+		args.article_number !== undefined && args.article_number !== null && String(args.article_number).trim() !== "";
+	const articleNum = articleProvided ? normalizeArticleNumber(args.article_number) : "";
+	if (articleProvided && !articleNum) {
+		return textResult({
+			ok: false,
+			statute_name: statuteKey,
+			article_number: String(args.article_number),
+			error: `[INVALID_ARTICLE_FORMAT] article_number '${String(args.article_number)}'은(는) 유효한 조문 번호가 아닙니다 (예: '103', '750', '44조의7'). 생략하면 수록 조문 전체를 반환합니다.`,
+			grounding_status: "INVALID_ARTICLE_FORMAT"
+		}, true);
+	}
 	if (articleNum) {
 		const maxArt = STATUTE_BOUNDS[statuteKey];
 		const baseNum = parseInt(articleNum.split("-")[0], 10);
@@ -258,11 +269,12 @@ async function lookupPrecedent(args) {
 	}
 
 	if (parsedCase) {
-		if (parsedCase.year > 2026) {
+		const currentYear = new Date().getFullYear();
+		if (parsedCase.year > currentYear) {
 			return textResult({
 				ok: false,
 				case_number: parsedCase.canonical_number,
-				error: `[판례 날조] 미래 연도 판결 인용: ${parsedCase.canonical_number} — 현재 연도(2026년)보다 미래의 사건번호는 날조된 환각입니다.`,
+				error: `[판례 날조] 미래 연도 판결 인용: ${parsedCase.canonical_number} — 현재 연도(${currentYear}년)보다 미래의 사건번호는 날조된 환각입니다.`,
 				grounding_status: "INVALID_FUTURE_PRECEDENT"
 			}, true);
 		}
@@ -306,6 +318,28 @@ async function lookupPrecedent(args) {
 			},
 			warning: "판례 번호 형식은 유효하나 전문 인용 시 공식 대법원 종합법률정보(glaw.scourt.go.kr) 원문 확인 필수. 존재하지 않는 가짜 판시사항 날조 금지.",
 			grounding_status: "FORMAT_VERIFIED_CONTENT_REQUIRES_SOURCE"
+		});
+	}
+
+	// Keyword substring search over bundled landmark precedent summaries
+	if (keyword) {
+		const matches = Object.values(LANDMARK_PRECEDENTS).filter((precedent) =>
+			`${precedent.case_number} ${precedent.name} ${precedent.holding}`.includes(keyword)
+		);
+		if (matches.length === 0) {
+			return textResult({
+				ok: false,
+				query_keyword: keyword,
+				error: `[INSUFFICIENT_DATA] keyword '${keyword}'에 일치하는 수록 판례 요약이 없습니다. 공식 대법원 종합법률정보(glaw.scourt.go.kr) 원문 확인 필수.`,
+				grounding_status: "UNVERIFIED"
+			}, true);
+		}
+		return textResult({
+			ok: true,
+			query_keyword: keyword,
+			match_count: matches.length,
+			matches,
+			grounding_status: "CACHED_SUMMARY_UNVERIFIED"
 		});
 	}
 
