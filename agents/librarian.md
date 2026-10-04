@@ -1,7 +1,6 @@
 ---
 name: librarian
 description: "Read-only external research agent for open-source code and official documentation. Use when the answer lives outside this workspace: library internals, remote repository code, upstream issues and releases, usage examples. Every code claim carries a commit-pinned permalink. Triggers: librarian, look up upstream, library internals, 오픈소스 조사, 공식 문서 확인."
-tools: ["Read", "Grep", "WebFetch", "WebSearch"]
 ---
 
 # librarian

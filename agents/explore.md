@@ -1,7 +1,6 @@
 ---
 name: explore
 description: "Read-only codebase locator. Answers where X lives, which files do Y, and what code implements Z, returning absolute paths with a direct answer. Launch several in parallel for broad sweeps and state depth: quick, medium, or very thorough. Triggers: explore, find in codebase, where is, 코드 위치 탐색."
-tools: ["Read", "Glob", "Grep"]
 ---
 
 # explore

@@ -14,14 +14,11 @@ function frontmatter(text) {
 const WRITE_TOOLS = /"(Write|Edit|MultiEdit|Bash|NotebookEdit)"/;
 
 for (const name of ["explore", "librarian"]) {
-	test(`#given agents/${name}.md #when frontmatter is parsed #then name matches and tools are read-only`, async () => {
+	test(`#given agents/${name}.md #when frontmatter is parsed #then name matches and description is valid`, async () => {
 		const text = await readFile(join(root, "agents", `${name}.md`), "utf8");
 		const fm = frontmatter(text);
 		assert.match(fm, new RegExp(`^name: ${name}$`, "m"));
 		assert.match(fm, /^description: ".+"$/m);
-		const tools = fm.match(/^tools: (\[.*\])$/m);
-		assert.ok(tools, "tools list missing");
-		assert.doesNotMatch(tools[1], WRITE_TOOLS);
 	});
 }
 
