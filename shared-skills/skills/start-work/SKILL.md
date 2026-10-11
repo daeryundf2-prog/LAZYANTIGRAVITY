@@ -83,7 +83,7 @@ If `--worktree` is set, verify the path with `git worktree list --porcelain` or 
 Each sub-task message must include:
 
 1. Goal and exact files or directories in scope.
-2. When the task touches existing behavior: a baseline characterization test, written first, that asserts current observable behavior and passes on the unchanged code. Then the red test or failing reproduction for the new behavior before production changes. Pin the baseline as rigorously as the new test: exact inputs, exact observable, exact assertion.
+2. When the task touches existing behavior: a baseline characterization test, written first, that asserts current observable behavior and passes on the unchanged code. Then, under a `TDD` test decision, the red test or failing reproduction for the new behavior before production changes. Pin the baseline as rigorously as the new test: exact inputs, exact observable, exact assertion.
 3. Implementation constraints from the plan and project rules.
 4. Automated verification commands to run.
 5. One Manual-QA channel, named with the exact tool and exact invocation (the literal `curl`, `send-keys`, `page.click`, payload, selectors, and the binary observable that decides PASS/FAIL), not "verify it works":
@@ -160,7 +160,8 @@ When all top-level checkboxes in `## TODOs` and `## Final Verification Wave` are
 
 ## Hard rules
 
-- No production change before a failing test or reproduction exists, and no change to existing behavior before a baseline characterization test pins the current behavior and passes on the unchanged code.
+- No change to existing behavior before a baseline characterization test pins the current behavior and passes on the unchanged code. Beyond that, follow the plan's `Test decision`: under `TDD` (the default when the plan has none), no production change before a failing test or reproduction exists.
+- No final message that defers in-scope work as "next". Do it, or name the input only the user can give.
 - No `--dry-run` as completion evidence.
 - No tests-only completion claim. A Manual-QA artifact is required.
 - No completion claim while an applicable ultraqa adversarial class was never probed. Each applicable class needs a captured observable result; each skipped class needs a one-line not-applicable reason in the ledger.

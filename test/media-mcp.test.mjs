@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -236,5 +236,49 @@ test("media_frames extracts and restores nothing outside the workspace", () => {
 			assert.ok(!frame.includes("/etc"), "frames must live inside the workspace");
 			assert.ok(existsSync(frame));
 		}
+	});
+});
+
+function fakeBin(dir, name, body) {
+	const path = join(dir, name);
+	writeFileSync(path, `#!/bin/sh\n${body}\n`, { mode: 0o755 });
+	return path;
+}
+
+test("media_transcribe backend=transcribe calls transcribe-cli with positional audio and -o", { skip: process.platform === "win32" }, () => {
+	withWorkspace((dir) => {
+		mkdirSync(join(dir, "audio"), { recursive: true });
+		mkdirSync(join(dir, "bin"), { recursive: true });
+		writeFileSync(join(dir, "audio", "clip.mp4"), "fake audio content");
+		writeFileSync(join(dir, "qwen3-asr.gguf"), "fake model");
+		const argvLog = join(dir, "argv.txt");
+		// fake ffmpeg: create the last argument (the wav path)
+		const ffmpeg = fakeBin(join(dir, "bin"), "ffmpeg", 'for a in "$@"; do last="$a"; done; [ -n "$last" ] && [ "$last" != "-version" ] && : > "$last"; exit 0');
+		// fake transcribe-cli: log argv, write text to the -o path
+		const tcli = fakeBin(join(dir, "bin"), "transcribe-cli", `echo "$@" > "${argvLog}"; while [ $# -gt 0 ]; do [ "$1" = "-o" ] && out="$2"; shift; done; [ -n "$out" ] && printf '안녕하세요 테스트' > "$out"; exit 0`);
+		const res = callTool("media_transcribe", { input: "audio/clip.mp4", backend: "transcribe", model: join(dir, "qwen3-asr.gguf"), lang: "ko" }, dir, {
+			LAZYANTIGRAVITY_FFMPEG_BIN: ffmpeg,
+			LAZYANTIGRAVITY_TRANSCRIBE_BIN: tcli,
+		});
+		assert.equal(res.ok, true, JSON.stringify(res));
+		assert.equal(res.backend, "transcribe");
+		assert.equal(res.text, "안녕하세요 테스트");
+		const argv = readFileSync(argvLog, "utf8").trim();
+		assert.match(argv, /^-m \S+qwen3-asr\.gguf -l ko -o \S+transcript\.txt \S+audio-16k\.wav$/);
+		assert.doesNotMatch(argv, /-otxt|-of |-f /);
+	});
+});
+
+test("LAZYANTIGRAVITY_STT_BACKEND=transcribe makes transcribe.cpp the default and reports a gguf hint", () => {
+	withWorkspace((dir) => {
+		mkdirSync(join(dir, "audio"), { recursive: true });
+		writeFileSync(join(dir, "audio", "clip.mp4"), "fake audio content");
+		const res = callTool("media_transcribe", { input: "audio/clip.mp4" }, dir, {
+			LAZYANTIGRAVITY_STT_BACKEND: "transcribe",
+			LAZYANTIGRAVITY_TRANSCRIBE_BIN: "/nonexistent-mcp-test-transcribe",
+		});
+		assert.equal(res.ok, false);
+		assert.match(res.error, /NOT INSTALLED/);
+		assert.match(res.installHint, /transcribe\.cpp/);
 	});
 });
