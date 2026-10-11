@@ -136,6 +136,37 @@ export function saveFact(
 	});
 }
 
+const DEFAULT_MEMORY_BUDGET_BYTES = 8192;
+const CATEGORY_PRIORITY: Record<FactRecord["category"], number> = { preference: 0, rule: 1, gotcha: 2, fact: 3 };
+
+function memoryBudgetBytes(): number {
+	const raw = Number(process.env.LAZYANTIGRAVITY_MEMORY_BUDGET_BYTES);
+	return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MEMORY_BUDGET_BYTES;
+}
+
+/**
+ * Pick what fits the injection budget: preferences, then rules, then gotchas,
+ * then facts, newest first within a category. A fixed "last 20" dropped old
+ * preferences that still applied. Selected facts keep their original order.
+ */
+export function selectFactsWithinBudget(facts: FactRecord[], budgetBytes: number): FactRecord[] {
+	const ranked = facts
+		.map((fact, index) => ({ fact, index }))
+		.sort(
+			(a, b) =>
+				(CATEGORY_PRIORITY[a.fact.category] ?? 3) - (CATEGORY_PRIORITY[b.fact.category] ?? 3) || b.index - a.index,
+		);
+	const keep = new Set<number>();
+	let used = 0;
+	for (const { fact, index } of ranked) {
+		const size = Buffer.byteLength(fact.content, "utf8") + 20;
+		if (used + size > budgetBytes) continue;
+		used += size;
+		keep.add(index);
+	}
+	return facts.filter((_, index) => keep.has(index));
+}
+
 export function formatActiveMemoryContext(facts: FactRecord[]): string {
 	if (facts.length === 0) return "";
 
@@ -145,7 +176,7 @@ export function formatActiveMemoryContext(facts: FactRecord[]): string {
 		"These editable working facts, conventions, and architectural gotchas were preserved across previous sessions. They are not verified evidence; review them against current sources before relying on them:",
 	];
 
-	for (const fact of facts.slice(-20)) {
+	for (const fact of selectFactsWithinBudget(facts, memoryBudgetBytes())) {
 		const prefix =
 			fact.category === "gotcha"
 				? "⚠️ [GOTCHA]"
