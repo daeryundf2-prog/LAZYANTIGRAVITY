@@ -55,7 +55,7 @@ test("#given Antigravity-default skills that mention wait_agent #when scanned #t
 });
 
 test("#given core orchestration skills #when inspected #then invoke_subagent is the Antigravity dispatch verb", async () => {
-	for (const skillName of ["ulw", "ulw-loop", "ulw-plan", "start-work", "review-work"]) {
+	for (const skillName of ["ulw-loop", "ulw-plan", "mass-ulw"]) {
 		const content = await readSkill(skillName);
 		assert.match(content, /invoke_subagent/, `${skillName} missing invoke_subagent`);
 	}

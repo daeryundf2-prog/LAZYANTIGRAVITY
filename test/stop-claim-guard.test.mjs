@@ -40,7 +40,7 @@ test("blocks grand completion claim without evidence", () => {
 test("passes claim backed by test counts and artifact paths", () => {
 	const res = runGuard(
 		stopPayload({
-			last_assistant_message: "모두 반영했습니다. uv run pytest → 98 passed, 산출물은 skills/boost/SKILL.md, 커밋 1464e7a.",
+			last_assistant_message: "모두 반영했습니다. uv run pytest → 98 passed, 산출물은 skills/ulw-loop/SKILL.md, 커밋 1464e7a.",
 		}),
 	);
 	assert.equal(res.status, 0);

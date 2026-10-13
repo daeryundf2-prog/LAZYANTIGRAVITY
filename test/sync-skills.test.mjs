@@ -11,28 +11,18 @@ const CONTEXT_PRESSURE_SKILL_BUDGET_BYTES = 25_000;
 
 const expectedSkills = [
 	"ast-grep",
-	"avoid-ai-writing",
-	"boost",
 	"coding-agent-sessions",
-	"cove-verify",
 	"data-scientist",
 	"debugging",
 	"frontend",
 	"git-master",
 	"image-prompt",
-	"init-deep",
 	"lsp-setup",
 	"mass-ulw",
 	"media-analysis",
 	"programming",
 	"refactor",
 	"remove-ai-slops",
-	"report-bug",
-	"review-work",
-	"safe-evaluator",
-	"start-work",
-	"ultra-research",
-	"ulw",
 	"ulw-loop",
 	"ulw-plan",
 	"ulw-research",
@@ -223,32 +213,6 @@ test("#given synced ulw-loop skill #when Codex hint metadata is inspected #then 
 	assert.match(interfaceMetadata, /- "ulw-loop"/);
 });
 
-test("#given synced report-bug skill #when inspected #then it files LazyAntigravity bug issues from proven debugging evidence", async () => {
-	// given
-	const skillRoot = join(root, "skills", "report-bug");
-
-	// when
-	const skill = await readFile(join(skillRoot, "SKILL.md"), "utf8");
-	const interfaceMetadata = await readFile(join(skillRoot, "agents", "openai.yaml"), "utf8");
-
-	// then
-	assert.match(skill, /^---\r?\nname: report-bug\r?\n/m);
-	assert.match(skill, /daeryundf2-prog\/LAZYANTIGRAVITY/);
-	assert.match(skill, /\/tmp\/lazyantigravity-source/);
-	assert.match(skill, /\$omo:debugging/);
-	assert.match(skill, /Repository Decision/);
-	assert.match(skill, /TARGET_REPO="daeryundf2-prog\/LAZYANTIGRAVITY"/);
-	assert.match(skill, /gh issue create --repo "\$TARGET_REPO"/);
-	assert.match(skill, /gh pr create --repo "\$TARGET_REPO"/);
-	assert.match(skill, /🤖 This issue\/PR was debugged and created with \[LazyAntigravity\]/);
-	assert.match(skill, /Browser use fallback/);
-	assert.match(skill, /Computer use fallback/);
-	assert.match(skill, /## Issue Body Template/);
-	assert.match(interfaceMetadata, /display_name: "report-bug \(lazyantigravity\)"/);
-	assert.match(interfaceMetadata, /- "lazyantigravity bug"/);
-	assert.match(interfaceMetadata, /- "antigravity plugin bug"/);
-});
-
 test("#given synced git-master skill #when inspected #then commits and git history route through it", async () => {
 	// given
 	const skillRoot = join(root, "skills", "git-master");
@@ -302,24 +266,6 @@ test("#given synced ulw-loop skill #when worker guidance is inspected #then Anti
 	assert.match(syncedSkill, /invoke_subagent/);
 	assert.match(syncedSkill, /canTierRoute|Subagents\[\]\.Model/);
 	assert.doesNotMatch(syncedSkill, /## Codex Tool Mapping/);
-});
-
-test("#given packaged start-work skill #when inspected #then no-plan bootstrap and adversarial verification contracts are shipped", async () => {
-	// given
-	const skillFile = await readPackagedSkillFile("start-work", "SKILL.md");
-
-	// when / then
-	assertPackagedContentMatches(skillFile, [
-		["executes Prometheus plan with Boulder state", /Prometheus work plan[\s\S]*Boulder state/],
-		["bootstraps ulw-plan when no selectable plan exists", /no selectable plan[\s\S]*ulw-plan|ulw-plan[\s\S]*no selectable plan/i],
-		["does not execute work without an approved plan", /approved plan[\s\S]*(?:before|prior to)[\s\S]*execution|execution[\s\S]*(?:requires|needs)[\s\S]*approved plan/i],
-		["keeps hook continuation Boulder-only", /Boulder[\s\S]*(?:continuation|Stop hook)[\s\S]*(?:only|solely)|(?:continuation|Stop hook)[\s\S]*(?:only|solely)[\s\S]*Boulder/i],
-		["distinguishes execution from verification", /execution[\s\S]*verification|verification[\s\S]*execution/i],
-		["requires dirty-worktree-aware editing", /dirty worktree/i],
-		["requires stale-state probes", /stale state/i],
-		["rejects misleading success output", /misleading success output/i],
-		["does not accept worker done claims without independent verification", /done claim[\s\S]*independent(?:ly)? verified|independent(?:ly)? verify[\s\S]*done claim/i],
-	]);
 });
 
 test("#given packaged ulw-plan skill #when inspected #then dynamic multi-agent planning contracts are shipped", async () => {

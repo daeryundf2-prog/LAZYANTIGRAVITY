@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
-const AG_SKILLS = ["review-work", "start-work", "ulw-loop", "ulw-plan"];
+const AG_SKILLS = ["ulw-loop", "ulw-plan"];
 
 const AGENT_FILES = [
 	"components/ultrawork/agents/codex-ultrawork-reviewer.toml",

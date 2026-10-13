@@ -41,7 +41,6 @@ test("#given isolated components #when hooks are inspected #then commands stay i
 		"components/lsp/dist/cli.js",
 		"components/rules/dist/cli.js",
 		"components/start-work-continuation/dist/cli.js",
-		"components/telemetry/dist/cli.js",
 		"components/ulw-loop/dist/cli.js",
 	];
 
