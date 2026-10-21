@@ -63,6 +63,13 @@
 						"command": "node \"${PLUGIN_ROOT}/components/git-bash/dist/cli.js\" hook pre-tool-use",
 						"timeout": 2,
 						"statusMessage": "LazyAntigravity(0.9.0): Recommending Git Bash Mcp"
+					},
+					{
+						"type": "command",
+						"command": "node \"${PLUGIN_ROOT}/scripts/hook-runner.mjs\" FAIL_OPEN none none node \"${PLUGIN_ROOT}/scripts/git-bypass-guard.mjs\"",
+						"timeout": 2,
+						"statusMessage": "LazyAntigravity(0.9.0): Blocking Git Verification Bypass",
+						"failurePolicy": "FAIL_OPEN"
 					}
 				]
 			},
