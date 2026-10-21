@@ -69,12 +69,12 @@ When exploration is exhausted and the genuine unknowns are answered, do NOT auto
 - the remaining ambiguities, each with the option you recommend,
 - the approach you intend to plan.
 
-Then **wait for the user's explicit okay** before generating the plan. No Metis, no plan file, no execution until the user approves. If the user amends scope, fold it in and re-present the brief. This gate replaces any automatic interview-to-plan transition.
+Before presenting, check every decision in the brief against the draft: each must trace to a user statement or cited evidence. List the rest under `Assumed (confirm or change)` in the brief instead of stating them as settled. Then **wait for the user's explicit okay** before generating the plan. No Metis, no plan file, no execution until the user approves. If the user amends scope, fold it in and re-present the brief. This gate replaces any automatic interview-to-plan transition.
 
 Narrow `$start-work` bootstrap exception: if `$start-work` invoked this skill because there was no active Boulder work and no selectable plan, the user's `start work` request counts as approval to generate the plan and begin execution. Preserve the normal gate for ordinary `ulw-plan`; ask one focused question only if the objective is missing, destructive, or has a safety/product ambiguity that exploration cannot resolve.
 
 ## Phase 3 - Generate the plan (only after approval)
-1. **Gap analysis (mandatory):** `invoke_subagent` with TASK to review this planning session for gaps. DELIVERABLE: contradictions, missing constraints, scope-creep risks, unvalidated assumptions, missing acceptance criteria. VERIFY: each gap names a concrete fix. Fold the findings in silently.
+1. **Gap analysis (mandatory):** `invoke_subagent` with TASK to review this planning session for gaps. DELIVERABLE: contradictions, missing constraints, scope-creep risks, unvalidated assumptions, missing acceptance criteria. VERIFY: each gap names a concrete fix. Fold mechanical gaps (missing references, acceptance commands, file lists) in silently. A finding that changes an owner-decision or the approved scope is NOT folded: present it to the user with your recommended option and wait, exactly like the approval gate.
 2. Write ONE plan to `.omo/plans/<slug>.md` using the template below. No "Phase 1 plan / Phase 2 plan" splits; 50+ todos is fine. Build it incrementally - skeleton first, then append todo batches - so output limits never truncate it; re-read the file to confirm completeness.
 3. **Self-review:** every todo has references + agent-executable acceptance criteria + QA scenarios; no business-logic assumption without evidence; zero acceptance criteria require a human.
 
@@ -137,7 +137,7 @@ Critical path: ...
 
 
 ## Phase 4 - High-accuracy review (optional)
-If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the plan path only. Fix every cited issue and resubmit until it approves. `Model` is an agent hint; the host does not switch the session UI model.
+If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the plan path only. Fix every cited issue and resubmit. Run another round only while the previous round raised a new blocker or confirmed an earlier blocker fixed; a round that does neither and still does not approve ends the loop, and you present the remaining blockers to the user with your recommended option. `review_round_limit` in the plan header is the hard cap either way. `Model` is an agent hint; the host does not switch the session UI model.
 
 ## Delegation discipline (Antigravity)
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, `VERIFY`, plus the role envelope.

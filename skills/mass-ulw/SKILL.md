@@ -44,16 +44,18 @@ A node sees only its prompt. Every prompt carries these fields, in this order:
 3. SCOPE: paths it may read, paths it may write, and what is out of bounds because another node owns it.
 4. VERIFY: the literal command it runs on its own work and the expected result.
 5. STOP WHEN: one observable condition.
+6. RETURN: at most N lines, ending with `STATUS: completed | failed | aborted | blocked`.
 
 Paste exact paths and facts. "As discussed" means nothing to a node. PASS or FAIL must be decidable from the prompt alone. One role per node: a node that investigates does not also fix.
 
 ## 4. Run waves
 
+- Before a wave wider than four nodes, append a spawn receipt to the ledger: why parallel, why not inline, proof the write scopes do not overlap, and the RETURN cap per node. If you cannot write the independence proof, the wave is not independent; split or serialize it.
 - Launch a wave as one `invoke_subagent` call with one entry per node. Use `Workspace: "branch"` for writer nodes whose scopes could collide; otherwise inherit.
 - After launching, end your turn or do independent work. Completion wakes you; do not poll.
 - On each report, check the node against its own SCOPE. Steer drift with `send_message` naming the boundary it crossed.
 - Treat every node report as a claim. Before the next wave depends on it, check the specific fact (file exists, test passes, symbol exported).
-- Append one entry per wave to `.omo/mass-ulw/<key>/ledger.md`: node id, model, status, evidence path. This file is how you resume after a context reset.
+- Append one entry per wave to `.omo/mass-ulw/<key>/ledger.md`: node id, model, status (the node's `STATUS` value), evidence path. This file is how you resume after a context reset.
 
 Wave width: one node per independent chunk, three or more per wave. Wider than about ten, add an aggregator node that reads bounded per-node reports so you never read N raw outputs yourself.
 
@@ -66,6 +68,7 @@ Any graph that changes code ends with a verification wave that depends on every 
 - A failed node blocks only its dependents. Read its report first.
 - Node alive but off track: `send_message` with the correction.
 - Node finished wrong: relaunch that one node with a corrected prompt; keep finished siblings.
+- Node returned no report or lost its session (infrastructure, not the task): relaunch it unchanged up to twice, waiting longer before each retry, and log each retry in the ledger. Skip its dependents only after the second retry fails.
 - Many nodes failing at start within seconds: the model lane is failing, not your prompts. Stop launching, switch `Model`, relaunch the failed ones.
 - Cancel (`manage_subagents` kill) only to abandon the goal, never because a node is slow.
 
