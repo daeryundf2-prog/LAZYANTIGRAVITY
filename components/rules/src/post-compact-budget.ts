@@ -45,7 +45,6 @@ const MODEL_CONTEXT_BUDGETS: readonly ModelContextBudget[] = [
 		contextWindowTokens: 200_000,
 		effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT,
 	},
-	{ slug: "gpt-oss-120b", contextWindowTokens: 128_000, effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT },
 ];
 
 export function withPostCompactBudget(config: PiRulesConfig, context?: PostCompactBudgetContext): PiRulesConfig {
