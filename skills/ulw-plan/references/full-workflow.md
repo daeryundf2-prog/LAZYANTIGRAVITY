@@ -137,7 +137,7 @@ Critical path: ...
 
 
 ## Phase 4 - High-accuracy review (optional)
-If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the plan path only. Fix every cited issue and resubmit until it approves. `Model` is an agent hint; the host does not switch the session UI model.
+If the user wants maximum rigor, `invoke_subagent` with `Model: "pro"` and the plan path only. Fix every cited issue and resubmit. Run another round only while the previous round raised a new blocker or confirmed an earlier blocker fixed; a round that does neither and still does not approve ends the loop, and you present the remaining blockers to the user with your recommended option. `review_round_limit` in the plan header is the hard cap either way. `Model` is an agent hint; the host does not switch the session UI model.
 
 ## Delegation discipline (Antigravity)
 - Every `invoke_subagent` message starts with `TASK:`, then `DELIVERABLE`, `SCOPE`, `VERIFY`, plus the role envelope.

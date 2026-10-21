@@ -68,6 +68,7 @@ Any graph that changes code ends with a verification wave that depends on every 
 - A failed node blocks only its dependents. Read its report first.
 - Node alive but off track: `send_message` with the correction.
 - Node finished wrong: relaunch that one node with a corrected prompt; keep finished siblings.
+- Node returned no report or lost its session (infrastructure, not the task): relaunch it unchanged up to twice, waiting longer before each retry, and log each retry in the ledger. Skip its dependents only after the second retry fails.
 - Many nodes failing at start within seconds: the model lane is failing, not your prompts. Stop launching, switch `Model`, relaunch the failed ones.
 - Cancel (`manage_subagents` kill) only to abandon the goal, never because a node is slow.
 
