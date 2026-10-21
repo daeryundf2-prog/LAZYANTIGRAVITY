@@ -111,6 +111,24 @@ describe("codex ultrawork hook", () => {
 		expect(isUltraworkPrompt("ulw_helper.ts")).toBe(false);
 	});
 
+	it("#given skill names, quotes, and relayed reports #when checked #then only a standalone request arms ultrawork", () => {
+		for (const prompt of ["please ulw this change", "ultrawork: fix the build", "mass ulw the migration", "ULW"]) {
+			expect(isUltraworkPrompt(prompt)).toBe(true);
+		}
+		for (const prompt of [
+			"run ulw-plan for the auth refactor",
+			"$ulw-loop status",
+			"use the mass-ulw skill",
+			'the doc says "ulw" is a keyword',
+			"see `ulw` in the README",
+			"> ulw finished the refactor\nwhat changed?",
+			"[REPORT] ultrawork done\nsummarize it",
+			"[planner -> worker] ulw this\nok",
+		]) {
+			expect(isUltraworkPrompt(prompt)).toBe(false);
+		}
+	});
+
 	it("#given context-pressure recovery prompt with ulw #when hook runs #then does not add more context", () => {
 		// given
 		const payload = {
