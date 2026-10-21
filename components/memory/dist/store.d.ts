@@ -9,6 +9,7 @@ export interface FactRecord extends FactMetadata {
 }
 export declare function getMemoryFilePath(cwd?: string): string;
 export declare function readFacts(filePath?: string): FactRecord[];
+export declare function detectSecret(text: string): string | null;
 export declare function saveFact(content: string, category?: FactRecord["category"], filePath?: string, metadata?: FactMetadata): FactRecord | null;
 /**
  * Pick what fits the injection budget: preferences, then rules, then gotchas,

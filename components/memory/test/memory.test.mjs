@@ -164,3 +164,19 @@ test("injection keeps old preferences under the byte budget instead of only the 
 	const context = formatActiveMemoryContext(facts);
 	assert.ok(context.includes("⭐ [PREFERENCE] Answer in Korean"));
 });
+
+test("memory refuses to persist credentials but keeps ordinary facts", async () => {
+	const { detectSecret } = await import("../dist/store.js");
+	const dir = mkdtempSync(join(tmpdir(), "memory-secret-"));
+	try {
+		const file = join(dir, "facts.jsonl");
+		const token = `ghp_${"a1B2".repeat(9)}`;
+		assert.throws(() => saveFact(`deploy uses ${token}`, "fact", file), /memory write blocked: .*GitHub token/);
+		assert.throws(() => saveFact("db password = hunter2hunter2", "gotcha", file), /credential assignment/);
+		assert.equal(detectSecret("Use pnpm, not npm, in this repo"), null);
+		assert.ok(saveFact("Use pnpm, not npm, in this repo", "preference", file));
+		assert.equal(readFacts(file).length, 1);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
