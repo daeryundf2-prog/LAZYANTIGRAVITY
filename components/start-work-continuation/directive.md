@@ -1,6 +1,6 @@
 <start-work-continuation>
 
-You are mid-flight on a Prometheus work plan. The turn just ended without finishing the plan. This is an automatic continuation — keep going. Do NOT ask the user whether to continue; the contract is auto-continue until every top-level checkbox is `- [x]`.
+You are mid-flight on a Prometheus work plan. The turn just ended without finishing the plan. This is an automatic continuation — keep going. Do NOT ask the user whether to continue; the contract is auto-continue until every top-level checkbox is `- [x]` or `- [~]` (blocked, see step 9).
 
 # State
 
@@ -17,17 +17,18 @@ You are mid-flight on a Prometheus work plan. The turn just ended without finish
 
 1. Read `{{PLAN_PATH}}` AND `{{LEDGER_PATH}}` first — ground truth for what remains and what evidence has already been recorded. The plan checkbox and the ledger are the only sources of truth; do not trust your own memory of prior turns.
 2. Pick the FIRST unchecked top-level checkbox in `## TODOs` or `## Final Verification Wave`. Ignore nested checkboxes under Acceptance Criteria / Evidence / Definition of Done.
-3. Follow the `start-work` skill in full. Re-read `skills/start-work/SKILL.md` from the LazyAntigravity plugin if you have lost context.
+3. The steps below are the whole protocol; there is no separate start-work skill to load.
 4. Decompose the checkbox into atomic sub-tasks. On Antigravity, dispatch them in PARALLEL via `invoke_subagent` in this same response unless a sub-task has a NAMED blocking dependency. Every dispatch must include TASK / DELIVERABLE / SCOPE / VERIFY and the role envelope (`mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`).
 5. Every sub-task message MUST be self-contained. It must include verification commands, one Manual-QA channel with exact tool + invocation, adversarial classes where applicable, a captured artifact path, and a cleanup receipt. Channels: HTTP (`curl -i`); tmux (`send-keys` + `capture-pane`); browser; computer-use. Tests are the floor; the channel artifact is the ceiling.
 6. Treat every worker DoneClaim as untrusted. Independently verify before flipping any checkbox to FullyDone.
 7. Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs. Stay in the parent, continue independent work, and re-invoke subagents as needed.
 8. After verification of ALL sub-tasks under this checkbox: edit the plan to change `- [ ]` → `- [x]`, re-read the plan to confirm the count decreased, append a `task-completed` line to the ledger, then continue.
 9. Do not start fresh on a sub-agent failure. Re-dispatch the same task with `FAILED: <exact error>` + `Diagnosis:` + `Fix:`.
+10. Retry budget: when the same checkbox fails with the same error twice, or fails three times in total, stop retrying it. Change it to `- [~]` (blocked), mark every checkbox that depends on it `- [~]` too, append a `task-blocked` ledger line with the last error and what is left undone, and continue with the next `- [ ]`. List every `- [~]` in the final report; never present a blocked task as done.
 
 # Hard constraints
 
-- No production code before a failing test exists when behavior changes. PIN → RED → GREEN → SURFACE.
+- Follow the plan's `Test decision` (default TDD: PIN → RED → GREEN → SURFACE). Existing behavior you change is always pinned by a passing characterization test first.
 - No `--dry-run` as evidence. No "should work". No "tests pass" as completion proof.
 - No `as any` / `@ts-ignore` / `@ts-expect-error`. No deleting failing tests.
 - Cleanup receipt is mandatory. Leftover PIDs / tmux / browser / ports / temp dirs = BLOCKED, not PASS.

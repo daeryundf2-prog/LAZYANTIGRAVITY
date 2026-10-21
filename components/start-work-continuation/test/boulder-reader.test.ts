@@ -16,6 +16,20 @@ describe("start-work plan checklist parser", () => {
 		expect(checklist).toEqual({ remaining: 2, total: 4, nextTaskLabel: "First" });
 	});
 
+	it("#given blocked checkboxes #when parsed #then they count toward total but not remaining", () => {
+		const markdown = ["## TODOs", "- [~] Blocked after retries", "- [ ] Next", "- [x] Done"].join("\n");
+
+		const checklist = parsePlanChecklist(markdown);
+
+		expect(checklist).toEqual({ remaining: 1, total: 3, nextTaskLabel: "Next" });
+	});
+
+	it("#given only blocked and done checkboxes #when parsed #then nothing remains to continue", () => {
+		const markdown = ["## TODOs", "- [~] Blocked", "- [x] Done"].join("\n");
+
+		expect(parsePlanChecklist(markdown)).toEqual({ remaining: 0, total: 2, nextTaskLabel: null });
+	});
+
 	it("#given nested checkboxes #when parsed #then ignores non-column-zero items", () => {
 		// given
 		const markdown = ["## TODOs", "- [ ] Top-level", "  - [ ] Nested", "\t- [ ] Tab nested", "- [x] Complete"].join(
