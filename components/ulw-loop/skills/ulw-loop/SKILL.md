@@ -56,11 +56,12 @@ This skill is intentionally compact. The full workflow lives in `references/full
 Session-once model recommendation (first `/ulw` or `/ulw-loop` only):
 
 <!-- MODEL-PROFILE:BEGIN ulw-loop-guide -->
-> **Antigravity Recommended Model Configuration Guide** (profile `gemini38-claude55`)
-> - **Session default (plan + code + research)**: Gemini 3.8 Flash (High). Claude Opus/Sonnet 5.5 also work; follow the model the user picked.
+> **Antigravity Recommended Model Configuration Guide** (profile `argon`)
+> - **Session default (conversation + implementation)**: Gemini 3.8 Flash (High)
+> - **Hard design / long-horizon reasoning**: switch the UI to Gemini 4 Argon (High)
 > - **Bulk fan-out / researcher / worker**: `Model: "flash"`
-> - **Verify / adversarial lanes**: `Model: "pro"` in any session
-> - **Final verdict (one lane only)**: switch the UI to Claude, then pass `Model: "inherit"` to that single lane. Use it for a high-risk change, an ambiguous design, or debugging stuck after 2 rounds. Default Claude Sonnet 5.5 (High); Claude Opus 5.5 (High) for design calls.
+> - **Verify / adversarial lanes**: Gemini 4 Argon session + `Model: "inherit"`
+> - **Cross-family second opinion (optional, one lane)**: Claude Sonnet 5.5 (High) / Opus 5.5 (High) session + `Model: "inherit"`
 > - **Rapid iterative bug fixes**: Flash (Medium) or `Model: "flash_lite"`
 >
 > *Pass `Subagents[].Model` on `invoke_subagent`. The host does not rewrite the session UI model (`canAutoRoute=false`, `hostEnforced=false`). Claude quota is scarce on Ultra.*
@@ -83,10 +84,11 @@ If rate limit/quota is detected:
 
 Fallback sequence (exact):
 <!-- MODEL-PROFILE:BEGIN ulw-loop-fallback -->
-- **When Gemini 3.8 Flash (High) is limited**: 3.8 Flash (Medium) → 3.7 Flash (High) → 3.1 Pro (High) → Sonnet 5.5 → Opus 5.5
-- **When Gemini 3.1 Pro is limited**: 3.8 Flash (High) → 3.7 Flash (High) → Sonnet 5.5
-- **When Claude Opus 5.5 is limited**: Sonnet 5.5 (High) → Gemini 3.1 Pro (High) → 3.8 Flash (High)
-- **When Claude Sonnet 5.5 is limited**: Gemini 3.1 Pro (High) → 3.8 Flash (High)
+- **When Gemini 4 Argon is limited**: 3.1 Pro (High) → 3.8 Flash (High) → Sonnet 5.5 → Opus 5.5
+- **When Gemini 3.8 Flash (High) is limited**: 3.8 Flash (Medium) → Gemini 4 Argon → 3.1 Pro (High) → Sonnet 5.5 → Opus 5.5
+- **When Gemini 3.1 Pro is limited**: Gemini 4 Argon → 3.8 Flash (High) → Sonnet 5.5
+- **When Claude Opus 5.5 is limited**: Sonnet 5.5 (High) → Gemini 4 Argon → 3.8 Flash (High)
+- **When Claude Sonnet 5.5 is limited**: Gemini 4 Argon → 3.8 Flash (High)
 - **When all models is limited**: wait for the 5-hour refresh or enable AI Credit Overages manually
 <!-- MODEL-PROFILE:END ulw-loop-fallback -->
 

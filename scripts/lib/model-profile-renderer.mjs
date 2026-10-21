@@ -2,7 +2,6 @@
 // switching profiles is a data change, not a code change.
 
 export const MARKER_FILES = [
-	{ path: "shared-skills/skills/ulw/SKILL.md", markers: ["ulw-guide"] },
 	{ path: "components/ulw-loop/skills/ulw-loop/SKILL.md", markers: ["ulw-loop-guide", "ulw-loop-fallback"] },
 	{ path: "README.md", markers: ["readme-table"] },
 	{ path: "components/rules/bundled-rules/hephaestus.md", markers: ["hephaestus-routing"] },

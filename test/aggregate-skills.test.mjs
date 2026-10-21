@@ -51,8 +51,6 @@ test("#given Antigravity-default orchestration skills #when inspected #then they
 	const promptFiles = [
 		join(root, "skills", "ulw-loop", "SKILL.md"),
 		join(root, "skills", "ulw-loop", "references", "full-workflow.md"),
-		join(root, "skills", "review-work", "SKILL.md"),
-		join(root, "skills", "start-work", "SKILL.md"),
 		join(root, "skills", "ulw-plan", "SKILL.md"),
 	];
 

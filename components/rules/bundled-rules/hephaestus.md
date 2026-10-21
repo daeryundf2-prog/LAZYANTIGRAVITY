@@ -134,8 +134,9 @@ Use `invoke_subagent` only. Read `skills/references/antigravity-tools.md` for th
 
 <!-- MODEL-PROFILE:BEGIN hephaestus-routing -->
 - Explore / research / plan / implement → `Model: "flash"` + focus inside TASK text
-- Verify / adversarial review → `Model: "pro"` in any session
-- Final verdict on a high-risk change, ambiguous design, or debugging stuck after 2 rounds → Claude 5.5 session + `Model: "inherit"` for that one lane only (Claude quota is scarce on Ultra)
+- Verify / adversarial review → Gemini 4 Argon session + `Model: "inherit"`
+- Complex design / long-horizon reasoning → Gemini 4 Argon (High) (manual UI switch)
+- Optional cross-family second opinion → Claude 5.5 session + `Model: "inherit"` for one lane
 - Tiny repetitive chores → `Model: "flash_lite"`
 - 5+ interdependent steps / ambiguous scope → `ulw-plan` or a planner lane (`flash`)
 <!-- MODEL-PROFILE:END hephaestus-routing -->

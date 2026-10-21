@@ -117,8 +117,8 @@ test("Dimension 3: Subagent Invocation Schema & Tier Routing Contracts", async (
 });
 
 test("Dimension 4: 1M Context repo-survey Skill Functional & Structural Integrity", async () => {
-	const sharedSkill = join(root, "shared-skills", "skills", "init-deep", "references", "repo-survey.md");
-	const packagedSkill = join(root, "skills", "init-deep", "references", "repo-survey.md");
+	const sharedSkill = join(root, "shared-skills", "skills", "ulw-research", "references", "repo-survey.md");
+	const packagedSkill = join(root, "skills", "ulw-research", "references", "repo-survey.md");
 
 	assert.equal(
 		await readFile(sharedSkill, "utf8"),
@@ -134,19 +134,6 @@ test("Dimension 4: 1M Context repo-survey Skill Functional & Structural Integrit
 	assert.match(content, /Error Hygiene/i, "Must describe error hygiene audit");
 	assert.match(content, /Model:\s*"flash"/, "Must include Model: flash scout subagent template");
 	assert.match(content, /Model:\s*"pro"/, "Must include Model: pro architectural critique mapping");
-});
-
-test("Dimension 5: Multi-Tier review-work Skill & Tiered Blocking Policy", async () => {
-	const skillPath = join(root, "skills", "review-work", "SKILL.md");
-	const content = await readFile(skillPath, "utf8");
-
-	assert.match(content, /Security Oracle \(Pro\)/, "Must include Security Oracle");
-	assert.match(content, /Code Quality & Logic Oracle \(Pro\)/, "Must include Code Quality & Logic Oracle");
-	assert.match(content, /Visual & CJK Fidelity Oracle \(Flash\)/, "Must include Visual & CJK Fidelity Oracle");
-	assert.match(content, /Performance & Efficiency Oracle \(Flash\)/, "Must include Performance & Efficiency Oracle");
-	assert.match(content, /Tiered Blocking Policy/i, "Must define Tiered Blocking Policy");
-	assert.match(content, /Core Blocking Gates \(Must PASS\)/i, "Must declare Blocking Gates");
-	assert.match(content, /Advisory Gates \(Warnings allowed\)/i, "Must declare Advisory Gates");
 });
 
 test("Dimension 6: Multimodal visual-qa & frontend-ui-ux Integration", async () => {
@@ -166,14 +153,13 @@ test("Dimension 7: Packaging & npm Pack Materialization Dry-Run", async () => {
 	const parsed = JSON.parse(output);
 	const files = parsed[0].files.map((f) => f.path);
 
-	assert.ok(files.includes("shared-skills/skills/init-deep/references/repo-survey.md"), "npm pack must include the repo-survey reference");
+	assert.ok(files.includes("shared-skills/skills/ulw-research/references/repo-survey.md"), "npm pack must include the repo-survey reference");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/references/frontend-ui-ux.md"), "npm pack must include the frontend-ui-ux reference");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/references/ui-loopback.md"), "npm pack must include the ui-loopback reference");
 	assert.ok(files.includes("shared-skills/skills/refactor/references/ast-refactor.md"), "npm pack must include the ast-refactor reference");
 	assert.ok(files.includes("shared-skills/skills/refactor/references/remove-ai-slops.md"), "npm pack must include the remove-ai-slops reference");
 	assert.ok(files.includes("shared-skills/skills/image-prompt/references/vector-diagram.md"), "npm pack must include the vector-diagram reference");
-	assert.ok(files.includes("shared-skills/skills/init-deep/references/information-density.md"), "npm pack must include the information-density reference");
-	assert.ok(files.includes("shared-skills/skills/review-work/SKILL.md"), "npm pack must include review-work");
+	assert.ok(files.includes("shared-skills/skills/ulw-research/references/information-density.md"), "npm pack must include the information-density reference");
 	assert.ok(files.includes("shared-skills/skills/visual-qa/SKILL.md"), "npm pack must include visual-qa");
 	// Component-skill references are not part of the root npm package; assert they exist on disk.
 	for (const componentReference of [

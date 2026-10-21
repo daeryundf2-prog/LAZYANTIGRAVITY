@@ -68,9 +68,10 @@ Follow the user-selected **session model** (supported: Gemini 3.8 Flash (High), 
 | Role | Recommendation |
 | :--- | :--- |
 | Session default | Gemini 3.8 Flash (High) — follow the model the user picked |
+| Hard design / long-horizon reasoning | Gemini 4 Argon (High) via UI switch |
 | Bulk fan-out / worker / parser / search | `Model: "flash"` |
-| Verify / adversarial review / plan review | `Model: "pro"` in any session |
-| Final verdict (one lane) | Claude Sonnet 5.5 (High), or Opus 5.5 (High) for design — UI switch + `Model: "inherit"` |
+| Verify / adversarial review / plan review | Gemini 4 Argon session + `Model: "inherit"` |
+| Cross-family second opinion (optional) | Claude Sonnet 5.5 (High) / Opus 5.5 (High) — UI switch + `Model: "inherit"`, one lane |
 | Rapid iterative fixes | Flash (Medium) or `Model: "flash_lite"` |
 <!-- MODEL-PROFILE:END readme-table -->
 

@@ -115,10 +115,10 @@
 		"hostEnforced": false,
 		"routingMode": "agent-tier-hint",
 		"tierMap": {
-			"default": "flash",
-			"planner": "flash",
-			"worker": "flash",
-			"researcher": "flash",
+			"default": "inherit",
+			"planner": "inherit",
+			"worker": "inherit",
+			"researcher": "inherit",
 			"surveyor": "flash",
 			"ast-refactor": "flash",
 			"dual-verify": "pro",
@@ -132,7 +132,7 @@
 			"fast": "flash_lite",
 			"fallback": "flash_lite"
 		},
-		"activeProfile": "gemini38-claude55",
+		"activeProfile": "argon",
 		"profiles": {
 			"gemini38-claude55": {
 				"status": "active",
@@ -198,14 +198,14 @@
 				}
 			},
 			"argon": {
-				"status": "pending",
+				"status": "active",
 				"displayName": "Gemini 4 Pro Argon + Gemini 3.8",
 				"description": "Pending profile: Gemini 4 Pro Argon for heavy reasoning/design, Gemini 3.8 Flash workhorse",
 				"pendingModels": [
 					{
 						"modelId": "gemini-4-pro-argon",
 						"displayName": "TBD",
-						"availability": "pending",
+						"availability": "available",
 						"provider": "google"
 					}
 				],
@@ -214,7 +214,7 @@
 					"fanout": "flash",
 					"chores": "flash_lite",
 					"verify": "pro",
-					"verifyLane": "pro",
+					"verifyLane": "inherit",
 					"crossFamilyVerdict": "inherit"
 				},
 				"fallbackTable": {
@@ -225,7 +225,7 @@
 					"Claude Sonnet 5.5": "{modelBase} → 3.8 Flash (High)",
 					"all models": "wait for the 5-hour refresh or enable AI Credit Overages manually"
 				},
-				"modelName": "Gemini 4 Pro Argon (High)",
+				"modelName": "Gemini 4 Argon (High)",
 				"verifyLaneText": {
 					"pro": "`Model: \"pro\"` in any session (on release day confirm the host maps `pro` to {modelBase}; otherwise re-apply with `--verify-lane inherit`)",
 					"inherit": "{modelBase} session + `Model: \"inherit\"`"
@@ -300,6 +300,7 @@
 				"reasoningLevel": "high",
 				"purpose": "설계/계획 기본 — 코드베이스 기반·에이전트형 설계는 3.8 Flash; 모호한 고비용 설계만 Claude Opus 5.5 (High)로 수동 전환 (Gemini 세션일 때만 필요)",
 				"fallbackChain": [
+					"gemini-4-argon-high",
 					"gemini-3.7-flash-high",
 					"gemini-3.8-flash-medium",
 					"gemini-3.1-pro-high",
@@ -314,6 +315,7 @@
 				"reasoningLevel": "high",
 				"purpose": "교차 모델 검증 — 메인(3.8 Flash)과 다른 패밀리로 편향 방지",
 				"fallbackChain": [
+					"gemini-4-argon-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high",
 					"claude-sonnet-5.5-high",
@@ -376,6 +378,7 @@
 				"reasoningLevel": "high",
 				"purpose": "실시간 듀얼 패스 교차 검증 오라클 — 적대적 침투 분석 및 자체 치유",
 				"fallbackChain": [
+					"gemini-4-argon-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high",
 					"claude-sonnet-5.5-high",
@@ -413,6 +416,7 @@
 				"reasoningLevel": "high",
 				"purpose": "직교 3대 가설 동시 반증 디버깅 — 논리 분기 및 불변식 락킹",
 				"fallbackChain": [
+					"gemini-4-argon-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high",
 					"claude-sonnet-5.5-high",
@@ -450,6 +454,7 @@
 				"reasoningLevel": "high",
 				"purpose": "클린 아키텍처 계층 검증 — 1M 전역 import 그래프 및 AST 의존성 드리프트 차단",
 				"fallbackChain": [
+					"gemini-4-argon-high",
 					"gemini-3.8-flash-high",
 					"gemini-3.7-flash-high",
 					"claude-sonnet-5.5-high",
@@ -600,6 +605,22 @@
 				"provider": "openai-oss",
 				"speed": "moderate",
 				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-4-argon-medium",
+				"displayName": "Gemini 4 Argon (Medium)",
+				"provider": "google",
+				"speed": "moderate",
+				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-4-argon-high",
+				"displayName": "Gemini 4 Argon (High)",
+				"provider": "google",
+				"speed": "moderate",
+				"reasoningLevel": "high",
 				"availabilitySource": "ui"
 			}
 		],
