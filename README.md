@@ -1,6 +1,5 @@
 # LAZYANTIGRAVITY (v0.9.0)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node 20+](https://img.shields.io/badge/Node-20%2B-brightgreen.svg?style=flat-square)](https://nodejs.org/)
 [![Reproducible Builds](https://img.shields.io/badge/Builds-Reproducible-success.svg?style=flat-square)](package.json)
 [![Architecture: Agentic Core](https://img.shields.io/badge/Architecture-Agentic%20Core-orange.svg?style=flat-square)](AGENTS.md)
@@ -185,4 +184,4 @@ Shared asset: `scripts/coverage_audit.mjs` is kept byte-identical across lazyfor
 
 ## License
 
-MIT (see component `LICENSE` files where present).
+All rights reserved. © 법무법인(유한) 대륜. 무단 사용·복제·배포를 금합니다. (Third-party components keep their own LICENSE files.)
