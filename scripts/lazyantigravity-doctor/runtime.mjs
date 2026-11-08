@@ -32,7 +32,9 @@ const CAPABILITY_PROBES = [
 // Resolve like a shell would, without depending on `which`/`command -v`
 // being reachable (they are not when PATH is minimal, e.g. in tests).
 function resolveBinary(name) {
-	const exts = process.platform === "win32" ? ["", ".exe", ".cmd", ".bat"] : [""];
+	// On Windows an extensionless file is never executable: npm's .bin dirs hold
+	// an extensionless sh shim next to the real .cmd one, so only try PATHEXT-style names.
+	const exts = process.platform === "win32" ? [".exe", ".cmd", ".bat"] : [""];
 	for (const dir of (process.env.PATH ?? "").split(delimiter)) {
 		if (dir === "") continue;
 		for (const ext of exts) {
