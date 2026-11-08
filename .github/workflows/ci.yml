@@ -49,7 +49,9 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Check forbidden TypeScript syntax (AGENTS.md)
-        # --experimental-strip-types needs Node >=20.19/22.6 (setup-node latest satisfies this)
+        # --experimental-strip-types does not exist on Node 20 (rejected on 20.20.2); the check is
+        # Node-version independent and still runs on Node 22 (test + windows jobs).
+        if: matrix.node != '20'
         run: node --experimental-strip-types shared-skills/skills/programming/scripts/typescript/check-no-excuse-rules.ts --only=no-any-assertion,no-unknown-assertion,no-ts-ignore,no-ts-expect-error,no-enum,no-non-null-assertion,no-default-export components
 
       - name: Configure Git for tests
