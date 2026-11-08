@@ -31,7 +31,6 @@ const MODEL_CONTEXT_BUDGETS = [
         contextWindowTokens: 200_000,
         effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT,
     },
-    { slug: "gpt-oss-120b", contextWindowTokens: 128_000, effectivePercent: DEFAULT_EFFECTIVE_CONTEXT_WINDOW_PERCENT },
 ];
 export function withPostCompactBudget(config, context) {
     const postCompactMaxResultChars = dynamicPostCompactMaxResultChars(context) ?? config.postCompactMaxResultChars;

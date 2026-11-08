@@ -480,8 +480,7 @@
 				"reasoningLevel": "low",
 				"purpose": "최종 폴백 — 쿼터/비용 절약용",
 				"fallbackChain": [
-					"gemini-3.7-flash-low",
-					"gpt-oss-120b"
+					"gemini-3.7-flash-low"
 				],
 				"availabilitySource": "ui"
 			}
@@ -597,14 +596,6 @@
 				"provider": "anthropic",
 				"speed": "moderate",
 				"reasoningLevel": "high",
-				"availabilitySource": "ui"
-			},
-			{
-				"modelId": "gpt-oss-120b",
-				"displayName": "GPT-OSS 120B (Medium)",
-				"provider": "openai-oss",
-				"speed": "moderate",
-				"reasoningLevel": "medium",
 				"availabilitySource": "ui"
 			},
 			{

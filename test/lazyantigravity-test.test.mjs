@@ -40,7 +40,7 @@ test("#given bundled model catalog #when antigravity roles inspected #then no ro
 		assert.ok(role.modelId, `role ${roleName} must have a modelId`);
 		assert.match(
 			role.modelId,
-			/^gemini-3\.[78]-flash|^gemini-3\.1-pro|^claude-|^gpt-oss/,
+			/^gemini-3\.[78]-flash|^gemini-3\.1-pro|^claude-/,
 			`role ${roleName} modelId=${role.modelId} must not recommend a 3.5/3.6 Flash tier`,
 		);
 		assert.doesNotMatch(
