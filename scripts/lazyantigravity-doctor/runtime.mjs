@@ -32,7 +32,9 @@ const CAPABILITY_PROBES = [
 // Resolve like a shell would, without depending on `which`/`command -v`
 // being reachable (they are not when PATH is minimal, e.g. in tests).
 function resolveBinary(name) {
-	const exts = process.platform === "win32" ? ["", ".exe", ".cmd", ".bat"] : [""];
+	// On Windows an extensionless file is never executable: npm's .bin dirs hold
+	// an extensionless sh shim next to the real .cmd one, so only try PATHEXT-style names.
+	const exts = process.platform === "win32" ? [".exe", ".cmd", ".bat"] : [""];
 	for (const dir of (process.env.PATH ?? "").split(delimiter)) {
 		if (dir === "") continue;
 		for (const ext of exts) {
@@ -49,9 +51,13 @@ function resolveBinary(name) {
 }
 
 function probeBinary(binaryPath, probe) {
-	const res = spawnSync(binaryPath, probe.args, {
+	// Node refuses to spawn .cmd/.bat shims (npm's node_modules/.bin wrappers on
+	// Windows) without a shell (EINVAL since the CVE-2024-27980 fix).
+	const needsShell = process.platform === "win32" && /\.(cmd|bat)$/i.test(binaryPath);
+	const res = spawnSync(needsShell ? `"${binaryPath}"` : binaryPath, probe.args, {
 		encoding: "utf8",
 		timeout: 15000,
+		...(needsShell ? { shell: true } : {}),
 	});
 	if (res.error) {
 		return { status: "error", detail: String(res.error.message ?? res.error) };

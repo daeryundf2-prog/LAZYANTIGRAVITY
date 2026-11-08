@@ -9,6 +9,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 
 function fakeBinary(dir, name, output) {
 	mkdirSync(dir, { recursive: true });
+	if (process.platform === "win32") return fakeWindowsBinary(dir, name, output);
 	const path = join(dir, name);
 	// Respond per subcommand so multi-probe inspection sees a real surface:
 	// `output` may be a string (echoed for every call) or a map keyed on argv.
@@ -20,6 +21,27 @@ function fakeBinary(dir, name, output) {
 					.join("")}  *) echo 'Usage: ${name} <command>' ;;\nesac\n`;
 	writeFileSync(path, script);
 	chmodSync(path, 0o755);
+	return path;
+}
+
+// Windows cannot run `#!/bin/sh` scripts: emit a `.cmd` shim that runs a node
+// handler with the same per-subcommand responses.
+function fakeWindowsBinary(dir, name, output) {
+	writeFileSync(
+		join(dir, `${name}.js`),
+		[
+			`const output = ${JSON.stringify(output)};`,
+			`const argv = process.argv.slice(2).join(" ");`,
+			`if (typeof output === "string") console.log(output);`,
+			`else {`,
+			`\tconst hit = Object.entries(output).find(([key]) => argv.includes(key));`,
+			`\tconsole.log(hit ? hit[1] : ${JSON.stringify(`Usage: ${name} <command>`)});`,
+			`}`,
+			"",
+		].join("\n"),
+	);
+	const path = join(dir, `${name}.cmd`);
+	writeFileSync(path, `@"${process.execPath}" "%~dp0${name}.js" %*\r\n`);
 	return path;
 }
 
