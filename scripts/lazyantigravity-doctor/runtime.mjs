@@ -49,9 +49,13 @@ function resolveBinary(name) {
 }
 
 function probeBinary(binaryPath, probe) {
-	const res = spawnSync(binaryPath, probe.args, {
+	// Node refuses to spawn .cmd/.bat shims (npm's node_modules/.bin wrappers on
+	// Windows) without a shell (EINVAL since the CVE-2024-27980 fix).
+	const needsShell = process.platform === "win32" && /\.(cmd|bat)$/i.test(binaryPath);
+	const res = spawnSync(needsShell ? `"${binaryPath}"` : binaryPath, probe.args, {
 		encoding: "utf8",
 		timeout: 15000,
+		...(needsShell ? { shell: true } : {}),
 	});
 	if (res.error) {
 		return { status: "error", detail: String(res.error.message ?? res.error) };
