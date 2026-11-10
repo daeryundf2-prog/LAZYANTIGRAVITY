@@ -27,6 +27,14 @@ This reference catalogs every defect code the report gates (`static`, `layout`, 
 | `missing_required_section` | blocker | true | A section explicitly required by the brief (e.g., via `--require-section`) is absent. | Add the section the brief requires (matched by --require-section). |
 | `missing_promised_deliverable` | blocker | true | A deliverable (e.g., a slide deck, a chart, a data file) is promised in the brief but not delivered, not marked blocked_capability, and not skipped with a reason. | Produce the promised deliverable or record it as blocked_capability or skipped with a reason. |
 
+### Reviewer checklist item next to `korean_no_keep_all` (not a gate code)
+
+No gate raises this one; the reviewer checks it by reading the rendered lines at each checked width. Name the break and fix the container, not the wording.
+
+| Item | What to look for | How to fix |
+|------|------------------|-----------|
+| `korean_orphan_particle` | A line ends or begins with a lone particle or verb ending (이, 가, 은, 는, 을, 를, 에, 도, 만, 부터, 까지, or an ending such as 요, 고) cut off from the word it belongs to, or a token (number plus unit, version, citation id) splits inside itself. | Keep `word-break: keep-all` with `overflow-wrap: anywhere`, widen the container, and drop any forced `<br>` inside a short phrase. If no named break applies, describe the break in words and invent no label. |
+
 ### Layout Gate (Rendering & Presentation)
 
 | Code | Severity | Integrity | What It Detects | How to Fix |
@@ -64,3 +72,30 @@ Citations within reports follow one of two lineage modes:
 - **section**: Sources are listed in a dedicated section with numbered entries ([S1], [S2], etc.).
 
 Both modes are valid; choose based on the report's narrative flow.
+
+## High-Risk Claims: Debate Record and Attributed-Only Status
+
+These rules are applied by the reviewer and the leader, not raised as defect codes by a gate.
+
+A claim is high risk when it is a number, a legal, regulatory, financial, medical or security statement, a dated "latest/current" statement, a causal claim, or a ranking that drives the recommendation. When unsure, treat it as high. A high-risk claim may be written as established fact only when all of these are recorded:
+
+1. Two independent source domains (two pages on one domain count once).
+2. One primary source that was opened, not quoted secondhand.
+3. One counter-search that looked for a refutation, with its query in the log.
+4. Explicit dates: source publish/update date, access date, and the date or version the claim holds for.
+5. A `debate` record with at least two attacks from different perspectives (evidence quality, source independence, method, scope, alternative explanation). A repeated perspective counts once.
+
+| claim id | attack | attacker perspective | defense | verdict (`holds` / `weakened` / `withdrawn`) | change to the claim |
+|---|---|---|---|---|---|
+
+Only one authoritative primary source can exist (a spec's own text, a vendor's own docs, a company's own filing): the second domain may be waived, with the reason written in the row. The counter-search, the dates and the debate are never waived.
+
+Status when a step is missing:
+
+- Counter-search could not run: the claim is `partial`. Write it only as attribution ("[S14] states that ..."), never as fact, and name the missing counter-search.
+- Fewer than two debate attacks from different perspectives: the claim is `unverified` and stays in the unresolved list.
+- Verdict `withdrawn`: the claim leaves the report.
+
+Normal-risk claims keep the current rule: one opened source that supports the sentence.
+
+Source: adapted from hypercore (MIT, alpoxdev) `skills/hyper-research/rules/claim-verification.md` and `skills/hyper-design/references/korean-break-quality.md`; see `NOTICE`.
