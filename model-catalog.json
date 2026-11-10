@@ -258,6 +258,7 @@
 						"| :--- | :--- |",
 						"| Session default | Gemini 3.8 Flash (High) — follow the model the user picked |",
 						"| Hard design / long-horizon reasoning | {model} via UI switch |",
+						"| Argon alternative (same lanes, same rules) | Gemini 4 Carbon (Medium/High) via UI switch — dummy bench 2026-11-11: accuracy on par, valid-JSON rate lower |",
 						"| Bulk fan-out / worker / parser / search | `Model: \"flash\"` |",
 						"| Verify / adversarial review / plan review | {verifyLane} |",
 						"| Cross-family second opinion (optional) | Claude Sonnet 5.5 (High) / Opus 5.5 (High) — UI switch + `Model: \"inherit\"`, one lane |",
@@ -609,6 +610,30 @@
 			{
 				"modelId": "gemini-4-argon-high",
 				"displayName": "Gemini 4 Argon (High)",
+				"provider": "google",
+				"speed": "moderate",
+				"reasoningLevel": "high",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-4-carbon-low",
+				"displayName": "Gemini 4 Carbon (Low)",
+				"provider": "google",
+				"speed": "moderate",
+				"reasoningLevel": "low",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-4-carbon-medium",
+				"displayName": "Gemini 4 Carbon (Medium)",
+				"provider": "google",
+				"speed": "moderate",
+				"reasoningLevel": "medium",
+				"availabilitySource": "ui"
+			},
+			{
+				"modelId": "gemini-4-carbon-high",
+				"displayName": "Gemini 4 Carbon (High)",
 				"provider": "google",
 				"speed": "moderate",
 				"reasoningLevel": "high",
