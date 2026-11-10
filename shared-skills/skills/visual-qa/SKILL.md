@@ -82,6 +82,8 @@ This JSON (diff ratio, similarity score, hotspots or overflow lines, border alig
 
 Send BOTH task calls in a single message so they run concurrently. Each oracle is read-only: it reviews and reports, it cannot modify files. Each returns PASS, REVISE, or FAIL with concrete, located findings.
 
+Give each oracle only the evidence listed below and a one-line statement of intent. Withhold the builder's reasoning, its self-assessment, and any list of what it thinks is good: a reviewer primed with the maker's story grades the story, not the surface. When no subagent can run, the same agent re-reads only that evidence in a fresh pass and labels the verdict `reviewer: self (degraded)`.
+
 Paste evidence directly into each prompt, because the oracle works only from the prompt text: source code, the plain-text TUI captures, the script JSON, and the screenshot paths plus your described observations for web.
 
 ### Pass A - Design-system and functional integrity (deeper, strict)
@@ -224,7 +226,12 @@ Flash results are advisory. If Flash flags SUSPECT or FAIL, prioritize those reg
 
 ## Step 4 - Synthesize one verdict
 
-When both passes return, merge them into a single report. Per dimension, mark good or bad with evidence. For each bad item, state what is wrong, where (file/line, hotspot grid, or capture line), and the concrete fix. Call out what is genuinely good so it is not regressed later.
+When both passes return, merge them into a single report. Per dimension, mark good or bad with evidence. For each bad item, state what is wrong, where (file/line, hotspot grid, or capture line), the measured or observed value, and the concrete fix, and tag it:
+
+- `[product]`: the interface itself is wrong. It is closed by changing the design or by a documented reason.
+- `[evidence]`: the capture cannot support any verdict (stale capture, wrong viewport, a required screen missing, a reference comparison that could not run). It is closed only by a new capture, never by a code change; fixing the UI first would grade the wrong artifact.
+
+A finding that mixes both is split: the capture defect stays `[evidence]`, and the UI defect it hid becomes a separate `[product]` finding once a valid capture exists. A finding with no location and no tag is a comment, not a finding. Call out what is genuinely good so it is not regressed later.
 
 Completion gate: do not declare the UI done until both passes are satisfied, OR the remaining gaps are explicitly listed and accepted by the user. A high `similarityScore` with an open Pass A finding, for example a faked-image layout or a broken feature, is still a FAIL.
 
@@ -289,6 +296,10 @@ Illustrative output (locked field names):
 }
 ```
 
+
+## Review-only static scan (optional)
+
+`node "$SKILL_DIR/scripts/ui-slop.mjs" <file|dir>` prints JSON candidates for common AI-UI slop signatures (gradient text, `transition: all`, side stripes, placeholder copy, missing alt, dead anchors, and similar). It always exits 0: a hit is a question for Pass A, not a verdict, and each rule carries a `keepWhen` hint for legitimate uses. Do not tune the UI to empty the list.
 
 ## References
 
