@@ -2,6 +2,11 @@ import { createReadStream } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
 import { confinePath } from "../../workspace-mcp/dist/path-policy.js";
 
+// Source label for web captures, adapted from hypercore (MIT, alpoxdev) hyper-browsing/rules/evidence-and-report.md; see NOTICE.
+// yt-dlp talks to the platform's own endpoints, so a media_youtube capture is `live`; local inputs are not web captures (null).
+const WEB_SOURCE_LABELS = { media_youtube: "live" };
+export const sourceLabelFor = (toolName) => WEB_SOURCE_LABELS[toolName] ?? null;
+
 export async function hashFile(raw) {
 	const path = confinePath(raw, { evidence: true, kind: "file" });
 	const hash = createHash("sha256");
@@ -12,7 +17,7 @@ export async function hashFile(raw) {
 export function unknownReceipt(input, parameters = {}) {
 	return {
 		schema_version: "1.0", case_id: parameters.case_id ?? null, evidence_id: parameters.evidence_id || "unknown",
-		status: "not_measured", source: { path: typeof input === "string" ? input : "", sha256: null }, artifacts: [],
+		status: "not_measured", source: { path: typeof input === "string" ? input : "", sha256: null }, source_label: null, artifacts: [],
 		tool: { name: "unknown", version: "unknown" }, parameters, started_at: null, finished_at: null, exit_code: null,
 		warnings: [], limitations: ["Historical job: timing, exit code, tool version and original hashes were not recorded"],
 		review: { status: "pending", reviewer: null, reviewed_at: null },
@@ -44,7 +49,7 @@ export async function finalizeReceipt(context, payload) {
 		catch { parameters.model_sha256 = null; }
 	}
 	return {
-		schema_version: "1.0", case_id: context.args.case_id ?? null, evidence_id: context.args.evidence_id || randomUUID(), status, source, artifacts,
+		schema_version: "1.0", case_id: context.args.case_id ?? null, evidence_id: context.args.evidence_id || randomUUID(), status, source, source_label: sourceLabelFor(context.name), artifacts,
 		tool: { name: tool?.binary || context.name, version: tool?.version || "unknown" }, parameters,
 		started_at: context.startedAt, finished_at: new Date().toISOString(), exit_code: failedRun?.status ?? tool?.status ?? null,
 		warnings, limitations: ["Hashes identify bytes, not evidentiary authenticity; human review is pending", "Completion does not certify transcription accuracy or complete media coverage", "Locally writable record, not an independent or third-party attestation", ...(!tool?.version ? ["Tool version not measured"] : [])],

@@ -238,3 +238,13 @@ test("media_frames extracts and restores nothing outside the workspace", () => {
 		}
 	});
 });
+
+test("processing receipt labels web captures as live and local media as unlabeled", async () => {
+	const { finalizeReceipt, unknownReceipt } = await import(join(ROOT, "media-mcp", "dist", "receipt.js"));
+	const base = { args: { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }, startedAt: new Date().toISOString(), runs: [], source: null };
+	const web = await finalizeReceipt({ ...base, name: "media_youtube" }, { ok: true });
+	assert.equal(web.source_label, "live");
+	const local = await finalizeReceipt({ ...base, name: "media_probe", args: { input: "clip.mp4" } }, { ok: true });
+	assert.equal(local.source_label, null);
+	assert.equal(unknownReceipt("clip.mp4").source_label, null);
+});
