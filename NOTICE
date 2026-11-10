@@ -7,7 +7,12 @@ hypercore
   Pinned commit: 2d305cbf5db72e337189aa584b363bb9ced2d9bc
   Adapted into: shared-skills/skills/handoff, components/ulw-loop/skills/ulw-loop/references/evidence-binding.md,
   scripts/lib/evidence-binding.mjs, shared-skills/skills/mass-ulw/SKILL.md (verifier label),
-  components/start-work-continuation/directive.md (artifact-path stage handoff)
+  components/start-work-continuation/directive.md (artifact-path stage handoff),
+  shared-skills/skills/ulw-research/references/report-gates.md (high-risk claim debate record, Korean orphan-particle item),
+  media-mcp/src/receipt.mjs (web-capture source label), shared-skills/skills/visual-qa/scripts/ui-slop.mjs and
+  shared-skills/skills/visual-qa/SKILL.md (UI slop signatures, [product]/[evidence] finding tags),
+  shared-skills/skills/image-prompt/SKILL.md (pre-generation checks),
+  components/ulw-loop/skills/ulw-loop/references/failure-class.md (failure class, dependent criteria)
 
 MIT License
 
