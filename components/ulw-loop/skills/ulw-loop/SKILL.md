@@ -107,6 +107,7 @@ Never auto-enable. Inform the user only.
 ## References
 
 - [evidence-binding](references/evidence-binding.md) — fingerprint-bound evidence, stale detection, verifier label
+- [failure-class](references/failure-class.md) — `failure_class` none/product/harness notes, signature stop rule, dependent criteria
 - [dual-verify](references/dual-verify.md) — consensus gate incl. the host-subagent transport
 - [swarm-sync](references/swarm-sync.md) — worktree isolation for parallel workers
 - [flaky-guard](references/flaky-guard.md) — flaky test stress-running
