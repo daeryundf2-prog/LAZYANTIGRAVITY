@@ -16,6 +16,7 @@ const expectedSkills = [
 	"debugging",
 	"frontend",
 	"git-master",
+	"handoff",
 	"image-prompt",
 	"lsp-setup",
 	"mass-ulw",

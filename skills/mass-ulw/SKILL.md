@@ -61,6 +61,8 @@ Wave width: one node per independent chunk, three or more per wave. Wider than a
 
 Any graph that changes code ends with a verification wave that depends on every producer. It runs the real test or build command and returns the captured output. Paginated deliverables (PDF, DOCX, slides) are checked by rendering every page, not by file size or grep. The run is done when the verification evidence passes, not when the last node says it finished.
 
+Name the verifier in the final verdict. When no `invoke_subagent` lane can run the verification wave, you are both producer and judge: write `verifier: self (no subagent capability)` in the ledger entry and the final message, accept only deterministic checks (commands with captured output, file existence, diffs), and state `maker-checker not available`. Never present a self-assessment as independent review. Source: adapted from hypercore (MIT, alpoxdev) `skills/hyper-mass/rules/run-and-recovery.md`; see `NOTICE`.
+
 ## 6. Recover
 
 - A failed node blocks only its dependents. Read its report first.

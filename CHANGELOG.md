@@ -6,6 +6,14 @@ semver. Given the 0.x stage, breaking changes may land in minor releases.
 
 ## [Unreleased]
 
+### Added — hypercore ideas (handoff, evidence binding, honest verifier)
+
+- `shared-skills/skills/handoff` (materialized to `skills/handoff`): state memo under `.omo/handoff/`, six-question cold-read check, fingerprint-checked resume.
+- `scripts/lib/evidence-binding.mjs` + `lazyantigravity-evidence-map.mjs --fingerprint | --record | --check-ledger`: evidence rows bound to `tree` + `diff_sha256`; a changed worktree makes old proofs `stale` (exit 1). Documented in `skills/ulw-loop/references/evidence-binding.md`; `test/evidence-binding.test.mjs`.
+- `ulw-loop` and `mass-ulw` final verdicts must name the verifier; without subagents: `verifier: self (no subagent capability)`, deterministic checks only.
+- `start-work-continuation/directive.md`: stage handoff by artifact path and a one-line `워크플로:` chain.
+- `NOTICE`: hypercore MIT entry (pinned 2d305cbf).
+
 ### Removed — GPT-OSS-120b ahead of Antigravity's 2026-11-02 removal
 
 - `model-catalog.json`: dropped `gpt-oss-120b` from `roles.fallback.fallbackChain` and `availableModels`. The Antigravity models page footnotes GPT-OSS-120b with "Will be removed on November 2, 2026" (antigravity.google/docs/models, checked 2026-10-21); keeping it would leave the last fallback pointing at a missing model.

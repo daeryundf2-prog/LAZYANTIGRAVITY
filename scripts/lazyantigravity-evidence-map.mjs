@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { access, readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { access, appendFile, mkdir, readFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { classifyLedger, fingerprint, makeRow, parseLedger } from "./lib/evidence-binding.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const format = "lazyantigravity-evidence-map.v1";
@@ -27,8 +28,20 @@ const commandClaims = [
 	["readme.evidence-map-command", "npm run evidence:map -- --json", "evidence:map", "scripts/lazyantigravity-evidence-map.mjs"],
 ];
 
+const usage = [
+	"Usage: node scripts/lazyantigravity-evidence-map.mjs [--json]",
+	"       node scripts/lazyantigravity-evidence-map.mjs --fingerprint [--repo <dir>]",
+	"       node scripts/lazyantigravity-evidence-map.mjs --check-ledger <ledger.jsonl> [--criteria C1,C2] [--repo <dir>]",
+	"       node scripts/lazyantigravity-evidence-map.mjs --record <ledger.jsonl> --criterion <id> --verdict pass|fail|blocked --command <cmd> --evidence <text> [--artifact <path>]... [--repo <dir>]",
+].join("\n");
+
 async function main() {
-	const options = parseArgs(process.argv.slice(2));
+	const argv = process.argv.slice(2);
+	if (argv.some((arg) => ["--fingerprint", "--check-ledger", "--record"].includes(arg))) {
+		process.exitCode = await runBinding(argv);
+		return;
+	}
+	const options = parseArgs(argv);
 	const report = await buildEvidenceMap();
 	if (options.json) {
 		process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
@@ -69,10 +82,49 @@ function parseArgs(args) {
 	if (args.length === 0) return { json: false };
 	if (args.length === 1 && args[0] === "--json") return { json: true };
 	if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
-		process.stdout.write("Usage: node scripts/lazyantigravity-evidence-map.mjs [--json]\n");
+		process.stdout.write(`${usage}\n`);
 		process.exit(0);
 	}
-	throw new Error("Usage: node scripts/lazyantigravity-evidence-map.mjs [--json]");
+	throw new Error(usage);
+}
+
+function parseBindingArgs(args) {
+	const valued = new Set(["--check-ledger", "--record", "--criteria", "--criterion", "--verdict", "--command", "--evidence", "--artifact", "--repo"]);
+	const options = { artifacts: [] };
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i];
+		if (arg === "--fingerprint") options.fingerprint = true;
+		else if (valued.has(arg) && i + 1 < args.length) {
+			const value = args[++i];
+			if (arg === "--artifact") options.artifacts.push(value);
+			else options[arg.slice(2).replace("check-ledger", "checkLedger")] = value;
+		} else throw new Error(usage);
+	}
+	return options;
+}
+
+// Fingerprint-bound evidence (see skills/ulw-loop/references/evidence-binding.md). Returns the exit code.
+async function runBinding(argv) {
+	const options = parseBindingArgs(argv);
+	const cwd = resolve(options.repo ?? process.cwd());
+	const current = fingerprint(cwd);
+	if (options.fingerprint) {
+		process.stdout.write(`${JSON.stringify(current, null, 2)}\n`);
+		return 0;
+	}
+	if (options.record) {
+		const row = makeRow(options, current);
+		const target = resolve(cwd, options.record);
+		await mkdir(dirname(target), { recursive: true });
+		await appendFile(target, `${JSON.stringify(row)}\n`);
+		process.stdout.write(`${JSON.stringify(row)}\n`);
+		return 0;
+	}
+	const rows = parseLedger(await readFile(resolve(cwd, options.checkLedger), "utf8"));
+	const criteria = options.criteria ? options.criteria.split(",").filter(Boolean) : [];
+	const verdict = classifyLedger(rows, current, { criteria, cwd });
+	process.stdout.write(`${JSON.stringify({ tree: current.tree, diff_sha256: current.diff_sha256, ...verdict }, null, 2)}\n`);
+	return verdict.ok ? 0 : 1;
 }
 
 async function readFiles(repoRoot, relativePaths) {
