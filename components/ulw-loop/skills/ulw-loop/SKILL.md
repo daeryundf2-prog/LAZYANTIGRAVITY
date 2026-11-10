@@ -27,6 +27,8 @@ This skill is intentionally compact. The full workflow lives in `references/full
 - After any compaction or context loss, re-read brief + goals + ledger FIRST (read files directly) plus `lazyantigravity ulw-loop status --json`, then resume; never re-plan from scratch.
 - Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
 - Record evidence through the CLI only after cleanup receipts are available.
+- Bind each criterion proof to the worktree fingerprint (`--record`) and run `--check-ledger` before the final verdict; a `stale` proof is re-captured, never re-labeled. See [evidence-binding](references/evidence-binding.md).
+- Final verdicts name their verifier. With no subagent capability write `verifier: self (no subagent capability)` and use deterministic checks only (commands with captured output, file existence, diffs); never present self-assessment as independent review.
 - Delegate via `invoke_subagent` only (see `../references/antigravity-tools.md`).
 - When invoking a subagent, pass a role envelope:
   - `mayFinalizeRun=false`
@@ -104,6 +106,7 @@ Never auto-enable. Inform the user only.
 
 ## References
 
+- [evidence-binding](references/evidence-binding.md) — fingerprint-bound evidence, stale detection, verifier label
 - [dual-verify](references/dual-verify.md) — consensus gate incl. the host-subagent transport
 - [swarm-sync](references/swarm-sync.md) — worktree isolation for parallel workers
 - [flaky-guard](references/flaky-guard.md) — flaky test stress-running

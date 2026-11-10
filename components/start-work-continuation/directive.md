@@ -19,11 +19,12 @@ You are mid-flight on a Prometheus work plan. The turn just ended without finish
 2. Pick the FIRST unchecked top-level checkbox in `## TODOs` or `## Final Verification Wave`. Ignore nested checkboxes under Acceptance Criteria / Evidence / Definition of Done.
 3. Follow the `start-work` skill in full. Re-read `skills/start-work/SKILL.md` from the LazyAntigravity plugin if you have lost context.
 4. Decompose the checkbox into atomic sub-tasks. On Antigravity, dispatch them in PARALLEL via `invoke_subagent` in this same response unless a sub-task has a NAMED blocking dependency. Every dispatch must include TASK / DELIVERABLE / SCOPE / VERIFY and the role envelope (`mayFinalizeRun=false`, `mayModifyGlobalRunState=false`, `mustReturn=SubagentResultEnvelope`, `requiresParentAck=true`).
-5. Every sub-task message MUST be self-contained. It must include verification commands, one Manual-QA channel with exact tool + invocation, adversarial classes where applicable, a captured artifact path, and a cleanup receipt. Channels: HTTP (`curl -i`); tmux (`send-keys` + `capture-pane`); browser; computer-use. Tests are the floor; the channel artifact is the ceiling.
-6. Treat every worker DoneClaim as untrusted. Independently verify before flipping any checkbox to FullyDone.
-7. Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs. Stay in the parent, continue independent work, and re-invoke subagents as needed.
-8. After verification of ALL sub-tasks under this checkbox: edit the plan to change `- [ ]` → `- [x]`, re-read the plan to confirm the count decreased, append a `task-completed` line to the ledger, then continue.
-9. Do not start fresh on a sub-agent failure. Re-dispatch the same task with `FAILED: <exact error>` + `Diagnosis:` + `Fix:`.
+5. Pass work between stages (explore -> plan -> implement -> verify) as saved artifact paths, not chat summaries: each dispatch names the artifact paths it reads and the one path it must write, and you confirm that file exists and is non-empty before the next stage starts. Open the turn with one line stating the chain and why: `워크플로: <stage> -> <stage> (근거: <reason>)`. If context is nearly full, write a memo with the `handoff` skill instead of summarizing in chat. (Adapted from hypercore, MIT, alpoxdev: skills/hyper/rules/stage-handoff.md; see NOTICE.)
+6. Every sub-task message MUST be self-contained. It must include verification commands, one Manual-QA channel with exact tool + invocation, adversarial classes where applicable, a captured artifact path, and a cleanup receipt. Channels: HTTP (`curl -i`); tmux (`send-keys` + `capture-pane`); browser; computer-use. Tests are the floor; the channel artifact is the ceiling.
+7. Treat every worker DoneClaim as untrusted. Independently verify before flipping any checkbox to FullyDone.
+8. Use `invoke_subagent` only. Do **not** invent foreign spawn/wait APIs. Stay in the parent, continue independent work, and re-invoke subagents as needed.
+9. After verification of ALL sub-tasks under this checkbox: edit the plan to change `- [ ]` → `- [x]`, re-read the plan to confirm the count decreased, append a `task-completed` line to the ledger, then continue.
+10. Do not start fresh on a sub-agent failure. Re-dispatch the same task with `FAILED: <exact error>` + `Diagnosis:` + `Fix:`.
 
 # Hard constraints
 
