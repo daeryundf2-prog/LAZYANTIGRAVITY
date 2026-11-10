@@ -68,6 +68,7 @@ Follow the user-selected **session model** (supported: Gemini 3.8 Flash (High), 
 | :--- | :--- |
 | Session default | Gemini 3.8 Flash (High) — follow the model the user picked |
 | Hard design / long-horizon reasoning | Gemini 4 Argon (High) via UI switch |
+| Argon alternative (same lanes, same rules) | Gemini 4 Carbon (Medium/High) via UI switch — dummy bench 2026-11-11: accuracy on par, valid-JSON rate lower |
 | Bulk fan-out / worker / parser / search | `Model: "flash"` |
 | Verify / adversarial review / plan review | Gemini 4 Argon session + `Model: "inherit"` |
 | Cross-family second opinion (optional) | Claude Sonnet 5.5 (High) / Opus 5.5 (High) — UI switch + `Model: "inherit"`, one lane |
