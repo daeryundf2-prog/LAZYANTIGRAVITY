@@ -26,6 +26,8 @@ This skill is intentionally compact. The full workflow lives in `references/full
 - Use the ulw-loop CLI state under `.omo/ulw-loop`; do not hand-edit goal state.
 - After any compaction or context loss, re-read brief + goals + ledger FIRST (read files directly) plus `lazyantigravity ulw-loop status --json`, then resume; never re-plan from scratch.
 - Every success criterion needs observable evidence from a real channel: tmux, HTTP, browser, or computer-use.
+- Work every unit as if the Final Quality Gate and review did not exist. A blocker they find is an execution miss to record, not the gate doing its job.
+- Before the final message: if it lists in-scope work as "next", do that work now. Stop only on work that needs an input only the user can give, and name that input.
 - Record evidence through the CLI only after cleanup receipts are available.
 - Delegate via `invoke_subagent` only (see `../references/antigravity-tools.md`).
 - When invoking a subagent, pass a role envelope:

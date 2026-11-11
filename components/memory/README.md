@@ -7,6 +7,8 @@
 
 Antigravity 세션 간에 프로젝트의 중요한 컨벤션, 빌드 트릭, 아키텍처 제약 사항, 발견된 결함/함정(Gotcha)을 `.lazyantigravity/memory/facts.jsonl` (또는 `.omo/memory/facts.jsonl`)에 안전하게 기록하고 다음 세션 시작 시 자동으로 시스템 프롬프트에 주입하는 스킬입니다.
 
+주입 예산은 기본 8KB(`LAZYANTIGRAVITY_MEMORY_BUDGET_BYTES`)입니다. 예산 안에서 preference > rule > gotcha > fact 순으로, 같은 등급은 최신순으로 고르고, 주입할 때는 원래 순서를 유지합니다. 예전처럼 최근 20개만 남기면 오래된 선호 설정이 빠졌습니다.
+
 ```mermaid
 flowchart LR
     Session["Antigravity 세션 작업"] --> Learn["중요 규칙 / 함정 발견"]

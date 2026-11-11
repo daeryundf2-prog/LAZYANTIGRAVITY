@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { ULTRAWORK_DIRECTIVE } from "./directive.js";
-const ULTRAWORK_PATTERN = /\b(?:ultrawork|ulw)\b/i;
+// Standalone keyword only: `ulw-plan`, `$ulw-loop`, `mass-ulw` and `ulw_helper` are names, not requests.
+const ULTRAWORK_PATTERN = /(?<![\w$-])(?:ultrawork|ulw)(?![\w-])/i;
+// Quoted or relayed text mentions the keyword without asking for the mode.
+const QUOTED_LINE = /^\s*(?:>|\[(?:REPORT|RESULT|[\w.-]+\s*->\s*[\w.-]+)\])/i;
+const QUOTED_SPAN = /"[^"\n]*"|`[^`\n]*`|“[^”\n]*”/g;
 const ULTRAWORK_DIRECTIVE_MARKER = "<ultrawork-mode>";
 const TRANSCRIPT_SEARCH_BYTES = 512_000;
 const CONTEXT_PRESSURE_MARKERS = [
@@ -76,7 +80,12 @@ function readTranscriptTail(transcriptPath) {
     return rawTranscript.subarray(Math.max(0, rawTranscript.byteLength - TRANSCRIPT_SEARCH_BYTES)).toString("utf8");
 }
 export function isUltraworkPrompt(prompt) {
-    return ULTRAWORK_PATTERN.test(prompt);
+    const ownText = prompt
+        .split("\n")
+        .filter((line) => !QUOTED_LINE.test(line))
+        .join("\n")
+        .replace(QUOTED_SPAN, " ");
+    return ULTRAWORK_PATTERN.test(ownText);
 }
 function isContextPressureRecoveryPrompt(prompt) {
     const normalizedPrompt = prompt.toLowerCase();

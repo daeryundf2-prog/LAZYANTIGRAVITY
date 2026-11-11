@@ -1,5 +1,6 @@
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
-const CHECKBOX_PATTERN = /^- \[[ xX]\] /;
+// `- [~]` marks a task blocked after its retry budget: counted in total, never remaining.
+const CHECKBOX_PATTERN = /^- \[[ xX~]\] /;
 const UNCHECKED_PATTERN = /^- \[ \] /;
 const TODO_HEADING = "TODOs";
 const FINAL_VERIFICATION_HEADING = "Final Verification Wave";

@@ -19,8 +19,12 @@ metadata:
 3. **영상 내용 분석**: `media_frames`로 프레임을 추출한 뒤, 반환된 이미지 경로를
    호스트 네이티브 비전으로 직접 읽는다 (프레임 수는 maxFrames로 제한, 기본 10).
 4. **OCR**: 이미지 속 텍스트는 `media_ocr` (기본 lang: kor+eng).
-5. **전사**: `media_transcribe` — whisper.cpp ggml 모델 경로가 필요하다
-   (model 파라미터 또는 LAZYANTIGRAVITY_WHISPER_MODEL).
+5. **전사**: `media_transcribe` — 기본은 whisper.cpp(ggml 모델, model 파라미터 또는
+   LAZYANTIGRAVITY_WHISPER_MODEL). 한국어 음성은 `backend: "transcribe"`(transcribe.cpp +
+   Qwen3-ASR GGUF, LAZYANTIGRAVITY_TRANSCRIBE_MODEL)가 더 정확하다(FLEURS 한국어 CER 4.6% vs
+   whisper large-v3 4.89%, transcribe.cpp 카탈로그 기준). `LAZYANTIGRAVITY_STT_BACKEND=transcribe`로
+   기본값을 바꿀 수 있다. 두 엔진 모두 로컬에서만 돈다. transcribe.cpp는 0.4에서 CLI가 바뀌므로
+   v0.3.x를 고정해서 쓴다.
 
 ## 도구별 전제 조건
 

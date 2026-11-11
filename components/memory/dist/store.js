@@ -88,10 +88,33 @@ export function readFacts(filePath) {
     catch { }
     return facts;
 }
+// facts.jsonl is injected into every session, so a credential saved here would
+// leak indefinitely. Block (not redact) — a redacted fact is rarely useful.
+const SECRET_PATTERNS = [
+    ["Anthropic/OpenAI API key", /\bsk-(?:ant-)?[A-Za-z0-9_-]{20,}/],
+    ["GitHub token", /\bgh[pousr]_[A-Za-z0-9]{30,}/],
+    ["AWS access key", /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/],
+    ["Google API key", /\bAIza[0-9A-Za-z_-]{30,}/],
+    ["Slack token", /\bxox[abpr]-[A-Za-z0-9-]{10,}/],
+    ["Hugging Face token", /\bhf_[A-Za-z0-9]{30,}/],
+    ["npm token", /\bnpm_[A-Za-z0-9]{30,}/],
+    ["JWT", /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/],
+    ["private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
+    ["credential assignment", /\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*["']?[^\s"']{8,}/i],
+];
+export function detectSecret(text) {
+    for (const [label, pattern] of SECRET_PATTERNS)
+        if (pattern.test(text))
+            return label;
+    return null;
+}
 export function saveFact(content, category = "fact", filePath, metadata) {
     const trimmed = content.trim();
     if (trimmed.length === 0)
         return null;
+    const secret = detectSecret(trimmed);
+    if (secret !== null)
+        throw new Error(`memory write blocked: content looks like a ${secret}`);
     const path = filePath ?? getMemoryFilePath();
     return withFileLock(path, () => {
         const validatedMetadata = factMetadata(metadata, trimmed, path, true);
@@ -111,6 +134,32 @@ export function saveFact(content, category = "fact", filePath, metadata) {
         return record;
     });
 }
+const DEFAULT_MEMORY_BUDGET_BYTES = 8192;
+const CATEGORY_PRIORITY = { preference: 0, rule: 1, gotcha: 2, fact: 3 };
+function memoryBudgetBytes() {
+    const raw = Number(process.env.LAZYANTIGRAVITY_MEMORY_BUDGET_BYTES);
+    return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_MEMORY_BUDGET_BYTES;
+}
+/**
+ * Pick what fits the injection budget: preferences, then rules, then gotchas,
+ * then facts, newest first within a category. A fixed "last 20" dropped old
+ * preferences that still applied. Selected facts keep their original order.
+ */
+export function selectFactsWithinBudget(facts, budgetBytes) {
+    const ranked = facts
+        .map((fact, index) => ({ fact, index }))
+        .sort((a, b) => (CATEGORY_PRIORITY[a.fact.category] ?? 3) - (CATEGORY_PRIORITY[b.fact.category] ?? 3) || b.index - a.index);
+    const keep = new Set();
+    let used = 0;
+    for (const { fact, index } of ranked) {
+        const size = Buffer.byteLength(fact.content, "utf8") + 20;
+        if (used + size > budgetBytes)
+            continue;
+        used += size;
+        keep.add(index);
+    }
+    return facts.filter((_, index) => keep.has(index));
+}
 export function formatActiveMemoryContext(facts) {
     if (facts.length === 0)
         return "";
@@ -119,7 +168,7 @@ export function formatActiveMemoryContext(facts) {
         "# Persistent Project Facts & Working Memory",
         "These editable working facts, conventions, and architectural gotchas were preserved across previous sessions. They are not verified evidence; review them against current sources before relying on them:",
     ];
-    for (const fact of facts.slice(-20)) {
+    for (const fact of selectFactsWithinBudget(facts, memoryBudgetBytes())) {
         const prefix = fact.category === "gotcha"
             ? "⚠️ [GOTCHA]"
             : fact.category === "preference"

@@ -20,7 +20,7 @@ test("#given the committed hook manifest #when loaded #then every command hook h
 			}
 		}
 	}
-	assert.equal(commandHooks, 26, "expected 26 command hooks (including json_schema_guard and bash redirect guards)");
+	assert.equal(commandHooks, 27, "expected 27 command hooks (including json_schema_guard, bash redirect guards and git-bypass-guard)");
 });
 
 test("#given hook manifest structure #when collecting command hooks #then filters and formats command handlers", () => {

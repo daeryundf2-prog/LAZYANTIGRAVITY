@@ -249,7 +249,9 @@ describe("skills/ulw-loop/SKILL.md", () => {
 		expect(text).toMatch(/commit in the observed style/);
 		expect(text).toMatch(/omnibus commit/);
 		expect(text).toContain("Every worker message MUST carry");
-		expect(text).toContain("Each worker does strict TDD");
+		expect(text).toContain("Each worker follows the plan's `Test decision`");
+		expect(text).toContain("baseline pin for touched existing behavior is required under every decision");
+		expect(text).not.toContain("Each worker does strict TDD");
 	});
 
 	it("#given Codex ULW reference #when worker guidance is inspected #then it avoids context-expensive agent polling", async () => {

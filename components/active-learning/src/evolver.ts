@@ -91,10 +91,16 @@ function parseAndValidateEvidence(evidenceInput: string | Record<string, unknown
 	}
 }
 
+// Kept in step with SECRET_PATTERNS in components/memory/src/store.ts.
+const SECRET_LIKE =
+	/\bsk-(?:ant-)?[A-Za-z0-9_-]{20,}|\bgh[pousr]_[A-Za-z0-9]{30,}|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\bAIza[0-9A-Za-z_-]{30,}|\bxox[abpr]-[A-Za-z0-9-]{10,}|\bhf_[A-Za-z0-9]{30,}|\bnpm_[A-Za-z0-9]{30,}|\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.|-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token)\s*[:=]\s*["']?[^\s"']{8,}/i;
+
 function sanitizeCandidate(value: string): string | null {
 	const normalized = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
 	if (normalized.length < 8 || normalized.length > 500) return null;
 	if (/^(ignore|disregard|forget)\s+(all|any|previous|prior)/i.test(normalized)) return null;
+	// Failure telemetry can carry tokens from error output; never promote it into memory.
+	if (SECRET_LIKE.test(normalized)) return null;
 	return normalized;
 }
 

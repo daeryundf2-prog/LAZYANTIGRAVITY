@@ -58,6 +58,7 @@ const BINARY_SPECS = {
 	ffprobe: { candidates: ["ffprobe"], versionArg: "-version", hint: "brew install ffmpeg  |  apt install ffmpeg" },
 	tesseract: { candidates: ["tesseract"], versionArg: "--version", hint: "brew install tesseract tesseract-lang  |  apt install tesseract tesseract-ocr-kor" },
 	whisper: { candidates: ["whisper-cli", "whisper-cpp", "whisper"], versionArg: "--help", hint: "build whisper.cpp (github.com/ggml-org/whisper.cpp) or brew install whisper-cpp; set LAZYANTIGRAVITY_WHISPER_BIN if the binary has a custom name" },
+	transcribe: { candidates: ["transcribe-cli"], versionArg: "--help", hint: "download a pinned transcribe.cpp release (github.com/handy-computer/transcribe.cpp, v0.3.x; the CLI changes in 0.4) or build it with cmake; set LAZYANTIGRAVITY_TRANSCRIBE_BIN if the binary has a custom name" },
 	ytdlp: { candidates: ["yt-dlp"], versionArg: "--version", hint: "brew install yt-dlp  |  pip install yt-dlp" },
 };
 const binaryCache = new Map();
@@ -226,6 +227,20 @@ async function mediaOcr(args) {
 	return textResult({ ok: false, error: truncate(`tesseract failed: ${res.stderr || res.stdout || "no output"}`) }, true);
 }
 
+// Local STT engine: whisper.cpp (default) or transcribe.cpp. transcribe.cpp
+// runs Qwen3-ASR, whose Korean FLEURS CER (4.6%, 1.7B) beats whisper
+// large-v3 (4.89%). Both stay on the machine.
+function localSttEngine(args) {
+	if (args.backend === "transcribe" || args.backend === "whisper") return args.backend;
+	return process.env["LAZYANTIGRAVITY_STT_BACKEND"] === "transcribe" ? "transcribe" : "whisper";
+}
+
+function resolveTranscribeModel(args) {
+	if (typeof args.model === "string" && args.model.trim().length > 0) return args.model.trim();
+	if (process.env["LAZYANTIGRAVITY_TRANSCRIBE_MODEL"]) return process.env["LAZYANTIGRAVITY_TRANSCRIBE_MODEL"];
+	return null;
+}
+
 function resolveWhisperModel(args) {
 	if (typeof args.model === "string" && args.model.trim().length > 0) return args.model.trim();
 	if (process.env["LAZYANTIGRAVITY_WHISPER_MODEL"]) return process.env["LAZYANTIGRAVITY_WHISPER_MODEL"];
@@ -266,23 +281,30 @@ async function whisperTranscribe(args, check, fallbackReason) {
 	const outBase = join(workDir, "transcript");
 	const timeoutMs = Number(args.timeoutSec) > 0 ? Math.min(Number(args.timeoutSec), 3600) * 1000 : 3600000;
 	const lang = typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "auto";
-	const res = await runBinary(findBinary("whisper"), ["-m", check.model, "-f", wavPath, "-l", lang, "-otxt", "-of", outBase], timeoutMs);
+	const engine = check.engine || "whisper";
 	const textPath = `${outBase}.txt`;
+	// transcribe-cli takes the audio as a positional arg and writes text to -o;
+	// it has no whisper-style -f / -otxt / -of flags.
+	const argv =
+		engine === "transcribe"
+			? ["-m", check.model, ...(lang === "auto" ? [] : ["-l", lang]), "-o", textPath, wavPath]
+			: ["-m", check.model, "-f", wavPath, "-l", lang, "-otxt", "-of", outBase];
+	const res = await runBinary(findBinary(engine), argv, timeoutMs);
 	if (res.ok && existsSync(textPath) && statSync(textPath).size > 0) {
 		const text = readFileSync(textPath, "utf8").trim();
-		const payload = { ok: true, backend: "whisper", input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length };
+		const payload = { ok: true, backend: engine, input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length };
 		if (fallbackReason) {
 			payload.requestedBackend = "gemini";
 			payload.fallbackReason = fallbackReason;
-			payload.note = "Ran locally via whisper because the gemini backend was not permitted for this call.";
+			payload.note = `Ran locally via ${engine} because the gemini backend was not permitted for this call.`;
 		}
 		return textResult(payload);
 	}
 	if (existsSync(textPath) && statSync(textPath).size > 0) {
 		const text = readFileSync(textPath, "utf8").trim();
-		return textResult({ ok: false, partial: true, backend: "whisper", input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length, error: truncate(`whisper exited ${res.status}: ${res.stderr || res.stdout || "partial output"}`) }, true);
+		return textResult({ ok: false, partial: true, backend: engine, input: args.input, model: check.model, textPath, text: truncate(text), chars: text.length, error: truncate(`${engine} exited ${res.status}: ${res.stderr || res.stdout || "partial output"}`) }, true);
 	}
-	return textResult({ ok: false, error: truncate(`whisper failed: ${res.stderr || res.stdout || "no output"}`) }, true);
+	return textResult({ ok: false, error: truncate(`${engine} failed: ${res.stderr || res.stdout || "no output"}`) }, true);
 }
 
 // ---------------------------------------------------------------------------
@@ -610,10 +632,25 @@ function mediaJobsDir() {
 }
 
 function transcribeValidation(args) {
-	if (findBinary("whisper") === null) return missingBinaryResult("whisper");
+	const engine = localSttEngine(args);
+	if (findBinary(engine) === null) return missingBinaryResult(engine);
 	if (findBinary("ffmpeg") === null) return missingBinaryResult("ffmpeg");
 	const confined = confineInputPath(args.input);
 	if (!confined.ok) return textResult({ ok: false, error: confined.error }, true);
+	if (engine === "transcribe") {
+		const model = resolveTranscribeModel(args);
+		if (!model || !existsSync(model)) {
+			return textResult(
+				{
+					ok: false,
+					error: "transcribe.cpp model file not found. Pass model=<path to *.gguf> or set LAZYANTIGRAVITY_TRANSCRIBE_MODEL.",
+					hint: "For Korean, download a Qwen3-ASR GGUF from huggingface.co/handy-computer (Apache-2.0).",
+				},
+				true,
+			);
+		}
+		return { confined, model, engine };
+	}
 	const model = resolveWhisperModel(args);
 	if (!model || !existsSync(model)) {
 		return textResult(
@@ -625,7 +662,7 @@ function transcribeValidation(args) {
 			true,
 		);
 	}
-	return { confined, model };
+	return { confined, model, engine };
 }
 
 const MAX_BACKGROUND_JOBS = 4;
@@ -660,6 +697,7 @@ async function mediaTranscribeStart(args) {
 				jobId,
 				input: args.input,
 				model: check.model,
+				backend: check.engine,
 				lang: typeof args.lang === "string" && args.lang.trim() ? args.lang.trim() : "auto",
 				status: "running",
 				phase: "extract",
@@ -717,7 +755,7 @@ async function runTranscribeJob(jobDir) {
 	if (!isInsideRoot(resolvedDir, mediaJobsDir()) || resolvedDir === mediaJobsDir()) throw new Error("Job directory outside media jobs root");
 	const statusPath = confinePath(join(resolvedDir, "status.json"));
 	const st = JSON.parse(readFileSync(statusPath, "utf8"));
-	const context = { name: "media_transcribe", args: st.parameters || { input: st.input, model: st.model, lang: st.lang }, startedAt: new Date().toISOString(), runs: [], dirs: [], source: null };
+	const context = { name: "media_transcribe", args: st.parameters || { input: st.input, model: st.model, lang: st.lang, backend: st.backend }, startedAt: new Date().toISOString(), runs: [], dirs: [], source: null };
 	await processingContext.run(context, async () => {
 		let payload;
 		try {
@@ -886,8 +924,8 @@ const TOOLS = [
 			type: "object",
 			properties: {
 				input: { type: "string", description: "Workspace-relative audio/video path" },
-				backend: { type: "string", enum: ["whisper", "gemini"], description: "whisper (local, default) or gemini (cloud, opt-in egress)" },
-				model: { type: "string", description: "whisper backend: path to a ggml-*.bin model" },
+				backend: { type: "string", enum: ["whisper", "transcribe", "gemini"], description: "whisper (local whisper.cpp, default), transcribe (local transcribe.cpp; LAZYANTIGRAVITY_STT_BACKEND=transcribe makes it the default), or gemini (cloud, opt-in egress)" },
+				model: { type: "string", description: "whisper: path to a ggml-*.bin model; transcribe: path to a *.gguf model (Qwen3-ASR for Korean)" },
 				lang: { type: "string", description: "whisper backend: spoken language hint" },
 				timeoutSec: { type: "number", description: "whisper backend: timeout (default 3600)" },
 				diarization: { type: "boolean", description: "gemini backend: speaker diarization (up to 8 speakers; 30-min audio limit)" },
@@ -902,12 +940,13 @@ const TOOLS = [
 	},
 	{
 		name: "media_transcribe_start",
-		description: "Start a background whisper.cpp transcription job and return a jobId immediately. Use for long audio/video; poll with media_transcribe_status.",
+		description: "Start a background local transcription job (whisper.cpp or transcribe.cpp) and return a jobId immediately. Use for long audio/video; poll with media_transcribe_status.",
 		inputSchema: {
 			type: "object",
 			properties: {
 				input: { type: "string", description: "Workspace-relative audio/video path" },
-				model: { type: "string", description: "Path to a ggml-*.bin whisper model" },
+				backend: { type: "string", enum: ["whisper", "transcribe"], description: "Local engine; default whisper unless LAZYANTIGRAVITY_STT_BACKEND=transcribe" },
+				model: { type: "string", description: "whisper: ggml-*.bin model; transcribe: *.gguf model" },
 				lang: { type: "string", description: "Spoken language hint" }
 			},
 			required: ["input"]
